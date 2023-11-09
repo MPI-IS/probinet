@@ -1,20 +1,24 @@
 """
-    Performing the inference in the given single-layer directed network.
-    Implementation of CRep algorithm.
+Performing the inference in the given single-layer directed network.
+Implementation of CRep algorithm.
 """
 
-from argparse import ArgumentParser
 import os
 import time
+from argparse import ArgumentParser
 
 import numpy as np
 import sktensor as skt
-from src.pgm.input.loader import import_data
-from src.pgm.model import CRep as CREP
 import yaml
+
+from .input.loader import import_data
+from .model import CRep as CREP
 
 
 def main():
+    """
+    Main function.
+    """
     p = ArgumentParser()
     p.add_argument('-a',
                    '--algorithm',
@@ -27,7 +31,7 @@ def main():
     p.add_argument('-f',
                    '--in_folder',
                    type=str,
-                   default='src/pgm/data/input/')  # path of the input network
+                   default='config/data/input/')  # path of the input network
     p.add_argument('-e', '--ego', type=str,
                    default='source')  # name of the source of the edge
     p.add_argument('-t', '--alter', type=str,
@@ -43,16 +47,16 @@ def main():
     args = p.parse_args()
 
     # setting to run the algorithm
-    with open('src/pgm/input/setting_' + args.algorithm + '.yaml') as f:
+    with open('config/model/setting_' + args.algorithm + '.yaml') as f:
         conf = yaml.load(f, Loader=yaml.FullLoader)
     if not os.path.exists(conf['out_folder']):
         os.makedirs(conf['out_folder'])
     with open(conf['out_folder'] + '/setting_' + args.algorithm + '.yaml',
               'w') as f:
         yaml.dump(conf, f)
-    '''
-    Import data
-    '''
+
+    # Import data
+
     network = args.in_folder + args.adj  # network complete path
     A, B, B_T, data_T_vals = import_data(network,
                                          ego=args.ego,
@@ -63,9 +67,9 @@ def main():
 
     valid_types = [np.ndarray, skt.dtensor, skt.sptensor]
     assert any(isinstance(B, vt) for vt in valid_types)
-    '''
-    Run CRep    
-    '''
+
+    # Run CRep
+
     print(f'\n### Run {args.algorithm} ###')
 
     time_start = time.time()
@@ -77,7 +81,3 @@ def main():
                   nodes=nodes)
 
     print(f'\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.')
-
-
-if __name__ == '__main__':
-    main()
