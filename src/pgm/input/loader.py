@@ -44,7 +44,7 @@ def import_data(dataset,
     """
 
     # read adjacency file
-    df_adj = pd.read_csv(dataset, sep='\s+', header=header)
+    df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
     print('{0} shape: {1}'.format(dataset, df_adj.shape))
 
     A = read_graph(df_adj=df_adj, ego=ego, alter=alter, noselfloop=True)
@@ -90,8 +90,7 @@ def read_graph(df_adj, ego='source', alter='target', noselfloop=True):
     # build nodes
     egoID = df_adj[ego].unique()
     alterID = df_adj[alter].unique()
-    nodes = list(set(egoID).union(set(alterID)))
-    nodes.sort()
+    nodes = sorted(set(egoID).union(set(alterID)))
 
     L = df_adj.shape[1] - 2  # number of layers
     # build the NetworkX graph: create a list of graphs, as many graphs as there are layers

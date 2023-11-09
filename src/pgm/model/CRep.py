@@ -284,7 +284,7 @@ class CRep:
                     colored(
                         'Solution failed to converge in {0} EM steps!'.format(
                             self.max_iter), 'blue'))
-            except:
+            except BaseException:
                 print('Solution failed to converge in {0} EM steps!'.format(
                     self.max_iter))
 

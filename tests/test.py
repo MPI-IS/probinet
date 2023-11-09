@@ -1,10 +1,9 @@
 import unittest
 
 import numpy as np
-import yaml
-
-import src.pgm.model.CRep as CREP
 from src.pgm.input.loader import import_data
+import src.pgm.model.CRep as CREP
+import yaml
 
 
 class Test(unittest.TestCase):

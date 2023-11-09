@@ -7,7 +7,7 @@ from sklearn import metrics
 
 from ..input.tools import transpose_ij3
 
-#TODO: make it model agnostic
+# TODO: make it model agnostic
 
 
 def calculate_AUC(pred, data0, mask=None):
@@ -167,7 +167,7 @@ def PSloglikelihood(B, u, v, w, eta, mask=None):
         return (B[mask > 0] * logM).sum() - M.sum()
 
 
-#TODO: make it model agnostic
+# TODO: make it model agnostic
 
 
 def calculate_opt_func(B, algo_obj=None, mask=None, assortative=False):

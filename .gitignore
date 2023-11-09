@@ -1,0 +1,6 @@
+# Ignore virtual environment
+/toolkit/
+
+# Ignore generated files and directories
+/PG.egg-info/
+/dist/

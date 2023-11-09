@@ -3,16 +3,15 @@
     Implementation of CRep algorithm.
 """
 
+from argparse import ArgumentParser
 import os
 import time
-from argparse import ArgumentParser
 
 import numpy as np
 import sktensor as skt
-import yaml
-
 from src.pgm.input.loader import import_data
 from src.pgm.model import CRep as CREP
+import yaml
 
 
 def main():

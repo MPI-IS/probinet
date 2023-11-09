@@ -141,7 +141,7 @@ class GM_reciprocity:
                     self.u[ind_over] = prng.dirichlet(
                         self.alpha * np.ones(self.K), overlapping)
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
-                                       prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+                        prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
                     if self.corr == 1.:
                         assert np.allclose(self.u, self.v)
                     if self.corr > 0:
@@ -152,7 +152,7 @@ class GM_reciprocity:
                                                   1. / self.beta,
                                                   size=(overlapping, self.K))
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
-                                       prng.gamma(self.ag, 1. / self.beta, size=(overlapping, self.K))
+                        prng.gamma(self.ag, 1. / self.beta, size=(overlapping, self.K))
                     self.u = tl.normalize_nonzero_membership(self.u)
                     self.v = tl.normalize_nonzero_membership(self.v)
 
@@ -322,7 +322,7 @@ class GM_reciprocity:
                     self.u[ind_over] = prng.dirichlet(
                         self.alpha * np.ones(self.K), overlapping)
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
-                                       prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+                        prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
                     if self.corr == 1.:
                         assert np.allclose(self.u, self.v)
                     if self.corr > 0:
@@ -333,7 +333,7 @@ class GM_reciprocity:
                                                   1. / self.beta,
                                                   size=(overlapping, self.K))
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
-                                       prng.gamma(self.ag, 1. / self.beta, size=(overlapping, self.K))
+                        prng.gamma(self.ag, 1. / self.beta, size=(overlapping, self.K))
                     self.u = tl.normalize_nonzero_membership(self.u)
                     self.v = tl.normalize_nonzero_membership(self.v)
 
@@ -349,7 +349,7 @@ class GM_reciprocity:
             self.w *= c  # only w is impact by that, u and v have a constraint, their sum over k should sum to 1
         '''
         Generate network G (and adjacency matrix A) using the latent variable,
-        with the generative model (A_ij) ~ P(A_ij|u,v,w) 
+        with the generative model (A_ij) ~ P(A_ij|u,v,w)
         '''
 
         G = nx.MultiDiGraph()
@@ -548,7 +548,7 @@ class GM_reciprocity:
         edges = list(G.edges(data=True))
         try:
             data = [[u, v, d['weight']] for u, v, d in edges]
-        except:
+        except BaseException:
             data = [[u, v, 1] for u, v, d in edges]
 
         df = pd.DataFrame(data, columns=['source', 'target', 'w'], index=None)

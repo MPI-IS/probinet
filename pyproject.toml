@@ -1,0 +1,40 @@
+# Project
+[project]
+name = "PGM"
+description = "Python package that integrates code from scientific publications, emphasizing probabilistic network analysis."
+dynamic = ["dependencies", "readme", "version"]
+requires-python = ">=3.9"
+
+# Setuptools
+[tool.setuptools]
+packages = ["src.pgm"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+readme = {file = "README.md"}
+
+# Autopep8
+[tool.autopep8]
+max_line_length = 100
+aggressive = 1
+
+# isort
+[tool.isort]
+profile = "google"
+force_single_line = false
+multi_line_output = 4
+line_length = 100
+src_paths = ["src/pgm"]
+
+# Pylint
+[tool.pylint.MASTER]
+disable = [
+    "attribute-defined-outside-init"]
+
+[tool.pylint.FORMAT]
+max-line-length = 100
+
+[tool.pylint.MESSAGES_CONTROL]
+disable = "invalid-name"
+
+
