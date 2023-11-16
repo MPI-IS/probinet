@@ -20,7 +20,17 @@ build
 # Pre-commit hooks
 .pre-commit-config.yaml
 
+# Test and coverage outputs
+.coverage
 
+# Output of the algorithm
 outputs/
 
-.coverage
+# tox test environment
+.tox/
+
+# mypy static type checker cache
+.mypy_cache/
+
+# XML reports
+*TEST*

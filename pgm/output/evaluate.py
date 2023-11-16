@@ -94,7 +94,7 @@ def calculate_expectation(u, v, w, eta=0.0):
     """
 
     lambda0 = _lambda0_full(u, v, w)
-    lambda0T = tl.transpose_ij3(lambda0)
+    lambda0T = transpose_ij3(lambda0)
     M = (lambda0 + eta * lambda0T) / (1. - eta * eta)
 
     return M
