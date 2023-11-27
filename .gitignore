@@ -1,0 +1,26 @@
+# Virtual environment
+venv
+
+# Generated files and directories
+*.egg-info
+dist
+
+# Python compiled files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# IDE-specific files
+.idea
+
+# Build artifacts
+build
+
+# Pre-commit hooks
+.pre-commit-config.yaml
+
+
+outputs/
+
+.coverage

@@ -1,0 +1,76 @@
+# build-system
+[build-system]
+requires = ["setuptools>=61", "setuptools-scm[toml]>=6.2"]  # TODO: add this to the merge request
+
+# Project
+[project]
+name = "pgm"
+#dynamic = ["version"]
+description = "Python package for probabilistic network analysis."
+version = "1.0"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy==1.22.0",
+    "pandas",
+    "scikit-learn",
+    "scikit-tensor-py3",
+    "scipy==1.10.0",
+    "networkx",
+    "argparse",
+    "termcolor",
+    "pyyaml",
+    "pytest",
+]
+
+[project.optional-dependencies]
+dev = ['autopep8', 'pylint', 'mypy', 'isort', 'coverage']
+
+# Setuptools
+[tool.setuptools]
+packages = ["pgm"]
+
+[tool.setuptools.package-data]
+pgm = ["data/input", "data/model"]
+
+[tool.setuptools.dynamic.readme]
+file = "README.md"
+
+# Autopep8
+[tool.autopep8]
+max_line_length = 100
+aggressive = 3
+
+# isort
+[tool.isort]
+profile = "google"
+force_single_line = false
+multi_line_output = 4
+line_length = 100
+src_paths = ["pgm"]
+
+# Pylint
+[tool.pylint.MASTER]
+disable = [
+    "attribute-defined-outside-init"]
+
+[tool.pylint.FORMAT]
+max-line-length = 100
+
+[tool.pylint.MESSAGES_CONTROL]
+disable = "invalid-name"
+
+# Coverage
+[tool.coverage.run]
+branch = true
+source = ["pgm"]
+omit = [
+    "tests",
+    "*.egg-info",
+    "__pycache__"]
+
+[tool.coverage.report]
+show_missing = true
+
+# MyPy
+[tool.mypy]
+ignore_missing_imports = true
