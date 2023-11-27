@@ -1,6 +1,6 @@
 """
-It provides essential functions for model assessment like AUC for link prediction, conditional and marginal expectations
-and the pseudo log-likelihood of the data.
+It provides essential functions for model assessment like AUC for link prediction, conditional
+and marginal expectations and the pseudo log-likelihood of the data.
 """
 import numpy as np
 from sklearn import metrics
