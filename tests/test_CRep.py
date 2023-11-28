@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from pgm.model.crep import CRep, sp_uttkrp, sp_uttkrp_assortative
+from pgm.model.CRep import CRep, sp_uttkrp, sp_uttkrp_assortative
 
 
 class TestCRepHelpers(unittest.TestCase):

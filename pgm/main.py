@@ -12,7 +12,7 @@ import sktensor as skt
 import yaml
 
 from .input.loader import import_data
-from .model import crep as CREP
+from .model import CRep as CREP
 
 
 def main():

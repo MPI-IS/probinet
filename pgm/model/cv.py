@@ -9,25 +9,25 @@ import numpy as np
 def extract_mask_kfold(indices: List[np.ndarray], N: int, fold: int = 0,
                        NFold: int = 5) -> np.ndarray:
     """
-        Extract a non-symmetric mask using KFold cross-validation. It contains pairs (i,j) but
-        possibly not (j,i).
-        KFold means no train/test sets intersect across the K folds.
+    Extract a non-symmetric mask using KFold cross-validation. It contains pairs (i,j) but
+    possibly not (j,i).
+    KFold means no train/test sets intersect across the K folds.
 
-        Parameters
-        ----------
+    Parameters
+    ----------
     indices : List[np.ndarray]
-                  Indices of the adjacency tensor in a shuffled order.
-        N : int
-            Number of nodes.
-        fold : int
-               Current fold.
-        NFold : int
-                Number of total folds.
+              Indices of the adjacency tensor in a shuffled order.
+    N : int
+        Number of nodes.
+    fold : int
+           Current fold.
+    NFold : int
+            Number of total folds.
 
-        Returns
-        -------
+    Returns
+    -------
     mask : np.ndarray
-               Mask for selecting the held out set in the adjacency tensor.
+           Mask for selecting the held out set in the adjacency tensor.
     """
 
     # Get the number of layers
@@ -57,21 +57,21 @@ def extract_mask_kfold(indices: List[np.ndarray], N: int, fold: int = 0,
 
 def shuffle_indices_all_matrix(N: int, L: int, rseed: int = 10) -> List[np.ndarray]:
     """
-        Shuffle the indices of the adjacency tensor.
+    Shuffle the indices of the adjacency tensor.
 
-        Parameters
-        ----------
-        N : int
-            Number of nodes.
-        L : int
-            Number of layers.
-        rseed : int
-                Random seed.
+    Parameters
+    ----------
+    N : int
+        Number of nodes.
+    L : int
+        Number of layers.
+    rseed : int
+            Random seed.
 
-        Returns
-        -------
+    Returns
+    -------
     indices : List[np.ndarray]
-                  Indices in a shuffled order.
+              Indices in a shuffled order.
     """
 
     # Calculate the total number of samples in the adjacency tensor

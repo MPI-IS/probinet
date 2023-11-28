@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 
 from pgm.input.loader import import_data
-from pgm.model.crep import CRep
+from pgm.model.CRep import CRep
 
 
 class Test(unittest.TestCase):
