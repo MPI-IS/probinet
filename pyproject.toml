@@ -4,11 +4,11 @@ requires = [
     "setuptools>=61",
     "setuptools-scm[toml]>=6.2",
 ] # TODO: add this to the merge request
+build-backend = "setuptools.build_meta"
 
 # Project
 [project]
 name = "pgm"
-#dynamic = ["version"]
 description = "Python package for probabilistic network analysis."
 version = "1.0"
 requires-python = ">=3.8"
@@ -25,14 +25,18 @@ dependencies = [
     "termcolor",
 ]
 
-# Development
 [project.optional-dependencies]
 dev = [
     'autopep8',
     'coverage',
     'isort',
     'mypy',
+    'myst_nb', #'myst_parser',
+    #'nbsphinx',
+    'piccolo_theme',
     'pylint',
+    #'sphinx_autodoc_typehints',
+    'sphinxcontrib.napoleon',
     'tox',
     'unittest-xml-reporting',
 ]
@@ -74,7 +78,7 @@ disable = "invalid-name"
 [tool.coverage.run]
 branch = true
 source = ["pgm"]
-omit = ["tests"]
+omit = ["pgm/version.py", "tests"]
 
 [tool.coverage.report]
 show_missing = true
@@ -90,7 +94,6 @@ legacy_tox_ini = """
 envlist = py37,py38,py39
 
 [testenv]
-description = run unit tests and generate xml reports
-deps = unittest-xml-reporting
-commands = python -m xmlrunner
+description = run unit tests
+commands = python run -m unittest
 """

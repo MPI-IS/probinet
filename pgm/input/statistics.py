@@ -63,11 +63,10 @@ def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     """
 
     n_all_edge = G.number_of_edges()
-    n_undirected = G.to_undirected().number_of_edges(
-    )  # unique pairs of edges, i.e. edges in the undirected graph
-    n_overlap_edge = (
-        n_all_edge - n_undirected
-    )  # number of undirected edges reciprocated in the directed network
+    # unique pairs of edges, i.e. edges in the undirected graph
+    n_undirected = G.to_undirected().number_of_edges()
+    # number of undirected edges reciprocated in the directed network
+    n_overlap_edge = n_all_edge - n_undirected
 
     if n_all_edge == 0:
         raise nx.NetworkXError("Not defined for empty graphs.")

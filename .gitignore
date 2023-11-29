@@ -34,3 +34,5 @@ outputs/
 
 # XML reports
 TEST*.xml
+
+doc/source/generated/

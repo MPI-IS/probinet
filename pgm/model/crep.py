@@ -148,8 +148,7 @@ class CRep:
             self.w_f = np.zeros((self.L, self.K, self.K), dtype=float)
 
         if self.fix_eta:
-            # TODO: check this with Martina
-            self.eta = self.eta_old = self.eta_f = self.eta0 if self.eta0 is not None else 0.0
+            self.eta = self.eta_old = self.eta_f = self.eta0 if self.eta0 is not None else 0.0  # TODO: check this with Martina
 
     def fit(self,
             data: Union[skt.dtensor, skt.sptensor],
@@ -158,7 +157,7 @@ class CRep:
             nodes: List[Any],
             flag_conv: str,
             mask: Optional[np.ndarray] = None) -> Tuple[
-            np.ndarray, np.ndarray, np.ndarray, float, float]:
+        np.ndarray, np.ndarray, np.ndarray, float, float]:
         """
         Model directed networks by using a probabilistic generative model that assume community
         parameters and reciprocity coefficient. The inference is performed via EM algorithm.
@@ -489,7 +488,7 @@ class CRep:
         self.u_old[self.u > 0] = np.copy(self.u[self.u > 0])
         self.v_old[self.v > 0] = np.copy(self.v[self.v > 0])
         self.w_old[self.w > 0] = np.copy(self.w[self.w > 0])
-        self.eta_old = np.copy(self.eta)
+        self.eta_old = np.copy(self.eta)  # type: ignore
 
     def _update_cache(self, data: Union[skt.dtensor, skt.sptensor],
                       data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray]) -> None:
@@ -645,7 +644,7 @@ class CRep:
         self.eta *= (self.data_M_nz * data_T_vals).sum() / Deta
 
         dist_eta = abs(self.eta - self.eta_old)
-        self.eta_old = np.copy(self.eta)
+        self.eta_old = np.copy(self.eta)  # type: ignore
 
         return dist_eta
 
@@ -858,7 +857,7 @@ class CRep:
                                convergence: bool,
                                data_T: skt.sptensor,
                                mask: Optional[np.ndarray] = None) -> Tuple[
-            int, float, int, bool]:
+        int, float, int, bool]:
         """
         Check for convergence by using the pseudo log-likelihood values.
 
@@ -907,8 +906,7 @@ class CRep:
         return it, loglik, coincide, convergence
 
     def _check_for_convergence_delta(self, it: int, coincide: int, du: float, dv: float,
-                                     dw: float, de: float, convergence: bool) -> Tuple[
-            int, int, bool]:
+                                     dw: float, de: float, convergence: bool) -> Tuple[int, int, bool]:
         """
         Check for convergence by using the maximum distances between the old and the new
         parameters values.
@@ -1038,7 +1036,7 @@ class CRep:
         self.u_f = np.copy(self.u)
         self.v_f = np.copy(self.v)
         self.w_f = np.copy(self.w)
-        self.eta_f = np.copy(self.eta)
+        self.eta_f = np.copy(self.eta)  # type: ignore
 
     def output_results(self, nodes: List[Any]) -> None:
         """
@@ -1054,7 +1052,7 @@ class CRep:
         if not os.path.exists(self.out_folder):
             os.makedirs(self.out_folder)
 
-        outfile = (self.out_folder / str('theta' + self.end_file)).with_suffix('.npz')
+        outfile = (self.out_folder / Path(str('theta' + self.end_file))).with_suffix('.npz')
         np.savez_compressed(outfile,
                             u=self.u_f,
                             v=self.v_f,

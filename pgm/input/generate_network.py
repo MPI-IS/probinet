@@ -3,7 +3,7 @@
     It builds a directed, possibly weighted, network.
 """
 import math
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple  # TODO: add this into a separte script
 
 import networkx as nx
 import numpy as np
@@ -161,15 +161,13 @@ class GM_reciprocity:
                     self.u = tl.normalize_nonzero_membership(self.u)
                     self.v = tl.normalize_nonzero_membership(self.v)
 
-        M0 = tl.Exp_ija_matrix(self.u, self.v,
-                               self.w)  # whose elements are lambda0_{ij}
+        M0 = tl.Exp_ija_matrix(self.u, self.v, self.w)  # whose elements are lambda0_{ij}
         np.fill_diagonal(M0, 0)
 
-        c = (self.ExpM *
-             (1. - self.eta)) / M0.sum()  # constant to enforce sparsity
+        c = (self.ExpM * (1. - self.eta)) / M0.sum()  # constant to enforce sparsity
 
-        MM = (M0 + self.eta * tl.transpose_ij2(M0)) / (
-            1. - self.eta * self.eta)  # whose elements are m_{ij}
+        MM = (M0 + self.eta * tl.transpose_ij2(M0)) / \
+            (1. - self.eta * self.eta)  # whose elements are m_{ij}
         Mt = tl.transpose_ij2(MM)
         MM0 = M0.copy()  # to be not influenced by c_lambda
 
@@ -179,12 +177,10 @@ class GM_reciprocity:
         M0 *= c
         M0t = tl.transpose_ij2(M0)  # whose elements are lambda0_{ji}
 
-        M = (M0 + self.eta * M0t) / (1. - self.eta * self.eta
-                                     )  # whose elements are m_{ij}
+        M = (M0 + self.eta * M0t) / (1. - self.eta * self.eta)  # whose elements are m_{ij}
         np.fill_diagonal(M, 0)
 
-        rw = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum()
-                         )  # expected reciprocity
+        rw = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())  # expected reciprocity
 
         # Generate network G (and adjacency matrix A) using the latent variables,
         # with the generative model (A_ij,A_ji) ~ P(A_ij|u,v,w,eta) P(A_ji|A_ij,u,v,w,eta)
@@ -198,9 +194,7 @@ class GM_reciprocity:
             for j in range(i + 1, self.N):
                 r = prng.rand(1)[0]
                 if r < 0.5:
-                    A_ij = prng.poisson(
-                        M[i,
-                          j], 1)[0]  # draw A_ij from P(A_ij) = Poisson(m_ij)
+                    A_ij = prng.poisson(M[i, j], 1)[0]  # draw A_ij from P(A_ij) = Poisson(m_ij)
                     if A_ij > 0:
                         G.add_edge(i, j, weight=A_ij)
                     lambda_ji = M0[j, i] + self.eta * A_ij
@@ -210,9 +204,7 @@ class GM_reciprocity:
                     if A_ji > 0:
                         G.add_edge(j, i, weight=A_ji)
                 else:
-                    A_ji = prng.poisson(
-                        M[j,
-                          i], 1)[0]  # draw A_ij from P(A_ij) = Poisson(m_ij)
+                    A_ji = prng.poisson(M[j, i], 1)[0]  # draw A_ij from P(A_ij) = Poisson(m_ij)
                     if A_ji > 0:
                         G.add_edge(j, i, weight=A_ji)
                     lambda_ij = M0[i, j] + self.eta * A_ji
@@ -236,8 +228,7 @@ class GM_reciprocity:
 
         A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight='weight')
 
-        Sparsity_cof = np.round(
-            2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
+        Sparsity_cof = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
 
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
@@ -347,8 +338,7 @@ class GM_reciprocity:
                     self.u = tl.normalize_nonzero_membership(self.u)
                     self.v = tl.normalize_nonzero_membership(self.v)
 
-        M0 = tl.Exp_ija_matrix(self.u, self.v,
-                               self.w)  # whose elements are lambda0_{ij}
+        M0 = tl.Exp_ija_matrix(self.u, self.v, self.w)  # whose elements are lambda0_{ij}
         np.fill_diagonal(M0, 0)
         M0t = tl.transpose_ij2(M0)  # whose elements are lambda0_{ji}
 
@@ -370,9 +360,8 @@ class GM_reciprocity:
         for i in range(self.N):
             for j in range(self.N):
                 if i != j:  # no self-loops
-                    A_ij = prng.poisson(
-                        c * M0[i, j],
-                        1)[0]  # draw A_ij from P(A_ij) = Poisson(c*m_ij)
+                    # draw A_ij from P(A_ij) = Poisson(c*m_ij)
+                    A_ij = prng.poisson(c * M0[i, j], 1)[0]
                     if A_ij > 0:
                         G.add_edge(i, j, weight=A_ij)
                     totM += A_ij
@@ -487,8 +476,7 @@ class GM_reciprocity:
 
         A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight='weight')
 
-        Sparsity_cof = np.round(
-            2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
+        Sparsity_cof = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
 
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
