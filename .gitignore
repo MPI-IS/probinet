@@ -33,4 +33,4 @@ outputs/
 .mypy_cache/
 
 # XML reports
-*TEST*
+TEST*.xml

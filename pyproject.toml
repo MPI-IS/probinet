@@ -74,13 +74,11 @@ disable = "invalid-name"
 [tool.coverage.run]
 branch = true
 source = ["pgm"]
-omit = ["tests", "*/__init__.py", "*/version.py"]
+omit = ["tests"]
 
 [tool.coverage.report]
 show_missing = true
-
-#[tool.coverage.cmd_options]
-#skip_empty = true
+skip_empty = true
 
 # MyPy
 [tool.mypy]
@@ -93,5 +91,6 @@ envlist = py37,py38,py39
 
 [testenv]
 description = run unit tests and generate xml reports
+deps = unittest-xml-reporting
 commands = python -m xmlrunner
 """
