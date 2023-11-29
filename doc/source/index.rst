@@ -8,7 +8,7 @@ Probabilistic Generative Models
    :caption: Contents
 
    api
-
+   Examples <tutorials/CRep>
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
@@ -20,12 +20,8 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Delve into the tutorials to learn more about the package:
+Delve into the tutorials to learn more about the package on the section Examples.
 
-.. toctree::
-    :maxdepth: 1
-    :caption: Examples
 
-    Tutorial about CRep <tutorials/CRep>
 
 Thank you for choosing Probabilistic Generative Models. Let's embark on a journey of advanced network analysis and generative modeling together!

@@ -19,7 +19,7 @@ To get started, follow these steps:
 ```bash
    python3 -m venv --copies venv
    . venv/bin/activate
-   (venv) pip install -u pip # optional but always advised!
+   (venv) pip install -U pip # optional but always advised!
 ```
 
 2. Install the ``pgm`` package by running::

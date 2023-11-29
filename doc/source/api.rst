@@ -10,6 +10,8 @@ API
     pgm.input.preprocessing
     pgm.input.statistics
     pgm.input.generate_network
-    pgm.model.CRep
+    pgm.model
+    pgm.model.crep
     pgm.model.cv
+    pgm.output
     pgm.output.evaluate

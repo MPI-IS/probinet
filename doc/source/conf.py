@@ -27,7 +27,7 @@ copyright = (
     'Software Workshop - Max Planck Institute for Intelligent Systems')
 author = 'Diego Baptista Theuerkauf'
 
-from pgm.version import __version__ # noqa: E402 # pylint: disable=wrong-import-position
+from pgm.version import __version__  # noqa: E402 # pylint: disable=wrong-import-position
 
 version = __version__
 
@@ -38,14 +38,15 @@ version = __version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',  # pull doc from docstrings
-    # 'sphinx_autodoc_typehints',  # type hints
+    # 'sphinx_autodoc_typehints',  # type hints # TODO: remove this from reqs
     'sphinx.ext.intersphinx',  # link to other projects
     'sphinx.ext.todo',  # support TODOs
     'sphinx.ext.ifconfig',  # include stuff based on configuration
     'sphinx.ext.viewcode',  # add source code
-    'myst_parser',  # add MD files
+    #'myst_parser',  # add MD files # not needed if myst_nb is used!
     'sphinx.ext.autosummary',  # pull doc from docstrings
-    'nbsphinx',  # add Jupyter notebooks
+    # 'nbsphinx',  # add Jupyter notebooks
+    'myst_nb',  # add Jupyter notebooks
     'sphinxcontrib.napoleon'  # Google style doc
 ]
 autodoc_default_options = {
