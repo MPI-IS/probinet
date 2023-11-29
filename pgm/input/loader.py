@@ -1,51 +1,55 @@
 """
-    Functions for handling the data.
+Functions for handling the data.
 """
+from typing import Any, Iterable, List, Optional, Tuple, Union
+
 import networkx as nx
+from numpy import ndarray
 import pandas as pd
 
 from . import preprocessing as prep
 from . import statistics as stats
 
 
-def import_data(dataset,
-                ego='source',
-                alter='target',
-                force_dense=True,
-                header=None):
+def import_data(dataset: str,
+                ego: str = 'source',
+                alter: str = 'target',
+                force_dense: bool = True,
+                header: Optional[int] = None) -> Tuple[
+        Iterable, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
     """
-        Import data, i.e. the adjacency matrix, from a given folder.
+    Import data, i.e. the adjacency matrix, from a given folder.
 
-        Return the NetworkX graph and its numpy adjacency matrix.
+    Return the NetworkX graph and its numpy adjacency matrix.
 
-        Parameters
-        ----------
-        dataset : str
-                  Path of the input file.
-        ego : str
-              Name of the column to consider as source of the edge.
-        alter : str
-                Name of the column to consider as target of the edge.
-        force_dense : bool
-                      If set to True, the algorithm is forced to consider a dense adjacency tensor.
-        header : int
-                 Row number to use as the column names, and the start of the data.
+    Parameters
+    ----------
+    dataset : str
+              Path of the input file.
+    ego : str
+          Name of the column to consider as the source of the edge.
+    alter : str
+            Name of the column to consider as the target of the edge.
+    force_dense : bool
+                  If set to True, the algorithm is forced to consider a dense adjacency tensor.
+    header : int
+             Row number to use as the column names, and the start of the data.
 
-        Returns
-        -------
-        A : list
-            List of MultiDiGraph NetworkX objects.
-        B : ndarray/sptensor
-            Graph adjacency tensor.
-        B_T : None/sptensor
-              Graph adjacency tensor (transpose).
-        data_T_vals : None/ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
+    Returns
+    -------
+    A : list
+        List of MultiDiGraph NetworkX objects.
+    B : ndarray/sptensor
+        Graph adjacency tensor.
+    B_T : None/sptensor
+          Graph adjacency tensor (transpose).
+    data_T_vals : None/ndarray
+                  Array with values of entries A[j, i] given non-zero entry (i, j).
     """
 
     # read adjacency file
     df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
-    print('{0} shape: {1}'.format(dataset, df_adj.shape))
+    print(f"{dataset} shape: {df_adj.shape}")
 
     A = read_graph(df_adj=df_adj, ego=ego, alter=alter, noselfloop=True)
 
@@ -63,28 +67,31 @@ def import_data(dataset,
     return A, B, B_T, data_T_vals
 
 
-def read_graph(df_adj, ego='source', alter='target', noselfloop=True):
+def read_graph(df_adj: pd.DataFrame,
+               ego: str = 'source',
+               alter: str = 'target',
+               noselfloop: bool = True) -> List[nx.MultiDiGraph]:
     """
-        Create the graph by adding edges and nodes.
-        It assumes that columns of layers are from l+2 (included) onwards.
+    Create the graph by adding edges and nodes.
+    It assumes that columns of layers are from l+2 (included) onwards.
 
-        Return the list MultiDiGraph NetworkX objects.
+    Return the list MultiDiGraph NetworkX objects.
 
-        Parameters
-        ----------
-        df_adj : DataFrame
-                 Pandas DataFrame object containing the edges of the graph.
-        ego : str
-              Name of the column to consider as source of the edge.
-        alter : str
-                Name of the column to consider as target of the edge.
-        noselfloop : bool
-                     If set to True, the algorithm removes the self-loops.
+    Parameters
+    ----------
+    df_adj : DataFrame
+             Pandas DataFrame object containing the edges of the graph.
+    ego : str
+          Name of the column to consider as the source of the edge.
+    alter : str
+            Name of the column to consider as the target of the edge.
+    noselfloop : bool
+                 If set to True, the algorithm removes the self-loops.
 
-        Returns
-        -------
-        A : list
-            List of MultiDiGraph NetworkX objects.
+    Returns
+    -------
+    A : list
+        List of MultiDiGraph NetworkX objects.
     """
 
     # build nodes
@@ -99,7 +106,7 @@ def read_graph(df_adj, ego='source', alter='target', noselfloop=True):
     for l in range(L):
         A[l].add_nodes_from(nodes)
 
-    for index, row in df_adj.iterrows():
+    for _, row in df_adj.iterrows():
         v1 = row[ego]
         v2 = row[alter]
         for l in range(L):

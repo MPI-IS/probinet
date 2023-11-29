@@ -3,9 +3,10 @@ Class definition of CRep, the algorithm to perform inference in networks with re
 The latent variables are related to community memberships and reciprocity value.
 """
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import sktensor as skt
@@ -18,30 +19,30 @@ from ..input.tools import get_item_array_from_subs
 class CRep:
 
     def __init__(self,
-                 N=100,
-                 L=1,
-                 K=2,
-                 undirected=False,
-                 assortative=False,
-                 rseed=0,
-                 inf=1e10,
-                 err_max=1e-8,
-                 err=0.01,
-                 N_real=1,
-                 tolerance=0.0001,
-                 decision=10,
-                 max_iter=500,
-                 initialization=0,
-                 fix_eta=False,
-                 fix_communities=False,
-                 fix_w=False,
-                 constrained=True,
-                 eta0=None,
-                 files=Path('../data/input/synthetic/theta.npz'),
-                 verbose=False,
-                 out_inference=False,
-                 out_folder=Path('outputs'),
-                 end_file='.dat'):
+                 N: int = 100,
+                 L: int = 1,
+                 K: int = 2,
+                 undirected: bool = False,
+                 assortative: bool = False,
+                 rseed: int = 0,
+                 inf: float = 1e10,
+                 err_max: float = 1e-8,
+                 err: float = 0.01,
+                 N_real: int = 1,
+                 tolerance: float = 0.0001,
+                 decision: int = 10,
+                 max_iter: int = 500,
+                 initialization: int = 0,
+                 fix_eta: bool = False,
+                 fix_communities: bool = False,
+                 fix_w: bool = False,
+                 constrained: bool = True,
+                 eta0: Optional[float] = None,
+                 files: Path = Path('../data/input/synthetic/theta.npz'),
+                 verbose: bool = False,
+                 out_inference: bool = False,
+                 out_folder: Path = Path('outputs'),
+                 end_file: str = '.dat'):
         self.N = N  # number of nodes
         self.L = L  # number of layers
         self.K = K  # number of communities
@@ -94,7 +95,7 @@ class CRep:
                 )
 
         if self.initialization > 0:
-            self.theta = np.load(self.files, allow_pickle=True)
+            self.theta = np.load(self.files.resolve(), allow_pickle=True)
             if self.initialization == 1:
                 dfW = self.theta['w']
                 self.L = dfW.shape[0]
@@ -147,9 +148,17 @@ class CRep:
             self.w_f = np.zeros((self.L, self.K, self.K), dtype=float)
 
         if self.fix_eta:
-            self.eta = self.eta_old = self.eta_f = self.eta0
+            # TODO: check this with Martina
+            self.eta = self.eta_old = self.eta_f = self.eta0 if self.eta0 is not None else 0.0
 
-    def fit(self, data, data_T, data_T_vals, nodes, flag_conv, mask=None):
+    def fit(self,
+            data: Union[skt.dtensor, skt.sptensor],
+            data_T: skt.sptensor,
+            data_T_vals: np.ndarray,
+            nodes: List[Any],
+            flag_conv: str,
+            mask: Optional[np.ndarray] = None) -> Tuple[
+            np.ndarray, np.ndarray, np.ndarray, float, float]:
         """
         Model directed networks by using a probabilistic generative model that assume community
         parameters and reciprocity coefficient. The inference is performed via EM algorithm.
@@ -298,7 +307,7 @@ class CRep:
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
-    def _initialize(self, rng, nodes):
+    def _initialize(self, rng: np.random.RandomState, nodes: List[Any]) -> None:
         """
         Random initialization of the parameters u, v, w, eta.
 
@@ -352,7 +361,7 @@ class CRep:
             self._initialize_v(rng, nodes)
             self._initialize_w(rng)
 
-    def _randomize_eta(self, rng):
+    def _randomize_eta(self, rng: np.random.RandomState) -> None:
         """
         Generate a random number in (0, 1.).
 
@@ -366,7 +375,7 @@ class CRep:
             rng = np.random.RandomState(self.rseed)
         self.eta = rng.random_sample(1)[0]
 
-    def _randomize_w(self, rng):
+    def _randomize_w(self, rng: np.random.RandomState) -> None:
         """
         Assign a random number in (0, 1.) to each entry of the affinity tensor w.
 
@@ -390,7 +399,7 @@ class CRep:
                             self.w[i, k, q] = self.w[
                                 i, q, k] = self.err * rng.random_sample(1)
 
-    def _randomize_u_v(self, rng):
+    def _randomize_u_v(self, rng: np.random.RandomState) -> None:
         """
         Assign a random number in (0, 1.) to each entry of the membership matrices u and v, and
         normalize each row.
@@ -414,7 +423,7 @@ class CRep:
         else:
             self.v = self.u
 
-    def _initialize_u(self, rng, nodes):
+    def _initialize_u(self, rng: np.random.RandomState, nodes: List[Any]) -> None:
         """
         Initialize out-going membership matrix u from file.
 
@@ -432,7 +441,7 @@ class CRep:
         max_entry = np.max(self.u)
         self.u += max_entry * self.err * rng.random_sample(self.u.shape)
 
-    def _initialize_v(self, rng, nodes):
+    def _initialize_v(self, rng: np.random.RandomState, nodes: List[Any]) -> None:
         """
         Initialize in-coming membership matrix v from file.
 
@@ -453,7 +462,7 @@ class CRep:
             max_entry = np.max(self.v)
             self.v += max_entry * self.err * rng.random_sample(self.v.shape)
 
-    def _initialize_w(self, rng):
+    def _initialize_w(self, rng: np.random.RandomState) -> None:
         """
         Initialize affinity tensor w from file.
 
@@ -472,7 +481,7 @@ class CRep:
         max_entry = np.max(self.w)
         self.w += max_entry * self.err * rng.random_sample(self.w.shape)
 
-    def _update_old_variables(self):
+    def _update_old_variables(self) -> None:
         """
         Update values of the parameters in the previous iteration.
         """
@@ -482,7 +491,8 @@ class CRep:
         self.w_old[self.w > 0] = np.copy(self.w[self.w > 0])
         self.eta_old = np.copy(self.eta)
 
-    def _update_cache(self, data, data_T_vals, subs_nz):
+    def _update_cache(self, data: Union[skt.dtensor, skt.sptensor],
+                      data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray]) -> None:
         """
         Update the cache used in the em_update.
 
@@ -505,7 +515,7 @@ class CRep:
             self.data_M_nz = data.vals / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
-    def _lambda0_nz(self, subs_nz):
+    def _lambda0_nz(self, subs_nz: Tuple[np.ndarray]) -> np.ndarray:
         """
         Compute the mean lambda0_ij for only non-zero entries.
 
@@ -521,16 +531,28 @@ class CRep:
         """
 
         if not self.assortative:
-            nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
-                                    self.w[subs_nz[0], :, :])
+            if len(subs_nz) >= 2:
+                nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
+                                        self.w[subs_nz[0], :, :])
+            else:
+                raise ValueError("subs_nz should have at least 2 elements.")
         else:
-            nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
-                                    self.w[subs_nz[0], :])
-        nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, self.v[subs_nz[2], :])
+            if len(subs_nz) >= 2:
+                nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
+                                        self.w[subs_nz[0], :])
+            else:
+                raise ValueError("subs_nz should have at least 2 elements.")
+
+        if len(subs_nz) >= 3:
+            nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, self.v[subs_nz[2], :])
+        else:
+            raise ValueError("subs_nz should have at least 3 elements.")
 
         return nz_recon_I
 
-    def _update_em(self, data, data_T_vals, subs_nz, denominator=None):
+    def _update_em(self, data: Union[skt.dtensor, skt.sptensor],
+                   data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray],
+                   denominator: float) -> Tuple[float, float, float, float]:
         """
         Update parameters via EM procedure.
 
@@ -594,7 +616,9 @@ class CRep:
 
         return d_u, d_v, d_w, d_eta
 
-    def _update_eta(self, data, data_T_vals, denominator=None):
+    def _update_eta(self, data: Union[skt.dtensor, skt.sptensor],
+                    data_T_vals: np.ndarray,
+                    denominator: Optional[float] = None) -> float:
         """
         Update reciprocity coefficient eta.
 
@@ -625,7 +649,7 @@ class CRep:
 
         return dist_eta
 
-    def _update_U(self, subs_nz):
+    def _update_U(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
         Update out-going membership matrix.
 
@@ -665,7 +689,7 @@ class CRep:
 
         return dist_u
 
-    def _update_V(self, subs_nz):
+    def _update_V(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
         Update in-coming membership matrix.
         Same as _update_U but with:
@@ -709,7 +733,7 @@ class CRep:
 
         return dist_v
 
-    def _update_W(self, subs_nz):
+    def _update_W(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
         Update affinity tensor.
 
@@ -723,6 +747,8 @@ class CRep:
         dist_w : float
                  Maximum distance between the old and the new affinity tensor w.
         """
+        if len(subs_nz) < 3:
+            raise ValueError("subs_nz should have at least 3 elements.")
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -750,7 +776,7 @@ class CRep:
 
         return dist_w
 
-    def _update_W_assortative(self, subs_nz):
+    def _update_W_assortative(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
         Update affinity tensor (assuming assortativity).
 
@@ -764,6 +790,8 @@ class CRep:
         dist_w : float
                  Maximum distance between the old and the new affinity tensor w.
         """
+        if len(subs_nz) < 3:
+            raise ValueError("subs_nz should have at least 3 elements.")
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -790,7 +818,8 @@ class CRep:
 
         return dist_w
 
-    def _update_membership(self, subs_nz, m):
+    def _update_membership(self, subs_nz: Tuple[np.ndarray],
+                           m: int) -> np.ndarray:
         """
         Return the Khatri-Rao product (sparse version) used in the update of the membership
         matrices.
@@ -822,48 +851,48 @@ class CRep:
         return uttkrp_DK
 
     def _check_for_convergence(self,
-                               data,
-                               it,
-                               loglik,
-                               coincide,
-                               convergence,
-                               data_T=None,
-                               mask=None):
+                               data: Union[skt.dtensor, skt.sptensor],
+                               it: int,
+                               loglik: float,
+                               coincide: int,
+                               convergence: bool,
+                               data_T: skt.sptensor,
+                               mask: Optional[np.ndarray] = None) -> Tuple[
+            int, float, int, bool]:
         """
         Check for convergence by using the pseudo log-likelihood values.
 
         Parameters
         ----------
         data : sptensor/dtensor
-               Graph adjacency tensor.
+           Graph adjacency tensor.
         it : int
-             Number of iteration.
+         Number of iteration.
         loglik : float
-                 Pseudo log-likelihood value.
+             Pseudo log-likelihood value.
         coincide : int
-                   Number of time the update of the pseudo log-likelihood respects the
-                   tolerance.
+               Number of time the update of the pseudo log-likelihood respects the
+               tolerance.
         convergence : bool
-                      Flag for convergence.
+                  Flag for convergence.
         data_T : sptensor/dtensor
-                 Graph adjacency tensor (transpose).
+             Graph adjacency tensor (transpose).
         mask : ndarray
-               Mask for selecting the held out set in the adjacency tensor in case of
-               cross-validation.
+           Mask for selecting the held out set in the adjacency tensor in case of
+           cross-validation.
 
         Returns
         -------
         it : int
-             Number of iteration.
+         Number of iteration.
         loglik : float
-                 Pseudo log-likelihood value.
+             Pseudo log-likelihood value.
         coincide : int
-                   Number of time the update of the pseudo log-likelihood respects the
-                   tolerance.
+               Number of time the update of the pseudo log-likelihood respects the
+               tolerance.
         convergence : bool
-                      Flag for convergence.
+                  Flag for convergence.
         """
-
         if it % 10 == 0:
             old_L = loglik
             loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
@@ -877,8 +906,9 @@ class CRep:
 
         return it, loglik, coincide, convergence
 
-    def _check_for_convergence_delta(self, it, coincide, du, dv, dw, de,
-                                     convergence):
+    def _check_for_convergence_delta(self, it: int, coincide: int, du: float, dv: float,
+                                     dw: float, de: float, convergence: bool) -> Tuple[
+            int, int, bool]:
         """
         Check for convergence by using the maximum distances between the old and the new
         parameters values.
@@ -921,7 +951,9 @@ class CRep:
 
         return it, coincide, convergence
 
-    def _PSLikelihood(self, data, data_T, mask=None):
+    def _PSLikelihood(self, data: Union[skt.dtensor, skt.sptensor],
+                      data_T: skt.sptensor,
+                      mask: Optional[np.ndarray] = None) -> float:
         """
         Compute the pseudo log-likelihood of the data.
 
@@ -970,7 +1002,8 @@ class CRep:
         else:
             return l
 
-    def _lambda0_full(self, u, v, w):
+    def _lambda0_full(self, u: np.ndarray, v: np.ndarray,
+                      w: np.ndarray) -> np.ndarray:
         """
         Compute the mean lambda0 for all entries.
 
@@ -997,7 +1030,7 @@ class CRep:
             M = np.einsum('ijkq,akq->aij', M, w)
         return M
 
-    def _update_optimal_parameters(self):
+    def _update_optimal_parameters(self) -> None:
         """
         Update values of the parameters after convergence.
         """
@@ -1007,7 +1040,7 @@ class CRep:
         self.w_f = np.copy(self.w)
         self.eta_f = np.copy(self.eta)
 
-    def output_results(self, nodes):
+    def output_results(self, nodes: List[Any]) -> None:
         """
         Output results.
 
@@ -1034,7 +1067,8 @@ class CRep:
         print('To load: theta=np.load(filename), then e.g. theta["u"]')
 
 
-def sp_uttkrp(vals, subs, m, u, v, w):
+def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
+              v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
     Compute the Khatri-Rao product (sparse version).
 
@@ -1064,6 +1098,8 @@ def sp_uttkrp(vals, subs, m, u, v, w):
           the Khatri-Rao product
           of the membership matrix.
     """
+    if len(subs) < 3:
+        raise ValueError("subs_nz should have at least 3 elements.")
 
     if m == 1:
         D, K = u.shape
@@ -1085,7 +1121,9 @@ def sp_uttkrp(vals, subs, m, u, v, w):
     return out
 
 
-def sp_uttkrp_assortative(vals, subs, m, u, v, w):
+def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
+                          u: np.ndarray, v: np.ndarray,
+                          w: np.ndarray) -> np.ndarray:
     """
     Compute the Khatri-Rao product (sparse version) with the assumption of assortativity.
 
@@ -1115,6 +1153,8 @@ def sp_uttkrp_assortative(vals, subs, m, u, v, w):
           the Khatri-Rao product
           of the membership matrix.
     """
+    if len(subs) < 3:
+        raise ValueError("subs_nz should have at least 3 elements.")
 
     if m == 1:
         D, K = u.shape

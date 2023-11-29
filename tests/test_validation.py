@@ -2,7 +2,7 @@
 This is the test module for the CRep algorithm.
 """
 
-import importlib.resources as res
+import importlib
 import unittest
 from pathlib import Path
 
@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 
 from pgm.input.loader import import_data
-from pgm.model.CRep import CRep
+from pgm.model.crep import CRep
 
 
 class Test(unittest.TestCase):
@@ -47,7 +47,7 @@ class Test(unittest.TestCase):
 
         # Setting to run the algorithm
 
-        with res.open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
+        with importlib.resources.open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
             conf = yaml.load(fp, Loader=yaml.Loader)
 
         conf['out_folder'] = self.out_folder

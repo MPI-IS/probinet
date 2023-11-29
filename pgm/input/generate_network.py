@@ -3,6 +3,7 @@
     It builds a directed, possibly weighted, network.
 """
 import math
+from typing import List, Optional, Tuple
 
 import networkx as nx
 import numpy as np
@@ -19,25 +20,25 @@ class GM_reciprocity:
     """
 
     def __init__(self,
-                 N,
-                 K,
-                 eta=0.5,
-                 k=3,
-                 ExpM=None,
-                 over=0.,
-                 corr=0.,
-                 seed=0,
-                 alpha=0.1,
-                 ag=0.1,
-                 beta=0.1,
-                 Normalization=0,
-                 structure='assortative',
-                 end_file='',
-                 out_folder='../data/output/real_data/cv/',
-                 output_parameters=False,
-                 output_adj=False,
-                 outfile_adj='None',
-                 verbose=False):
+                 N: int,
+                 K: int,
+                 eta: float = 0.5,
+                 k: float = 3,
+                 ExpM: Optional[float] = None,
+                 over: float = 0.0,
+                 corr: float = 0.0,
+                 seed: int = 0,
+                 alpha: float = 0.1,
+                 ag: float = 0.1,
+                 beta: float = 0.1,
+                 Normalization: int = 0,
+                 structure: str = 'assortative',
+                 end_file: str = '',
+                 out_folder: str = '../data/output/real_data/cv/',
+                 output_parameters: bool = False,
+                 output_adj: bool = False,
+                 outfile_adj: str = 'None',
+                 verbose: bool = False):
         self.N = N  # number of nodes
         self.K = K  # number of communities
         self.k = k  # average degree
@@ -84,32 +85,32 @@ class GM_reciprocity:
             )
         self.structure = structure
 
-    def reciprocity_planted_network(self, parameters=None):
+    def reciprocity_planted_network(self, parameters: Optional[
+            Tuple[np.ndarray, np.ndarray, np.ndarray, float]] = None) -> nx.MultiDiGraph:
         """
-            Generate a directed, possibly weighted network by using the reciprocity generative model.
-            Can be used to generate benchmarks for networks with reciprocity.
+        Generate a directed, possibly weighted network by using the reciprocity generative model.
+        Can be used to generate benchmarks for networks with reciprocity.
 
-            Steps:
-                1. Generate the latent variables.
-                2. Extract A_ij entries (network edges) from a Poisson distribution;
-                   its mean depends on the latent variables.
+        Steps:
+            1. Generate the latent variables.
+            2. Extract A_ij entries (network edges) from a Poisson distribution;
+               its mean depends on the latent variables.
 
-            Parameters
-            ----------
-            parameters: object
-                        Latent variables u, v, w and eta.
+        Parameters
+        ----------
+        parameters: Tuple[np.ndarray, np.ndarray, np.ndarray, float], optional
+                    Latent variables u, v, w, and eta.
 
-            Returns
-            -------
-            G: MultiDigraph
-               MultiDiGraph NetworkX object.
+        Returns
+        -------
+        G: MultiDigraph
+           MultiDiGraph NetworkX object.
         """
 
         prng = np.random.RandomState(
             self.seed)  # set seed random number generator
-        '''
-        Set latent variables u, v, w
-        '''
+
+        # Set latent variables u, v, w
 
         if parameters is not None:
             self.u, self.v, self.w, self.eta = parameters
@@ -184,10 +185,9 @@ class GM_reciprocity:
 
         rw = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum()
                          )  # expected reciprocity
-        '''
-        Generate network G (and adjacency matrix A) using the latent variables,
-        with the generative model (A_ij,A_ji) ~ P(A_ij|u,v,w,eta) P(A_ji|A_ij,u,v,w,eta)
-        '''
+
+        # Generate network G (and adjacency matrix A) using the latent variables,
+        # with the generative model (A_ij,A_ji) ~ P(A_ij|u,v,w,eta) P(A_ji|A_ij,u,v,w,eta)
 
         G = nx.MultiDiGraph()
         for i in range(self.N):
@@ -276,27 +276,27 @@ class GM_reciprocity:
 
         return G
 
-    def planted_network_cond_independent(self, parameters=None):
+    def planted_network_cond_independent(self, parameters: Optional[
+            Tuple[np.ndarray, np.ndarray, np.ndarray]] = None) -> nx.MultiDiGraph:
         """
-            Generate a directed, possibly weighted network without using reciprocity.
-            It uses conditionally independent A_ij from a Poisson | (u,v,w).
+        Generate a directed, possibly weighted network without using reciprocity.
+        It uses conditionally independent A_ij from a Poisson | (u,v,w).
 
-            Parameters
-            ----------
-            parameters: object
-                        Latent variables u, v and w.
+        Parameters
+        ----------
+        parameters: Tuple[np.ndarray, np.ndarray, np.ndarray], optional
+                    Latent variables u, v, and w.
 
-            Returns
-            -------
-            G: MultiDigraph
-               MultiDiGraph NetworkX object.
+        Returns
+        -------
+        G: MultiDigraph
+           MultiDiGraph NetworkX object.
         """
 
         prng = np.random.RandomState(
             self.seed)  # set seed random number generator
-        '''
-        Set latent variables u,v,w
-        '''
+
+        # Set latent variables u,v,w
 
         if parameters is not None:
             self.u, self.v, self.w = parameters
@@ -358,10 +358,9 @@ class GM_reciprocity:
         if parameters is None:
             self.w *= c  # only w is impact by that, u and v have a constraint, their sum
             # over k should sum to 1
-        '''
-        Generate network G (and adjacency matrix A) using the latent variable,
-        with the generative model (A_ij) ~ P(A_ij|u,v,w)
-        '''
+
+        # Generate network G (and adjacency matrix A) using the latent variable,
+        # with the generative model (A_ij) ~ P(A_ij|u,v,w)
 
         G = nx.MultiDiGraph()
         for i in range(self.N):
@@ -390,14 +389,14 @@ class GM_reciprocity:
         self.v = self.v[nodes]
         self.N = len(nodes)
 
-        A = nx.to_scipy_sparse_matrix(G, nodelist=nodes, weight='weight')
+        A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight='weight')
 
         Sparsity_cof = np.round(
             2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
 
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
-        reciprocity_c = np.round(tl.reciprocal_edges(G), 3)
+        reciprocity_c = np.round(stats.reciprocal_edges(G), 3)
 
         if self.verbose:
             print(
@@ -431,21 +430,21 @@ class GM_reciprocity:
 
         return G
 
-    def planted_network_reciprocity_only(self, p=None):
+    def planted_network_reciprocity_only(self, p: Optional[float] = None) -> nx.MultiDiGraph:
         """
-            Generate a directed, possibly weighted network using only reciprocity.
-            One of the directed-edges is generated with probability p, the other with eta*A_ji,
-            i.e. as in Erdos-Renyi reciprocity.
+        Generate a directed, possibly weighted network using only reciprocity.
+        One of the directed-edges is generated with probability p, the other with eta*A_ji,
+        i.e. as in Erdos-Renyi reciprocity.
 
-            Parameters
-            ----------
-            p: float
-               Probability to generate one of the directed-edge.
+        Parameters
+        ----------
+        p: float, optional
+           Probability to generate one of the directed-edge.
 
-            Returns
-            -------
-            G: MultiDigraph
-               MultiDiGraph NetworkX object.
+        Returns
+        -------
+        G: MultiDigraph
+           MultiDiGraph NetworkX object.
         """
 
         prng = np.random.RandomState(
@@ -453,9 +452,8 @@ class GM_reciprocity:
 
         if p is None:
             p = (1. - self.eta) * self.k * 0.5 / (self.N - 1.)
-        '''
-        Generate network G (and adjacency matrix A)
-        '''
+
+        # Generate network G (and adjacency matrix A)
 
         G = nx.MultiDiGraph()
         for i in range(self.N):
@@ -487,14 +485,14 @@ class GM_reciprocity:
         nodes = list(G.nodes())
         self.N = len(nodes)
 
-        A = nx.to_scipy_sparse_matrix(G, nodelist=nodes, weight='weight')
+        A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight='weight')
 
         Sparsity_cof = np.round(
             2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
 
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
-        reciprocity_c = np.round(tl.reciprocal_edges(G), 3)
+        reciprocity_c = np.round(stats.reciprocal_edges(G), 3)
 
         if self.verbose:
             print(
@@ -519,19 +517,19 @@ class GM_reciprocity:
                 f'unordered pairs): '
                 f'{reciprocity_c}\n')
 
-        if self.output_adjacency:
+        if self.output_adj:
             self.output_adjacency(G, outfile=self.outfile_adj)
 
         return G
 
-    def output_results(self, nodes):
+    def output_results(self, nodes: List[int]) -> None:
         """
-            Output results in a compressed file.
+        Output results in a compressed file.
 
-            Parameters
-            ----------
-            nodes : list
-                    List of nodes IDs.
+        Parameters
+        ----------
+        nodes : List[int]
+                List of nodes IDs.
         """
 
         output_parameters = self.out_folder + 'theta_gt' + str(
@@ -546,17 +544,17 @@ class GM_reciprocity:
             print(f'Parameters saved in: {output_parameters}.npz')
             print('To load: theta=np.load(filename), then e.g. theta["u"]')
 
-    def output_adjacency(self, G, outfile=None):
+    def output_adjacency(self, G: nx.MultiDiGraph, outfile: Optional[str] = None) -> None:
         """
-            Output the adjacency matrix. Default format is space-separated .csv with 3 columns:
-            node1 node2 weight
+        Output the adjacency matrix. Default format is space-separated .csv with 3 columns:
+        node1 node2 weight
 
-            Parameters
-            ----------
-            G: MultiDigraph
-               MultiDiGraph NetworkX object.
-            outfile: str
-                     Name of the adjacency matrix.
+        Parameters
+        ----------
+        G: MultiDiGraph
+           MultiDiGraph NetworkX object.
+        outfile: str, optional
+                 Name of the adjacency matrix.
         """
 
         if outfile is None:
@@ -574,28 +572,29 @@ class GM_reciprocity:
             print(f'Adjacency matrix saved in: {self.out_folder + outfile}')
 
 
-def affinity_matrix(structure='assortative', N=100, K=2, a=0.1, b=0.3):
+def affinity_matrix(structure: str = 'assortative', N: int = 100, K: int = 2, a: float = 0.1,
+                    b: float = 0.3) -> np.ndarray:
     """
-        Return the KxK affinity matrix w with probabilities between and within groups.
+    Return the KxK affinity matrix w with probabilities between and within groups.
 
-        Parameters
-        ----------
-        structure : string
-                    Structure of the network, e.g. assortative, disassortative.
-        N : int
-            Number of nodes.
-        K : int
-            Number of communities.
-        a : float
-            Parameter for secondary probabilities.
-        b : float
-            Parameter for third probabilities.
+    Parameters
+    ----------
+    structure : str
+                Structure of the network, e.g. assortative, disassortative.
+    N : int
+        Number of nodes.
+    K : int
+        Number of communities.
+    a : float
+        Parameter for secondary probabilities.
+    b : float
+        Parameter for third probabilities.
 
-        Returns
-        -------
-        p : ndarray
-            Array with probabilities between and within groups. Element (k,q) gives the density
-            of edges going from the nodes of group k to nodes of group q.
+    Returns
+    -------
+    p : np.ndarray
+        Array with probabilities between and within groups. Element (k,q) gives the density
+        of edges going from the nodes of group k to nodes of group q.
     """
 
     b *= a

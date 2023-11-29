@@ -4,21 +4,23 @@ calculates metrics such as the number of nodes, layers, edges, average degree, w
 reciprocity, and more. It aims to provide a comprehensive overview of the structural properties of
 the input graphs, considering both directed and weighted edges.
 """
+from typing import List
+
 import networkx as nx
 import numpy as np
 
 
-def print_graph_stat(A, rw):
+def print_graph_stat(A: List[nx.MultiDiGraph], rw: List[float]) -> None:
     """
-        Print the statistics of the graph A.
+    Print the statistics of the graph A.
 
-        Parameters
-        ----------
-        A : list
-            List of MultiDiGraph NetworkX objects.
-        rw : list
-             List whose elements are reciprocity (considering the weights of the edges) values,
-             one per each layer.
+    Parameters
+    ----------
+    A : list
+        List of MultiDiGraph NetworkX objects.
+    rw : list
+         List whose elements are reciprocity (considering the weights of the edges) values,
+         one per each layer.
     """
 
     L = len(A)
@@ -38,27 +40,26 @@ def print_graph_stat(A, rw):
         print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(A[l]), 3)}')
         print(
             f'Reciprocity (intended as the proportion of bi-directional edges over the unordered '
-            f'pairs) = '
-            f'{np.round(reciprocal_edges(A[l]), 3)}')
+            f'pairs) = {np.round(reciprocal_edges(A[l]), 3)}')
         print(
             f'Reciprocity (considering the weights of the edges) = {np.round(rw[l], 3)}'
         )
 
 
-def reciprocal_edges(G):
+def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     """
-        Compute the proportion of bi-directional edges, by considering the unordered pairs.
+    Compute the proportion of bi-directional edges, by considering the unordered pairs.
 
-        Parameters
-        ----------
-        G: MultiDigraph
-           MultiDiGraph NetworkX object.
+    Parameters
+    ----------
+    G: MultiDigraph
+       MultiDiGraph NetworkX object.
 
-        Returns
-        -------
-        reciprocity: float
-                     Reciprocity value, intended as the proportion of bi-directional edges over the
-                     unordered pairs.
+    Returns
+    -------
+    reciprocity: float
+                 Reciprocity value, intended as the proportion of bi-directional edges over the
+                 unordered pairs.
     """
 
     n_all_edge = G.number_of_edges()

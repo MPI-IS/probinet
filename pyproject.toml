@@ -1,6 +1,9 @@
 # build-system
 [build-system]
-requires = ["setuptools>=61", "setuptools-scm[toml]>=6.2"]  # TODO: add this to the merge request
+requires = [
+    "setuptools>=61",
+    "setuptools-scm[toml]>=6.2",
+] # TODO: add this to the merge request
 
 # Project
 [project]
@@ -10,20 +13,29 @@ description = "Python package for probabilistic network analysis."
 version = "1.0"
 requires-python = ">=3.8"
 dependencies = [
+    "argparse",
+    "networkx",
     "numpy==1.22.0",
     "pandas",
+    "pyyaml",
+    "pytest",
     "scikit-learn",
     "scikit-tensor-py3",
     "scipy==1.10.0",
-    "networkx",
-    "argparse",
     "termcolor",
-    "pyyaml",
-    "pytest",
 ]
 
+# Development
 [project.optional-dependencies]
-dev = ['autopep8', 'pylint', 'mypy', 'isort', 'coverage']
+dev = [
+    'autopep8',
+    'coverage',
+    'isort',
+    'mypy',
+    'pylint',
+    'tox',
+    'unittest-xml-reporting',
+]
 
 # Setuptools
 [tool.setuptools]
@@ -50,8 +62,7 @@ src_paths = ["pgm"]
 
 # Pylint
 [tool.pylint.MASTER]
-disable = [
-    "attribute-defined-outside-init"]
+disable = ["attribute-defined-outside-init"]
 
 [tool.pylint.FORMAT]
 max-line-length = 100
@@ -63,14 +74,23 @@ disable = "invalid-name"
 [tool.coverage.run]
 branch = true
 source = ["pgm"]
-omit = [
-    "tests",
-    "*.egg-info",
-    "__pycache__"]
+omit = ["tests"]
 
 [tool.coverage.report]
 show_missing = true
+skip_empty = true
 
 # MyPy
 [tool.mypy]
 ignore_missing_imports = true
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py37,py38,py39
+
+[testenv]
+description = run unit tests and generate xml reports
+deps = unittest-xml-reporting
+commands = python -m xmlrunner
+"""

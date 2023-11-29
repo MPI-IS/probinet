@@ -4,7 +4,7 @@ It provides functions for cross-validation for the CRep model.
 
 import yaml
 
-from . import CRep as CREP
+from . import crep as CREP
 
 
 def fit_model(B, B_T, data_T_vals, nodes, N, L, algo, K, flag_conv, **conf):

@@ -3,16 +3,16 @@ Performing the inference in the given single-layer directed network.
 Implementation of CRep algorithm.
 """
 
+from argparse import ArgumentParser
 import os
 import time
-from argparse import ArgumentParser
 
 import numpy as np
 import sktensor as skt
 import yaml
 
 from .input.loader import import_data
-from .model import CRep as CREP
+from .model import crep as CREP
 
 
 def main():
