@@ -43,11 +43,11 @@ extensions = [
     'sphinx.ext.todo',  # support TODOs
     'sphinx.ext.ifconfig',  # include stuff based on configuration
     'sphinx.ext.viewcode',  # add source code
-    #'myst_parser',  # add MD files # not needed if myst_nb is used!
+    # 'myst_parser',  # add MD files # not needed if myst_nb is used!
     'sphinx.ext.autosummary',  # pull doc from docstrings
     # 'nbsphinx',  # add Jupyter notebooks
     'myst_nb',  # add Jupyter notebooks
-    'sphinxcontrib.napoleon'  # Google style doc
+    'sphinx.ext.napoleon'  # 'sphinxcontrib.napoleon' is deprecated  # Google style doc
 ]
 autodoc_default_options = {
     'members': True,  # when set to True, Sphinx will automatically document all members

@@ -31,12 +31,12 @@ dev = [
     'coverage',
     'isort',
     'mypy',
-    'myst_nb', #'myst_parser',
-    #'nbsphinx',
+    'myst_nb',
+    'nbconvert',
     'piccolo_theme',
     'pylint',
-    #'sphinx_autodoc_typehints',
-    'sphinxcontrib.napoleon',
+    'sphinx',
+    'sphinxcontrib.napoleon', # breaks in python 3.10: 'sphinxcontrib.napoleon',
     'tox',
     'unittest-xml-reporting',
 ]
@@ -95,5 +95,10 @@ envlist = py37,py38,py39
 
 [testenv]
 description = run unit tests
-commands = python run -m unittest
+deps = unittest-xml-reporting
+       nbconvert
+       jupyter
+       matplotlib
+commands = python -m xmlrunner discover
+
 """
