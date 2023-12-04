@@ -3,9 +3,9 @@ Class definition of CRep, the algorithm to perform inference in networks with re
 The latent variables are related to community memberships and reciprocity value.
 """
 import os
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np

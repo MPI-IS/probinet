@@ -79,6 +79,14 @@ def import_data(dataset: str,
 
     return A, B, B_T, data_T_vals
 
+def import_data_jointcrep(dataset, undirected=False,
+                ego='source',
+                alter='alter',
+                force_dense=True,
+                noselfloop=True, verbose=True,
+                binary=True):
+    """
+        Import data, i.e. the adjacency tensor, from a given folder.
 
 def read_graph(
         df_adj,
