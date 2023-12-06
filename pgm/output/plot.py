@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 import seaborn as sns
 
+
 # Utils to visualize the data
 
 
@@ -291,6 +292,9 @@ def plot_adjacency_samples(Bdata, Bsampled, cm='Blues'):
     plt.tight_layout()
     plt.show()
 
+def plot_A(A, cmap='PuBuGn'):
+    """
+        Plot the adjacency tensor produced by the generative algorithm.
 
 def plot_A(A, cmap='PuBuGn'):
     """

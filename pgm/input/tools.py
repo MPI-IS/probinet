@@ -201,36 +201,7 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     return M
 
 
-def Exp_ija_tensor(u, v, w):
-    """
-    Compute the mean lambda0_ij for all entries.
-
-    INPUT
-    ----------
-    u : ndarray
-        Out-going membership matrix.
-    v : ndarray
-        In-coming membership matrix.
-    w : ndarray
-        Affinity matrix.
-
-    OUTPUT
-    -------
-    M : ndarray
-        Mean lambda0_ij for all entries.
-    """
-
-    if w.ndim == 2:
-        M = np.einsum('ik,jk->ijk', u, v)
-        M = np.einsum('ijk,ak->aij', M, w)
-    else:
-        M = np.einsum('ik,jq->ijkq', u, v)
-        M = np.einsum('ijkq,akq->aij', M, w)
-
-    return M
-
-
-def check_symmetric(a, rtol=1e-05, atol=1e-08):  # TODO: add type hints
+def check_symmetric(a, rtol=1e-05, atol=1e-08): # TODO: add type hints
     """
         Check if a matrix a is symmetric in all layers.
 
@@ -274,7 +245,6 @@ def build_edgelist(A, l):
 
     return df_res
 
-
 def output_adjacency(A, out_folder, label):
     """
         Save the adjacency tensor to a file.
@@ -301,6 +271,33 @@ def output_adjacency(A, out_folder, label):
         df = df.append(dfl)
     df.to_csv(out_folder + outfile, index=False, sep=' ')
     print(f'Adjacency matrix saved in: {out_folder + outfile}')
+
+
+def reciprocal_edges(G):
+    """
+        Compute the proportion of bi-directional edges, by considering the unordered pairs.
+
+        Parameters
+        ----------
+        G: MultiDigraph
+           MultiDiGraph NetworkX object.
+
+        Returns
+        -------
+        reciprocity: float
+                     Reciprocity value, intended as the proportion of bi-directional edges over the unordered pairs.
+    """
+
+    n_all_edge = G.number_of_edges()
+    n_undirected = G.to_undirected().number_of_edges()  # unique pairs of edges, i.e. edges in the undirected graph
+    n_overlap_edge = (n_all_edge - n_undirected)  # number of undirected edges reciprocated in the directed network
+
+    if n_all_edge == 0:
+        raise nx.NetworkXError("Not defined for empty graphs.")
+
+    reciprocity = float(n_overlap_edge) / float(n_undirected)
+
+    return reciprocity
 
 
 def print_details(G):
@@ -332,6 +329,6 @@ def print_details(G):
         print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
 
         print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
-        print(
-            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
-            f'{np.round(reciprocal_edges(G[l]), 3)}')
+        print(f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
+              f'{np.round(reciprocal_edges(G[l]), 3)}')
+
