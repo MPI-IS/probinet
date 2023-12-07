@@ -6,6 +6,7 @@ from importlib.resources import files
 import os
 from pathlib import Path
 import unittest
+from pathlib import Path
 
 import numpy as np
 import yaml

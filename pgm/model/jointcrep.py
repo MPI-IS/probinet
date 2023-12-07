@@ -8,6 +8,7 @@ from __future__ import print_function
 import os
 from pathlib import Path
 import time
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
