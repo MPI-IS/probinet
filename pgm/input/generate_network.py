@@ -25,7 +25,8 @@ from scipy.optimize import brentq
 
 from . import statistics as stats
 from . import tools as tl
-from .tools import output_adjacency, print_details, Exp_ija_matrix, normalize_nonzero_membership, check_symmetric
+from .tools import output_adjacency, print_details, Exp_ija_matrix, normalize_nonzero_membership, check_symmetric, \
+    Exp_ija_matrix_jointcrep
 from ..model.jointcrep import transpose_tensor
 from ..output.plot import plot_A
 
@@ -1093,7 +1094,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
                 self.G[l].add_node(i)
 
         # whose elements are lambda0_{ij}
-        self.M0 = Exp_ija_matrix(self.u, self.v, self.w)
+        self.M0 = Exp_ija_matrix_jointcrep(self.u, self.v, self.w)
         for l in range(self.L):
             np.fill_diagonal(self.M0[l], 0)
             if self.is_sparse:
@@ -1139,7 +1140,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
             self.G[l].remove_nodes_from(list(n_to_remove))
             self.nodes = list(self.G[l].nodes())
 
-            self.layer_graphs.append(nx.to_scipy_sparse_matrix(self.G[l], nodelist=self.nodes))
+            self.layer_graphs.append(nx.to_scipy_sparse_array(self.G[l], nodelist=self.nodes))
 
         self.u = self.u[self.nodes]
         self.v = self.v[self.nodes]
@@ -1191,7 +1192,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
 
         return np.sum(LeftHandSide) - ExpM
 
-    def _plot_M(self, cmap='PuBuGn'): # TODO: add type hint
+    def _plot_M(self, cmap='PuBuGn'):  # TODO: add type hint
         """
             Plot the marginal means produced by the generative algorithm.
 

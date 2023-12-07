@@ -200,6 +200,34 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
 
     return M
 
+def Exp_ija_matrix_jointcrep(u, v, w):
+    """
+    Compute the mean lambda0_ij for all entries.
+
+    INPUT
+    ----------
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity matrix.
+
+    OUTPUT
+    -------
+    M : ndarray
+        Mean lambda0_ij for all entries.
+    """
+
+    if w.ndim == 2:
+        M = np.einsum('ik,jk->ijk', u, v)
+        M = np.einsum('ijk,ak->aij', M, w)
+    else:
+        M = np.einsum('ik,jq->ijkq', u, v)
+        M = np.einsum('ijkq,akq->aij', M, w)
+
+    return M
+
 
 def check_symmetric(a, rtol=1e-05, atol=1e-08): # TODO: add type hints
     """
