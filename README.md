@@ -1,3 +1,5 @@
+# Probabilistic Generative Models
+
 Welcome to the documentation for the Probabilistic Generative Models (``pgm``) Python package. This project is a
 collaborative effort to consolidate state-of-the-art probabilistic generative modeling implementations from various
 scientific publications. Our focus lies in advancing network analysis techniques with an emphasis on recent modeling
@@ -33,7 +35,7 @@ To get started, follow these steps:
 Run the PGM package as a whole with the following command::
 
 ```bash
-    python main.py
+    python main_CRep.py
 ```
 
 ## Tests

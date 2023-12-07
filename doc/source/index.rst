@@ -1,8 +1,5 @@
 .. pgm documentation master file.
 
-Probabilistic Generative Models
-===============================
-
 .. toctree::
    :maxdepth: 1
    :caption: Contents

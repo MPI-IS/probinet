@@ -5,8 +5,12 @@ tensors, and converting between dense and sparse representations.
 """
 from typing import Tuple, Union
 
+import networkx as nx
 import numpy as np
+import pandas as pd
 import sktensor as skt
+
+from pgm.input.statistics import reciprocal_edges
 
 
 def can_cast(string: Union[int, float, str]) -> bool:
@@ -190,3 +194,137 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     M = np.einsum('ijkq,kq->ij', M, w)
 
     return M
+
+def Exp_ija_tensor(u, v, w):
+    """
+    Compute the mean lambda0_ij for all entries.
+
+    INPUT
+    ----------
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity matrix.
+
+    OUTPUT
+    -------
+    M : ndarray
+        Mean lambda0_ij for all entries.
+    """
+
+    if w.ndim == 2:
+        M = np.einsum('ik,jk->ijk', u, v)
+        M = np.einsum('ijk,ak->aij', M, w)
+    else:
+        M = np.einsum('ik,jq->ijkq', u, v)
+        M = np.einsum('ijkq,akq->aij', M, w)
+
+    return M
+
+
+def check_symmetric(a, rtol=1e-05, atol=1e-08): # TODO: add type hints
+    """
+        Check if a matrix a is symmetric in all layers.
+
+        INPUT
+        ----------
+        a : ndarray
+            Numpy matrix.
+
+        OUTPUT
+        -------
+        symmetry : bool
+                   Flag to assess if a matrix is symmetric in all layers.
+    """
+    symmetry = False
+    for l in range(len(a)):
+        symmetry = np.logical_and(np.allclose(a[l], a[l].T, rtol=rtol, atol=atol), symmetry)
+
+    return symmetry
+
+
+def build_edgelist(A, l):
+    """
+        Build the edgelist for a given layer, a in DataFrame format.
+
+        INPUT
+        ----------
+        A : list
+            List of scipy sparse matrices, one for each layer.
+        l : int
+            Layer number.
+
+        OUTPUT
+        -------
+        df_res : DataFrame
+                 Pandas DataFrame with edge information about a given layer.
+    """
+
+    A_coo = A.tocoo()
+    data_dict = {'source': A_coo.row, 'target': A_coo.col, 'L' + str(l): A_coo.data}
+    df_res = pd.DataFrame(data_dict)
+
+    return df_res
+
+def output_adjacency(A, out_folder, label):
+    """
+        Save the adjacency tensor to a file.
+        Default format is space-separated .csv with L+2 columns: source_node target_node edge_l0 ... edge_lL
+
+        INPUT
+        ----------
+        A : list
+            List of scipy sparse matrices, one for each layer.
+        out_folder : str
+                     Path to store the adjacency tensor.
+        label : str
+                Label name to store the adjacency tensor.
+    """
+
+    outfile = label + '.dat'
+    if not os.path.exists(out_folder):
+        os.makedirs(out_folder)
+
+    L = len(A)
+    df = pd.DataFrame()
+    for l in range(L):
+        dfl = build_edgelist(A[l], l)
+        df = df.append(dfl)
+    df.to_csv(out_folder + outfile, index=False, sep=' ')
+    print(f'Adjacency matrix saved in: {out_folder + outfile}')
+
+
+def print_details(G):
+    """
+        Print the statistics of the graph A.
+
+        Parameters
+        ----------
+        G : list
+            List of MultiDiGraph NetworkX objects.
+    """
+
+    L = len(G)
+    N = G[0].number_of_nodes()
+    print('Number of nodes =', N)
+    print('Number of layers =', L)
+    print('Number of edges and average degree in each layer:')
+    for l in range(L):
+        E = G[l].number_of_edges()
+        k = 2 * float(E) / float(N)
+        print(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
+
+        weights = [d['weight'] for u, v, d in list(G[l].edges(data=True))]
+        if not np.array_equal(weights, np.ones_like(weights)):
+            M = np.sum([d['weight'] for u, v, d in list(G[l].edges(data=True))])
+            kW = 2 * float(M) / float(N)
+            print(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
+
+        print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
+
+        print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
+        print(f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
+              f'{np.round(reciprocal_edges(G[l]), 3)}')
+

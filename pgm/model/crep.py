@@ -3,9 +3,9 @@ Class definition of CRep, the algorithm to perform inference in networks with re
 The latent variables are related to community memberships and reciprocity value.
 """
 import os
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
@@ -16,55 +16,39 @@ from ..input.preprocessing import preprocess
 from ..input.tools import get_item_array_from_subs
 
 
+# NOTE: user changes the class parameters by hand, no yaml file here
 class CRep:
 
     def __init__(self,
-                 N: int = 100,
-                 L: int = 1,
-                 K: int = 2,
-                 undirected: bool = False,
-                 assortative: bool = False,
-                 rseed: int = 0,
-                 inf: float = 1e10,
-                 err_max: float = 1e-8,
-                 err: float = 0.01,
-                 N_real: int = 1,
-                 tolerance: float = 0.0001,
-                 decision: int = 10,
-                 max_iter: int = 500,
-                 initialization: int = 0,
-                 fix_eta: bool = False,
-                 fix_communities: bool = False,
-                 fix_w: bool = False,
-                 constrained: bool = True,
-                 eta0: Optional[float] = None,
-                 files: Path = Path('../data/input/synthetic/theta.npz'),
-                 verbose: bool = False,
-                 out_inference: bool = False,
-                 out_folder: Path = Path('outputs'),
-                 end_file: str = '.dat'):
-        self.N = N  # number of nodes
-        self.L = L  # number of layers
-        self.K = K  # number of communities
-        self.undirected = undirected  # flag to call the undirected network
-        self.assortative = assortative  # if True, the network is assortative
-        self.rseed = rseed  # random seed for the initialization
-        self.inf = inf  # initial value of the pseudo log-likelihood
-        self.err_max = err_max  # minimum value for the parameters
-        self.err = err  # noise for the initialization
-        self.N_real = N_real  # number of iterations with different random initialization
-        self.tolerance = tolerance  # tolerance parameter for convergence
-        self.decision = decision  # convergence parameter
-        self.max_iter = max_iter  # maximum number of EM steps before aborting
-        self.fix_eta = fix_eta  # if True, the eta parameter is fixed
-        self.fix_communities = fix_communities  # if True, keep the communities u and v fixed
-        self.fix_w = fix_w  # if True, keep the affinity tensor fixed
-        self.constrained = constrained  # if True, use the configuration with constraints on the updates
-        self.files = files  # path of the input files for u, v, w (when initialization>0)
-        self.verbose = verbose  # flag to print details
-        self.out_inference = out_inference  # flag for storing the inferred parameters
-        self.out_folder = out_folder  # path for storing the output
-        self.end_file = end_file  # output file suffix
+                 inf: float = 1e10,  # initial value of the pseudo log-likelihood, aka, infinity
+                 err_max: float = 1e-12,  # minimum value for the parameters
+                 err: float = 0.1,  # noise for the initialization
+                 num_realizations: int = 5,  # number of iterations with different random initialization
+                 convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
+                 decision: int = 10,  # convergence parameter
+                 max_iter: int = 1000,  # maximum number of EM steps before aborting
+                 verbose: bool = True,  # flag to print details
+                 flag_conv: str = 'log',  # flag to choose the convergence criterion
+                 ) -> None:
+        self.inf = inf
+        self.err_max = err_max
+        self.err = err
+        self.num_realizations = num_realizations
+        self.convergence_tol = convergence_tol
+        self.decision = decision
+        self.max_iter = max_iter
+        self.verbose = verbose
+        self.flag_conv = flag_conv
+
+    def __check_fit_params(self,
+                           initialization,
+                           eta0,
+                           undirected,
+                           assortative,
+                           data,
+                           K,
+                           constrained,
+                           **extra_params) -> None:
         if initialization not in {
             0, 1, 2, 3
         }:  # indicator for choosing how to initialize u, v and w
@@ -80,36 +64,75 @@ class CRep:
                 raise ValueError(
                     'The reciprocity coefficient eta0 has to be in [0, 1]!')
         self.eta0 = eta0  # initial value for the reciprocity coefficient
-        if self.fix_eta:
-            if self.eta0 is None:
-                raise ValueError('If fix_eta=True, provide a value for eta0.')
-        if self.fix_w:
-            if self.initialization not in {1, 3}:
-                raise ValueError(
-                    'If fix_w=True, the initialization has to be either 1 or 3.'
-                )
-        if self.fix_communities:
-            if self.initialization not in {2, 3}:
-                raise ValueError(
-                    'If fix_communities=True, the initialization has to be either 2 or 3.'
-                )
+        self.undirected = undirected  # flag to call the undirected network
+        self.assortative = assortative  # flag to call the assortative network
+        self.constrained = constrained  # if True, use the configuration with constraints on the updates
 
+        self.N = data.shape[1]
+        self.L = data.shape[0]
+        self.K = K
+
+        available_extra_params = [
+            'fix_eta',
+            'fix_w',
+            'fix_communities',
+            'files',
+            'out_inference',
+            'out_folder',
+            'end_file'
+        ]
+        for extra_param in extra_params:
+            if extra_param not in available_extra_params:
+                msg = "Ignoring unrecognised parameter %s." % extra_param
+                print(msg)  # Add the warning
+                # self.logger.warn(msg) # TODO: check this out
+        if "fix_eta" in extra_params:
+            self.fix_eta = extra_params["fix_eta"]
+
+            if self.fix_eta:
+                if self.eta0 is None:
+                    raise ValueError('If fix_eta=True, provide a value for eta0.')
+        else:
+            self.fix_eta = False
+
+        if "fix_w" in extra_params:
+            self.fix_w = extra_params["fix_w"]
+            if self.fix_w:
+                if self.initialization not in {1, 3}:
+                    raise ValueError(
+                        'If fix_w=True, the initialization has to be either 1 or 3.'
+                    )
+        else:
+            self.fix_w = False
+
+        if "fix_communities" in extra_params:
+            self.fix_communities = extra_params["fix_communities"]
+            if self.fix_communities:
+                if self.initialization not in {2, 3}:
+                    raise ValueError(
+                        'If fix_communities=True, the initialization has to be either 2 or 3.'
+                    )
+        else:
+            self.fix_communities = False
+
+        if "files" in extra_params:
+            self.files = extra_params["files"]
         if self.initialization > 0:
             self.theta = np.load(self.files.resolve(), allow_pickle=True)
-            if self.initialization == 1:
-                dfW = self.theta['w']
-                self.L = dfW.shape[0]
-                self.K = dfW.shape[1]
-            elif self.initialization == 2:
-                dfU = self.theta['u']
-                self.N, self.K = dfU.shape
-            else:
-                dfW = self.theta['w']
-                dfU = self.theta['u']
-                self.L = dfW.shape[0]
-                self.K = dfW.shape[1]
-                self.N = dfU.shape[0]
-                assert self.K == dfU.shape[1]
+
+        if "out_inference" in extra_params:
+            self.out_inference = extra_params["out_inference"]
+        else:
+            self.out_inference = True
+        if "out_folder" in extra_params:
+            self.out_folder = extra_params["out_folder"]
+        else:
+            self.out_folder = Path('outputs')
+
+        if "end_file" in extra_params:
+            self.end_file = extra_params["end_file"]
+        else:
+            self.end_file = ''
 
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 0):
@@ -117,46 +140,21 @@ class CRep:
                     'If undirected=True, the parameter eta has to be fixed equal to 0.'
                 )
 
-        # values of the parameters used during the update
-        self.u = np.zeros((self.N, self.K),
-                          dtype=float)  # out-going membership
-        self.v = np.zeros((self.N, self.K), dtype=float)  # in-going membership
-        self.eta = 0.  # reciprocity coefficient
-
-        # values of the parameters in the previous iteration
-        self.u_old = np.zeros((self.N, self.K),
-                              dtype=float)  # out-going membership
-        self.v_old = np.zeros((self.N, self.K),
-                              dtype=float)  # in-going membership
-        self.eta_old = 0.  # reciprocity coefficient
-
-        # final values after convergence --> the ones that maximize the pseudo log-likelihood
-        self.u_f = np.zeros((self.N, self.K),
-                            dtype=float)  # out-going membership
-        self.v_f = np.zeros((self.N, self.K),
-                            dtype=float)  # in-going membership
-        self.eta_f = 0.  # reciprocity coefficient
-
-        # values of the affinity tensor
-        if self.assortative:  # purely diagonal matrix
-            self.w = np.zeros((self.L, self.K), dtype=float)
-            self.w_old = np.zeros((self.L, self.K), dtype=float)
-            self.w_f = np.zeros((self.L, self.K), dtype=float)
-        else:
-            self.w = np.zeros((self.L, self.K, self.K), dtype=float)
-            self.w_old = np.zeros((self.L, self.K, self.K), dtype=float)
-            self.w_f = np.zeros((self.L, self.K, self.K), dtype=float)
-
-        if self.fix_eta:
-            self.eta = self.eta_old = self.eta_f = self.eta0 if self.eta0 is not None else 0.0  # TODO: check this with Martina
-
     def fit(self,
             data: Union[skt.dtensor, skt.sptensor],
             data_T: skt.sptensor,
             data_T_vals: np.ndarray,
             nodes: List[Any],
-            flag_conv: str,
-            mask: Optional[np.ndarray] = None) -> Tuple[
+            rseed: int = 0,
+            K: int = 3,
+            mask: Optional[np.ndarray] = None,
+            initialization: int = 0,
+            eta0: Optional[float] = None,
+            undirected: bool = False,
+            assortative: bool = True,
+            constrained: bool = True,
+            **extra_params
+            ) -> Tuple[
         np.ndarray, np.ndarray, np.ndarray, float, float]:
         """
         Model directed networks by using a probabilistic generative model that assume community
@@ -196,7 +194,16 @@ class CRep:
         final_it : int
                    Total number of iterations.
         """
-
+        self.__check_fit_params(data=data,
+                                K=K,
+                                initialization=initialization,
+                                eta0=eta0,
+                                undirected=undirected,
+                                assortative=assortative,
+                                constrained=constrained,
+                                **extra_params)
+        self.rng = np.random.RandomState(rseed)  # random seed
+        self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
 
         if data_T is None:
@@ -217,11 +224,9 @@ class CRep:
         elif isinstance(data, skt.sptensor):
             subs_nz = data.subs
 
-        rng = np.random.RandomState(self.rseed)
+        for r in range(self.num_realizations):
 
-        for r in range(self.N_real):
-
-            self._initialize(rng=rng, nodes=nodes)
+            self._initialize(nodes=nodes)
 
             self._update_old_variables()
             self._update_cache(data, data_T_vals, subs_nz)
@@ -239,7 +244,7 @@ class CRep:
                 # main EM update: updates memberships and calculates max difference new vs old
                 delta_u, delta_v, delta_w, delta_eta = self._update_em(
                     data, data_T_vals, subs_nz, denominator=E)
-                if flag_conv == 'log':
+                if self.flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data,
                         it,
@@ -254,7 +259,7 @@ class CRep:
                                 f'Nreal = {r} - Pseudo Log-likelihood = {loglik} '
                                 f'- iterations = {it} - '
                                 f'time = {np.round(time.time() - time_start, 2)} seconds')
-                elif flag_conv == 'deltas':
+                elif self.flag_conv == 'deltas':
                     it, coincide, convergence = self._check_for_convergence_delta(
                         it, coincide, delta_u, delta_v, delta_w, delta_eta,
                         convergence)
@@ -267,13 +272,13 @@ class CRep:
                 else:
                     raise ValueError('flag_conv can be either log or deltas!')
 
-            if flag_conv == 'log':
+            if self.flag_conv == 'log':
                 if maxL < loglik:
                     self._update_optimal_parameters()
                     maxL = loglik
                     self.final_it = it
                     conv = convergence
-            elif flag_conv == 'deltas':
+            elif self.flag_conv == 'deltas':
                 loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
                 if maxL < loglik:
                     self._update_optimal_parameters()
@@ -306,7 +311,7 @@ class CRep:
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
-    def _initialize(self, rng: np.random.RandomState, nodes: List[Any]) -> None:
+    def _initialize(self, nodes: List[Any]) -> None:
         """
         Random initialization of the parameters u, v, w, eta.
 
@@ -318,28 +323,25 @@ class CRep:
                 List of nodes IDs.
         """
 
-        if rng is None:
-            rng = np.random.RandomState(self.rseed)
-
         if self.eta0 is not None:
             self.eta = self.eta0
         else:
             if self.verbose:
                 print('eta is initialized randomly.')
-            self._randomize_eta(rng=rng)
+            self._randomize_eta()
 
         if self.initialization == 0:
             if self.verbose:
                 print('u, v and w are initialized randomly.')
-            self._randomize_w(rng=rng)
-            self._randomize_u_v(rng=rng)
+            self._randomize_w()
+            self._randomize_u_v()
 
         elif self.initialization == 1:
             if self.verbose:
                 print(f'w is initialized using the input file: {self.files}.')
                 print('u and v are initialized randomly.')
-            self._initialize_w(rng)
-            self._randomize_u_v(rng=rng)
+            self._initialize_w()
+            self._randomize_u_v()
 
         elif self.initialization == 2:
             if self.verbose:
@@ -347,20 +349,20 @@ class CRep:
                     f'u and v are initialized using the input file: {self.files}.'
                 )
                 print('w is initialized randomly.')
-            self._initialize_u(rng, nodes)
-            self._initialize_v(rng, nodes)
-            self._randomize_w(rng=rng)
+            self._initialize_u(nodes)
+            self._initialize_v(nodes)
+            self._randomize_w()
 
         elif self.initialization == 3:
             if self.verbose:
                 print(
                     f'u, v and w are initialized using the input file: {self.files}.'
                 )
-            self._initialize_u(rng, nodes)
-            self._initialize_v(rng, nodes)
-            self._initialize_w(rng)
+            self._initialize_u(nodes)
+            self._initialize_v(nodes)
+            self._initialize_w()
 
-    def _randomize_eta(self, rng: np.random.RandomState) -> None:
+    def _randomize_eta(self) -> None:
         """
         Generate a random number in (0, 1.).
 
@@ -370,11 +372,9 @@ class CRep:
               Container for the Mersenne Twister pseudo-random number generator.
         """
 
-        if rng is None:
-            rng = np.random.RandomState(self.rseed)
-        self.eta = rng.random_sample(1)[0]
+        self.eta = self.rng.random_sample(1)[0]
 
-    def _randomize_w(self, rng: np.random.RandomState) -> None:
+    def _randomize_w(self) -> None:
         """
         Assign a random number in (0, 1.) to each entry of the affinity tensor w.
 
@@ -383,22 +383,12 @@ class CRep:
         rng : RandomState
               Container for the Mersenne Twister pseudo-random number generator.
         """
+        if self.assortative:
+            self.w = self.rng.random_sample((self.L, self.K))
+        else:
+            self.w = np.zeros((self.L, self.K, self.K))
 
-        if rng is None:
-            rng = np.random.RandomState(self.rseed)
-        for i in range(self.L):
-            for k in range(self.K):
-                if self.assortative:
-                    self.w[i, k] = rng.random_sample(1)
-                else:
-                    for q in range(k, self.K):
-                        if q == k:
-                            self.w[i, k, q] = rng.random_sample(1)
-                        else:
-                            self.w[i, k, q] = self.w[
-                                i, q, k] = self.err * rng.random_sample(1)
-
-    def _randomize_u_v(self, rng: np.random.RandomState) -> None:
+    def _randomize_u_v(self) -> None:
         """
         Assign a random number in (0, 1.) to each entry of the membership matrices u and v, and
         normalize each row.
@@ -409,20 +399,18 @@ class CRep:
               Container for the Mersenne Twister pseudo-random number generator.
         """
 
-        if rng is None:
-            rng = np.random.RandomState(self.rseed)
-        self.u = rng.random_sample(self.u.shape)
+        self.u = self.rng.random_sample((self.N, self.K))
         row_sums = self.u.sum(axis=1)
         self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
         if not self.undirected:
-            self.v = rng.random_sample(self.v.shape)
+            self.v = self.rng.random_sample((self.N, self.K))
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
         else:
             self.v = self.u
 
-    def _initialize_u(self, rng: np.random.RandomState, nodes: List[Any]) -> None:
+    def _initialize_u(self, nodes: List[Any]) -> None:
         """
         Initialize out-going membership matrix u from file.
 
@@ -438,9 +426,9 @@ class CRep:
         assert np.array_equal(nodes, self.theta['nodes'])
 
         max_entry = np.max(self.u)
-        self.u += max_entry * self.err * rng.random_sample(self.u.shape)
+        self.u += max_entry * self.err * self.rng.random_sample(self.u.shape)
 
-    def _initialize_v(self, rng: np.random.RandomState, nodes: List[Any]) -> None:
+    def _initialize_v(self, nodes: List[Any]) -> None:
         """
         Initialize in-coming membership matrix v from file.
 
@@ -459,9 +447,9 @@ class CRep:
             assert np.array_equal(nodes, self.theta['nodes'])
 
             max_entry = np.max(self.v)
-            self.v += max_entry * self.err * rng.random_sample(self.v.shape)
+            self.v += max_entry * self.err * self.rng.random_sample(self.v.shape)
 
-    def _initialize_w(self, rng: np.random.RandomState) -> None:
+    def _initialize_w(self) -> None:
         """
         Initialize affinity tensor w from file.
 
@@ -478,17 +466,17 @@ class CRep:
             self.w = self.theta['w']
 
         max_entry = np.max(self.w)
-        self.w += max_entry * self.err * rng.random_sample(self.w.shape)
+        self.w += max_entry * self.err * self.rng.random_sample(self.w.shape)
 
     def _update_old_variables(self) -> None:
         """
         Update values of the parameters in the previous iteration.
         """
 
-        self.u_old[self.u > 0] = np.copy(self.u[self.u > 0])
-        self.v_old[self.v > 0] = np.copy(self.v[self.v > 0])
-        self.w_old[self.w > 0] = np.copy(self.w[self.w > 0])
-        self.eta_old = np.copy(self.eta)  # type: ignore
+        self.u_old = np.copy(self.u)
+        self.v_old = np.copy(self.v)
+        self.w_old = np.copy(self.w)
+        self.eta_old = np.copy(self.eta)
 
     def _update_cache(self, data: Union[skt.dtensor, skt.sptensor],
                       data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray]) -> None:
@@ -871,7 +859,7 @@ class CRep:
              Pseudo log-likelihood value.
         coincide : int
                Number of time the update of the pseudo log-likelihood respects the
-               tolerance.
+               convergence_tol.
         convergence : bool
                   Flag for convergence.
         data_T : sptensor/dtensor
@@ -888,14 +876,14 @@ class CRep:
              Pseudo log-likelihood value.
         coincide : int
                Number of time the update of the pseudo log-likelihood respects the
-               tolerance.
+               convergence_tol.
         convergence : bool
                   Flag for convergence.
         """
         if it % 10 == 0:
             old_L = loglik
             loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
-            if abs(loglik - old_L) < self.tolerance:
+            if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
             else:
                 coincide = 0
@@ -916,7 +904,7 @@ class CRep:
         it : int
              Number of iteration.
         coincide : int
-                   Number of time the update of the log-likelihood respects the tolerance.
+                   Number of time the update of the log-likelihood respects the convergence_tol.
         du : float
              Maximum distance between the old and the new membership matrix U.
         dv : float
@@ -933,13 +921,13 @@ class CRep:
         it : int
              Number of iteration.
         coincide : int
-                   Number of time the update of the log-likelihood respects the tolerance.
+                   Number of time the update of the log-likelihood respects the convergence_tol.
         convergence : bool
                       Flag for convergence.
         """
 
-        if du < self.tolerance and dv < self.tolerance and dw < self.tolerance and \
-                de < self.tolerance:
+        if du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol and \
+                de < self.convergence_tol:
             coincide += 1
         else:
             coincide = 0
@@ -1052,7 +1040,11 @@ class CRep:
         if not os.path.exists(self.out_folder):
             os.makedirs(self.out_folder)
 
-        outfile = (self.out_folder / Path(str('theta' + self.end_file))).with_suffix('.npz')
+        # Check if the output folder is a Path
+        if not isinstance(self.out_folder, Path):
+            self.out_folder = Path(self.out_folder)
+
+        outfile = (self.out_folder / str('theta' + self.end_file)).with_suffix('.npz')
         np.savez_compressed(outfile,
                             u=self.u_f,
                             v=self.v_f,

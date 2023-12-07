@@ -215,3 +215,102 @@ def calculate_opt_func(B, algo_obj=None, mask=None, assortative=False):
                                w,
                                algo_obj.eta_f,
                                mask=mask)
+
+
+
+def calculate_Z(lambda0_aij, eta):
+    """
+        Compute the normalization constant of the Bivariate Bernoulli distribution.
+
+        Returns
+        -------
+        Z : ndarray
+            Normalization constant Z of the Bivariate Bernoulli distribution.
+    """
+
+    Z = lambda0_aij + transpose_ij3(lambda0_aij) + eta * np.einsum('aij,aji->aij', lambda0_aij, lambda0_aij) + 1
+    for l in range(len(Z)):
+        assert check_symmetric(Z[l])
+
+    return Z
+
+
+def check_symmetric(a, rtol=1e-05, atol=1e-08):
+    """
+        Check if a matrix a is symmetric.
+    """
+
+    return np.allclose(a, a.T, rtol=rtol, atol=atol)
+
+
+def compute_M_joint(U, V, W, eta):
+    """
+        Return the vectors of joint probabilities of every pair of edges.
+
+        Parameters
+        ----------
+        U : ndarray
+            Out-going membership matrix.
+        V : ndarray
+            In-coming membership matrix.
+        W : ndarray
+            Affinity tensor.
+        eta : float
+              Pair interaction coefficient.
+
+        Returns
+        -------
+        [p00, p01, p10, p11] : list
+                               List of ndarray with joint probabilities of having no edges, only one edge in one
+                               direction and both edges for every pair of edges.
+    """
+
+    lambda0_aij = _lambda0_full(U, V, W)
+
+    Z = calculate_Z(lambda0_aij, eta)
+
+    p00 = 1 / Z
+    p10 = lambda0_aij / Z
+    p01 = transpose_ij3(p10)
+    p11 = (eta * lambda0_aij * transpose_ij3(lambda0_aij)) / Z
+
+    return [p00, p01, p10, p11]
+
+def expected_computation(B, U, V, W, eta):
+    """
+        Return the marginal and conditional expected value.
+
+        Parameters
+        ----------
+        B : ndarray
+            Graph adjacency tensor.
+        U : ndarray
+            Out-going membership matrix.
+        V : ndarray
+            In-coming membership matrix.
+        W : ndarray
+            Affinity tensor.
+        eta : float
+              Pair interaction coefficient.
+
+        Returns
+        -------
+        M_marginal : ndarray
+                     Marginal expected values.
+        M_conditional : ndarray
+                        Conditional expected values.
+    """
+
+    lambda0_aij = _lambda0_full(U, V, W)
+    L = lambda0_aij.shape[0]
+
+    Z = calculate_Z(lambda0_aij, eta)
+    M_marginal = (lambda0_aij + eta * lambda0_aij * transpose_ij3(lambda0_aij)) / Z
+    for l in np.arange(L):
+        np.fill_diagonal(M_marginal[l], 0.)
+
+    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / (eta ** transpose_ij3(B) * lambda0_aij + 1)
+    for l in np.arange(L):
+        np.fill_diagonal(M_conditional[l], 0.)
+
+    return M_marginal, M_conditional
