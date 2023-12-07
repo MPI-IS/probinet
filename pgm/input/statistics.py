@@ -78,6 +78,11 @@ def print_graph_stat_jointcrep(G):
         print(f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
               f'{np.round(reciprocal_edges(G[l]), 3)}\n')
 
+        if rw is not None:
+            print(
+                f'Reciprocity (considering the weights of the edges) = {np.round(rw[l], 3)}'
+            )
+
 
 def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     """

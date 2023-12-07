@@ -26,7 +26,7 @@ from scipy.optimize import brentq
 from . import statistics as stats
 from . import tools as tl
 from .tools import output_adjacency, print_details, Exp_ija_matrix, normalize_nonzero_membership, check_symmetric, \
-    Exp_ija_matrix_jointcrep
+    Exp_ija_tensor
 from ..model.jointcrep import transpose_tensor
 from ..output.plot import plot_A
 
@@ -1094,7 +1094,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
                 self.G[l].add_node(i)
 
         # whose elements are lambda0_{ij}
-        self.M0 = Exp_ija_matrix_jointcrep(self.u, self.v, self.w)
+        self.M0 = Exp_ija_tensor(self.u, self.v, self.w)
         for l in range(self.L):
             np.fill_diagonal(self.M0[l], 0)
             if self.is_sparse:

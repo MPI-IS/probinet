@@ -292,6 +292,7 @@ def plot_adjacency_samples(Bdata, Bsampled, cm='Blues'):
     plt.tight_layout()
     plt.show()
 
+
 def plot_A(A, cmap='PuBuGn'):
     """
         Plot the adjacency tensor produced by the generative algorithm.

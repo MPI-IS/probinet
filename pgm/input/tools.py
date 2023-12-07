@@ -200,7 +200,7 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
 
     return M
 
-def Exp_ija_matrix_jointcrep(u, v, w):
+def Exp_ija_tensor(u, v, w):
     """
     Compute the mean lambda0_ij for all entries.
 
@@ -299,33 +299,6 @@ def output_adjacency(A, out_folder, label):
         df = df.append(dfl)
     df.to_csv(out_folder + outfile, index=False, sep=' ')
     print(f'Adjacency matrix saved in: {out_folder + outfile}')
-
-
-def reciprocal_edges(G):
-    """
-        Compute the proportion of bi-directional edges, by considering the unordered pairs.
-
-        Parameters
-        ----------
-        G: MultiDigraph
-           MultiDiGraph NetworkX object.
-
-        Returns
-        -------
-        reciprocity: float
-                     Reciprocity value, intended as the proportion of bi-directional edges over the unordered pairs.
-    """
-
-    n_all_edge = G.number_of_edges()
-    n_undirected = G.to_undirected().number_of_edges()  # unique pairs of edges, i.e. edges in the undirected graph
-    n_overlap_edge = (n_all_edge - n_undirected)  # number of undirected edges reciprocated in the directed network
-
-    if n_all_edge == 0:
-        raise nx.NetworkXError("Not defined for empty graphs.")
-
-    reciprocity = float(n_overlap_edge) / float(n_undirected)
-
-    return reciprocity
 
 
 def print_details(G):

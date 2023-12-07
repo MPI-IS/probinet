@@ -4,8 +4,8 @@ Functions for handling the data.
 from typing import Any, Iterable, Optional, Tuple, Union
 
 import networkx as nx
-from numpy import ndarray
 import pandas as pd
+from numpy import ndarray
 
 from . import preprocessing as prep
 from .statistics import print_graph_stat
@@ -21,7 +21,7 @@ def import_data(dataset: str,
                 verbose=True,
                 binary=True,
                 header: Optional[int] = None) -> Tuple[
-        Iterable, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
+    Iterable, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
     """
     Import data, i.e. the adjacency matrix, from a given folder.
 
