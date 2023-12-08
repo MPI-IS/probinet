@@ -14,6 +14,8 @@ version = "1.0"
 requires-python = ">=3.8"
 dependencies = [
     "argparse",
+    "jupyter",
+    "matplotlib",
     "networkx",
     "numpy==1.22.0",
     "pandas",
@@ -22,6 +24,7 @@ dependencies = [
     "scikit-learn",
     "scikit-tensor-py3",
     "scipy==1.10.0",
+    "seaborn",
     "termcolor",
 ]
 
@@ -31,11 +34,10 @@ dev = [
     'coverage',
     'isort',
     'mypy',
-    'myst_nb', #'myst_parser',
-    #'nbsphinx',
+    'myst_nb',
+    'nbconvert',
     'piccolo_theme',
     'pylint',
-    #'sphinx_autodoc_typehints',
     'sphinxcontrib.napoleon',
     'tox',
     'unittest-xml-reporting',
@@ -95,5 +97,9 @@ envlist = py37,py38,py39
 
 [testenv]
 description = run unit tests
-commands = python run -m unittest
+deps = unittest-xml-reporting
+       nbconvert
+       jupyter
+       matplotlib
+commands = python -m xmlrunner
 """

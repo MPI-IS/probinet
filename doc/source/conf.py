@@ -47,7 +47,7 @@ extensions = [
     'sphinx.ext.autosummary',  # pull doc from docstrings
     # 'nbsphinx',  # add Jupyter notebooks
     'myst_nb',  # add Jupyter notebooks
-    'sphinxcontrib.napoleon'  # Google style doc
+    'sphinx.ext.napoleon'  # 'sphinxcontrib.napoleon' is deprecated  # Google style doc
 ]
 autodoc_default_options = {
     'members': True,  # when set to True, Sphinx will automatically document all members

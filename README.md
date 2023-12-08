@@ -32,10 +32,17 @@ To get started, follow these steps:
 
 ## Usage
 
-Run the PGM package as a whole with the following command::
+Run the PGM package as a whole with the `main_*` commands, e.g. if you are interested in running the `CRep` algorithm,
+you can do it by running::
 
 ```bash
     python main_CRep.py
+```
+
+A list of the parameters that can be passed as arguments is available by running::
+
+```bash
+    python main_CRep.py --help
 ```
 
 ## Tests

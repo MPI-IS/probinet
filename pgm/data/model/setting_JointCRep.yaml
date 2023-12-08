@@ -18,4 +18,4 @@ verbose: True
 out_inference: True
 out_folder: "outputs/"
 end_file: "_test"
-plot_loglik: True
+plot_loglik: False

@@ -3,6 +3,7 @@ This is the test module for the CRep algorithm.
 """
 
 import importlib.resources as importlib_resources
+import os
 import unittest
 from pathlib import Path
 
@@ -41,7 +42,7 @@ class Test(unittest.TestCase):
                                                                  ego=self.ego,
                                                                  alter=self.alter,
                                                                  force_dense=self.force_dense,
-                                                                 binary = False,
+                                                                 binary=False,
                                                                  header=0)
         self.nodes = self.A[0].nodes()
 
@@ -51,6 +52,8 @@ class Test(unittest.TestCase):
             conf = yaml.load(fp, Loader=yaml.Loader)
 
         conf['out_folder'] = 'tests/' + conf['out_folder']  # Saving the outputs of the tests inside the tests dir
+
+        conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
 
         self.conf = conf
 
@@ -81,7 +84,7 @@ class Test(unittest.TestCase):
                            **self.conf)
         theta = np.load((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix(
             '.npz'))
-        thetaGT = np.load((self.model.out_folder / str('theta_' + self.algorithm)).with_suffix(
+        thetaGT = np.load((self.model.out_folder / str('theta_GT_CRep')).with_suffix(
             '.npz'))
 
         self.assertTrue(np.array_equal(self.model.u_f, theta['u']))
@@ -93,3 +96,6 @@ class Test(unittest.TestCase):
         self.assertTrue(np.array_equal(thetaGT['v'], theta['v']))
         self.assertTrue(np.array_equal(thetaGT['w'], theta['w']))
         self.assertTrue(np.array_equal(thetaGT['eta'], theta['eta']))
+
+        # Remove output npz files after testing using os module
+        os.remove((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz'))

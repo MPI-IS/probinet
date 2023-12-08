@@ -1,4 +1,5 @@
 import importlib.resources as importlib_resources
+import os
 import unittest
 from pathlib import Path
 
@@ -33,9 +34,8 @@ class Test(unittest.TestCase):
         self.flag_conv = 'log'  # TODO: Move to config file
         self.force_dense = False  # TODO: Move to config file
 
-        '''
-        Import data: removing self-loops and making binary
-        '''
+        # Import data: removing self-loops and making binary
+
         network = self.in_folder / self.adj  # network complete path
         self.A, self.B, self.B_T, self.data_T_vals = import_data(network,
                                                                  ego=self.ego,
@@ -56,19 +56,17 @@ class Test(unittest.TestCase):
         # out_folder = '../data/output/'  # it seems that this is not needed
         conf['out_folder'] = 'tests/' + conf['out_folder']  # Saving the outputs of the tests inside the tests dir
 
+        conf['end_file'] = '_OUT_JointCRep'  # Adding a suffix to the output files
+
         self.conf = conf
 
         self.L = len(self.A)
 
         self.N = len(self.nodes)
 
-        # self.model = CRep()
+        # Run model
 
-        '''
-        Run model
-        '''
         self.model = JointCRep(N=self.N, L=self.L, K=self.K, undirected=self.undirected, **conf)
-        # _ = mod_multicrep.fit(data=B, data_T=B_T, data_T_vals=data_T_vals, flag_conv=flag_conv, nodes=nodes)
 
     # test case function to check the JointCRep.set_name function
     def test_import_data(self):
@@ -87,10 +85,10 @@ class Test(unittest.TestCase):
         _ = self.model.fit(data=self.B, data_T=self.B_T, data_T_vals=self.data_T_vals,
                            flag_conv=self.flag_conv, nodes=self.nodes)
 
-        # theta = np.load(self.model.out_folder + 'theta' + self.model.end_file + '.npz')
         theta = np.load((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix(
             '.npz'))
-        thetaGT = np.load((self.model.out_folder / 'theta_synthetic_data').with_suffix('.npz'))
+        # This reads the synthetic data Ground Truth output
+        thetaGT = np.load((self.model.out_folder / 'theta_GT_JointCRep').with_suffix('.npz'))
 
         self.assertTrue(np.array_equal(self.model.u_f, theta['u']))
         self.assertTrue(np.array_equal(self.model.v_f, theta['v']))
@@ -101,3 +99,6 @@ class Test(unittest.TestCase):
         self.assertTrue(np.array_equal(thetaGT['v'], theta['v']))
         self.assertTrue(np.array_equal(thetaGT['w'], theta['w']))
         self.assertTrue(np.array_equal(thetaGT['eta'], theta['eta']))
+
+        # Remove output npz files after testing using os module
+        os.remove((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz'))

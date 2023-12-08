@@ -139,9 +139,6 @@ def read_graph(df_adj, ego='source', alter='target', undirected=False, noselfloo
                             row[l + 2])  # the edge already exists, no parallel edge created
                     else:
                         A[l].add_edge(v1, v2, weight=int(row[l + 2]))
-    if verbose:
-        print('done!')
-
     # remove self-loops
     if noselfloop:
         if verbose:
