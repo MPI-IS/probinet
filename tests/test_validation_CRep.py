@@ -2,10 +2,10 @@
 This is the test module for the CRep algorithm.
 """
 
-import importlib.resources as importlib_resources
+from importlib.resources import open_binary
 import os
-import unittest
 from pathlib import Path
+import unittest
 
 import numpy as np
 import yaml
@@ -14,9 +14,7 @@ from pgm.input.loader import import_data
 from pgm.model.crep import CRep
 
 
-# TODO: add conversion to strings passed as input/output file
-
-class Test(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -28,7 +26,6 @@ class Test(unittest.TestCase):
 
         # Test case parameters
         self.algorithm = 'CRep'
-        # self.K = 3
         self.in_folder = Path('pgm') / 'data' / 'input'
         self.adj = 'syn111.dat'
         self.ego = 'source'
@@ -38,20 +35,23 @@ class Test(unittest.TestCase):
         # Import data
 
         network = self.in_folder / self.adj  # network complete path
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(network,
-                                                                 ego=self.ego,
-                                                                 alter=self.alter,
-                                                                 force_dense=self.force_dense,
-                                                                 binary=False,
-                                                                 header=0)
+        self.A, self.B, self.B_T, self.data_T_vals = import_data(
+            network,
+            ego=self.ego,
+            alter=self.alter,
+            force_dense=self.force_dense,
+            binary=False,
+            header=0
+        )
+
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
-
-        with importlib_resources.open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
+        with open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
             conf = yaml.load(fp, Loader=yaml.Loader)
 
-        conf['out_folder'] = 'tests/' + conf['out_folder']  # Saving the outputs of the tests inside the tests dir
+        # Saving the outputs of the tests inside the tests dir
+        conf['out_folder'] = Path(__file__).parent / conf['out_folder']
 
         conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
 

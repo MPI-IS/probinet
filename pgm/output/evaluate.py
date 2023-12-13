@@ -217,7 +217,6 @@ def calculate_opt_func(B, algo_obj=None, mask=None, assortative=False):
                                mask=mask)
 
 
-
 def calculate_Z(lambda0_aij, eta):
     """
         Compute the normalization constant of the Bivariate Bernoulli distribution.
@@ -228,7 +227,8 @@ def calculate_Z(lambda0_aij, eta):
             Normalization constant Z of the Bivariate Bernoulli distribution.
     """
 
-    Z = lambda0_aij + transpose_ij3(lambda0_aij) + eta * np.einsum('aij,aji->aij', lambda0_aij, lambda0_aij) + 1
+    Z = lambda0_aij + transpose_ij3(lambda0_aij) + eta * \
+        np.einsum('aij,aji->aij', lambda0_aij, lambda0_aij) + 1
     for l in range(len(Z)):
         assert check_symmetric(Z[l])
 
@@ -276,6 +276,7 @@ def compute_M_joint(U, V, W, eta):
 
     return [p00, p01, p10, p11]
 
+
 def expected_computation(B, U, V, W, eta):
     """
         Return the marginal and conditional expected value.
@@ -309,7 +310,8 @@ def expected_computation(B, U, V, W, eta):
     for l in np.arange(L):
         np.fill_diagonal(M_marginal[l], 0.)
 
-    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / (eta ** transpose_ij3(B) * lambda0_aij + 1)
+    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / \
+        (eta ** transpose_ij3(B) * lambda0_aij + 1)
     for l in np.arange(L):
         np.fill_diagonal(M_conditional[l], 0.)
 

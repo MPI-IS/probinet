@@ -1,10 +1,11 @@
+from matplotlib import gridspec
+from matplotlib import pyplot as plt
 import networkx as nx
 import numpy as np
-from matplotlib import pyplot as plt, gridspec
-import seaborn as sns # TODO: add to reqs
-
+import seaborn as sns
 
 # Utils to visualize the data
+
 
 def plot_hard_membership(graph, communities, pos, node_size, colors, edge_color):
     """
@@ -14,9 +15,18 @@ def plot_hard_membership(graph, communities, pos, node_size, colors, edge_color)
     plt.figure(figsize=(10, 5))
     for i, k in enumerate(communities):
         plt.subplot(1, 2, i + 1)
-        nx.draw_networkx(graph, pos, node_size=node_size, node_color=[colors[node] for node in communities[k]],
-                         with_labels=False, width=0.5, edge_color=edge_color, arrows=True,
-                         arrowsize=5, connectionstyle="arc3,rad=0.2")
+        nx.draw_networkx(
+            graph,
+            pos,
+            node_size=node_size,
+            node_color=[
+                colors[node] for node in communities[k]],
+            with_labels=False,
+            width=0.5,
+            edge_color=edge_color,
+            arrows=True,
+            arrowsize=5,
+            connectionstyle="arc3,rad=0.2")
         plt.title(k, fontsize=17)
         plt.axis('off')
     plt.tight_layout()
@@ -44,7 +54,13 @@ def plot_soft_membership(graph, thetas, pos, node_size, colors, edge_color):
         for i, n in enumerate(graph.nodes()):
             wedge_sizes, wedge_colors = extract_bridge_properties(i, colors, thetas[k])
             if len(wedge_sizes) > 0:
-                _ = plt.pie(wedge_sizes, center=pos[n], colors=wedge_colors, radius=(node_size[i]) * 0.0005)
+                _ = plt.pie(
+                    wedge_sizes,
+                    center=pos[n],
+                    colors=wedge_colors,
+                    radius=(
+                        node_size[i]) *
+                    0.0005)
                 ax.axis("equal")
         plt.title(k, fontsize=17)
         plt.axis('off')
@@ -102,7 +118,15 @@ def mapping(G, A):
     return nx.relabel_nodes(G, mapping)
 
 
-def plot_graph(graph, M_marginal, M_conditional, pos, node_size, node_color, edge_color, threshold=0.2):
+def plot_graph(
+        graph,
+        M_marginal,
+        M_conditional,
+        pos,
+        node_size,
+        node_color,
+        edge_color,
+        threshold=0.2):
     """
         Plot a graph and its reconstruction given by the marginal and the conditional expected values.
     """
@@ -112,9 +136,19 @@ def plot_graph(graph, M_marginal, M_conditional, pos, node_size, node_color, edg
 
     plt.subplot(gs[0, 0])
     edgewidth = [d['weight'] for (u, v, d) in graph.edges(data=True)]
-    nx.draw_networkx(graph, pos, node_size=node_size, node_color=node_color, connectionstyle="arc3,rad=0.2",
-                     with_labels=False, width=edgewidth, edge_color=edge_color, arrows=True, arrowsize=5,
-                     font_size=15, font_color="black")
+    nx.draw_networkx(
+        graph,
+        pos,
+        node_size=node_size,
+        node_color=node_color,
+        connectionstyle="arc3,rad=0.2",
+        with_labels=False,
+        width=edgewidth,
+        edge_color=edge_color,
+        arrows=True,
+        arrowsize=5,
+        font_size=15,
+        font_color="black")
     plt.axis('off')
     plt.title('Data', fontsize=17)
 
@@ -125,9 +159,20 @@ def plot_graph(graph, M_marginal, M_conditional, pos, node_size, node_color, edg
     G = mapping(G, graph)
     edgewidth = [d['weight'] for (u, v, d) in G.edges(data=True)]
     plt.subplot(gs[0, 1])
-    nx.draw_networkx(G, pos, node_size=node_size, node_color=node_color, connectionstyle="arc3,rad=0.2",
-                     with_labels=False, width=edgewidth, edge_color=edgewidth,
-                     edge_cmap=plt.cm.Greys, edge_vmin=0, edge_vmax=1, arrows=True, arrowsize=5)
+    nx.draw_networkx(
+        G,
+        pos,
+        node_size=node_size,
+        node_color=node_color,
+        connectionstyle="arc3,rad=0.2",
+        with_labels=False,
+        width=edgewidth,
+        edge_color=edgewidth,
+        edge_cmap=plt.cm.Greys,
+        edge_vmin=0,
+        edge_vmax=1,
+        arrows=True,
+        arrowsize=5)
     plt.axis('off')
     plt.title(r'$\mathbb{E}_{P(A_{ij} | \Theta)}[A_{ij}]$', fontsize=17)
 
@@ -139,9 +184,20 @@ def plot_graph(graph, M_marginal, M_conditional, pos, node_size, node_color, edg
     edgewidth = [d['weight'] for (u, v, d) in G.edges(data=True)]
 
     plt.subplot(gs[0, 2])
-    nx.draw_networkx(G, pos, node_size=node_size, node_color=node_color, connectionstyle="arc3,rad=0.2",
-                     with_labels=False, width=edgewidth, edge_color=edgewidth,
-                     edge_cmap=plt.cm.Greys, edge_vmin=0, edge_vmax=1, arrows=True, arrowsize=5)
+    nx.draw_networkx(
+        G,
+        pos,
+        node_size=node_size,
+        node_color=node_color,
+        connectionstyle="arc3,rad=0.2",
+        with_labels=False,
+        width=edgewidth,
+        edge_color=edgewidth,
+        edge_cmap=plt.cm.Greys,
+        edge_vmin=0,
+        edge_vmax=1,
+        arrows=True,
+        arrowsize=5)
     plt.axis('off')
     plt.title(r'$\mathbb{E}_{P(A_{ij} | A_{ij}, \Theta)}[A_{ij}]$', fontsize=17)
 
@@ -159,7 +215,16 @@ def plot_precision_recall(conf_matrix, cm='Blues'):
     # normalized by row
     gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05])
     plt.subplot(gs[0, 0])
-    im = plt.imshow(conf_matrix / np.sum(conf_matrix, axis=1)[:, np.newaxis], cmap=cm, vmin=0, vmax=1)
+    im = plt.imshow(
+        conf_matrix /
+        np.sum(
+            conf_matrix,
+            axis=1)[
+            :,
+            np.newaxis],
+        cmap=cm,
+        vmin=0,
+        vmax=1)
     plt.xticks([0, 1, 2, 3], labels=[(0, 0), (0, 1), (1, 0), (1, 1)], fontsize=13)
     plt.yticks([0, 1, 2, 3], labels=[(0, 0), (0, 1), (1, 0), (1, 1)], fontsize=13)
     plt.ylabel('True', fontsize=15)
@@ -170,8 +235,15 @@ def plot_precision_recall(conf_matrix, cm='Blues'):
     plt.subplot(gs[0, 1])
     plt.imshow(conf_matrix / np.sum(conf_matrix, axis=0)[np.newaxis, :], cmap=cm, vmin=0, vmax=1)
     plt.xticks([0, 1, 2, 3], labels=[(0, 0), (0, 1), (1, 0), (1, 1)], fontsize=13)
-    plt.tick_params(axis='y', which='both', bottom=False, top=False, labelbottom=False, right=False, left=False,
-                    labelleft=False)
+    plt.tick_params(
+        axis='y',
+        which='both',
+        bottom=False,
+        top=False,
+        labelbottom=False,
+        right=False,
+        left=False,
+        labelleft=False)
     plt.xlabel('Predicted', fontsize=15)
     plt.title('Recall', fontsize=17)
 
@@ -191,15 +263,29 @@ def plot_adjacency_samples(Bdata, Bsampled, cm='Blues'):
     gs = gridspec.GridSpec(1, 6, width_ratios=[1, 1, 1, 1, 1, 1])
     plt.subplot(gs[0, 0])
     plt.imshow(Bdata[0], vmin=0, vmax=1, cmap=cm)
-    plt.tick_params(axis='both', which='both', bottom=False, top=False, labelbottom=False, right=False, left=False,
-                    labelleft=False)
+    plt.tick_params(
+        axis='both',
+        which='both',
+        bottom=False,
+        top=False,
+        labelbottom=False,
+        right=False,
+        left=False,
+        labelleft=False)
     plt.title('Data', fontsize=25)
 
     for i in range(5):
         plt.subplot(gs[0, i + 1])
         plt.imshow(Bsampled[i], vmin=0, vmax=1, cmap=cm)
-        plt.tick_params(axis='both', which='both', bottom=False, top=False, labelbottom=False, right=False,
-                        left=False, labelleft=False)
+        plt.tick_params(
+            axis='both',
+            which='both',
+            bottom=False,
+            top=False,
+            labelbottom=False,
+            right=False,
+            left=False,
+            labelleft=False)
         plt.title(f'Sample {i + 1}', fontsize=25)
 
     plt.tight_layout()

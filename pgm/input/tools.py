@@ -55,7 +55,8 @@ def normalize_nonzero_membership(u: np.ndarray) -> np.ndarray:
     # Identify the positions where den1 is equal to 0 and create a boolean mask.
     nzz = den1 == 0.
 
-    # Replace the elements in den1 corresponding to positions where it is 0 with 1 to avoid division by zero.
+    # Replace the elements in den1 corresponding to positions where it is 0
+    # with 1 to avoid division by zero.
     den1[nzz] = 1.
 
     # Normalize the matrix u by dividing each element by the corresponding sum along axis 1.
@@ -89,11 +90,13 @@ def is_sparse(X: np.ndarray) -> bool:
     # Get the total number of elements in the tensor X.
     S = X.size
 
-    # Get the number of non-zero elements in the tensor X using the first dimension of the non-zero indices.
+    # Get the number of non-zero elements in the tensor X using the first
+    # dimension of the non-zero indices.
     I = X.nonzero()[0].size
 
     # Check if the tensor X is sparse based on a heuristic definition of sparsity.
-    # A tensor is considered sparse if the total number of elements is greater than (number of non-zero elements + 1) times the number of dimensions.
+    # A tensor is considered sparse if the total number of elements is greater
+    # than (number of non-zero elements + 1) times the number of dimensions.
     return S > (I + 1) * M
 
 
@@ -126,7 +129,8 @@ def get_item_array_from_subs(A: np.ndarray, ref_subs: Tuple[np.ndarray]) -> np.n
     Output is a 1-d array with dimension = number of non zero entries.
     """
 
-    # return np.array([A[a, i, j] for a, i, j in zip(*ref_subs)]) (Older version) #TODO: Check with Martina
+    # return np.array([A[a, i, j] for a, i, j in zip(*ref_subs)]) (Older
+    # version) #TODO: Check with Martina
     return np.array([A[tuple(sub)] for sub in zip(*ref_subs)])
 
 
@@ -185,7 +189,8 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
 
     # Compute the outer product of matrices u and v, resulting in a 4D tensor M.
-    # Dimensions of M: (number of rows in u) x (number of columns in v) x (number of rows in u) x (number of columns in v)
+    # Dimensions of M: (number of rows in u) x (number of columns in v) x
+    # (number of rows in u) x (number of columns in v)
     M = np.einsum('ik,jq->ijkq', u, v)
 
     # Multiply the 4D tensor M element-wise with the 2D tensor w along the last dimension.
@@ -194,6 +199,7 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     M = np.einsum('ijkq,kq->ij', M, w)
 
     return M
+
 
 def Exp_ija_tensor(u, v, w):
     """
@@ -224,7 +230,7 @@ def Exp_ija_tensor(u, v, w):
     return M
 
 
-def check_symmetric(a, rtol=1e-05, atol=1e-08): # TODO: add type hints
+def check_symmetric(a, rtol=1e-05, atol=1e-08):  # TODO: add type hints
     """
         Check if a matrix a is symmetric in all layers.
 
@@ -267,6 +273,7 @@ def build_edgelist(A, l):
     df_res = pd.DataFrame(data_dict)
 
     return df_res
+
 
 def output_adjacency(A, out_folder, label):
     """
@@ -325,6 +332,6 @@ def print_details(G):
         print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
 
         print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
-        print(f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
-              f'{np.round(reciprocal_edges(G[l]), 3)}')
-
+        print(
+            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
+            f'{np.round(reciprocal_edges(G[l]), 3)}')

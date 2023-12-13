@@ -3,11 +3,11 @@ Performing the inference in the given single-layer directed network.
 Implementation of JointCRep algorithm.
 """
 
-import importlib.resources as importlib_resources
-import os
-import time
 from argparse import ArgumentParser
+from importlib.resources import open_binary
+import os
 from pathlib import Path
+import time
 
 import numpy as np
 import yaml
@@ -52,7 +52,7 @@ def main():
     # setting to run the algorithm
 
     config_path = 'setting_' + args.algorithm + '.yaml'
-    with importlib_resources.open_binary('pgm.data.model', config_path) as fp:
+    with open_binary('pgm.data.model', config_path) as fp:
         conf = yaml.load(fp, Loader=yaml.Loader)
 
     # Change the output folder

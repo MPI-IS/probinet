@@ -3,9 +3,9 @@ Class definition of CRep, the algorithm to perform inference in networks with re
 The latent variables are related to community memberships and reciprocity value.
 """
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
@@ -155,7 +155,7 @@ class CRep:
             constrained: bool = True,
             **extra_params
             ) -> Tuple[
-        np.ndarray, np.ndarray, np.ndarray, float, float]:
+            np.ndarray, np.ndarray, np.ndarray, float, float]:
         """
         Model directed networks by using a probabilistic generative model that assume community
         parameters and reciprocity coefficient. The inference is performed via EM algorithm.
@@ -845,7 +845,7 @@ class CRep:
                                convergence: bool,
                                data_T: skt.sptensor,
                                mask: Optional[np.ndarray] = None) -> Tuple[
-        int, float, int, bool]:
+            int, float, int, bool]:
         """
         Check for convergence by using the pseudo log-likelihood values.
 
@@ -893,8 +893,16 @@ class CRep:
 
         return it, loglik, coincide, convergence
 
-    def _check_for_convergence_delta(self, it: int, coincide: int, du: float, dv: float,
-                                     dw: float, de: float, convergence: bool) -> Tuple[int, int, bool]:
+    def _check_for_convergence_delta(self,
+                                     it: int,
+                                     coincide: int,
+                                     du: float,
+                                     dv: float,
+                                     dw: float,
+                                     de: float,
+                                     convergence: bool) -> Tuple[int,
+                                                                 int,
+                                                                 bool]:
         """
         Check for convergence by using the maximum distances between the old and the new
         parameters values.

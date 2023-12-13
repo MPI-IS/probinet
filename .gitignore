@@ -38,3 +38,5 @@ TEST*.xml
 doc/source/generated/
 
 doc/source/tutorials/outputs/
+
+coverage.xml

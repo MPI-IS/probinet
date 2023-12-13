@@ -98,8 +98,5 @@ envlist = py37,py38,py39
 [testenv]
 description = run unit tests
 deps = unittest-xml-reporting
-       nbconvert
-       jupyter
-       matplotlib
 commands = python -m xmlrunner
 """

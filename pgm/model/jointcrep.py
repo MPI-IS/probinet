@@ -6,22 +6,44 @@
 from __future__ import print_function
 
 import os
-import time
 from pathlib import Path
+import time
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 import sktensor as skt
-from matplotlib.ticker import MaxNLocator
 from termcolor import colored
 
 
 class JointCRep:
-    def __init__(self, N=100, L=1, K=2, undirected=False, assortative=False,
-                 rseed=0, inf=1e10, err_max=1e-8, err=0.01, N_real=1, tolerance=0.0001, decision=10, max_iter=500,
-                 initialization=0, fix_eta=False, fix_communities=False, fix_w=False, use_approximation=False,
-                 eta0=None, files='../data/input/synthetic/theta.npz',
-                 verbose=False, out_inference=False, out_folder='../data/output/', end_file='.dat', plot_loglik=False):
+    def __init__(
+            self,
+            N=100,
+            L=1,
+            K=2,
+            undirected=False,
+            assortative=False,
+            rseed=0,
+            inf=1e10,
+            err_max=1e-8,
+            err=0.01,
+            N_real=1,
+            tolerance=0.0001,
+            decision=10,
+            max_iter=500,
+            initialization=0,
+            fix_eta=False,
+            fix_communities=False,
+            fix_w=False,
+            use_approximation=False,
+            eta0=None,
+            files='../data/input/synthetic/theta.npz',
+            verbose=False,
+            out_inference=False,
+            out_folder='../data/output/',
+            end_file='.dat',
+            plot_loglik=False):
         self.N = N  # number of nodes
         self.L = L  # number of layers
         self.K = K  # number of communities
@@ -45,12 +67,14 @@ class JointCRep:
         self.out_folder = out_folder  # path for storing the output
         self.end_file = end_file  # output file suffix
         self.plot_loglik = plot_loglik  # flag to plot the log-likelihood
-        if initialization not in {0, 1, 2, 3}:  # indicator for choosing how to initialize u, v and w
-            raise ValueError('The initialization parameter can be either 0, 1, 2 or 3. It is used as an indicator to '
-                             'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
-                             'will be generated randomly; 1 means only the affinity matrix w will be uploaded from '
-                             'file; 2 implies the membership matrices u and v will be uploaded from file and 3 all u, '
-                             'v and w will be initialized through an input file.')
+        if initialization not in {
+                0, 1, 2, 3}:  # indicator for choosing how to initialize u, v and w
+            raise ValueError(
+                'The initialization parameter can be either 0, 1, 2 or 3. It is used as an indicator to '
+                'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
+                'will be generated randomly; 1 means only the affinity matrix w will be uploaded from '
+                'file; 2 implies the membership matrices u and v will be uploaded from file and 3 all u, '
+                'v and w will be initialized through an input file.')
         self.initialization = initialization
         if (eta0 is not None) and (eta0 <= 0.):  # initial value for the pair interaction coefficient
             raise ValueError('If not None, the eta0 parameter has to be greater than 0.!')
@@ -63,7 +87,8 @@ class JointCRep:
                 raise ValueError('If fix_w=True, the initialization has to be either 1 or 3.')
         if self.fix_communities:
             if self.initialization not in {2, 3}:
-                raise ValueError('If fix_communities=True, the initialization has to be either 2 or 3.')
+                raise ValueError(
+                    'If fix_communities=True, the initialization has to be either 2 or 3.')
 
         if self.initialization > 0:
             self.theta = np.load(self.files, allow_pickle=True)
@@ -84,7 +109,8 @@ class JointCRep:
 
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 1):
-                raise ValueError('If undirected=True, the parameter eta has to be fixed equal to 1 (s.t. log(eta)=0).')
+                raise ValueError(
+                    'If undirected=True, the parameter eta has to be fixed equal to 1 (s.t. log(eta)=0).')
 
         # values of the parameters used during the update
         self.u = np.zeros((self.N, self.K), dtype=float)  # out-going membership
@@ -187,16 +213,16 @@ class JointCRep:
                 # main EM update: updates memberships and calculates max difference new vs old
                 delta_u, delta_v, delta_w, delta_eta = self._update_em(data, subs_nz)
                 if flag_conv == 'log':
-                    it, loglik, coincide, convergence = self._check_for_convergence(data, it, loglik, coincide,
-                                                                                    convergence)
+                    it, loglik, coincide, convergence = self._check_for_convergence(
+                        data, it, loglik, coincide, convergence)
                     loglik_values.append(loglik)
                     if self.verbose:
                         if not it % 100:
                             print(f'Nreal = {r} - Log-likelihood = {loglik} - iterations = {it} - '
                                   f'time = {np.round(time.time() - time_start, 2)} seconds')
                 elif flag_conv == 'deltas':
-                    it, coincide, convergence = self._check_for_convergence_delta(it, coincide, delta_u, delta_v,
-                                                                                  delta_w, delta_eta, convergence)
+                    it, coincide, convergence = self._check_for_convergence_delta(
+                        it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)
                     if self.verbose:
                         if not it % 100:
                             print(f'Nreal = {r} - iterations = {it} - '
@@ -232,8 +258,12 @@ class JointCRep:
         if np.logical_and(final_it == self.max_iter, not conv):
             # convergence not reaches
             try:
-                print(colored('Solution failed to converge in {0} EM steps!'.format(self.max_iter), 'blue'))
-            except:
+                print(
+                    colored(
+                        'Solution failed to converge in {0} EM steps!'.format(
+                            self.max_iter),
+                        'blue'))
+            except BaseException:
                 print('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
 
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
@@ -429,7 +459,10 @@ class JointCRep:
 
         self.den_updates = 1 + self.eta * self.lambda_aij  # to use in the updates
         if not self.use_approximation:
-            self.lambdalambdaT = np.einsum('aij,aji->aij', self.lambda_aij, self.lambda_aij)  # to use in Z and eta
+            self.lambdalambdaT = np.einsum(
+                'aij,aji->aij',
+                self.lambda_aij,
+                self.lambda_aij)  # to use in Z and eta
             self.Z = self._calculate_Z()
 
     def _lambda_full(self):
@@ -553,7 +586,10 @@ class JointCRep:
             d_w = 0.
 
         if not self.fix_eta:
-            self.lambdalambdaT = np.einsum('aij,aji->aij', self.lambda_aij, self.lambda_aij)  # to use in Z and eta
+            self.lambdalambdaT = np.einsum(
+                'aij,aji->aij',
+                self.lambda_aij,
+                self.lambda_aij)  # to use in Z and eta
             if self.use_approximation:
                 d_eta = self._update_eta_approx()
             else:
@@ -735,7 +771,8 @@ class JointCRep:
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
-                uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L)
+                uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0],
+                                                   weights=uttkrp_I[:, k, q], minlength=self.L)
 
         self.w = self.w_old * uttkrp_DKQ
 
@@ -814,7 +851,8 @@ class JointCRep:
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
-                uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L)
+                uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0],
+                                                   weights=uttkrp_I[:, k, q], minlength=self.L)
 
         self.w = self.w_old * uttkrp_DKQ
 
@@ -1050,7 +1088,10 @@ class JointCRep:
                 Log-likelihood value.
         """
 
-        self.lambdalambdaT = np.einsum('aij,aji->aij', self.lambda_aij, self.lambda_aij)  # to use in Z and eta
+        self.lambdalambdaT = np.einsum(
+            'aij,aji->aij',
+            self.lambda_aij,
+            self.lambda_aij)  # to use in Z and eta
         self.Z = self._calculate_Z()
 
         ft = (data.vals * np.log(self.lambda_nz)).sum()
@@ -1149,9 +1190,11 @@ def sp_uttkrp(vals, subs, m, u, v, w):
     for k in range(K):
         tmp = vals.copy()
         if m == 1:  # we are updating u
-            tmp *= (w[subs[0], k, :].astype(tmp.dtype) * v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
+            tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
+                    v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
         elif m == 2:  # we are updating v
-            tmp *= (w[subs[0], :, k].astype(tmp.dtype) * u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
+            tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
+                    u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
         out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out

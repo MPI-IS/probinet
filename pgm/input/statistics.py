@@ -9,7 +9,8 @@ from typing import List, Optional
 import networkx as nx
 import numpy as np
 
-def print_graph_stat(G:List[nx.MultiDiGraph], rw: Optional[List[float]]= None) -> None:
+
+def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None) -> None:
     """
         Print the statistics of the graph A.
 
@@ -37,8 +38,9 @@ def print_graph_stat(G:List[nx.MultiDiGraph], rw: Optional[List[float]]= None) -
         print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
 
         print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
-        print(f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
-              f'{np.round(reciprocal_edges(G[l]), 3)}\n')
+        print(
+            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
+            f'{np.round(reciprocal_edges(G[l]), 3)}\n')
 
         if rw is not None:
             print(

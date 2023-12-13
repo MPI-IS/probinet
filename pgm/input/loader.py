@@ -4,8 +4,8 @@ Functions for handling the data.
 from typing import Any, Iterable, Optional, Tuple, Union
 
 import networkx as nx
-import pandas as pd
 from numpy import ndarray
+import pandas as pd
 
 from . import preprocessing as prep
 from .statistics import print_graph_stat
@@ -21,7 +21,7 @@ def import_data(dataset: str,
                 verbose=True,
                 binary=True,
                 header: Optional[int] = None) -> Tuple[
-    Iterable, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
+        Iterable, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
     """
     Import data, i.e. the adjacency matrix, from a given folder.
 
@@ -57,9 +57,14 @@ def import_data(dataset: str,
     print(f"{dataset} shape: {df_adj.shape}")
 
     # A = read_graph(df_adj=df_adj, ego=ego, alter=alter, noselfloop=True)
-    A = read_graph(df_adj=df_adj, ego=ego, alter=alter, undirected=undirected, noselfloop=noselfloop,
-                   verbose=verbose,
-                   binary=binary)
+    A = read_graph(
+        df_adj=df_adj,
+        ego=ego,
+        alter=alter,
+        undirected=undirected,
+        noselfloop=noselfloop,
+        verbose=verbose,
+        binary=binary)
     nodes = list(A[0].nodes())
     print('\nNumber of nodes =', len(nodes))
     print('Number of layers =', len(A))
@@ -75,7 +80,14 @@ def import_data(dataset: str,
     return A, B, B_T, data_T_vals
 
 
-def read_graph(df_adj, ego='source', alter='target', undirected=False, noselfloop=True, verbose=True, binary=True):
+def read_graph(
+        df_adj,
+        ego='source',
+        alter='target',
+        undirected=False,
+        noselfloop=True,
+        verbose=True,
+        binary=True):
     """
         Create the graph by adding edges and nodes.
 
@@ -111,7 +123,8 @@ def read_graph(df_adj, ego='source', alter='target', undirected=False, noselfloo
     nodes.sort()
 
     L = df_adj.shape[1] - 2  # number of layers
-    # build the multilayer NetworkX graph: create a list of graphs, as many graphs as there are layers
+    # build the multilayer NetworkX graph: create a list of graphs, as many
+    # graphs as there are layers
     if undirected:
         A = [nx.MultiGraph() for _ in range(L)]
     else:

@@ -1,20 +1,20 @@
-import importlib.resources as importlib_resources
+"""
+This is the test module for the JointCRep algorithm.
+"""
+
+from importlib.resources import open_binary
 import os
-import unittest
 from pathlib import Path
+import unittest
 
 import numpy as np
-# import JointCRep
 import yaml
 
 from pgm.input.loader import import_data
 from pgm.model.jointcrep import JointCRep
 
 
-# import tools as tl
-
-
-class Test(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -37,24 +37,25 @@ class Test(unittest.TestCase):
         # Import data: removing self-loops and making binary
 
         network = self.in_folder / self.adj  # network complete path
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(network,
-                                                                 ego=self.ego,
-                                                                 alter=self.alter,
-                                                                 undirected=self.undirected,
-                                                                 force_dense=self.force_dense,
-                                                                 noselfloop=True,
-                                                                 verbose=True,
-                                                                 binary=True,
-                                                                 header=0)
+        self.A, self.B, self.B_T, self.data_T_vals = import_data(
+            network,
+            ego=self.ego,
+            alter=self.alter,
+            undirected=self.undirected,
+            force_dense=self.force_dense,
+            noselfloop=True,
+            verbose=True,
+            binary=True,
+            header=0
+        )
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
-
-        with importlib_resources.open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
+        with open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
             conf = yaml.load(fp, Loader=yaml.Loader)
 
-        # out_folder = '../data/output/'  # it seems that this is not needed
-        conf['out_folder'] = 'tests/' + conf['out_folder']  # Saving the outputs of the tests inside the tests dir
+        # Saving the outputs of the tests inside the tests dir
+        conf['out_folder'] = Path(__file__).parent / conf['out_folder']
 
         conf['end_file'] = '_OUT_JointCRep'  # Adding a suffix to the output files
 
