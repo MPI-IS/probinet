@@ -2,12 +2,12 @@
     Class definition of the reciprocity generative model with the member functions required.
     It builds a directed, possibly weighted, network.
 """
-import sys
 # This is an abstract class that cannot be instantiated, but it can be
 # used to define abstract methods
 from abc import ABCMeta
 import math
 import os
+import sys
 # for its subclasses.
 from typing import List, Optional, Tuple  # TODO: add this into a separte script
 import warnings  # This module is used for warning the user about runtime issues, or other problems

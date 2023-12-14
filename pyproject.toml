@@ -3,7 +3,7 @@
 requires = [
     "setuptools>=61",
     "setuptools-scm[toml]>=6.2",
-] # TODO: add this to the merge request
+]
 build-backend = "setuptools.build_meta"
 
 # Project
@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 name = "pgm"
 description = "Python package for probabilistic network analysis."
 version = "1.0"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "argparse",
     "jupyter",
@@ -93,7 +93,7 @@ ignore_missing_imports = true
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37,py38,py39
+envlist = py39,py310
 
 [testenv]
 description = run unit tests
