@@ -6,10 +6,12 @@ tensors, and converting between dense and sparse representations.
 import os
 from typing import List, Tuple, Union
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import sktensor as skt
 
+from pgm.input.statistics import reciprocal_edges
 
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
 # too-many-statements
