@@ -92,7 +92,7 @@ class TestGMReciprocity(unittest.TestCase):
             GM_reciprocity(N=100, K=3, Normalization=2)
         expected_error_message = r'The Normalization parameter can be either 0 or 1! It is used as ' \
                                  r'an indicator for generating the membership matrices u and v ' \
-                                 r'from a Dirichlet or a Gamma \ distribution, respectively. ' \
+                                 r'from a Dirichlet or a Gamma distribution, respectively. ' \
                                  r'It is used when there is overlapping.'
         self.assertEqual(str(context.exception), expected_error_message)
 

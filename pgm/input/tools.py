@@ -3,16 +3,17 @@ It provides utility functions to handle matrices, tensors, and sparsity. It incl
 checking if an object can be cast to an integer, normalizing matrices, determining sparsity in
 tensors, and converting between dense and sparse representations.
 """
-from typing import Tuple, Union
+import os
+from typing import List, Tuple, Union
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 import sktensor as skt
 
-from pgm.input.statistics import reciprocal_edges
 
-
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
+# too-many-statements
+# pylint: disable=fixme
 def can_cast(string: Union[int, float, str]) -> bool:
     """
     Verify if one object can be converted to integer object.
@@ -118,8 +119,9 @@ def sptensor_from_dense_array(X: np.ndarray) -> skt.sptensor:
     # Extract the values of non-zero elements in the dense tensor X.
     vals = X[subs]
 
-    # Create a sparse tensor (sptensor) using the non-zero indices (subs) and corresponding values (vals).
-    # The shape and data type of the sparse tensor are derived from the original dense tensor X.
+    # Create a sparse tensor (sptensor) using the non-zero indices (subs) and corresponding
+    # values (vals). The shape and data type of the sparse tensor are derived
+    # from the original dense tensor X.
     return skt.sptensor(subs, vals, shape=X.shape, dtype=X.dtype)
 
 
@@ -200,92 +202,66 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
 
     return M
 
-def Exp_ija_tensor(u, v, w):
-    """
-    Compute the mean lambda0_ij for all entries.
 
-    INPUT
+def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
+                    rtol: float = 1e-05, atol: float = 1e-08) -> bool:
+    """
+    Check if a matrix or a list of matrices is symmetric.
+
+    Parameters
     ----------
-    u : ndarray
-        Out-going membership matrix.
-    v : ndarray
-        In-coming membership matrix.
-    w : ndarray
-        Affinity matrix.
-
-    OUTPUT
+    a : ndarray or list
+        Input data.
+    rtol : float
+           Relative tolerance.
+    atol : float
+              Absolute tolerance.
+    Returns
     -------
-    M : ndarray
-        Mean lambda0_ij for all entries.
+    True if the matrix is symmetric, False otherwise.
+    """
+    if isinstance(a, list):
+        return all(np.allclose(mat, mat.T, rtol=rtol, atol=atol) for mat in a)
+
+    return np.allclose(a, a.T, rtol=rtol, atol=atol)
+
+
+def build_edgelist(A: skt.sptensor, l: int) -> pd.DataFrame:
+    """
+    Build the edgelist for a given layer, a in DataFrame format.
+
+    Parameters
+    ----------
+    A : ndarray or sptensor
+        List of scipy sparse matrices, one for each layer
+    l : int
+        Layer index.
+    Returns
+    -------
+    Dataframe with the edgelist for a given layer.
     """
 
-    if w.ndim == 2:
-        M = np.einsum('ik,jk->ijk', u, v)
-        M = np.einsum('ijk,ak->aij', M, w)
-    else:
-        M = np.einsum('ik,jq->ijkq', u, v)
-        M = np.einsum('ijkq,akq->aij', M, w)
-
-    return M
-
-
-def check_symmetric(a, rtol=1e-05, atol=1e-08): # TODO: add type hints
-    """
-        Check if a matrix a is symmetric in all layers.
-
-        INPUT
-        ----------
-        a : ndarray
-            Numpy matrix.
-
-        OUTPUT
-        -------
-        symmetry : bool
-                   Flag to assess if a matrix is symmetric in all layers.
-    """
-    symmetry = False
-    for l in range(len(a)):
-        symmetry = np.logical_and(np.allclose(a[l], a[l].T, rtol=rtol, atol=atol), symmetry)
-
-    return symmetry
-
-
-def build_edgelist(A, l):
-    """
-        Build the edgelist for a given layer, a in DataFrame format.
-
-        INPUT
-        ----------
-        A : list
-            List of scipy sparse matrices, one for each layer.
-        l : int
-            Layer number.
-
-        OUTPUT
-        -------
-        df_res : DataFrame
-                 Pandas DataFrame with edge information about a given layer.
-    """
-
-    A_coo = A.tocoo()
+    A_coo = A.tocoo()  # TODO: Solve this issue with Martina
     data_dict = {'source': A_coo.row, 'target': A_coo.col, 'L' + str(l): A_coo.data}
     df_res = pd.DataFrame(data_dict)
 
     return df_res
 
-def output_adjacency(A, out_folder, label):
-    """
-        Save the adjacency tensor to a file.
-        Default format is space-separated .csv with L+2 columns: source_node target_node edge_l0 ... edge_lL
 
-        INPUT
-        ----------
-        A : list
-            List of scipy sparse matrices, one for each layer.
-        out_folder : str
-                     Path to store the adjacency tensor.
-        label : str
-                Label name to store the adjacency tensor.
+def output_adjacency(A: List, out_folder: str, label: str):
+    """
+    Save the adjacency tensor to a file.
+    Default format is space-separated .csv with L+2 columns: source_node target_node
+    edge_l0 ... edge_lL .
+
+    Parameters
+    ----------
+    A : ndarray
+        Adjacency tensor.
+    out_folder : str
+        Output folder.
+    label : str
+        Label of the output file.
     """
 
     outfile = label + '.dat'
@@ -301,35 +277,18 @@ def output_adjacency(A, out_folder, label):
     print(f'Adjacency matrix saved in: {out_folder + outfile}')
 
 
-def print_details(G):
+def transpose_tensor(M: np.ndarray) -> np.ndarray:
     """
-        Print the statistics of the graph A.
+    Given M tensor, it returns its transpose: for each dimension a, compute the transpose ij->ji.
 
-        Parameters
-        ----------
-        G : list
-            List of MultiDiGraph NetworkX objects.
+    Parameters
+    ----------
+    M : ndarray
+        Tensor with the mean lambda for all entries.
+
+    Returns
+    -------
+    Transpose version of M_aij, i.e. M_aji.
     """
 
-    L = len(G)
-    N = G[0].number_of_nodes()
-    print('Number of nodes =', N)
-    print('Number of layers =', L)
-    print('Number of edges and average degree in each layer:')
-    for l in range(L):
-        E = G[l].number_of_edges()
-        k = 2 * float(E) / float(N)
-        print(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
-
-        weights = [d['weight'] for u, v, d in list(G[l].edges(data=True))]
-        if not np.array_equal(weights, np.ones_like(weights)):
-            M = np.sum([d['weight'] for u, v, d in list(G[l].edges(data=True))])
-            kW = 2 * float(M) / float(N)
-            print(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
-
-        print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
-
-        print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
-        print(f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
-              f'{np.round(reciprocal_edges(G[l]), 3)}')
-
+    return np.einsum('aij->aji', M)

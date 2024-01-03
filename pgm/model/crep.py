@@ -2,28 +2,35 @@
 Class definition of CRep, the algorithm to perform inference in networks with reciprocity.
 The latent variables are related to community memberships and reciprocity value.
 """
-import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
+from numpy import dtype, float_, floating, ndarray
 import numpy as np
+from numpy.typing import _64Bit
 import sktensor as skt
 from termcolor import colored
 
 from ..input.preprocessing import preprocess
 from ..input.tools import get_item_array_from_subs
+from ..output.evaluate import _lambda0_full
+
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
+# pylint: disable=fixme
 
 
-# NOTE: user changes the class parameters by hand, no yaml file here
 class CRep:
+    """
+    Class to perform inference in networks with reciprocity.
+    """
 
     def __init__(self,
                  inf: float = 1e10,  # initial value of the pseudo log-likelihood, aka, infinity
                  err_max: float = 1e-12,  # minimum value for the parameters
                  err: float = 0.1,  # noise for the initialization
-                 num_realizations: int = 5,  # number of iterations with different random initialization
+                 num_realizations: int = 5,  # number of iterations with different random init
                  convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
                  decision: int = 10,  # convergence parameter
                  max_iter: int = 1000,  # maximum number of EM steps before aborting
@@ -41,13 +48,13 @@ class CRep:
         self.flag_conv = flag_conv
 
     def __check_fit_params(self,
-                           initialization,
-                           eta0,
-                           undirected,
-                           assortative,
-                           data,
-                           K,
-                           constrained,
+                           initialization: int,
+                           eta0: Union[float, None],
+                           undirected: bool,
+                           assortative: bool,
+                           data: Union[skt.dtensor, skt.sptensor],
+                           K: int,
+                           constrained: bool,
                            **extra_params) -> None:
         if initialization not in {
             0, 1, 2, 3
@@ -57,7 +64,8 @@ class CRep:
                 'indicator to initialize the membership matrices u and v and the affinity matrix w.'
                 'If it is 0, they will be generated randomly; 1 means only the affinity matrix w '
                 'will be uploaded from file; 2 implies the membership matrices u and v will be '
-                'uploaded from file and 3 all u, v and w will be initialized through an input file.')
+                'uploaded from file and 3 all u, v and w will be initialized through an input '
+                'file.')
         self.initialization = initialization
         if eta0 is not None:
             if (eta0 < 0) or (eta0 > 1):
@@ -66,7 +74,7 @@ class CRep:
         self.eta0 = eta0  # initial value for the reciprocity coefficient
         self.undirected = undirected  # flag to call the undirected network
         self.assortative = assortative  # flag to call the assortative network
-        self.constrained = constrained  # if True, use the configuration with constraints on the updates
+        self.constrained = constrained  # if True, use the config with constraints on the updates
 
         self.N = data.shape[1]
         self.L = data.shape[0]
@@ -83,7 +91,7 @@ class CRep:
         ]
         for extra_param in extra_params:
             if extra_param not in available_extra_params:
-                msg = "Ignoring unrecognised parameter %s." % extra_param
+                msg = f'Parameter {extra_param} is not available.'
                 print(msg)  # Add the warning
                 # self.logger.warn(msg) # TODO: check this out
         if "fix_eta" in extra_params:
@@ -141,7 +149,8 @@ class CRep:
                 )
 
     def fit(self,
-            data: Union[skt.dtensor, skt.sptensor],
+            data: Union[skt.dtensor,
+                        skt.sptensor],
             data_T: skt.sptensor,
             data_T_vals: np.ndarray,
             nodes: List[Any],
@@ -149,13 +158,20 @@ class CRep:
             K: int = 3,
             mask: Optional[np.ndarray] = None,
             initialization: int = 0,
-            eta0: Optional[float] = None,
+            eta0: Union[float,
+                        None] = None,
             undirected: bool = False,
             assortative: bool = True,
             constrained: bool = True,
-            **extra_params
-            ) -> Tuple[
-            np.ndarray, np.ndarray, np.ndarray, float, float]:
+            **extra_params) -> tuple[ndarray[Any,
+                                             dtype[floating[_64Bit] | float_]],
+                                     ndarray[Any,
+                                             dtype[floating[_64Bit] | float_]],
+                                     ndarray[Any,
+                                             dtype[floating[_64Bit] | float_]],
+                                     ndarray[Any,
+                                             dtype[Any]],
+                                     float]:
         """
         Model directed networks by using a probabilistic generative model that assume community
         parameters and reciprocity coefficient. The inference is performed via EM algorithm.
@@ -191,8 +207,6 @@ class CRep:
                 Reciprocity coefficient.
         maxL : float
                Maximum pseudo log-likelihood.
-        final_it : int
-                   Total number of iterations.
         """
         self.__check_fit_params(data=data,
                                 K=K,
@@ -202,7 +216,7 @@ class CRep:
                                 assortative=assortative,
                                 constrained=constrained,
                                 **extra_params)
-        self.rng = np.random.RandomState(rseed)  # random seed
+        self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
 
@@ -300,11 +314,11 @@ class CRep:
             try:
                 print(
                     colored(
-                        'Solution failed to converge in {0} EM steps!'.format(
-                            self.max_iter), 'blue'))
-            except BaseException:
-                print('Solution failed to converge in {0} EM steps!'.format(
-                    self.max_iter))
+                        f'Solution failed to converge in {self.max_iter} EM steps!',
+                        'blue'))
+            # Raise exception if print fails
+            except IOError:
+                print(f'Solution failed to converge in {self.max_iter} EM steps!')
 
         if self.out_inference:
             self.output_results(nodes)
@@ -368,8 +382,6 @@ class CRep:
 
         Parameters
         ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
         """
 
         self.eta = self.rng.random_sample(1)[0]
@@ -934,8 +946,8 @@ class CRep:
                       Flag for convergence.
         """
 
-        if du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol and \
-                de < self.convergence_tol:
+        if (du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol
+                and de < self.convergence_tol):
             coincide += 1
         else:
             coincide = 0
@@ -967,7 +979,7 @@ class CRep:
             Pseudo log-likelihood value.
         """
 
-        self.lambda0_ija = self._lambda0_full(self.u, self.v, self.w)
+        self.lambda0_ija = _lambda0_full(self.u, self.v, self.w)
 
         if mask is not None:
             sub_mask_nz = mask.nonzero()
@@ -996,34 +1008,6 @@ class CRep:
         else:
             return l
 
-    def _lambda0_full(self, u: np.ndarray, v: np.ndarray,
-                      w: np.ndarray) -> np.ndarray:
-        """
-        Compute the mean lambda0 for all entries.
-
-        Parameters
-        ----------
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
-
-        Returns
-        -------
-        M : ndarray
-            Mean lambda0 for all entries.
-        """
-
-        if w.ndim == 2:
-            M = np.einsum('ik,jk->ijk', u, v)
-            M = np.einsum('ijk,ak->aij', M, w)
-        else:
-            M = np.einsum('ik,jq->ijkq', u, v)
-            M = np.einsum('ijkq,akq->aij', M, w)
-        return M
-
     def _update_optimal_parameters(self) -> None:
         """
         Update values of the parameters after convergence.
@@ -1043,10 +1027,10 @@ class CRep:
         nodes : list
                 List of nodes IDs.
         """
-
         # Check if the output folder exists, otherwise create it
-        if not os.path.exists(self.out_folder):
-            os.makedirs(self.out_folder)
+        output_path = Path(self.out_folder)
+        if not output_path.exists():
+            output_path.mkdir(parents=True, exist_ok=True)
 
         # Check if the output folder is a Path
         if not isinstance(self.out_folder, Path):

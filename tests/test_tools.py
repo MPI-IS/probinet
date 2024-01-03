@@ -5,7 +5,7 @@ import sktensor as skt
 
 from pgm.input.tools import (
     can_cast, Exp_ija_matrix, get_item_array_from_subs, is_sparse, normalize_nonzero_membership,
-    sptensor_from_dense_array, transpose_ij2, transpose_ij3)
+    output_adjacency, sptensor_from_dense_array, transpose_ij2, transpose_ij3)
 
 from .fixtures import decimal, rtol
 
