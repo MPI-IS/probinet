@@ -1,9 +1,10 @@
 """
 It provides functions for cross-validation for the CRep model.
 """
+
 import yaml
 
-from pgm.model.crep import CRep
+from .crep import CRep
 
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 # pylint: disable=fixme
