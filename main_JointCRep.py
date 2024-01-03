@@ -71,6 +71,9 @@ def main():
     out_folder_path = Path(conf['out_folder'])
     out_folder_path.mkdir(parents=True, exist_ok=True)
 
+    if not out_folder_path.exists():
+        out_folder_path.mkdir(parents=True)
+
     # Print the configuration file
     print(yaml.dump(conf))
 

@@ -1,3 +1,6 @@
+"""
+Unit tests for the CRep class.
+"""
 from pathlib import Path
 import unittest
 
@@ -5,8 +8,13 @@ import numpy as np
 
 from pgm.model.crep import CRep, sp_uttkrp, sp_uttkrp_assortative
 
+# pylint: disable=missing-function-docstring, missing-module-docstring, too-many-locals, too-many-instance-attributes
+
 
 class TestCRepHelpers(unittest.TestCase):
+    """
+    Test cases for the CRep class.
+    """
 
     def setUp(self):
         # Initialize a CRep object for testing
@@ -17,7 +25,7 @@ class TestCRepHelpers(unittest.TestCase):
         self.crep.N = self.N
         self.crep.L = self.L
         self.crep.K = self.K
-        self.crep.rng = np.random.RandomState(0)
+        self.crep.rng = np.random.RandomState(0)  # pylint: disable=no-member
         self.crep.files = Path('pgm').resolve() / 'data' / 'input' / 'theta_gt111.npz'
         self.crep.theta = np.load(self.crep.files,
                                   allow_pickle=True)  # TODO: use package data
@@ -45,19 +53,19 @@ class TestCRepHelpers(unittest.TestCase):
         self.w_a = np.array([[0.1, 0.2, 0]])  # lxk #in the other case, this is lxkxk
 
     def test_randomize_eta(self):
-        self.crep._randomize_eta()
+        self.crep._randomize_eta()  # pylint: disable=protected-access
         self.assertTrue(0 <= self.crep.eta <= 1)
 
     def test_randomize_w(self):
 
-        self.crep._randomize_w()
+        self.crep._randomize_w()  # pylint: disable=protected-access
         if self.crep.assortative:
             self.assertEqual(self.crep.w.shape, (self.crep.L, self.crep.K))
         else:
             self.assertEqual(self.crep.w.shape, (self.crep.L, self.crep.K, self.crep.K))
 
     def test_randomize_u_v(self):
-        self.crep._randomize_u_v()
+        self.crep._randomize_u_v()  # pylint: disable=protected-access
         row_sums_u = self.crep.u.sum(axis=1)
         self.assertTrue(np.all((0 <= self.crep.u) & (self.crep.u <= 1)))
         self.assertTrue(np.all(row_sums_u > 0))
@@ -69,13 +77,13 @@ class TestCRepHelpers(unittest.TestCase):
     def test_initialize_random_eta(self):
 
         self.crep.initialization = 0
-        self.crep._initialize(nodes=[0, 1, 2])
+        self.crep._initialize(nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(0 <= self.crep.eta <= 1)
 
     def test_initialize_random_uvw(self):
 
         self.crep.initialization = 0
-        self.crep._initialize(nodes=[0, 1, 2])
+        self.crep._initialize(nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(np.all((0 <= self.crep.u) & (self.crep.u <= 1)))
         self.assertTrue(np.all((0 <= self.crep.v) & (self.crep.v <= 1)))
         self.assertTrue(np.all((0 <= self.crep.w) & (self.crep.w <= 1)))
@@ -86,19 +94,19 @@ class TestCRepHelpers(unittest.TestCase):
         dfW = self.crep.theta['w']
         self.crep.L = dfW.shape[0]
         self.crep.K = dfW.shape[1]
-        self.crep._initialize(nodes=[0, 1, 2])
+        self.crep._initialize(nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(np.all(0 <= self.crep.w))
 
     def test_initialize_uv_from_file(self):
         self.crep.initialization = 2
-        self.crep._initialize(nodes=range(600))  # Set by hand
+        self.crep._initialize(nodes=range(600))  # pylint: disable=protected-access # Set by hand
         self.assertTrue(np.all(0 <= self.crep.u))
         self.assertTrue(np.all(0 <= self.crep.v))
 
     def test_initialize_uvw_from_file(self):
         self.crep.initialization = 3
         self.crep.L, self.crep.K = self.w_a.shape
-        self.crep._initialize(nodes=range(600))
+        self.crep._initialize(nodes=range(600))  # pylint: disable=protected-access
         self.assertTrue(np.all(0 <= self.crep.u))
         self.assertTrue(np.all(0 <= self.crep.v))
         self.assertTrue(np.all(0 <= self.crep.w))

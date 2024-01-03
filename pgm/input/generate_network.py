@@ -869,6 +869,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
 
         # Create networkx DiGraph objects for each layer for easier manipulation
 
+        # Create networkx DiGraph objects for each layer for easier manipulation
+
         nodes_to_remove = []
         self.G = []
         self.layer_graphs = []

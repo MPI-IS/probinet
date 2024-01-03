@@ -1,3 +1,6 @@
+"""
+Test cases for the evaluate module.
+"""
 import unittest
 
 import numpy as np
@@ -6,8 +9,13 @@ from pgm.output.evaluate import (
     _lambda0_full, calculate_AUC, calculate_conditional_expectation, calculate_expectation,
     PSloglikelihood)
 
+# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
+
 
 class TestEvaluateFunctions(unittest.TestCase):
+    """
+    Test cases for the evaluate module.
+    """
 
     def setUp(self):
         # Set up variables for testing
@@ -94,13 +102,3 @@ class TestEvaluateFunctions(unittest.TestCase):
 
         # Check if psloglikelihood_result is a number
         self.assertIsInstance(psloglikelihood_result, float)
-
-    @unittest.skip("Reason: Not implemented yet")
-    def test_calculate_opt_func(self):
-        # Test calculate_opt_func function
-
-        # Calculate optimal value for pseudo log-likelihood
-        opt_func_result = calculate_opt_func(self.B, mask=self.mask)
-
-        # Check if opt_func_result is a number
-        self.assertIsInstance(opt_func_result, float)

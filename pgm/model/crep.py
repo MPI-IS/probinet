@@ -9,12 +9,16 @@ from typing import Any, List, Optional, Tuple, Union
 
 from numpy import dtype, ndarray
 import numpy as np
+from numpy.typing import _64Bit
 import sktensor as skt
 from termcolor import colored
 
 from ..input.preprocessing import preprocess
 from ..input.tools import get_item_array_from_subs
 from ..output.evaluate import _lambda0_full
+
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
+# pylint: disable=fixme
 
 
 class CRep:

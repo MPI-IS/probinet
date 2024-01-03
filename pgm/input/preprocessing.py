@@ -13,6 +13,8 @@ from sktensor import sptensor
 
 from . import tools
 
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
+
 
 def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tuple[
         ndarray, List[Any]]:

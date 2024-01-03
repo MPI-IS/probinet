@@ -13,6 +13,8 @@ import yaml
 from pgm.input.loader import import_data
 from pgm.model.jointcrep import JointCRep
 
+# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
+
 
 class BaseTestCase(unittest.TestCase):
     """
@@ -26,7 +28,7 @@ class BaseTestCase(unittest.TestCase):
         # Test case parameters
         self.algorithm = 'JointCRep'
         self.in_folder = Path('pgm').resolve() / 'data' / 'input'
-        self.adj = 'synthetic_data.dat'  # TODO: Look for file
+        self.adj = 'synthetic_data.dat'
         self.ego = 'source'
         self.alter = 'target'
         self.K = 2
@@ -52,7 +54,8 @@ class BaseTestCase(unittest.TestCase):
 
         # Setting to run the algorithm
 
-        with files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb') as fp:
+        with (files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb')
+              as fp):
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
