@@ -1,5 +1,5 @@
-import unittest
 from pathlib import Path
+import unittest
 
 import numpy as np
 
@@ -13,10 +13,19 @@ class TestCRepHelpers(unittest.TestCase):
         self.N = 100
         self.L = 1
         self.K = 2
-        self.crep = CRep(N=self.N, L=self.L, K=self.K, verbose=False)
-        self.crep.files = Path('pgm/data/input/theta_gt111.npz')
+        self.crep = CRep()
+        self.crep.N = self.N
+        self.crep.L = self.L
+        self.crep.K = self.K
+        self.crep.rng = np.random.RandomState(0)
+        self.crep.files = Path('pgm').resolve() /'data'/'input'/'theta_gt111.npz'
         self.crep.theta = np.load(self.crep.files,
                                   allow_pickle=True)  # TODO: use package data
+        self.crep.eta0 = 0
+        self.crep.undirected = False
+        self.crep.assortative = True
+        self.crep.constrained = True
+
         # Parameters for the non assortative case
         self.vals_ = np.array([1.0, 2.0, 3.0])
         self.subs_ = (np.array([0, 0, 1]), np.array([0, 1, 2]), np.array([0, 1, 2]))
@@ -36,21 +45,19 @@ class TestCRepHelpers(unittest.TestCase):
         self.w_a = np.array([[0.1, 0.2, 0]])  # lxk #in the other case, this is lxkxk
 
     def test_randomize_eta(self):
-        rng = np.random.RandomState(42)
-        self.crep._randomize_eta(rng)
+        self.crep._randomize_eta()
         self.assertTrue(0 <= self.crep.eta <= 1)
 
     def test_randomize_w(self):
-        rng = np.random.RandomState(42)
-        self.crep._randomize_w(rng)
+
+        self.crep._randomize_w()
         if self.crep.assortative:
             self.assertEqual(self.crep.w.shape, (self.crep.L, self.crep.K))
         else:
             self.assertEqual(self.crep.w.shape, (self.crep.L, self.crep.K, self.crep.K))
 
     def test_randomize_u_v(self):
-        rng = np.random.RandomState(42)
-        self.crep._randomize_u_v(rng)
+        self.crep._randomize_u_v()
         row_sums_u = self.crep.u.sum(axis=1)
         self.assertTrue(np.all((0 <= self.crep.u) & (self.crep.u <= 1)))
         self.assertTrue(np.all(row_sums_u > 0))
@@ -60,39 +67,38 @@ class TestCRepHelpers(unittest.TestCase):
             self.assertTrue(np.all(row_sums_v > 0))
 
     def test_initialize_random_eta(self):
-        rng = np.random.RandomState(42)
-        self.crep._initialize(rng, nodes=[0, 1, 2])
+
+        self.crep.initialization = 0
+        self.crep._initialize(nodes=[0, 1, 2])
         self.assertTrue(0 <= self.crep.eta <= 1)
 
     def test_initialize_random_uvw(self):
-        rng = np.random.RandomState(42)
+
         self.crep.initialization = 0
-        self.crep._initialize(rng, nodes=[0, 1, 2])
+        self.crep._initialize(nodes=[0, 1, 2])
         self.assertTrue(np.all((0 <= self.crep.u) & (self.crep.u <= 1)))
         self.assertTrue(np.all((0 <= self.crep.v) & (self.crep.v <= 1)))
         self.assertTrue(np.all((0 <= self.crep.w) & (self.crep.w <= 1)))
 
     def test_initialize_w_from_file(self):
-        rng = np.random.RandomState(42)
         self.crep.initialization = 1
 
         dfW = self.crep.theta['w']
         self.crep.L = dfW.shape[0]
         self.crep.K = dfW.shape[1]
-        self.crep._initialize(rng, nodes=[0, 1, 2])
+        self.crep._initialize(nodes=[0, 1, 2])
         self.assertTrue(np.all(0 <= self.crep.w))
 
     def test_initialize_uv_from_file(self):
-        rng = np.random.RandomState(42)
         self.crep.initialization = 2
-        self.crep._initialize(rng, nodes=range(600))  # Set by hand
+        self.crep._initialize(nodes=range(600))  # Set by hand
         self.assertTrue(np.all(0 <= self.crep.u))
         self.assertTrue(np.all(0 <= self.crep.v))
 
     def test_initialize_uvw_from_file(self):
-        rng = np.random.RandomState(42)
         self.crep.initialization = 3
-        self.crep._initialize(rng, nodes=range(600))
+        self.crep.L, self.crep.K = self.w_a.shape
+        self.crep._initialize(nodes=range(600))
         self.assertTrue(np.all(0 <= self.crep.u))
         self.assertTrue(np.all(0 <= self.crep.v))
         self.assertTrue(np.all(0 <= self.crep.w))

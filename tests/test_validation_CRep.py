@@ -2,9 +2,10 @@
 This is the test module for the CRep algorithm.
 """
 
-import importlib.resources as importlib_resources
-import unittest
+from importlib.resources import files
+import os
 from pathlib import Path
+import unittest
 
 import numpy as np
 import yaml
@@ -13,7 +14,7 @@ from pgm.input.loader import import_data
 from pgm.model.crep import CRep
 
 
-class Test(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -25,34 +26,38 @@ class Test(unittest.TestCase):
 
         # Test case parameters
         self.algorithm = 'CRep'
-        self.K = 3
-        self.in_folder = Path('pgm') / 'data' / 'input'
-        self.out_folder = Path('outputs')
-        self.end_file = '_test'
+        self.in_folder = Path('pgm').resolve() / 'data' / 'input'
         self.adj = 'syn111.dat'
         self.ego = 'source'
         self.alter = 'target'
         self.force_dense = False
-        self.flag_conv = 'log'
 
         # Import data
 
         network = self.in_folder / self.adj  # network complete path
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(network,
-                                                                 ego=self.ego,
-                                                                 alter=self.alter,
-                                                                 force_dense=self.force_dense,
-                                                                 header=0)
+        self.A, self.B, self.B_T, self.data_T_vals = import_data(
+            network,
+            ego=self.ego,
+            alter=self.alter,
+            force_dense=self.force_dense,
+            binary=False,
+            header=0
+        )
+
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
+        with files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb') as fp:
+            conf = yaml.safe_load(fp)
 
-        with importlib_resources.open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
-            conf = yaml.load(fp, Loader=yaml.Loader)
+        # Saving the outputs of the tests inside the tests dir
+        conf['out_folder'] = Path(__file__).parent / conf['out_folder']
 
-        conf['out_folder'] = self.out_folder
+        conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
 
-        self.model = CRep(N=self.A[0].number_of_nodes(), L=len(self.A), K=self.K, **conf)
+        self.conf = conf
+
+        self.model = CRep()
 
     # test case function to check the crep.set_name function
     def test_import_data(self):
@@ -74,11 +79,12 @@ class Test(unittest.TestCase):
         _ = self.model.fit(data=self.B,
                            data_T=self.B_T,
                            data_T_vals=self.data_T_vals,
-                           flag_conv=self.flag_conv,
-                           nodes=self.nodes)
+                           nodes=self.nodes,
+                           # K=self.K,
+                           **self.conf)
         theta = np.load((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix(
             '.npz'))
-        thetaGT = np.load((self.model.out_folder / str('theta_' + self.algorithm)).with_suffix(
+        thetaGT = np.load((self.model.out_folder / str('theta_GT_CRep')).with_suffix(
             '.npz'))
 
         self.assertTrue(np.array_equal(self.model.u_f, theta['u']))
@@ -90,3 +96,6 @@ class Test(unittest.TestCase):
         self.assertTrue(np.array_equal(thetaGT['v'], theta['v']))
         self.assertTrue(np.array_equal(thetaGT['w'], theta['w']))
         self.assertTrue(np.array_equal(thetaGT['eta'], theta['eta']))
+
+        # Remove output npz files after testing using os module
+        os.remove((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz'))

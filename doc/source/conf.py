@@ -6,7 +6,6 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import sys
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -15,7 +14,8 @@ import sys
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 from pathlib import Path
-from typing import List, Any
+import sys
+from typing import Any, List
 
 root_folder = Path(__file__).parent.parent.parent.resolve()
 sys.path.insert(0, str(root_folder))

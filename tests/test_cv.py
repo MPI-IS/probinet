@@ -45,4 +45,3 @@ class TestCV(unittest.TestCase):
         # Check if the indices are shuffled for each layer
         for l in range(self.L):
             self.assertTrue(np.any(indices[l] != np.arange(self.N * self.N)))
-

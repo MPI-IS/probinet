@@ -2,19 +2,58 @@
     Class definition of the reciprocity generative model with the member functions required.
     It builds a directed, possibly weighted, network.
 """
+# This is an abstract class that cannot be instantiated, but it can be
+# used to define abstract methods
+from abc import ABCMeta
 import math
+import os
+import sys
+# for its subclasses.
 from typing import List, Optional, Tuple  # TODO: add this into a separte script
+import warnings  # This module is used for warning the user about runtime issues, or other problems
 
+from matplotlib import pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
+from scipy.optimize import brentq
 import scipy.sparse as sparse
 
 from . import statistics as stats
 from . import tools as tl
+from ..model.jointcrep import transpose_tensor
+from ..output.plot import plot_A
+from .tools import (
+    check_symmetric, Exp_ija_matrix, Exp_ija_tensor, normalize_nonzero_membership, output_adjacency,
+    print_details)
+
+DEFAULT_N = 1000
+DEFAULT_L = 1
+DEFAULT_K = 2
+DEFAULT_ETA = 50
+DEFAULT_ALPHA_HL = 6
+DEFAULT_AVG_DEGREE = 15
+DEFAULT_STRUCTURE = "assortative"
+
+DEFAULT_PERC_OVERLAPPING = 0.2
+DEFAULT_CORRELATION_U_V = 0.
+DEFAULT_ALPHA = 0.1
+
+DEFAULT_SEED = 10
+DEFAULT_IS_SPARSE = True
+
+DEFAULT_OUT_FOLDER = "data/input/synthetic/"
+
+DEFAULT_SHOW_DETAILS = True
+DEFAULT_SHOW_PLOTS = True
+DEFAULT_OUTPUT_NET = True
 
 
-class GM_reciprocity:
+if not sys.warnoptions:
+    warnings.simplefilter("ignore")
+
+
+class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
     """
     A class to generate a directed, possibly weighted, network with reciprocity.
     """
@@ -167,7 +206,7 @@ class GM_reciprocity:
         c = (self.ExpM * (1. - self.eta)) / M0.sum()  # constant to enforce sparsity
 
         MM = (M0 + self.eta * tl.transpose_ij2(M0)) / \
-            (1. - self.eta * self.eta)  # whose elements are m_{ij}
+             (1. - self.eta * self.eta)  # whose elements are m_{ij}
         Mt = tl.transpose_ij2(MM)
         MM0 = M0.copy()  # to be not influenced by c_lambda
 
@@ -598,3 +637,600 @@ def affinity_matrix(structure: str = 'assortative', N: int = 100, K: int = 2, a:
     # print(f'Affinity matrix w: \n{p}')
 
     return p
+
+
+class BaseSyntheticNetwork(metaclass=ABCMeta):
+    """
+    A base abstract class for generation and management of synthetic networks.
+
+    Suitable for representing any type of synthetic network.
+    """
+
+    def __init__(
+            self,
+            N: int = DEFAULT_N,
+            L: int = DEFAULT_L,
+            K: int = DEFAULT_K,
+            seed: int = DEFAULT_SEED,
+            out_folder: str = DEFAULT_OUT_FOLDER,
+            output_net: bool = DEFAULT_OUTPUT_NET,
+            show_details: bool = DEFAULT_SHOW_DETAILS,
+            show_plots: bool = DEFAULT_SHOW_PLOTS,
+            **kwargs
+    ):
+        self.N = N  # number of nodes
+        self.L = L  # number of layers
+        self.K = K  # number of communities
+
+        # Set seed random number generator
+        self.seed = seed
+        self.prng = np.random.RandomState(self.seed)
+
+        self.out_folder = out_folder
+        self.output_net = output_net
+
+        self.show_details = show_details
+        self.show_plots = show_plots
+
+
+class StandardMMSBM(BaseSyntheticNetwork):
+    """
+    Create a synthetic, directed, and weighted network (possibly multilayer)
+    by a standard mixed-membership stochastic block-model
+    - It models marginals (iid assumption) with Poisson distributions
+    """
+
+    def __init__(self, **kwargs):
+
+        if "parameters" in kwargs:
+            parameters = kwargs["parameters"]
+        else:
+            parameters = None
+
+        self.init_mmsbm_params(**kwargs)
+
+        self.build_Y(parameters=parameters)
+
+        if self.output_net:
+            self._output_parameters()
+            output_adjacency(self.layer_graphs, self.out_folder, self.label)
+
+        if self.show_details:
+            print_details(self.G)
+        if self.show_plots:
+            plot_A(self.layer_graphs)
+            if self.M is not None:
+                self._plot_M()
+
+    def init_mmsbm_params(self, **kwargs):
+        """
+        Check MMSBM-specific parameters
+        """
+
+        super().__init__(**kwargs)
+
+        if "avg_degree" in kwargs:
+            avg_degree = kwargs["avg_degree"]
+            if avg_degree <= 0:  # (in = out) average degree
+                err_msg = "The average degree has to be greater than 0.!"
+                raise ValueError(err_msg)
+        else:
+            msg = f"avg_degree parameter was not set. Defaulting to avg_degree={DEFAULT_AVG_DEGREE}"
+            warnings.warn(msg)
+            avg_degree = DEFAULT_AVG_DEGREE
+        self.avg_degree = avg_degree
+        self.ExpEdges = int(self.avg_degree * self.N * 0.5)
+
+        if "is_sparse" in kwargs:
+            is_sparse = kwargs["is_sparse"]
+        else:
+            msg = f"is_sparse parameter was not set. Defaulting to is_sparse={DEFAULT_IS_SPARSE}"
+            warnings.warn(msg)
+            is_sparse = DEFAULT_IS_SPARSE
+        self.is_sparse = is_sparse
+
+        if "label" in kwargs:
+            label = kwargs["label"]
+        else:
+            try:
+                msg = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta_seed"
+                warnings.warn(msg)
+                label = '_'.join(
+                    [
+                        str(), str(
+                            self.N), str(
+                            self.L), str(
+                            self.K), str(
+                            self.avg_degree), str(
+                            self.eta), str(
+                                self.seed)])
+            except BaseException:
+                msg = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_seed"
+                warnings.warn(msg)
+                label = '_'.join([str(), str(self.N), str(self.L), str(
+                    self.K), str(self.avg_degree), str(self.seed)])
+        self.label = label
+
+        """
+        SETUP overlapping communities
+        """
+        if "perc_overlapping" in kwargs:
+            perc_overlapping = kwargs["perc_overlapping"]
+            if (perc_overlapping < 0) or (perc_overlapping >
+                                          1):  # fraction of nodes with mixed membership
+                err_msg = "The percentage of overlapping nodes has to be in [0, 1]!"
+                raise ValueError(err_msg)
+        else:
+            msg = f"perc_overlapping parameter was not set. Defaulting to perc_overlapping={DEFAULT_PERC_OVERLAPPING}"
+            warnings.warn(msg)
+            perc_overlapping = DEFAULT_PERC_OVERLAPPING
+        self.perc_overlapping = perc_overlapping
+
+        if self.perc_overlapping:
+            # correlation between u and v synthetically generated
+            if "correlation_u_v" in kwargs:
+                correlation_u_v = kwargs["correlation_u_v"]
+                if (correlation_u_v < 0) or (correlation_u_v > 1):
+                    err_msg = "The correlation between u and v has to be in [0, 1]!"
+                    raise ValueError(err_msg)
+            else:
+                msg = (f"correlation_u_v parameter for overlapping communities was not set. "
+                       f"Defaulting to corr={DEFAULT_CORRELATION_U_V}")
+                warnings.warn(msg)
+                correlation_u_v = DEFAULT_CORRELATION_U_V
+            self.correlation_u_v = correlation_u_v
+
+            if "alpha" in kwargs:
+                alpha = kwargs["alpha"]
+            else:
+                msg = f"alpha parameter of Dirichlet distribution was not set. Defaulting to alpha={[DEFAULT_ALPHA] * self.K}"
+                warnings.warn(msg)
+                alpha = [DEFAULT_ALPHA] * self.K
+            if isinstance(alpha, float):
+                if alpha <= 0:
+                    err_msg = "Each entry of the Dirichlet parameter has to be positive!"
+                    raise ValueError(err_msg)
+                else:
+                    alpha = [alpha] * self.K
+            elif len(alpha) != self.K:
+                err_msg = "The parameter alpha should be a list of length K."
+                raise ValueError(err_msg)
+            if not all(alpha):
+                err_msg = "Each entry of the Dirichlet parameter has to be positive!"
+                raise ValueError(err_msg)
+            self.alpha = alpha
+
+        """
+        SETUP informed structure
+        """
+        if "structure" in kwargs:
+            structure = kwargs["structure"]
+        else:
+            msg = f"structure parameter was not set. Defaulting to structure={[DEFAULT_STRUCTURE] * self.L}"
+            warnings.warn(msg)
+            structure = [DEFAULT_STRUCTURE] * self.L
+        if isinstance(structure, str):
+            if structure not in ["assortative", "disassortative"]:
+                err_msg = "The available structures for the affinity tensor w are: assortative, disassortative!"
+                raise ValueError(err_msg)
+            else:
+                structure = [structure] * self.L
+        elif len(structure) != self.L:
+            err_msg = ("The parameter structure should be a list of length L. "
+                       "Each entry defines the structure of the corresponding layer!")
+            raise ValueError(err_msg)
+        for e in structure:
+            if e not in ["assortative", "disassortative"]:
+                err_msg = "The available structures for the affinity tensor w are: assortative, disassortative!"
+                raise ValueError(err_msg)
+        self.structure = structure
+
+    def build_Y(self, parameters=None):
+        """
+        Generate network layers G using the latent variables,
+        with the generative model A_ij ~ P(A_ij|u,v,w)
+        """
+
+        """
+        Latent variables
+        """
+        if parameters is None:
+            # generate latent variables
+            self.u, self.v, self.w = self._generate_lv()
+        else:
+            # set latent variables
+            self.u, self.v, self.w = parameters
+            if self.u.shape != (self.N, self.K):
+                raise ValueError('The shape of the parameter u has to be (N, K).')
+            if self.v.shape != (self.N, self.K):
+                raise ValueError('The shape of the parameter v has to be (N, K).')
+            if self.w.shape != (self.L, self.K, self.K):
+                raise ValueError('The shape of the parameter w has to be (L, K, K).')
+
+        """
+        Generate Y
+        """
+        self.M = Exp_ija_matrix(self.u, self.v, self.w)
+        for l in range(self.L):
+            np.fill_diagonal(self.M[l], 0)
+        # sparsity parameter for Y
+        if self.is_sparse:
+            c = self.ExpEdges / self.M.sum()
+            self.M *= c
+            if parameters is None:
+                self.w *= c
+
+        Y = self.prng.poisson(self.M)
+
+        """
+        Create networkx DiGraph objects for each layer for easier manipulation
+        """
+        nodes_to_remove = []
+        self.G = []
+        self.layer_graphs = []
+        for l in range(self.L):
+            self.G.append(nx.from_numpy_matrix(Y[l], create_using=nx.DiGraph()))
+            Gc = max(nx.weakly_connected_components(self.G[l]), key=len)
+            nodes_to_remove.append(set(self.G[l].nodes()).difference(Gc))
+
+        n_to_remove = nodes_to_remove[0].intersection(*nodes_to_remove)
+        for l in range(self.L):
+            self.G[l].remove_nodes_from(list(n_to_remove))
+            self.nodes = list(self.G[l].nodes())
+
+            self.layer_graphs.append(nx.to_scipy_sparse_matrix(self.G[l], nodelist=self.nodes))
+
+        self.u = self.u[self.nodes]
+        self.v = self.v[self.nodes]
+        self.N = len(self.nodes)
+
+    def _apply_overlapping(self, u, v):
+        """
+            Introduce overlapping membership in the NxK membership vectors u and v, by using a Dirichlet distribution.
+
+            INPUT, OUTPUT
+            ----------
+            u : Numpy array
+                Matrix NxK of out-going membership vectors, positive element-wise.
+
+            v : Numpy array
+                Matrix NxK of in-coming membership vectors, positive element-wise.
+        """
+
+        # number of nodes belonging to more communities
+        overlapping = int(self.N * self.perc_overlapping)
+        ind_over = self.prng.randint(len(u), size=overlapping)
+
+        u[ind_over] = self.prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+        v[ind_over] = self.correlation_u_v * u[ind_over] + (1.0 - self.correlation_u_v) * \
+            self.prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+        if self.correlation_u_v == 1.0:
+            assert np.allclose(u, v)
+        if self.correlation_u_v > 0:
+            v = normalize_nonzero_membership(v)
+
+        return u, v
+
+    def _sample_membership_vectors(self):
+        """
+            Compute the NxK membership vectors u and v without overlapping.
+
+            OUTPUT
+            ----------
+            u : Numpy array
+                Matrix NxK of out-going membership vectors, positive element-wise.
+
+            v : Numpy array
+                Matrix NxK of in-coming membership vectors, positive element-wise.
+        """
+
+        # Generate equal-size unmixed group membership
+        size = int(self.N / self.K)
+        u = np.zeros((self.N, self.K))
+        v = np.zeros((self.N, self.K))
+        for i in range(self.N):
+            q = int(math.floor(float(i) / float(size)))
+            if q == self.K:
+                u[i:, self.K - 1] = 1.0
+                v[i:, self.K - 1] = 1.0
+            else:
+                for j in range(q * size, q * size + size):
+                    u[j, q] = 1.0
+                    v[j, q] = 1.0
+
+        return u, v
+
+    def _compute_affinity_matrix(self, structure, a=0.1):
+        """
+            Compute the KxK affinity matrix w with probabilities between and within groups.
+
+            INPUT
+            ----------
+            structure : list
+                        List of structure of network layers.
+            a : float
+                Parameter for secondary probabilities.
+
+            OUTPUT
+            -------
+            p : Numpy array
+                Array with probabilities between and within groups. Element (k,h)
+                gives the density of edges going from the nodes of group k to nodes of group h.
+        """
+
+        p1 = self.avg_degree * self.K / self.N
+
+        if structure == "assortative":
+            p = p1 * a * np.ones((self.K, self.K))  # secondary-probabilities
+            np.fill_diagonal(p, p1 * np.ones(self.K))  # primary-probabilities
+
+        elif structure == "disassortative":
+            p = p1 * np.ones((self.K, self.K))  # primary-probabilities
+            np.fill_diagonal(p, a * p1 * np.ones(self.K))  # secondary-probabilities
+
+        return p
+
+    def _generate_lv(self):
+        """
+            Generate latent variables for a MMSBM, assuming network layers are independent
+            and communities are shared across layers.
+        """
+
+        # Generate u, v
+        u, v = self._sample_membership_vectors()
+        # Introduce the overlapping membership
+        if self.perc_overlapping > 0:
+            u, v = self._apply_overlapping(u, v)
+
+        # Generate w
+        w = np.zeros((self.L, self.K, self.K))
+        for l in range(self.L):
+            w[l, :, :] = self._compute_affinity_matrix(self.structure[l])
+
+        return u, v, w
+
+    def _output_parameters(self):
+        """
+            Output results in a compressed file.
+        """
+
+        if not os.path.exists(self.out_folder):
+            os.makedirs(self.out_folder)
+
+        output_parameters = self.out_folder + 'gt_' + self.label
+        try:
+            np.savez_compressed(
+                output_parameters +
+                '.npz',
+                u=self.u,
+                v=self.v,
+                w=self.w,
+                eta=self.eta,
+                nodes=self.nodes)
+        except BaseException:
+            np.savez_compressed(
+                output_parameters +
+                '.npz',
+                u=self.u,
+                v=self.v,
+                w=self.w,
+                nodes=self.nodes)
+        print(f'Parameters saved in: {output_parameters}.npz')
+        print('To load: theta=np.load(filename), then e.g. theta["u"]')
+
+    def _plot_M(self, cmap='PuBuGn'):
+        """
+            Plot the marginal means produced by the generative algorithm.
+
+            INPUT
+            ----------
+            M : ndarray
+                Mean lambda for all entries.
+        """
+
+        for l in range(self.L):
+            fig, ax = plt.subplots(figsize=(7, 7))
+            ax.matshow(self.M[l], cmap=plt.get_cmap(cmap))
+            ax.set_title(f'Marginal means matrix layer {l}', fontsize=15)
+            for PCM in ax.get_children():
+                if isinstance(PCM, plt.cm.ScalarMappable):
+                    break
+            plt.colorbar(PCM, ax=ax)
+            plt.show()
+
+
+class ReciprocityMMSBM_joints(StandardMMSBM):
+    """
+    Proposed benchmark.
+    Create a synthetic, directed, and binary network (possibly multilayer)
+    by a mixed-membership stochastic block-model with a reciprocity structure
+    - It models pairwise joint distributions with Bivariate Bernoulli distributions
+    """
+
+    def __init__(self, **kwargs):
+
+        if "eta" in kwargs:
+            eta = kwargs["eta"]
+            if eta <= 0:  # pair interaction coefficient
+                raise ValueError('The pair interaction coefficient eta has to greater than 0.!')
+        else:
+            msg = f"eta parameter was not set. Defaulting to eta={DEFAULT_ETA}"
+            warnings.warn(msg)
+            eta = DEFAULT_ETA
+        self.eta = eta
+        if "parameters" in kwargs:
+            parameters = kwargs["parameters"]
+        else:
+            parameters = None
+
+        super().init_mmsbm_params(**kwargs)
+
+        self.build_Y(parameters=parameters)
+
+        if self.output_net:
+            super()._output_parameters()
+            output_adjacency(self.layer_graphs, self.out_folder, self.label)
+
+        if self.show_details:
+            print_details(self.G)
+        if self.show_plots:
+            plot_A(self.layer_graphs)
+            if self.M0 is not None:
+                self._plot_M()
+
+    def build_Y(self, parameters=None):
+        """
+        Generate network layers G using the latent variables,
+        with the generative model (A_ij,A_ji) ~ P(A_ij, A_ji|u,v,w,eta)
+        """
+
+        """
+        Latent variables
+        """
+        if parameters is None:
+            # generate latent variables
+            self.u, self.v, self.w = self._generate_lv()
+        else:
+            # set latent variables
+            self.u, self.v, self.w = parameters
+            if self.u.shape != (self.N, self.K):
+                raise ValueError('The shape of the parameter u has to be (N, K).')
+            if self.v.shape != (self.N, self.K):
+                raise ValueError('The shape of the parameter v has to be (N, K).')
+            if self.w.shape != (self.L, self.K, self.K):
+                raise ValueError('The shape of the parameter w has to be (L, K, K).')
+
+        """
+        Generate Y
+        """
+        self.G = [nx.DiGraph() for _ in range(self.L)]
+        self.layer_graphs = []
+
+        nodes_to_remove = []
+        for l in range(self.L):
+            for i in range(self.N):
+                self.G[l].add_node(i)
+
+        # whose elements are lambda0_{ij}
+        self.M0 = Exp_ija_tensor(self.u, self.v, self.w)
+        for l in range(self.L):
+            np.fill_diagonal(self.M0[l], 0)
+            if self.is_sparse:
+                # constant to enforce sparsity
+                c = brentq(self._eq_c, 0.00001, 100., args=(self.ExpEdges, self.M0[l], self.eta))
+                # print(f'Constant to enforce sparsity: {np.round(c, 3)}')
+                self.M0[l] *= c
+                if parameters is None:
+                    self.w[l] *= c
+        # compute the normalization constant
+        self.Z = self._calculate_Z(self.M0, self.eta)
+
+        for l in range(self.L):
+            for i in range(self.N):
+                for j in range(i + 1, self.N):
+                    # [p00, p01, p10, p11]
+                    probabilities = np.array([1., self.M0[l, j, i], self.M0[l, i, j],
+                                              self.M0[l, i, j] * self.M0[l, j, i] * self.eta]) / self.Z[l, i, j]
+                    cumulative = [1. / self.Z[l, i, j],
+                                  np.sum(probabilities[:2]), np.sum(probabilities[:3]), 1.]
+                    # print(f'({i}, {j}): {probabilities}')
+                    r = self.prng.rand(1)[0]
+                    if r <= probabilities[0]:
+                        A_ij, A_ji = 0, 0
+                    elif (r > probabilities[0]) and (r <= cumulative[1]):
+                        A_ij, A_ji = 0, 1
+                    elif (r > cumulative[1]) and (r <= cumulative[2]):
+                        A_ij, A_ji = 1, 0
+                    elif r > cumulative[2]:
+                        A_ij, A_ji = 1, 1
+                    if A_ij > 0:
+                        self.G[l].add_edge(i, j, weight=1)  # binary
+                    if A_ji > 0:
+                        self.G[l].add_edge(j, i, weight=1)  # binary
+
+            assert len(list(self.G[l].nodes())) == self.N
+
+            # keep largest connected component
+            Gc = max(nx.weakly_connected_components(self.G[l]), key=len)
+            nodes_to_remove.append(set(self.G[l].nodes()).difference(Gc))
+
+        n_to_remove = nodes_to_remove[0].intersection(*nodes_to_remove)
+        for l in range(self.L):
+            self.G[l].remove_nodes_from(list(n_to_remove))
+            self.nodes = list(self.G[l].nodes())
+
+            self.layer_graphs.append(nx.to_scipy_sparse_array(self.G[l], nodelist=self.nodes))
+
+        self.u = self.u[self.nodes]
+        self.v = self.v[self.nodes]
+        self.N = len(self.nodes)
+
+    def _calculate_Z(self, lambda_aij, eta):
+        """
+            Compute the normalization constant of the Bivariate Bernoulli distribution.
+
+            Parameters
+            ----------
+            lambda_aij : ndarray
+                         Tensor with the mean lambda for all entries.
+            eta : float
+                  Reciprocity coefficient.
+
+            Returns
+            -------
+            Z : ndarray
+                Normalization constant Z of the Bivariate Bernoulli distribution.
+        """
+
+        Z = lambda_aij + transpose_tensor(lambda_aij) + eta * \
+            np.einsum('aij,aji->aij', lambda_aij, lambda_aij) + 1
+        check_symmetric(Z)
+
+        return Z
+
+    def _eq_c(self, c, ExpM, M, eta):
+        """
+            Compute the function to set to zero to find the value of the sparsity parameter c.
+
+            INPUT
+            ----------
+            c : float
+                Sparsity parameter.
+            ExpM : int
+                   In-coming membership matrix.
+            M : ndarray
+                Mean lambda for all entries.
+            eta : float
+                  Reciprocity coefficient.
+
+            OUTPUT
+            -------
+            Value of the function to set to zero to find the value of the sparsity parameter c.
+        """
+
+        LeftHandSide = (c * M + c * c * eta * M * M.T) / \
+            (c * M + c * M.T + c * c * eta * M * M.T + 1.)
+
+        return np.sum(LeftHandSide) - ExpM
+
+    def _plot_M(self, cmap='PuBuGn'):  # TODO: add type hint
+        """
+            Plot the marginal means produced by the generative algorithm.
+
+            INPUT
+            ----------
+            cmap : Matplotlib object
+                   Colormap used for the plot.
+        """
+
+        M = (self.M0 + self.eta * self.M0 * transpose_tensor(self.M0)) / self.Z
+        for l in range(self.L):
+            np.fill_diagonal(M[l], 0.)
+            fig, ax = plt.subplots(figsize=(7, 7))
+            ax.matshow(M[l], cmap=plt.get_cmap(cmap))
+            ax.set_title(f'Marginal means matrix layer {l}', fontsize=15)
+            for PCM in ax.get_children():
+                if isinstance(PCM, plt.cm.ScalarMappable):
+                    break
+            plt.colorbar(PCM, ax=ax)
+            plt.show()

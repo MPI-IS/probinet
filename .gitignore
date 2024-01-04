@@ -1,5 +1,5 @@
 # Virtual environment
-venv
+venv*
 
 # Generated files and directories
 *.egg-info
@@ -24,7 +24,7 @@ build
 .coverage
 
 # Output of the algorithm
-outputs/
+./outputs/
 
 # tox test environment
 .tox/
@@ -36,3 +36,7 @@ outputs/
 TEST*.xml
 
 doc/source/generated/
+
+doc/source/tutorials/outputs/
+
+coverage.xml

@@ -1,8 +1,8 @@
 import os
 import unittest
 
-import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
+import nbformat
 
 
 class TestCRepNotebook(unittest.TestCase):

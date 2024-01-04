@@ -2,8 +2,9 @@ import unittest
 
 import numpy as np
 
-from pgm.output.evaluate import calculate_AUC, calculate_conditional_expectation, \
-    calculate_expectation, _lambda0_full, PSloglikelihood, calculate_opt_func
+from pgm.output.evaluate import (
+    _lambda0_full, calculate_AUC, calculate_conditional_expectation, calculate_expectation,
+    calculate_opt_func, PSloglikelihood)
 
 
 class TestEvaluateFunctions(unittest.TestCase):

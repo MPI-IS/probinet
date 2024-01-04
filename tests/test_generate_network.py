@@ -3,8 +3,8 @@ import unittest
 import networkx as nx
 import numpy as np
 
-from pgm.input.generate_network import \
-    GM_reciprocity, affinity_matrix
+from pgm.input.generate_network import affinity_matrix, GM_reciprocity
+
 from .fixtures import rtol
 
 

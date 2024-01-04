@@ -4,46 +4,48 @@ calculates metrics such as the number of nodes, layers, edges, average degree, w
 reciprocity, and more. It aims to provide a comprehensive overview of the structural properties of
 the input graphs, considering both directed and weighted edges.
 """
-from typing import List
+from typing import List, Optional
 
 import networkx as nx
 import numpy as np
 
 
-def print_graph_stat(A: List[nx.MultiDiGraph], rw: List[float]) -> None:
+def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None) -> None:
     """
-    Print the statistics of the graph A.
+        Print the statistics of the graph A.
 
-    Parameters
-    ----------
-    A : list
-        List of MultiDiGraph NetworkX objects.
-    rw : list
-         List whose elements are reciprocity (considering the weights of the edges) values,
-         one per each layer.
+        Parameters
+        ----------
+        G : list
+            List of MultiDiGraph NetworkX objects.
     """
 
-    L = len(A)
-    N = A[0].number_of_nodes()
-    print('Number of nodes =', N)
-    print('Number of layers =', L)
+    L = len(G)
+    N = G[0].number_of_nodes()
 
     print('Number of edges and average degree in each layer:')
     for l in range(L):
-        E = A[l].number_of_edges()
+        E = G[l].number_of_edges()
         k = 2 * float(E) / float(N)
-        M = np.sum([d['weight'] for u, v, d in list(A[l].edges(data=True))])
-        kW = 2 * float(M) / float(N)
-
         print(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
-        print(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
-        print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(A[l]), 3)}')
+
+        weights = [d['weight'] for u, v, d in list(G[l].edges(data=True))]
+        if not np.array_equal(weights, np.ones_like(weights)):
+            M = np.sum([d['weight'] for u, v, d in list(G[l].edges(data=True))])
+            kW = 2 * float(M) / float(N)
+            print(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
+
+        print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
+
+        print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
         print(
-            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered '
-            f'pairs) = {np.round(reciprocal_edges(A[l]), 3)}')
-        print(
-            f'Reciprocity (considering the weights of the edges) = {np.round(rw[l], 3)}'
-        )
+            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
+            f'{np.round(reciprocal_edges(G[l]), 3)}\n')
+
+        if rw is not None:
+            print(
+                f'Reciprocity (considering the weights of the edges) = {np.round(rw[l], 3)}'
+            )
 
 
 def reciprocal_edges(G: nx.MultiDiGraph) -> float:
