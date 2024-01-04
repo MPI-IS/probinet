@@ -2,7 +2,7 @@
 This is the test module for the CRep algorithm.
 """
 
-from importlib.resources import open_binary
+from importlib.resources import files
 import os
 from pathlib import Path
 import unittest
@@ -26,7 +26,7 @@ class BaseTestCase(unittest.TestCase):
 
         # Test case parameters
         self.algorithm = 'CRep'
-        self.in_folder = Path('pgm') / 'data' / 'input'
+        self.in_folder = Path('pgm').resolve() / 'data' / 'input'
         self.adj = 'syn111.dat'
         self.ego = 'source'
         self.alter = 'target'
@@ -47,8 +47,8 @@ class BaseTestCase(unittest.TestCase):
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
-        with open_binary('pgm.data.model', 'setting_' + self.algorithm + '.yaml') as fp:
-            conf = yaml.load(fp, Loader=yaml.Loader)
+        with files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb') as fp:
+            conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
         conf['out_folder'] = Path(__file__).parent / conf['out_folder']

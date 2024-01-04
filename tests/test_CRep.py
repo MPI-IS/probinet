@@ -18,7 +18,7 @@ class TestCRepHelpers(unittest.TestCase):
         self.crep.L = self.L
         self.crep.K = self.K
         self.crep.rng = np.random.RandomState(0)
-        self.crep.files = Path('pgm/data/input/theta_gt111.npz')
+        self.crep.files = Path('pgm').resolve() /'data'/'input'/'theta_gt111.npz'
         self.crep.theta = np.load(self.crep.files,
                                   allow_pickle=True)  # TODO: use package data
         self.crep.eta0 = 0

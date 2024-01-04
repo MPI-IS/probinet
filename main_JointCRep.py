@@ -4,8 +4,7 @@ Implementation of JointCRep algorithm.
 """
 
 from argparse import ArgumentParser
-from importlib.resources import open_binary
-import os
+from importlib.resources import files
 from pathlib import Path
 import time
 
@@ -52,8 +51,8 @@ def main():
     # setting to run the algorithm
 
     config_path = 'setting_' + args.algorithm + '.yaml'
-    with open_binary('pgm.data.model', config_path) as fp:
-        conf = yaml.load(fp, Loader=yaml.Loader)
+    with files('pgm.data.model').joinpath(config_path).open('rb') as fp:
+        conf = yaml.safe_load(fp)
 
     # Change the output folder
     conf['out_folder'] = './' + args.algorithm + \

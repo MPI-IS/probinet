@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 name = "pgm"
 description = "Python package for probabilistic network analysis."
 version = "1.0"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "argparse",
     "jupyter",
@@ -30,17 +30,20 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    'autopep8',
-    'coverage',
-    'isort',
-    'mypy',
-    'myst_nb',
-    'nbconvert',
-    'piccolo_theme',
-    'pylint',
-    'sphinxcontrib.napoleon',
-    'tox',
-    'unittest-xml-reporting',
+    "autopep8",
+    "coverage",
+    "coverage2clover",
+    "isort",
+    "jupyter",
+    "matplotlib",
+    "mypy",
+    "myst_nb",
+    "nbconvert",
+    "piccolo_theme",
+    "pylint",
+    "sphinxcontrib.napoleon",
+    "tox",
+    "unittest-xml-reporting"
 ]
 
 # Setuptools
@@ -93,10 +96,12 @@ ignore_missing_imports = true
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py39,py310
-
+envlist = py310 # sktensor needs numpy 1.22.0 but then python 3.11 gives errors; we can upgrade to 3.11 when sktensor is removed
 [testenv]
-description = run unit tests
-deps = unittest-xml-reporting
-commands = python -m xmlrunner
+description =
+    run unit tests
+extras =
+    dev
+commands =
+    python -m xmlrunner
 """
