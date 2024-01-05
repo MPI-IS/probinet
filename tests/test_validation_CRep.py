@@ -55,6 +55,8 @@ class BaseTestCase(unittest.TestCase):
 
         conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
 
+        conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
+
         self.conf = conf
 
         self.model = CRep()

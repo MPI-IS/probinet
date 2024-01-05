@@ -50,7 +50,6 @@ class BaseTestCase(unittest.TestCase):
         )
         self.nodes = self.A[0].nodes()
 
-
         # Setting to run the algorithm
 
         with files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb') as fp:
@@ -69,7 +68,7 @@ class BaseTestCase(unittest.TestCase):
 
         # Run model
 
-        self.model = JointCRep(N=self.N, L=self.L, K=self.K, undirected=self.undirected, **conf)
+        self.model = JointCRep()
 
     # test case function to check the JointCRep.set_name function
     def test_import_data(self):
@@ -85,8 +84,11 @@ class BaseTestCase(unittest.TestCase):
     def test_running_algorithm(self):
         print("\nStart running algorithm test\n")
 
-        _ = self.model.fit(data=self.B, data_T=self.B_T, data_T_vals=self.data_T_vals,
-                           flag_conv=self.flag_conv, nodes=self.nodes)
+        _ = self.model.fit(data=self.B,
+                           data_T=self.B_T,
+                           data_T_vals=self.data_T_vals,
+                           nodes=self.nodes,
+                           **self.conf)
 
         theta = np.load((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix(
             '.npz'))

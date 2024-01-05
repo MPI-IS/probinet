@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import unittest
 
 from nbconvert.preprocessors import ExecutePreprocessor
@@ -9,15 +10,18 @@ class TestCRepNotebook(unittest.TestCase):
 
     def test_notebook_execution(self):
         # Get the absolute path of the notebook dynamically
-        notebook_path = "doc/source/tutorials/CRep.ipynb"
+        root_path = Path(__file__).parent.parent
+        notebook_path = root_path / "doc" / "source" / "tutorials" / "CRep.ipynb"
+
         # Store the current directory
         original_dir = os.getcwd()
+
         # Change to the directory containing the notebook
         notebook_dir = os.path.dirname(notebook_path)
         os.chdir(notebook_dir)
 
         # Load the notebook
-        with open("CRep.ipynb", "r", encoding="utf-8") as notebook_file:
+        with open(notebook_path.name, "r", encoding="utf-8") as notebook_file:
             notebook_content = nbformat.read(notebook_file, as_version=4)
 
         # Initialize the ExecutePreprocessor

@@ -5,7 +5,6 @@ Implementation of CRep algorithm.
 
 from argparse import ArgumentParser
 from importlib.resources import files
-import os
 from pathlib import Path
 import time
 
@@ -14,6 +13,8 @@ import yaml
 
 from pgm.input.loader import import_data
 from pgm.model.crep import CRep
+
+# pylint: disable=too-many-locals
 
 
 def main():
@@ -46,6 +47,7 @@ def main():
                    type=str,
                    choices=['log', 'deltas'],
                    default='log')  # flag for convergence
+
     args = p.parse_args()
 
     # setting to run the algorithm
@@ -55,28 +57,30 @@ def main():
         conf = yaml.safe_load(fp)
 
     # Change the output folder
-    conf['out_folder'] = './' + args.algorithm + '_output/' if args.out_folder == '' else args.out_folder
+    conf['out_folder'] = args.algorithm + '_output/' if args.out_folder == '' else args.out_folder
 
     # Change K if given
     if args.K is not None:
         conf['K'] = args.K
+
     # Ensure the output folder exists
-    if not os.path.exists(conf['out_folder']):
-        os.makedirs(conf['out_folder'])
+    out_folder_path = Path(conf['out_folder'])
+    out_folder_path.mkdir(parents=True, exist_ok=True)
 
     # Print the configuration file
     print(yaml.dump(conf))
 
     # Save the configuration file
     output_config_path = conf['out_folder'] + '/setting_' + args.algorithm + '.yaml'
-    with open(output_config_path, 'w') as f:
+    with open(output_config_path, 'w', encoding='utf8') as f:
         yaml.dump(conf, f)
 
     # Import data
     ego = args.ego
     alter = args.alter
     force_dense = args.force_dense  # Sparse matrices
-    in_folder = Path.cwd().resolve() / 'pgm/data/input/' if args.in_folder == '' else Path(args.in_folder)
+    in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
+        'input' if args.in_folder == '' else Path(args.in_folder)
     adj = Path(args.adj)
     network = in_folder / adj  # network complete path
 

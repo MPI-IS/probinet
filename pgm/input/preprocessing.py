@@ -6,12 +6,12 @@ weights, and ensures proper formatting of input data tensors.
 from typing import Any, List, Optional, Tuple
 
 import networkx as nx
-from numpy import ndarray
 import numpy as np
-from sktensor import sptensor
 import sktensor as skt
+from numpy import ndarray
+from sktensor import sptensor
 
-from . import tools  # type: ignore
+from . import tools
 
 
 def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tuple[
@@ -57,20 +57,20 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tu
 
     # Loop over each layer in A using enumeration to get both the layer index (l) and the graph
     # (A[l])
-    for l, _ in enumerate(A):
+    for l, A_layer in enumerate(A):
         # Check if the current graph has the same set of nodes as the first graph
-        assert set(A[l].nodes()) == set(
+        assert set(A_layer.nodes()) == set(
             nodes), "All graphs in A must have the same set of vertices."
 
         # Check if all weights in B[l] are integers
         assert all(isinstance(a[2], int) for a in
-                   A[l].edges(data='weight')), "All weights in A must be integers."
+                   A_layer.edges(data='weight')), "All weights in A must be integers."
 
         # Convert the graph A[l] to a numpy array with specified options
         # - weight='weight': consider edge weights
         # - dtype=int: ensure the resulting array has integer data type
         # - nodelist=nodes: use the specified nodes
-        B[l, :, :] = nx.to_numpy_array(A[l],
+        B[l, :, :] = nx.to_numpy_array(A_layer,
                                        weight='weight',
                                        dtype=int,
                                        nodelist=nodes)

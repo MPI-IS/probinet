@@ -81,7 +81,7 @@ def shuffle_indices_all_matrix(N: int, L: int, rseed: int = 10) -> List[np.ndarr
     indices = [np.arange(n_samples) for _ in range(L)]
 
     # Create a random number generator with the specified random seed
-    rng = np.random.RandomState(rseed)
+    rng = np.random.default_rng(rseed)
 
     # Loop over each layer and shuffle the corresponding indices
     for l in range(L):

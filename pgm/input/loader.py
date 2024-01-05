@@ -1,7 +1,8 @@
 """
 Functions for handling the data.
 """
-from typing import Any, Iterable, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
 from numpy import ndarray
@@ -11,8 +12,7 @@ from . import preprocessing as prep
 from .statistics import print_graph_stat
 
 
-# TODO: Correct the docstring, the type hints and the return type.
-def import_data(dataset: str,
+def import_data(dataset: Path,
                 ego: str = 'source',
                 alter: str = 'target',
                 force_dense: bool = True,
@@ -21,7 +21,7 @@ def import_data(dataset: str,
                 verbose=True,
                 binary=True,
                 header: Optional[int] = None) -> Tuple[
-        Iterable, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
+        List, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
     """
     Import data, i.e. the adjacency matrix, from a given folder.
 
@@ -81,13 +81,13 @@ def import_data(dataset: str,
 
 
 def read_graph(
-        df_adj,
-        ego='source',
-        alter='target',
-        undirected=False,
-        noselfloop=True,
-        verbose=True,
-        binary=True):
+        df_adj: pd.DataFrame,
+        ego: str = 'source',
+        alter: str = 'target',
+        undirected: bool = False,
+        noselfloop: bool = True,
+        verbose: bool = True,
+        binary: bool = True) -> List:
     """
         Create the graph by adding edges and nodes.
 
@@ -136,7 +136,7 @@ def read_graph(
     for l in range(L):
         A[l].add_nodes_from(nodes)
 
-    for index, row in df_adj.iterrows():
+    for _, row in df_adj.iterrows():
         v1 = row[ego]
         v2 = row[alter]
         for l in range(L):

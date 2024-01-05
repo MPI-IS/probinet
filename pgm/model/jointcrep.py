@@ -6,92 +6,133 @@
 from __future__ import print_function
 
 import os
-from pathlib import Path
 import time
+from pathlib import Path
+from typing import Any, List, Union
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 import numpy as np
 import sktensor as skt
 from termcolor import colored
 
+from .crep import sp_uttkrp, sp_uttkrp_assortative
+from ..input.preprocessing import preprocess
+from ..input.tools import check_symmetric, get_item_array_from_subs, transpose_tensor
+from ..output.plot import plot_L
+
+
+# TODO: remove repeated parts once mixin is implemented
+
 
 class JointCRep:
-    def __init__(
-            self,
-            N=100,
-            L=1,
-            K=2,
-            undirected=False,
-            assortative=False,
-            rseed=0,
-            inf=1e10,
-            err_max=1e-8,
-            err=0.01,
-            N_real=1,
-            tolerance=0.0001,
-            decision=10,
-            max_iter=500,
-            initialization=0,
-            fix_eta=False,
-            fix_communities=False,
-            fix_w=False,
-            use_approximation=False,
-            eta0=None,
-            files='../data/input/synthetic/theta.npz',
-            verbose=False,
-            out_inference=False,
-            out_folder='../data/output/',
-            end_file='.dat',
-            plot_loglik=False):
-        self.N = N  # number of nodes
-        self.L = L  # number of layers
-        self.K = K  # number of communities
-        self.undirected = undirected  # flag to call the undirected network
-        self.assortative = assortative  # if True, the network is assortative
-        self.rseed = rseed  # random rseed for the initialization
-        self.inf = inf  # initial value of the log-likelihood
-        self.err_max = err_max  # minimum value for the parameters
-        self.err = err  # noise for the initialization
-        self.N_real = N_real  # number of iterations with different random initialization
-        self.tolerance = tolerance  # tolerance parameter for convergence
-        self.decision = decision  # convergence parameter
-        self.max_iter = max_iter  # maximum number of EM steps before aborting
-        self.fix_eta = fix_eta  # if True, keep the eta parameter fixed
-        self.fix_communities = fix_communities  # if True, keep the communities u and v fixed
-        self.fix_w = fix_w  # if True, keep the affinity tensor fixed
-        self.use_approximation = use_approximation  # if True, use the approximated version of the updates
-        self.files = files  # path of the input files for u, v, w (when initialization>0)
-        self.verbose = verbose  # flag to print details
-        self.out_inference = out_inference  # flag for storing the inferred parameters
-        self.out_folder = out_folder  # path for storing the output
-        self.end_file = end_file  # output file suffix
-        self.plot_loglik = plot_loglik  # flag to plot the log-likelihood
+    """
+    Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
+    """
+
+    def __init__(self,
+                 inf: float = 1e10,  # initial value of the log-likelihood
+                 err_max: float = 1e-12,  # minimum value for the parameters
+                 err: float = 0.1,  # noise for the initialization
+                 num_realizations: int = 3,
+                 # number of iterations with different random initialization
+                 convergence_tol: float = 0.0001,  # convergence_tol parameter for convergence
+                 decision: int = 10,  # convergence parameter
+                 max_iter: int = 500,  # maximum number of EM steps before aborting
+                 verbose: bool = True,  # flag to print details
+                 plot_loglik: bool = False,  # flag to plot the log-likelihood
+                 flag_conv: str = 'log'  # flag to choose the convergence criterion
+                 ) -> None:
+        self.inf = inf
+        self.err_max = err_max
+        self.err = err
+        self.num_realizations = num_realizations
+        self.convergence_tol = convergence_tol
+        self.decision = decision
+        self.max_iter = max_iter
+        self.verbose = verbose
+        self.plot_loglik = plot_loglik
+        self.flag_conv = flag_conv
+
+    def __check_fit_params(self,
+                           initialization: int,
+                           eta0: Union[float, None],
+                           undirected: bool,
+                           assortative: bool,
+                           use_approximation: bool,
+                           data: Union[skt.dtensor, skt.sptensor],
+                           K: int,
+                           **extra_params
+                           ) -> None:
+
         if initialization not in {
                 0, 1, 2, 3}:  # indicator for choosing how to initialize u, v and w
             raise ValueError(
-                'The initialization parameter can be either 0, 1, 2 or 3. It is used as an indicator to '
-                'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
-                'will be generated randomly; 1 means only the affinity matrix w will be uploaded from '
-                'file; 2 implies the membership matrices u and v will be uploaded from file and 3 all u, '
+                'The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
+                'indicator to initialize the membership matrices u and v and the affinity '
+                'matrix w. If it is 0, they will be generated randomly; 1 means only '
+                'the affinity matrix w will be uploaded from file; 2 implies the '
+                'membership matrices u and v will be uploaded from file and 3 all u, '
                 'v and w will be initialized through an input file.')
         self.initialization = initialization
-        if (eta0 is not None) and (eta0 <= 0.):  # initial value for the pair interaction coefficient
+        if (eta0 is not None) and (
+                eta0 <= 0.):  # initial value for the pair interaction coefficient
             raise ValueError('If not None, the eta0 parameter has to be greater than 0.!')
-        self.eta0 = eta0
-        if self.fix_eta:
-            if self.eta0 is None:
-                raise ValueError('If fix_eta=True, provide a value for eta0.')
-        if self.fix_w:
-            if self.initialization not in {1, 3}:
-                raise ValueError('If fix_w=True, the initialization has to be either 1 or 3.')
-        if self.fix_communities:
-            if self.initialization not in {2, 3}:
-                raise ValueError(
-                    'If fix_communities=True, the initialization has to be either 2 or 3.')
+
+        self.eta0 = eta0  # initial value for the reciprocity coefficient
+        self.undirected = undirected  # flag to call the undirected network
+        self.assortative = assortative  # flag to call the assortative network
+        self.use_approximation = use_approximation  # flag to use the approximation in the updates
+
+        self.N = data.shape[1]
+        self.L = data.shape[0]
+        self.K = K
+
+        available_extra_params = [
+            'fix_eta',
+            'fix_w',
+            'fix_communities',
+            'files',
+            'out_inference',
+            'out_folder',
+            'end_file',
+            'use_approximation'
+        ]
+
+        for extra_param in extra_params:
+            if extra_param not in available_extra_params:
+                msg = f'Ignoring extra parameter {extra_param}.'
+                print(msg)  # Add the warning
+
+        if "fix_eta" in extra_params:
+            self.fix_eta = extra_params["fix_eta"]
+
+            if self.fix_eta:
+                if self.eta0 is None:
+                    raise ValueError('If fix_eta=True, provide a value for eta0.')
+        else:
+            self.fix_eta = False
+
+        if "fix_w" in extra_params:
+            self.fix_w = extra_params["fix_w"]
+            if self.fix_w:
+                if self.initialization not in {1, 3}:
+                    raise ValueError('If fix_w=True, the initialization has to be either 1 or 3.')
+        else:
+            self.fix_w = False
+
+        if "fix_communities" in extra_params:
+            self.fix_communities = extra_params["fix_communities"]
+            if self.fix_communities:
+                if self.initialization not in {2, 3}:
+                    raise ValueError(
+                        'If fix_communities=True, the initialization has to be either 2 or 3.')
+        else:
+            self.fix_communities = False
+
+        if "files" in extra_params:
+            self.files = extra_params["files"]
 
         if self.initialization > 0:
-            self.theta = np.load(self.files, allow_pickle=True)
+            self.theta = np.load(self.files.resolve(), allow_pickle=True)
             if self.initialization == 1:
                 dfW = self.theta['w']
                 self.L = dfW.shape[0]
@@ -107,10 +148,29 @@ class JointCRep:
                 self.N = dfU.shape[0]
                 assert self.K == dfU.shape[1]
 
+        if "out_inference" in extra_params:
+            # TODO: what happens if this is not given?
+            self.out_inference = extra_params["out_inference"]
+        else:
+            self.out_inference = True
+        if "out_folder" in extra_params:
+            self.out_folder = extra_params["out_folder"]
+        else:
+            self.out_folder = Path('outputs')
+
+        if "end_file" in extra_params:
+            self.end_file = extra_params["end_file"]
+        else:
+            self.end_file = ''
+
+        if "use_approximation" in extra_params:
+            self.use_approximation = extra_params["use_approximation"]
+
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 1):
                 raise ValueError(
-                    'If undirected=True, the parameter eta has to be fixed equal to 1 (s.t. log(eta)=0).')
+                    'If undirected=True, the parameter eta has to be fixed equal to 1'
+                    ' (s.t. log(eta)=0).')
 
         # values of the parameters used during the update
         self.u = np.zeros((self.N, self.K), dtype=float)  # out-going membership
@@ -140,40 +200,81 @@ class JointCRep:
         if self.fix_eta:
             self.eta = self.eta_old = self.eta_f = self.eta0
 
-    def fit(self, data, data_T, data_T_vals, nodes, flag_conv):
+    def fit(self,
+            data: Union[skt.dtensor, skt.sptensor],
+            data_T: skt.sptensor,
+            data_T_vals: np.ndarray,
+            nodes: List[Any],
+            rseed: int = 0,
+            K: int = 3,
+            initialization: int = 0,
+            eta0: Union[float, None] = None,
+            undirected: bool = False,
+            assortative: bool = True,
+            use_approximation: bool = False,
+            **extra_params
+            ):
         """
-            Model directed networks by using a probabilistic generative model based on a Bivariate Bernoulli
-            distribution that assumes community parameters and a pair interaction coefficient as latent variables.
-            The inference is performed via EM algorithm.
+        Model directed networks by using a probabilistic generative model based on a Bivariate
+        Bernoulli distribution that assumes community parameters and a pair interaction
+        coefficient as latent variables. The inference is performed via EM algorithm.
 
-            Parameters
-            ----------
-            data : ndarray/sptensor
-                   Graph adjacency tensor.
-            data_T: None/sptensor
-                    Graph adjacency tensor (transpose) - if sptensor.
-            data_T_vals : None/ndarray
-                          Array with values of entries A[j, i] given non-zero entry (i, j) - if ndarray.
-            nodes : list
-                    List of nodes IDs.
-            flag_conv : str
-                        If 'log' the convergence is based on the log-likelihood values; if 'deltas' the convergence is
-                        based on the differences in the parameters values. The latter is suggested when the dataset
-                        is big (N > 1000 ca.).
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T : sptensor
+                 Graph adjacency tensor (transpose).
+        data_T_vals : ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        nodes : list
+                List of nodes IDs.
+        rseed : int
+                Random seed.
+        K : int
+            Number of communities.
+        initialization : int
+                         Indicator for choosing how to initialize u, v and w.
+                         If 0, they will be generated randomly; 1 means only the affinity matrix
+                         w will be uploaded from file; 2 implies the membership matrices u and
+                         v will be uploaded from file and 3 all u, v and w will be initialized
+                         through an input file.
+        eta0 : float
+             Initial value for the reciprocity coefficient.
+        undirected : bool
+                     Flag to call the undirected network.
+        assortative : bool
+                      Flag to call the assortative network.
+        use_approximation : bool
+                            Flag to use the approximation in the updates.
+        extra_params : dict
+                        Dictionary of extra parameters.
 
-            Returns
-            -------
-            u_f : ndarray
-                  Out-going membership matrix.
-            v_f : ndarray
-                  In-coming membership matrix.
-            w_f : ndarray
-                  Affinity tensor.
-            eta_f : float
-                    Pair interaction coefficient.
-            maxL : float
-                   Maximum log-likelihood.
+        Returns
+        -------
+        u_f : ndarray
+              Out-going membership matrix.
+        v_f : ndarray
+              In-coming membership matrix.
+        w_f : ndarray
+              Affinity tensor.
+        eta_f : float
+                Pair interaction coefficient.
+        maxL : float
+               Maximum log-likelihood.
         """
+        self.__check_fit_params(data=data,
+                                K=K,
+                                initialization=initialization,
+                                eta0=eta0,
+                                undirected=undirected,
+                                assortative=assortative,
+                                use_approximation=use_approximation,
+                                **extra_params)
+
+        self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
+        self.initialization = initialization
+        maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
 
         if data_T is None:
             data_T = np.einsum('aij->aji', data)
@@ -189,13 +290,9 @@ class JointCRep:
 
         self.AAtSum = (data.vals * data_T_vals).sum()
 
-        rng = np.random.RandomState(self.rseed)
+        for r in range(self.num_realizations):
 
-        maxL = -self.inf  # initialization of the maximum log-likelihood
-
-        for r in range(self.N_real):
-
-            self._initialize(rng=rng, nodes=nodes)
+            self._initialize(nodes=nodes)
 
             self._update_old_variables()
             self._update_cache(data, subs_nz)
@@ -212,7 +309,7 @@ class JointCRep:
             while np.logical_and(not convergence, it < self.max_iter):
                 # main EM update: updates memberships and calculates max difference new vs old
                 delta_u, delta_v, delta_w, delta_eta = self._update_em(data, subs_nz)
-                if flag_conv == 'log':
+                if self.flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data, it, loglik, coincide, convergence)
                     loglik_values.append(loglik)
@@ -220,7 +317,7 @@ class JointCRep:
                         if not it % 100:
                             print(f'Nreal = {r} - Log-likelihood = {loglik} - iterations = {it} - '
                                   f'time = {np.round(time.time() - time_start, 2)} seconds')
-                elif flag_conv == 'deltas':
+                elif self.flag_conv == 'deltas':
                     it, coincide, convergence = self._check_for_convergence_delta(
                         it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)
                     if self.verbose:
@@ -230,7 +327,7 @@ class JointCRep:
                 else:
                     raise ValueError('flag_conv can be either log or deltas!')
 
-            if flag_conv == 'log':
+            if self.flag_conv == 'log':
                 if maxL < loglik:
                     self._update_optimal_parameters()
                     best_loglik = list(loglik_values)
@@ -238,7 +335,7 @@ class JointCRep:
                     final_it = it
                     conv = convergence
                     best_r = r
-            elif flag_conv == 'deltas':
+            elif self.flag_conv == 'deltas':
                 loglik = self._Likelihood(data)
                 if maxL < loglik:
                     self._update_optimal_parameters()
@@ -260,13 +357,12 @@ class JointCRep:
             try:
                 print(
                     colored(
-                        'Solution failed to converge in {0} EM steps!'.format(
-                            self.max_iter),
+                        f'Solution failed to converge in {self.max_iter} EM steps!',
                         'blue'))
-            except BaseException:
-                print('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
+            except IOError:
+                print(f'Solution failed to converge in {self.max_iter} EM steps!')
 
-        if np.logical_and(self.plot_loglik, flag_conv == 'log'):
+        if np.logical_and(self.plot_loglik, self.flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
 
         if self.out_inference:
@@ -274,16 +370,14 @@ class JointCRep:
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
-    def _initialize(self, rng, nodes):
+    def _initialize(self, nodes: List[Any]) -> None:
         """
-            Random initialization of the parameters u, v, w, eta.
+        Random initialization of the parameters u, v, w, eta.
 
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-            nodes : list
-                    List of nodes IDs.
+        Parameters
+        ----------
+        nodes : list
+                List of nodes IDs.
         """
 
         if self.eta0 is not None:
@@ -291,20 +385,20 @@ class JointCRep:
         else:
             if self.verbose:
                 print('eta is initialized randomly.')
-            self._randomize_eta(rng=rng)
+            self._randomize_eta()
 
         if self.initialization == 0:
             if self.verbose:
                 print('u, v and w are initialized randomly.')
-            self._randomize_w(rng=rng)
-            self._randomize_u_v(rng=rng)
+            self._randomize_w()
+            self._randomize_u_v()
 
         elif self.initialization == 1:
             if self.verbose:
                 print(f'w is initialized using the input file: {self.files}.')
                 print('u and v are initialized randomly.')
             self._initialize_w()
-            self._randomize_u_v(rng=rng)
+            self._randomize_u_v()
 
         elif self.initialization == 2:
             if self.verbose:
@@ -312,7 +406,7 @@ class JointCRep:
                 print('w is initialized randomly.')
             self._initialize_u(nodes)
             self._initialize_v(nodes)
-            self._randomize_w(rng=rng)
+            self._randomize_w()
 
         elif self.initialization == 3:
             if self.verbose:
@@ -321,84 +415,74 @@ class JointCRep:
             self._initialize_v(nodes)
             self._initialize_w()
 
-    def _randomize_eta(self, rng):
+    def _randomize_eta(self) -> None:
         """
-            Generate a random number in (1., 50.).
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
+        Generate a random number in (1., 50.).
         """
 
-        self.eta = rng.uniform(1.01, 49.99)
+        self.eta = self.rng.uniform(1.01, 49.99)
 
-    def _randomize_w(self, rng):
+    def _randomize_w(self) -> None:
         """
-            Assign a random number in (0, 1.) to each entry of the affinity tensor w.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
+        Assign a random number in (0, 1.) to each entry of the affinity tensor w.
         """
 
         for i in range(self.L):
             for k in range(self.K):
                 if self.assortative:
-                    self.w[i, k] = rng.random_sample(1)
+                    self.w[i, k] = self.rng.random_sample(1)
                 else:
                     for q in range(k, self.K):
                         if q == k:
-                            self.w[i, k, q] = rng.random_sample(1)
+                            self.w[i, k, q] = self.rng.random_sample(1)
                         else:
-                            self.w[i, k, q] = self.w[i, q, k] = self.err * rng.random_sample(1)
+                            self.w[i, k, q] = self.w[i, q, k] = self.err * self.rng.random_sample(1)
+        # if self.assortative:
+        #     self.w = self.rng.random_sample((self.L, self.K)) # TODO: check with martina
+        # else:
+        #     self.w = np.zeros((self.L, self.K, self.K))
 
-    def _randomize_u_v(self, rng):
+    def _randomize_u_v(self) -> None:
         """
-            Assign a random number in (0, 1.) to each entry of the membership matrices u and v, and normalize each row.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
+        Assign a random number in (0, 1.) to each entry of the membership matrices u and v,
+        and normalize each row.
         """
 
-        self.u = rng.random_sample(self.u.shape)
+        self.u = self.rng.random_sample(self.u.shape)  # TODO: check with martina
         # row_sums = self.u.sum(axis=1)
         # self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
         if not self.undirected:
-            self.v = rng.random_sample(self.v.shape)
+            self.v = self.rng.random_sample(self.v.shape)
             # row_sums = self.v.sum(axis=1)
             # self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
         else:
             self.v = self.u
 
-    def _initialize_u(self, nodes):
+    def _initialize_u(self, nodes: List[Any]) -> None:
         """
-            Initialize out-going membership matrix u from file.
+        Initialize out-going membership matrix u from file.
 
-            Parameters
-            ----------
-            nodes : list
-                    List of nodes IDs.
+        Parameters
+        ----------
+        nodes : list
+                List of nodes IDs.
         """
 
         self.u = self.theta['u']
         assert np.array_equal(nodes, self.theta['nodes'])
 
         max_entry = np.max(self.u)
-        self.u += max_entry * self.err * np.random.random_sample(self.u.shape)
+        self.u += max_entry * self.err * self.rng.random_sample(self.u.shape)
 
-    def _initialize_v(self, nodes):
+    def _initialize_v(self, nodes: List[Any]) -> None:
         """
-            Initialize in-coming membership matrix v from file.
+        Initialize in-coming membership matrix v from file.
 
-            Parameters
-            ----------
-            nodes : list
-                    List of nodes IDs.
+        Parameters
+        ----------
+        nodes : list
+                List of nodes IDs.
         """
 
         if self.undirected:
@@ -408,11 +492,11 @@ class JointCRep:
             assert np.array_equal(nodes, self.theta['nodes'])
 
             max_entry = np.max(self.v)
-            self.v += max_entry * self.err * np.random.random_sample(self.v.shape)
+            self.v += max_entry * self.err * self.rng.random_sample(self.v.shape)
 
-    def _initialize_w(self):
+    def _initialize_w(self) -> None:
         """
-            Initialize affinity tensor w from file.
+        Initialize affinity tensor w from file.
         """
 
         if self.assortative:
@@ -422,28 +506,28 @@ class JointCRep:
             self.w = self.theta['w']
 
         max_entry = np.max(self.w)
-        self.w += max_entry * self.err * np.random.random_sample(self.w.shape)
+        self.w += max_entry * self.err * self.rng.random_sample(self.w.shape)
 
-    def _update_old_variables(self):
+    def _update_old_variables(self) -> None:
         """
-            Update values of the parameters in the previous iteration.
+        Update values of the parameters in the previous iteration.
         """
 
-        self.u_old[self.u > 0] = np.copy(self.u[self.u > 0])
-        self.v_old[self.v > 0] = np.copy(self.v[self.v > 0])
-        self.w_old[self.w > 0] = np.copy(self.w[self.w > 0])
+        self.u_old = np.copy(self.u)
+        self.v_old = np.copy(self.v)
+        self.w_old = np.copy(self.w)
         self.eta_old = np.copy(self.eta)
 
-    def _update_cache(self, data, subs_nz):
+    def _update_cache(self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple) -> None:
         """
-            Update the cache used in the em_update.
+        Update the cache used in the em_update.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
         """
 
         self.lambda_aij = self._lambda_full()  # full matrix lambda
@@ -455,7 +539,7 @@ class JointCRep:
             self.data_M_nz = data[subs_nz] / self.lambda_nz
         elif isinstance(data, skt.sptensor):
             self.data_M_nz = data.vals / self.lambda_nz
-        self.data_M_nz[lambda_zeros] = 0  # to use in the udpates
+        self.data_M_nz[lambda_zeros] = 0  # to use in the updates
 
         self.den_updates = 1 + self.eta * self.lambda_aij  # to use in the updates
         if not self.use_approximation:
@@ -467,12 +551,12 @@ class JointCRep:
 
     def _lambda_full(self):
         """
-            Compute the mean lambda for all entries.
+        Compute the mean lambda for all entries.
 
-            Returns
-            -------
-            M : ndarray
-                Mean lambda for all entries.
+        Returns
+        -------
+        M : ndarray
+            Mean lambda for all entries.
         """
 
         if self.w.ndim == 2:
@@ -484,19 +568,19 @@ class JointCRep:
 
         return M
 
-    def _lambda_nz(self, subs_nz):
+    def _lambda_nz(self, subs_nz: tuple) -> np.ndarray:
         """
-            Compute the mean lambda_ij for only non-zero entries.
+        Compute the mean lambda_ij for only non-zero entries.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            nz_recon_I : ndarray
-                         Mean lambda_ij for only non-zero entries.
+        Returns
+        -------
+        nz_recon_I : ndarray
+                     Mean lambda_ij for only non-zero entries.
         """
 
         if not self.assortative:
@@ -507,43 +591,43 @@ class JointCRep:
 
         return nz_recon_I
 
-    def _calculate_Z(self):
+    def _calculate_Z(self) -> np.ndarray:
         """
-            Compute the normalization constant of the Bivariate Bernoulli distribution.
+        Compute the normalization constant of the Bivariate Bernoulli distribution.
 
-            Returns
-            -------
-            Z : ndarray
-                Normalization constant Z of the Bivariate Bernoulli distribution.
+        Returns
+        -------
+        Z : ndarray
+            Normalization constant Z of the Bivariate Bernoulli distribution.
         """
 
         Z = self.lambda_aij + transpose_tensor(self.lambda_aij) + self.eta * self.lambdalambdaT + 1
-        for l in range(len(Z)):
-            assert check_symmetric(Z[l])
+        for _, z in enumerate(Z):
+            assert check_symmetric(z)
 
         return Z
 
-    def _update_em(self, data, subs_nz):
+    def _update_em(self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple) -> tuple:
         """
-            Update parameters via EM procedure.
+        Update parameters via EM procedure.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            d_u : float
-                  Maximum distance between the old and the new membership matrix u.
-            d_v : float
-                  Maximum distance between the old and the new membership matrix v.
-            d_w : float
-                  Maximum distance between the old and the new affinity tensor w.
-            d_eta : float
-                    Maximum distance between the old and the new pair interaction coefficient eta.
+        Returns
+        -------
+        d_u : float
+              Maximum distance between the old and the new membership matrix u.
+        d_v : float
+              Maximum distance between the old and the new membership matrix v.
+        d_w : float
+              Maximum distance between the old and the new affinity tensor w.
+        d_eta : float
+                Maximum distance between the old and the new pair interaction coefficient eta.
         """
 
         if not self.fix_communities:
@@ -600,19 +684,19 @@ class JointCRep:
 
         return d_u, d_v, d_w, d_eta
 
-    def _update_U_approx(self, subs_nz):
+    def _update_U_approx(self, subs_nz: tuple) -> float:
         """
-            Update out-going membership matrix.
+        Update out-going membership matrix.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_u : float
-                     Maximum distance between the old and the new membership matrix u.
+        Returns
+        -------
+        dist_u : float
+                 Maximum distance between the old and the new membership matrix u.
         """
 
         self.u *= self._update_membership(subs_nz, 1)
@@ -635,19 +719,19 @@ class JointCRep:
 
         return dist_u
 
-    def _update_U(self, subs_nz):
+    def _update_U(self, subs_nz: tuple) -> float:
         """
-            Update out-going membership matrix.
+        Update out-going membership matrix.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_u : float
-                     Maximum distance between the old and the new membership matrix u.
+        Returns
+        -------
+        dist_u : float
+                 Maximum distance between the old and the new membership matrix u.
         """
 
         self.u *= self._update_membership(subs_nz, 1)
@@ -671,23 +755,23 @@ class JointCRep:
 
         return dist_u
 
-    def _update_V_approx(self, subs_nz):
+    def _update_V_approx(self, subs_nz: tuple) -> float:
         """
-            Update in-coming membership matrix.
-            Same as _update_U but with:
-            data <-> data_T
-            w <-> w_T
-            u <-> v
+        Update in-coming membership matrix.
+        Same as _update_U but with:
+        data <-> data_T
+        w <-> w_T
+        u <-> v
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_v : float
-                     Maximum distance between the old and the new membership matrix v.
+        Returns
+        -------
+        dist_v : float
+                 Maximum distance between the old and the new membership matrix v.
         """
 
         self.v *= self._update_membership(subs_nz, 2)
@@ -710,23 +794,23 @@ class JointCRep:
 
         return dist_v
 
-    def _update_V(self, subs_nz):
+    def _update_V(self, subs_nz: tuple) -> float:
         """
-            Update in-coming membership matrix.
-            Same as _update_U but with:
-            data <-> data_T
-            w <-> w_T
-            u <-> v
+        Update in-coming membership matrix.
+        Same as _update_U but with:
+        data <-> data_T
+        w <-> w_T
+        u <-> v
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_v : float
-                     Maximum distance between the old and the new membership matrix v.
+        Returns
+        -------
+        dist_v : float
+                 Maximum distance between the old and the new membership matrix v.
         """
 
         self.v *= self._update_membership(subs_nz, 2)
@@ -750,19 +834,19 @@ class JointCRep:
 
         return dist_v
 
-    def _update_W_approx(self, subs_nz):
+    def _update_W_approx(self, subs_nz: tuple) -> float:
         """
-            Update affinity tensor.
+        Update affinity tensor.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_w : float
-                     Maximum distance between the old and the new affinity tensor w.
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor w.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -791,19 +875,19 @@ class JointCRep:
 
         return dist_w
 
-    def _update_W_assortative_approx(self, subs_nz):
+    def _update_W_assortative_approx(self, subs_nz: tuple) -> float:
         """
-            Update affinity tensor (assuming assortativity).
+        Update affinity tensor (assuming assortativity).
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_w : float
-                     Maximum distance between the old and the new affinity tensor w.
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor w.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -830,19 +914,19 @@ class JointCRep:
 
         return dist_w
 
-    def _update_W(self, subs_nz):
+    def _update_W(self, subs_nz: tuple) -> float:
         """
-            Update affinity tensor.
+        Update affinity tensor.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_w : float
-                     Maximum distance between the old and the new affinity tensor w.
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor w.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -872,19 +956,19 @@ class JointCRep:
 
         return dist_w
 
-    def _update_W_assortative(self, subs_nz):
+    def _update_W_assortative(self, subs_nz: tuple) -> float:
         """
-            Update affinity tensor (assuming assortativity).
+        Update affinity tensor (assuming assortativity).
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_w : float
-                     Maximum distance between the old and the new affinity tensor w.
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor w.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -912,21 +996,21 @@ class JointCRep:
 
         return dist_w
 
-    def _update_eta_approx(self):
+    def _update_eta_approx(self) -> float:
         """
-            Update pair interaction coefficient eta.
+        Update pair interaction coefficient eta.
 
-            Returns
-            -------
-            dist_eta : float
-                       Maximum distance between the old and the new pair interaction coefficient eta.
+        Returns
+        -------
+        dist_eta : float
+                   Maximum distance between the old and the new pair interaction coefficient eta.
         """
 
         den = self.lambdalambdaT.sum()
         if not den > 0.:
             raise ValueError('eta update_approx has zero denominator!')
-        else:
-            self.eta = self.AAtSum / den
+
+        self.eta = self.AAtSum / den
 
         if self.eta < self.err_max:  # value is too low
             self.eta = 0.  # and set to 0.
@@ -936,22 +1020,29 @@ class JointCRep:
 
         return dist_eta
 
-    def eta_fix_point(self):
+    def eta_fix_point(self) -> float:
+        """
+        Compute the fix point of the pair interaction coefficient eta.
+        Returns
+        -------
+        eta : float
+              Fix point of the pair interaction coefficient eta.
+        """
         st = (self.lambdalambdaT / self.Z).sum()
         if st > 0:
             return self.AAtSum / st
-        else:
-            print(self.lambdalambdaT, self.Z)
-            raise ValueError('eta fix point has zero denominator!')
 
-    def _update_eta(self):
+        print(self.lambdalambdaT, self.Z)
+        raise ValueError('eta fix point has zero denominator!')
+
+    def _update_eta(self) -> float:
         """
-            Update pair interaction coefficient eta.
+        Update pair interaction coefficient eta.
 
-            Returns
-            -------
-            dist_eta : float
-                       Maximum distance between the old and the new pair interaction coefficient eta.
+        Returns
+        -------
+        dist_eta : float
+                   Maximum distance between the old and the new pair interaction coefficient eta.
         """
 
         self.eta = self.eta_fix_point()
@@ -964,23 +1055,24 @@ class JointCRep:
 
         return dist_eta
 
-    def _update_membership(self, subs_nz, m):
+    def _update_membership(self, subs_nz: tuple, m: int) -> np.ndarray:
         """
-            Return the Khatri-Rao product (sparse version) used in the update of the membership matrices.
+        Return the Khatri-Rao product (sparse version) used in the update of the membership
+        matrices.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            m : int
-                Mode in which the Khatri-Rao product of the membership matrix is multiplied with the tensor: if 1 it
-                works with the matrix u; if 2 it works with v.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        m : int
+            Mode in which the Khatri-Rao product of the membership matrix is multiplied with the
+            tensor: if 1 itworks with the matrix u; if 2 it works with v.
 
-            Returns
-            -------
-            uttkrp_DK : ndarray
-                        Matrix which is the result of the matrix product of the unfolding of the tensor and the
-                        Khatri-Rao product of the membership matrix.
+        Returns
+        -------
+        uttkrp_DK : ndarray
+                    Matrix which is the result of the matrix product of the unfolding of the tensor
+                     and the Khatri-Rao product of the membership matrix.
         """
 
         if not self.assortative:
@@ -990,39 +1082,45 @@ class JointCRep:
 
         return uttkrp_DK
 
-    def _check_for_convergence(self, data, it, loglik, coincide, convergence):
+    def _check_for_convergence(self,
+                               data: Union[skt.dtensor,
+                                           skt.sptensor],
+                               it: int,
+                               loglik: float,
+                               coincide: int,
+                               convergence: bool) -> tuple:
         """
-            Check for convergence by using the log-likelihood values.
+        Check for convergence by using the log-likelihood values.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            it : int
-                 Number of iteration.
-            loglik : float
-                     Pseudo log-likelihood value.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the tolerance.
-            convergence : bool
-                          Flag for convergence.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        it : int
+             Number of iteration.
+        loglik : float
+                 Pseudo log-likelihood value.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
 
-            Returns
-            -------
-            it : int
-                 Number of iteration.
-            loglik : float
-                     Log-likelihood value.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the tolerance.
-            convergence : bool
-                          Flag for convergence.
+        Returns
+        -------
+        it : int
+             Number of iteration.
+        loglik : float
+                 Log-likelihood value.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
         """
 
         if it % 10 == 0:
             old_L = loglik
             loglik = self._Likelihood(data)
-            if abs(loglik - old_L) < self.tolerance:
+            if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
             else:
                 coincide = 0
@@ -1032,38 +1130,48 @@ class JointCRep:
 
         return it, loglik, coincide, convergence
 
-    def _check_for_convergence_delta(self, it, coincide, du, dv, dw, de, convergence):
+    def _check_for_convergence_delta(
+            self,
+            it: int,
+            coincide: int,
+            du: float,
+            dv: float,
+            dw: float,
+            de: float,
+            convergence: bool) -> tuple:
         """
-            Check for convergence by using the maximum distances between the old and the new parameters values.
+        Check for convergence by using the maximum distances between the old and the new parameters
+        values.
 
-            Parameters
-            ----------
-            it : int
-                 Number of iteration.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the tolerance.
-            du : float
-                 Maximum distance between the old and the new membership matrix U.
-            dv : float
-                 Maximum distance between the old and the new membership matrix V.
-            dw : float
-                 Maximum distance between the old and the new affinity tensor W.
-            de : float
-                 Maximum distance between the old and the new eta parameter.
-            convergence : bool
-                          Flag for convergence.
+        Parameters
+        ----------
+        it : int
+             Number of iteration.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        du : float
+             Maximum distance between the old and the new membership matrix U.
+        dv : float
+             Maximum distance between the old and the new membership matrix V.
+        dw : float
+             Maximum distance between the old and the new affinity tensor W.
+        de : float
+             Maximum distance between the old and the new eta parameter.
+        convergence : bool
+                      Flag for convergence.
 
-            Returns
-            -------
-            it : int
-                 Number of iteration.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the tolerance.
-            convergence : bool
-                          Flag for convergence.
+        Returns
+        -------
+        it : int
+             Number of iteration.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
         """
 
-        if du < self.tolerance and dv < self.tolerance and dw < self.tolerance and de < self.tolerance:
+        if (du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol
+                and de < self.convergence_tol):
             coincide += 1
         else:
             coincide = 0
@@ -1073,19 +1181,19 @@ class JointCRep:
 
         return it, coincide, convergence
 
-    def _Likelihood(self, data):
+    def _Likelihood(self, data: Union[skt.dtensor, skt.sptensor]) -> float:
         """
-            Compute the log-likelihood of the data.
+        Compute the log-likelihood of the data.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
 
-            Returns
-            -------
-            l : float
-                Log-likelihood value.
+        Returns
+        -------
+        l : float
+            Log-likelihood value.
         """
 
         self.lambdalambdaT = np.einsum(
@@ -1104,12 +1212,12 @@ class JointCRep:
 
         if np.isnan(l):
             raise ValueError('log-likelihood is NaN!')
-        else:
-            return l
 
-    def _update_optimal_parameters(self):
+        return l
+
+    def _update_optimal_parameters(self) -> None:
         """
-            Update values of the parameters after convergence.
+        Update values of the parameters after convergence.
         """
 
         self.u_f = np.copy(self.u)
@@ -1117,18 +1225,18 @@ class JointCRep:
         self.w_f = np.copy(self.w)
         self.eta_f = np.copy(self.eta)
 
-    def _output_results(self, maxL, nodes, final_it):
+    def _output_results(self, maxL: float, nodes: List[Any], final_it: int) -> None:
         """
-            Output results.
+        Output results.
 
-            Parameters
-            ----------
-            maxL : float
-                   Maximum log-likelihood.
-            nodes : list
-                    List of nodes IDs.
-            final_it : int
-                       Total number of iterations.
+        Parameters
+        ----------
+        maxL : float
+               Maximum log-likelihood.
+        nodes : list
+                List of nodes IDs.
+        final_it : int
+                   Total number of iterations.
         """
         # Check if the output folder exists, otherwise create it
         if not os.path.exists(self.out_folder):
@@ -1138,7 +1246,7 @@ class JointCRep:
         if not isinstance(self.out_folder, Path):
             self.out_folder = Path(self.out_folder)
 
-        # outfile = self.out_folder + 'theta' + self.end_file
+        # Save the inferred parameters
         outfile = (self.out_folder / str('theta' + self.end_file)).with_suffix('.npz')
         np.savez_compressed(outfile,
                             u=self.u_f,
@@ -1150,225 +1258,3 @@ class JointCRep:
                             nodes=nodes)
         print(f'\nInferred parameters saved in: {outfile.resolve()}')
         print('To load: theta=np.load(filename), then e.g. theta["u"]')
-
-
-def sp_uttkrp(vals, subs, m, u, v, w):
-    """
-        Compute the Khatri-Rao product (sparse version).
-
-        Parameters
-        ----------
-        vals : ndarray
-               Values of the non-zero entries.
-        subs : tuple
-               Indices of elements that are non-zero. It is a n-tuple of array-likes and the length of tuple n must be
-               equal to the dimension of tensor.
-        m : int
-            Mode in which the Khatri-Rao product of the membership matrix is multiplied with the tensor: if 1 it
-            works with the matrix u; if 2 it works with v.
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
-
-        Returns
-        -------
-        out : ndarray
-              Matrix which is the result of the matrix product of the unfolding of the tensor and the Khatri-Rao product
-              of the membership matrix.
-    """
-
-    if m == 1:
-        D, K = u.shape
-        out = np.zeros_like(u)
-    elif m == 2:
-        D, K = v.shape
-        out = np.zeros_like(v)
-
-    for k in range(K):
-        tmp = vals.copy()
-        if m == 1:  # we are updating u
-            tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
-                    v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
-        elif m == 2:  # we are updating v
-            tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
-                    u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
-        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
-
-    return out
-
-
-def sp_uttkrp_assortative(vals, subs, m, u, v, w):
-    """
-        Compute the Khatri-Rao product (sparse version) with the assumption of assortativity.
-
-        Parameters
-        ----------
-        vals : ndarray
-               Values of the non-zero entries.
-        subs : tuple
-               Indices of elements that are non-zero. It is a n-tuple of array-likes and the length of tuple n must be
-               equal to the dimension of tensor.
-        m : int
-            Mode in which the Khatri-Rao product of the membership matrix is multiplied with the tensor: if 1 it
-            works with the matrix u; if 2 it works with v.
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
-
-        Returns
-        -------
-        out : ndarray
-              Matrix which is the result of the matrix product of the unfolding of the tensor and the Khatri-Rao product
-              of the membership matrix.
-    """
-
-    if m == 1:
-        D, K = u.shape
-        out = np.zeros_like(u)
-    elif m == 2:
-        D, K = v.shape
-        out = np.zeros_like(v)
-
-    for k in range(K):
-        tmp = vals.copy()
-        if m == 1:  # we are updating u
-            tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(tmp.dtype)
-        elif m == 2:  # we are updating v
-            tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(tmp.dtype)
-        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
-
-    return out
-
-
-def get_item_array_from_subs(A, ref_subs):
-    """
-        Get values of ref_subs entries of a dense tensor.
-        Output is a 1-d array with dimension = number of non zero entries.
-    """
-
-    return np.array([A[a, i, j] for a, i, j in zip(*ref_subs)])
-
-
-def preprocess(A):
-    """
-        Pre-process input data tensor.
-        If the input is sparse, returns an int sptensor. Otherwise, returns an int dtensor.
-
-        Parameters
-        ----------
-        A : ndarray
-            Input data (tensor).
-
-        Returns
-        -------
-        A : sptensor/dtensor
-            Pre-processed data. If the input is sparse, returns an int sptensor. Otherwise, returns an int dtensor.
-    """
-
-    if not A.dtype == np.dtype(int).type:
-        A = A.astype(int)
-    if np.logical_and(isinstance(A, np.ndarray), is_sparse(A)):
-        A = sptensor_from_dense_array(A)
-    else:
-        A = skt.dtensor(A)
-
-    return A
-
-
-def is_sparse(X):
-    """
-        Check whether the input tensor is sparse.
-        It implements a heuristic definition of sparsity. A tensor is considered sparse if:
-        given
-        M = number of modes
-        S = number of entries
-        I = number of non-zero entries
-        then
-        N > M(I + 1)
-
-        Parameters
-        ----------
-        X : ndarray
-            Input data.
-
-        Returns
-        -------
-        Boolean flag: true if the input tensor is sparse, false otherwise.
-    """
-
-    M = X.ndim
-    S = X.size
-    I = X.nonzero()[0].size
-
-    return S > (I + 1) * M
-
-
-def sptensor_from_dense_array(X):
-    """
-        Create an sptensor from a ndarray or dtensor.
-        Parameters
-        ----------
-        X : ndarray
-            Input data.
-
-        Returns
-        -------
-        sptensor from a ndarray or dtensor.
-    """
-
-    subs = X.nonzero()
-    vals = X[subs]
-
-    return skt.sptensor(subs, vals, shape=X.shape, dtype=X.dtype)
-
-
-def plot_L(values, indices=None, k_i=5, figsize=(7, 7), int_ticks=False, xlab='Iterations'):
-    """
-        Plot the log-likelihood.
-    """
-
-    fig, ax = plt.subplots(1, 1, figsize=figsize)
-
-    if indices is None:
-        ax.plot(values[k_i:])
-    else:
-        ax.plot(indices[k_i:], values[k_i:])
-    ax.set_xlabel(xlab)
-    ax.set_ylabel('Log-likelihood values')
-    if int_ticks:
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.grid()
-
-    plt.tight_layout()
-    plt.show()
-
-
-def check_symmetric(a, rtol=1e-05, atol=1e-08):
-    """
-        Check if a matrix a is symmetric.
-    """
-
-    return np.allclose(a, a.T, rtol=rtol, atol=atol)
-
-
-def transpose_tensor(M):
-    """
-        Given M tensor, it returns its transpose: for each dimension a, compute the transpose ij->ji.
-
-        Parameters
-        ----------
-        M : ndarray
-            Tensor with the mean lambda for all entries.
-
-        Returns
-        -------
-        Transpose version of M_aij, i.e. M_aji.
-    """
-
-    return np.einsum('aij->aji', M)

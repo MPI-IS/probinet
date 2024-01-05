@@ -39,8 +39,8 @@ def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None)
 
         print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
         print(
-            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered pairs) = '
-            f'{np.round(reciprocal_edges(G[l]), 3)}\n')
+            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered '
+            f'pairs) = {np.round(reciprocal_edges(G[l]), 3)}\n')
 
         if rw is not None:
             print(
