@@ -3,18 +3,16 @@ Performing the inference in the given single-layer directed network.
 Implementation of CRep algorithm.
 """
 
+import time
 from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
-import time
 
 import numpy as np
 import yaml
 
-from pgm.input.loader import import_data
-from pgm.model.crep import CRep
-
-# pylint: disable=too-many-locals
+from .input.loader import import_data
+from .model.crep import CRep
 
 
 def main():
@@ -25,7 +23,7 @@ def main():
     p.add_argument('-a',
                    '--algorithm',
                    type=str,
-                   choices=['Crep', 'Crepnc', 'Crep0'],
+                   choices=['CRep', 'CRepnc', 'CRep0'],
                    default='CRep')  # configuration
     p.add_argument('-K', '--K', type=int, default=None)  # number of communities
     p.add_argument('-A', '--adj', type=str,
@@ -47,7 +45,7 @@ def main():
                    type=str,
                    choices=['log', 'deltas'],
                    default='log')  # flag for convergence
-
+    p.add_argument('-v', '--verbose', default=True)  # action='store_true')  # print verbose
     args = p.parse_args()
 
     # setting to run the algorithm
@@ -99,11 +97,11 @@ def main():
     nodes = A[0].nodes()
 
     # Run CRep
-
     if args.verbose:
         print(f'\n### Run {args.algorithm} ###')
     model = CRep()
-    if not args.verbose: model.verbose = False
+    if not args.verbose:
+        model.verbose = False
     time_start = time.time()
     _ = model.fit(data=B,
                   data_T=B_T,

@@ -857,7 +857,7 @@ class CRep:
                                convergence: bool,
                                data_T: skt.sptensor,
                                mask: Optional[np.ndarray] = None) -> Tuple[
-        int, float, int, bool]:
+            int, float, int, bool]:
         """
         Check for convergence by using the pseudo log-likelihood values.
 
@@ -913,8 +913,8 @@ class CRep:
                                      dw: float,
                                      de: float,
                                      convergence: bool) -> Tuple[int,
-    int,
-    bool]:
+                                                                 int,
+                                                                 bool]:
         """
         Check for convergence by using the maximum distances between the old and the new
         parameters values.

@@ -11,8 +11,8 @@ import time
 import numpy as np
 import yaml
 
-from pgm.input.loader import import_data
-from pgm.model.jointcrep import JointCRep
+from .input.loader import import_data
+from .model.jointcrep import JointCRep
 
 # pylint: disable=too-many-locals
 

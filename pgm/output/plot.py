@@ -11,7 +11,6 @@ import numpy as np
 import seaborn as sns
 
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 def plot_hard_membership(
         graph: nx.DiGraph,
         communities: Dict,
@@ -476,7 +475,7 @@ def plot_A(A: List, cmap='Blues') -> List[plt.Figure]:
     L = len(A)
     for l in range(L):
         Ad = A[l].todense()
-        _, ax = plt.subplots(figsize=(7, 7))
+        fig, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(Ad, cmap=plt.get_cmap(cmap))
         ax.set_title(f'Adjacency matrix layer {l}', fontsize=15)
         for PCM in ax.get_children():
