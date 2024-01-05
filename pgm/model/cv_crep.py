@@ -5,9 +5,6 @@ import yaml
 
 from .crep import CRep
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
-# pylint: disable=fixme
-
 
 def fit_model(B, B_T, data_T_vals, nodes, algo, **conf):
     """

@@ -1,6 +1,7 @@
 """
 Functions for handling the data.
 """
+from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
@@ -10,10 +11,8 @@ import pandas as pd
 from . import preprocessing as prep
 from .statistics import print_graph_stat
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 
-
-def import_data(dataset: str,
+def import_data(dataset: Path,
                 ego: str = 'source',
                 alter: str = 'target',
                 force_dense: bool = True,

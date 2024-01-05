@@ -77,7 +77,8 @@ disable = ["attribute-defined-outside-init"]
 max-line-length = 100
 
 [tool.pylint.MESSAGES_CONTROL]
-disable = "invalid-name"
+disable = ["C", # convention
+    "R"] # refactoring
 
 # Coverage
 [tool.coverage.run]

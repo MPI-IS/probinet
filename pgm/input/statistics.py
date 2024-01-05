@@ -10,7 +10,6 @@ import networkx as nx
 import numpy as np
 
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None) -> None:
     """
         Print the statistics of the graph A.

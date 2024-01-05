@@ -10,7 +10,8 @@ class TestCRepNotebook(unittest.TestCase):
 
     def test_notebook_execution(self):
         # Get the absolute path of the notebook dynamically
-        notebook_path = Path("doc/source/tutorials/CRep.ipynb")
+        root_path = Path(__file__).parent.parent
+        notebook_path = root_path / "doc" / "source" / "tutorials" / "CRep.ipynb"
 
         # Store the current directory
         original_dir = os.getcwd()

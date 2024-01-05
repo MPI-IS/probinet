@@ -24,10 +24,6 @@ from ..output.plot import plot_A
 from .statistics import print_graph_stat
 from .tools import check_symmetric, Exp_ija_matrix, normalize_nonzero_membership, output_adjacency
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements,
-# pylint: disable=too-few-public-methods
-# pylint: disable=fixme
-
 # TODO: add type hints into a separte script
 
 DEFAULT_N = 1000
@@ -598,7 +594,10 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
             print(f'Adjacency matrix saved in: {self.out_folder + outfile}')
 
 
-def affinity_matrix(structure: str = 'assortative', N: int = 100, K: int = 2, a: float = 0.1,
+def affinity_matrix(structure: str = 'assortative',
+                    N: int = 100,
+                    K: int = 2,
+                    a: float = 0.1,
                     b: float = 0.3) -> np.ndarray:
     """
     Return the KxK affinity matrix w with probabilities between and within groups.

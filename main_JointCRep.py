@@ -55,7 +55,7 @@ def main():
         conf = yaml.safe_load(fp)
 
     # Change the output folder
-    conf['out_folder'] = './' + args.algorithm + \
+    conf['out_folder'] = args.algorithm + \
         '_output/' if args.out_folder == '' else args.out_folder
 
     # Change K if given
@@ -69,9 +69,7 @@ def main():
 
     # Ensure the output folder exists
     out_folder_path = Path(conf['out_folder'])
-
-    if not out_folder_path.exists():
-        out_folder_path.mkdir(parents=True)
+    out_folder_path.mkdir(parents=True, exist_ok=True)
 
     # Print the configuration file
     print(yaml.dump(conf))
