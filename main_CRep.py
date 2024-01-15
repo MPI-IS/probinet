@@ -57,7 +57,8 @@ def main():
         conf = yaml.safe_load(fp)
 
     # Change the output folder
-    conf['out_folder'] = args.algorithm + '_output/' if args.out_folder == '' else args.out_folder
+    conf['out_folder'] = './' + \
+                         args.algorithm + '_output/' if args.out_folder == '' else args.out_folder
 
     # Change K if given
     if args.K is not None:
@@ -65,13 +66,13 @@ def main():
 
     # Ensure the output folder exists
     out_folder_path = Path(conf['out_folder'])
-    out_folder_path.mkdir(parents=True, exist_ok=True)
 
     if not out_folder_path.exists():
         out_folder_path.mkdir(parents=True)
 
     # Print the configuration file
-    print(yaml.dump(conf))
+    if args.verbose:
+        print(yaml.dump(conf))
 
     # Save the configuration file
     output_config_path = conf['out_folder'] + '/setting_' + args.algorithm + '.yaml'
@@ -87,25 +88,30 @@ def main():
     adj = Path(args.adj)
     network = in_folder / adj  # network complete path
 
-    A, B, B_T, data_T_vals = import_data(network,
-                                         ego=ego,
-                                         alter=alter,
-                                         force_dense=force_dense,
-                                         header=0)
+    A, B, B_T, data_T_vals = import_data(
+        network,
+        ego=ego,
+        alter=alter,
+        force_dense=force_dense,
+        header=0,
+        verbose=args.verbose
+    )
     nodes = A[0].nodes()
 
     # Run CRep
 
-    print(f'\n### Run {args.algorithm} ###')
+    if args.verbose:
+        print(f'\n### Run {args.algorithm} ###')
     model = CRep()
+    if not args.verbose: model.verbose = False
     time_start = time.time()
     _ = model.fit(data=B,
                   data_T=B_T,
                   data_T_vals=data_T_vals,
                   nodes=nodes,
                   **conf)
-
-    print(f'\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.')
+    if args.verbose:
+        print(f'\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.')
 
 
 if __name__ == '__main__':

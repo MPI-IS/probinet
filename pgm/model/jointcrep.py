@@ -63,7 +63,7 @@ class JointCRep:
                            ) -> None:
 
         if initialization not in {
-                0, 1, 2, 3}:  # indicator for choosing how to initialize u, v and w
+            0, 1, 2, 3}:  # indicator for choosing how to initialize u, v and w
             raise ValueError(
                 'The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
                 'indicator to initialize the membership matrices u and v and the affinity '

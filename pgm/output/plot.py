@@ -476,7 +476,7 @@ def plot_A(A: List, cmap='Blues') -> List[plt.Figure]:
     L = len(A)
     for l in range(L):
         Ad = A[l].todense()
-        fig, ax = plt.subplots(figsize=(7, 7))
+        _, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(Ad, cmap=plt.get_cmap(cmap))
         ax.set_title(f'Adjacency matrix layer {l}', fontsize=15)
         for PCM in ax.get_children():

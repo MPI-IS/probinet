@@ -35,6 +35,7 @@ class BaseTestCase(unittest.TestCase):
         self.flag_conv = 'log'
         self.force_dense = False
 
+
         # Import data: removing self-loops and making binary
 
         with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):

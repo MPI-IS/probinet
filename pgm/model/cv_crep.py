@@ -2,6 +2,8 @@
 It provides functions for cross-validation for the CRep model.
 """
 
+import importlib.resources as importlib_resources
+
 import yaml
 
 from .crep import CRep

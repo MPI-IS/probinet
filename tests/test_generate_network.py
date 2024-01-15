@@ -156,6 +156,20 @@ class TestGMReciprocity(unittest.TestCase):
         expected_result = np.array([[0.002, 0.02], [0.02, 0.002]])
         actual_result = affinity_matrix(structure='disassortative', N=100, K=2, a=0.1, b=0.3)
         np.testing.assert_allclose(actual_result, expected_result, rtol=rtol)
+        
+        
+class TestBaseSyntheticNetwork(unittest.TestCase):
+    def setUp(self):
+        self.N = 100
+        self.L = 1
+        self.K = 2
+        self.seed = 0
+        self.out_folder = "data/input/synthetic/"
+        self.output_net = True
+        self.show_details = True
+        self.show_plots = True
+        self.kwargs = {}
+        self.base_synthetic_network = BaseSyntheticNetwork(self.N, self.L, self.K, self.seed, self.out_folder, self.output_net, self.show_details, self.show_plots, **self.kwargs)
 
 
 class TestBaseSyntheticNetwork(unittest.TestCase):

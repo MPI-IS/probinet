@@ -857,7 +857,7 @@ class CRep:
                                convergence: bool,
                                data_T: skt.sptensor,
                                mask: Optional[np.ndarray] = None) -> Tuple[
-            int, float, int, bool]:
+        int, float, int, bool]:
         """
         Check for convergence by using the pseudo log-likelihood values.
 
@@ -913,8 +913,8 @@ class CRep:
                                      dw: float,
                                      de: float,
                                      convergence: bool) -> Tuple[int,
-                                                                 int,
-                                                                 bool]:
+    int,
+    bool]:
         """
         Check for convergence by using the maximum distances between the old and the new
         parameters values.
@@ -1045,8 +1045,9 @@ class CRep:
                             max_it=self.final_it,
                             maxPSL=self.maxPSL,
                             nodes=nodes)
-        print(f'\nInferred parameters saved in: {outfile.resolve()}')
-        print('To load: theta=np.load(filename), then e.g. theta["u"]')
+        if self.verbose:
+            print(f'\nInferred parameters saved in: {outfile.resolve()}')
+            print('To load: theta=np.load(filename), then e.g. theta["u"]')
 
 
 def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
