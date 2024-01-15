@@ -1,3 +1,6 @@
+"""
+Tests for the preprocessing module.
+"""
 import unittest
 
 import networkx as nx
@@ -7,8 +10,14 @@ import sktensor as skt
 from pgm.input import tools
 from pgm.input.preprocessing import build_B_from_A, build_sparse_B_from_A, preprocess
 
+# pylint: disable=missing-function-docstring, too-many-locals
+
 
 class TestPreprocessing(unittest.TestCase):
+    """
+    Test cases for the preprocessing module.
+    """
+
     def test_build_B_from_A(self):
         # Test case for build_B_from_A
         G1 = nx.MultiDiGraph()

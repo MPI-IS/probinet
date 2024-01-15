@@ -6,12 +6,14 @@ weights, and ensures proper formatting of input data tensors.
 from typing import Any, List, Optional, Tuple
 
 import networkx as nx
-import numpy as np
-import sktensor as skt
 from numpy import ndarray
+import numpy as np
 from sktensor import sptensor
+import sktensor as skt
 
 from . import tools
+
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 
 
 def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tuple[

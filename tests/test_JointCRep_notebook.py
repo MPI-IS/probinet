@@ -1,5 +1,5 @@
 """
-Test cases for the CRep notebook.
+Unit tests for the JointCRep notebook.
 """
 import os
 from pathlib import Path
@@ -13,19 +13,18 @@ import nbformat
 
 class TestCRepNotebook(unittest.TestCase):
     """
-    Test cases for the CRep notebook.
+    Test cases for the JointCRep notebook.
     """
 
     def test_notebook_execution(self):
         # Get the absolute path of the notebook dynamically
-        root_path = Path(__file__).parent.parent
-        notebook_path = root_path / "doc" / "source" / "tutorials" / "CRep.ipynb"
+        notebook_path = Path("doc/source/tutorials/JointCRep.ipynb")
 
         # Store the current directory
-        original_dir = os.getcwd()
+        original_dir = Path.cwd()
 
         # Change to the directory containing the notebook
-        notebook_dir = os.path.dirname(notebook_path)
+        notebook_dir = notebook_path.parent
         os.chdir(notebook_dir)
 
         # Load the notebook

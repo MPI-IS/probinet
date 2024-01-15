@@ -11,6 +11,7 @@ import numpy as np
 import seaborn as sns
 
 
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 def plot_hard_membership(
         graph: nx.DiGraph,
         communities: Dict,

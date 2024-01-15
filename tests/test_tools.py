@@ -1,6 +1,11 @@
+"""
+Test cases for the tools module.
+"""
+import os
 import unittest
 
 import numpy as np
+from scipy import sparse
 import sktensor as skt
 
 from pgm.input.tools import (
@@ -9,8 +14,13 @@ from pgm.input.tools import (
 
 from .fixtures import decimal, rtol
 
+# pylint: disable=missing-function-docstring, too-many-locals
+
 
 class TestToolsModule(unittest.TestCase):
+    """
+    Test cases for the tools module.
+    """
 
     def test_can_cast(self):
         self.assertTrue(can_cast("123"))
@@ -86,3 +96,19 @@ class TestToolsModule(unittest.TestCase):
         expected_result = np.array([[0.95, 1.29], [2.07, 2.81]])
         result = Exp_ija_matrix(u, v, w)
         np.testing.assert_allclose(result, expected_result, rtol=rtol)
+
+    @unittest.skip("Reason: Not implemented yet")
+    def test_output_adjacency(self):
+        # Test output adjacency function.
+        # Create an empty scipy sparse matrix
+
+        i = [0, 0, 0, 1, 1, 1]
+        j = [0, 1, 2, 0, 3, 4]
+        A = [sparse.csr_matrix((np.ones_like(j), (i, j)))]
+
+        out_folder = 'tests/'
+        label = 'test_output_adjacency'
+        # This gives: AttributeError: 'DataFrame' object has no attribute 'append'
+        output_adjacency(A, out_folder, label)
+
+        self.assertTrue(os.path.exists(out_folder + label + '.dat'))

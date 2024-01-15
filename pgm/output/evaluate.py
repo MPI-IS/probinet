@@ -9,6 +9,10 @@ from sklearn import metrics
 
 from ..input.tools import check_symmetric, transpose_ij3
 
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
+# too-many-statements
+# pylint: disable=fixme
+
 # TODO: make it model agnostic
 
 
