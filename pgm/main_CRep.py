@@ -3,10 +3,10 @@ Performing the inference in the given single-layer directed network.
 Implementation of CRep algorithm.
 """
 
-import time
 from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
+import time
 
 import numpy as np
 import yaml
@@ -55,8 +55,7 @@ def main():
         conf = yaml.safe_load(fp)
 
     # Change the output folder
-    conf['out_folder'] = './' + \
-                         args.algorithm + '_output/' if args.out_folder == '' else args.out_folder
+    conf['out_folder'] = args.algorithm + '_output/' if args.out_folder == '' else args.out_folder
 
     # Change K if given
     if args.K is not None:
@@ -73,7 +72,8 @@ def main():
         print(yaml.dump(conf))
 
     # Save the configuration file
-    output_config_path = conf['out_folder'] + '/setting_' + args.algorithm + '.yaml'
+    output_config_path = conf['out_folder'] + '/setting_' + \
+        args.algorithm + '.yaml'
     with open(output_config_path, 'w', encoding='utf8') as f:
         yaml.dump(conf, f)
 

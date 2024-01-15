@@ -8,7 +8,7 @@ fix_eta: false
 fix_w: false
 initialization: 0
 num_realizations: 50
-out_folder: ./JointCRep_output/
+out_folder: JointCRep_output/
 out_inference: true
 plot_loglik: false
 rseed: 0
