@@ -11,7 +11,9 @@ import pandas as pd
 from . import preprocessing as prep
 from .statistics import print_graph_stat
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
+# pylint: disable=too-many-arguments, too-many-instance-attributes,
+# too-many-locals, too-many-branches, too-many-statements
+
 
 def import_data(dataset: Path,
                 ego: str = 'source',
@@ -80,14 +82,6 @@ def import_data(dataset: Path,
 
     return A, B, B_T, data_T_vals
 
-def import_data_jointcrep(dataset, undirected=False,
-                ego='source',
-                alter='alter',
-                force_dense=True,
-                noselfloop=True, verbose=True,
-                binary=True):
-    """
-        Import data, i.e. the adjacency tensor, from a given folder.
 
 def read_graph(
         df_adj: pd.DataFrame,
@@ -104,24 +98,24 @@ def read_graph(
 
         Parameters
         ----------
-        df_adj : DataFrame
+        df_adj: DataFrame
                  Pandas DataFrame object containing the edges of the graph.
-        ego : str
+        ego: str
               Name of the column to consider as source of the edge.
-        alter : str
+        alter: str
                 Name of the column to consider as target of the edge.
-        undirected : bool
+        undirected: bool
                      If set to True, the algorithm considers an undirected graph.
-        noselfloop : bool
-                     If set to True, the algorithm removes the self-loops.
-        verbose : bool
+        noselfloop: bool
+                     If set to True, the algorithm removes the self - loops.
+        verbose: bool
                   Flag to print details.
-        binary : bool
+        binary: bool
                  If set to True, read the graph with binary edges.
 
         Returns
         -------
-        A : list
+        A: list
             List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
     """
 
@@ -171,7 +165,14 @@ def read_graph(
     return A
 
 
-def read_graph_jointcrep(df_adj, ego='source', alter='target', undirected=False, noselfloop=True, verbose=True, binary=True):
+def read_graph_jointcrep(
+        df_adj,
+        ego='source',
+        alter='target',
+        undirected=False,
+        noselfloop=True,
+        verbose=True,
+        binary=True):
     """
         Create the graph by adding edges and nodes.
 
@@ -179,24 +180,24 @@ def read_graph_jointcrep(df_adj, ego='source', alter='target', undirected=False,
 
         Parameters
         ----------
-        df_adj : DataFrame
+        df_adj: DataFrame
                  Pandas DataFrame object containing the edges of the graph.
-        ego : str
+        ego: str
               Name of the column to consider as source of the edge.
-        alter : str
+        alter: str
                 Name of the column to consider as target of the edge.
-        undirected : bool
+        undirected: bool
                      If set to True, the algorithm considers an undirected graph.
-        noselfloop : bool
-                     If set to True, the algorithm removes the self-loops.
-        verbose : bool
+        noselfloop: bool
+                     If set to True, the algorithm removes the self - loops.
+        verbose: bool
                   Flag to print details.
-        binary : bool
+        binary: bool
                  If set to True, read the graph with binary edges.
 
         Returns
         -------
-        A : list
+        A: list
             List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
     """
 
@@ -208,7 +209,8 @@ def read_graph_jointcrep(df_adj, ego='source', alter='target', undirected=False,
     nodes.sort()
 
     L = df_adj.shape[1] - 2  # number of layers
-    # build the multilayer NetworkX graph: create a list of graphs, as many graphs as there are layers
+    # build the multilayer NetworkX graph: create a list of graphs, as many
+    # graphs as there are layers
     if undirected:
         A = [nx.MultiGraph() for _ in range(L)]
     else:

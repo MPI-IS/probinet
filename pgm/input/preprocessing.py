@@ -6,10 +6,10 @@ weights, and ensures proper formatting of input data tensors.
 from typing import Any, List, Optional, Tuple
 
 import networkx as nx
-import numpy as np
-import sktensor as skt
 from numpy import ndarray
+import numpy as np
 from sktensor import sptensor
+import sktensor as skt
 
 from . import tools
 

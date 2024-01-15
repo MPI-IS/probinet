@@ -226,7 +226,6 @@ def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
     return np.allclose(a, a.T, rtol=rtol, atol=atol)
 
 
-
 def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
                     rtol: float = 1e-05, atol: float = 1e-08) -> bool:
     """

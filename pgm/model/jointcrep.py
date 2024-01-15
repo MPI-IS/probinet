@@ -8,18 +8,16 @@ from __future__ import print_function
 import os
 from pathlib import Path
 import time
-from pathlib import Path
 from typing import Any, List, Union
 
 import numpy as np
 import sktensor as skt
 from termcolor import colored
 
-from .crep import sp_uttkrp, sp_uttkrp_assortative
 from ..input.preprocessing import preprocess
 from ..input.tools import check_symmetric, get_item_array_from_subs, transpose_tensor
 from ..output.plot import plot_L
-
+from .crep import sp_uttkrp, sp_uttkrp_assortative
 
 # TODO: remove repeated parts once mixin is implemented
 

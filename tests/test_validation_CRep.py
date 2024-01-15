@@ -31,7 +31,6 @@ class BaseTestCase(unittest.TestCase):
 
         # Test case parameters
         self.algorithm = 'CRep'
-        self.in_folder = Path('pgm').resolve() / 'data' / 'input'
         self.adj = 'syn111.dat'
         self.ego = 'source'
         self.alter = 'target'
@@ -39,15 +38,15 @@ class BaseTestCase(unittest.TestCase):
 
         # Import data
 
-        network = self.in_folder / self.adj  # network complete path
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(
-            network,
-            ego=self.ego,
-            alter=self.alter,
-            force_dense=self.force_dense,
-            binary=False,
-            header=0
-        )
+        with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):
+            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+                network.name,
+                ego=self.ego,
+                alter=self.alter,
+                force_dense=self.force_dense,
+                binary=False,
+                header=0
+            )
 
         self.nodes = self.A[0].nodes()
 
@@ -115,13 +114,15 @@ class BaseTestCase(unittest.TestCase):
 
         # Import data
 
-        network = self.in_folder / self.adj  # network complete path
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(network,
-                                                                 ego=self.ego,
-                                                                 alter=self.alter,
-                                                                 force_dense=self.force_dense,
-                                                                 binary=False,
-                                                                 header=0)
+        with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):
+            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+                network.name,
+                ego=self.ego,
+                alter=self.alter,
+                force_dense=self.force_dense,
+                binary=False,
+                header=0
+            )
 
         # Running the algorithm
 
@@ -151,21 +152,24 @@ class BaseTestCase(unittest.TestCase):
 
         # Import data
 
-        network = self.in_folder / self.adj  # network complete path
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(network,
-                                                                 ego=self.ego,
-                                                                 alter=self.alter,
-                                                                 force_dense=self.force_dense,
-                                                                 binary=False,
-                                                                 header=0)
+        with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):
+            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+                network.name,
+                ego=self.ego,
+                alter=self.alter,
+                force_dense=self.force_dense,
+                binary=False,
+                header=0
+            )
 
         # Running the algorithm
 
-        _ = self.model.fit(data=self.B,
-                           data_T=self.B_T,
-                           data_T_vals=self.data_T_vals,
-                           nodes=self.nodes,
-                           **self.conf)
+        _ = self.model.fit(
+            data=self.B,
+            data_T=self.B_T,
+            data_T_vals=self.data_T_vals,
+            nodes=self.nodes,
+            **self.conf)
 
         # Calculate pseudo log-likelihood
         psloglikelihood_result = PSloglikelihood(

@@ -27,7 +27,6 @@ class BaseTestCase(unittest.TestCase):
         """
         # Test case parameters
         self.algorithm = 'JointCRep'
-        self.in_folder = Path('pgm').resolve() / 'data' / 'input'
         self.adj = 'synthetic_data.dat'
         self.ego = 'source'
         self.alter = 'target'
@@ -38,18 +37,18 @@ class BaseTestCase(unittest.TestCase):
 
         # Import data: removing self-loops and making binary
 
-        network = self.in_folder / self.adj  # network complete path
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(
-            network,
-            ego=self.ego,
-            alter=self.alter,
-            undirected=self.undirected,
-            force_dense=self.force_dense,
-            noselfloop=True,
-            verbose=True,
-            binary=True,
-            header=0
-        )
+        with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):
+            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+                network.name,
+                ego=self.ego,
+                alter=self.alter,
+                undirected=self.undirected,
+                force_dense=self.force_dense,
+                noselfloop=True,
+                verbose=True,
+                binary=True,
+                header=0
+            )
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
