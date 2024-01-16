@@ -40,16 +40,16 @@ def main():
         choices=['log', 'deltas'],
         default='log')  # flag for convergence
     p.add_argument('--noselfloop', type=bool, default=True)  # flag to remove self-loops
-    p.add_argument('--verbose', type=bool, default=True)  # flag to print the log-likelihood
     p.add_argument('--binary', type=bool, default=True)   # flag to make the network binary
     # flag to plot the log-likelihood
     p.add_argument('--plot_loglikelihood', type=bool, default=False)
     p.add_argument('--rseed', type=int, default=0)  # random seed
     p.add_argument('--num_realizations', type=int, default=50)  # number of realizations
-
+    p.add_argument('-v', '--verbose', action='store_true')  # print verbose
     args = p.parse_args()
 
     # setting to run the algorithm
+
     config_path = 'setting_' + args.algorithm + '.yaml'
     with files('pgm.data.model').joinpath(config_path).open('rb') as fp:
         conf = yaml.safe_load(fp)
@@ -71,11 +71,9 @@ def main():
     out_folder_path = Path(conf['out_folder'])
     out_folder_path.mkdir(parents=True, exist_ok=True)
 
-    if not out_folder_path.exists():
-        out_folder_path.mkdir(parents=True)
-
     # Print the configuration file
-    print(yaml.dump(conf))
+    if args.verbose:
+        print(yaml.dump(conf))
 
     # Save the configuration file
     output_config_path = conf['out_folder'] + '/setting_' + args.algorithm + '.yaml'
@@ -104,7 +102,8 @@ def main():
     nodes = A[0].nodes()
 
     # Run model
-    print(f'\n### Run {args.algorithm} ###')
+    if args.verbose:
+        print(f'\n### Run {args.algorithm} ###')
     model = JointCRep()
     time_start = time.time()
     _ = model.fit(data=B,
@@ -112,8 +111,8 @@ def main():
                   data_T_vals=data_T_vals,
                   nodes=nodes,
                   **conf)
-
-    print(f'\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.')
+    if args.verbose:
+        print(f'\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.')
 
 
 if __name__ == '__main__':

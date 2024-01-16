@@ -45,7 +45,7 @@ def main():
                    type=str,
                    choices=['log', 'deltas'],
                    default='log')  # flag for convergence
-    p.add_argument('-v', '--verbose', default=True)  # action='store_true')  # print verbose
+    p.add_argument('-v', '--verbose', action='store_true')  # print verbose
     args = p.parse_args()
 
     # setting to run the algorithm
@@ -63,9 +63,7 @@ def main():
 
     # Ensure the output folder exists
     out_folder_path = Path(conf['out_folder'])
-
-    if not out_folder_path.exists():
-        out_folder_path.mkdir(parents=True)
+    out_folder_path.mkdir(parents=True, exist_ok=True)
 
     # Print the configuration file
     if args.verbose:
@@ -84,8 +82,9 @@ def main():
     in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
         'input' if args.in_folder == '' else Path(args.in_folder)
     adj = Path(args.adj)
-    network = in_folder / adj  # network complete path
 
+    # Import data:
+    network = in_folder / adj  # network complete path
     A, B, B_T, data_T_vals = import_data(
         network,
         ego=ego,
@@ -100,8 +99,6 @@ def main():
     if args.verbose:
         print(f'\n### Run {args.algorithm} ###')
     model = CRep()
-    if not args.verbose:
-        model.verbose = False
     time_start = time.time()
     _ = model.fit(data=B,
                   data_T=B_T,
