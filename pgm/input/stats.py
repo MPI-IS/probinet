@@ -13,12 +13,12 @@ import numpy as np
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None) -> None:
     """
-        Print the statistics of the graph A.
+    Print the statistics of the graph A.
 
-        Parameters
-        ----------
-        G : list
-            List of MultiDiGraph NetworkX objects.
+    Parameters
+    ----------
+    G : list
+        List of MultiDiGraph NetworkX objects.
     """
 
     L = len(G)

@@ -16,6 +16,8 @@ from pgm.input.statistics import reciprocal_edges
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
 # too-many-statements
 # pylint: disable=fixme
+
+
 def can_cast(string: Union[int, float, str]) -> bool:
     """
     Verify if one object can be converted to integer object.

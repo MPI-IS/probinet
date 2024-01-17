@@ -94,9 +94,9 @@ def read_graph(
         verbose: bool = True,
         binary: bool = True) -> List:
     """
-        Create the graph by adding edges and nodes.
+    Create the graph by adding edges and nodes.
 
-        Return the list MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    Return the list MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
 
         Parameters
         ----------

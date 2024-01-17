@@ -1,5 +1,4 @@
 """
-Performing the inference in the given single-layer directed network.
 Implementation of CRep algorithm.
 """
 
