@@ -3,6 +3,7 @@ Performing the inference in the given single-layer directed network.
 Implementation of JointCRep algorithm.
 """
 
+import argparse
 from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
@@ -21,31 +22,46 @@ def main():
     """
     Main function for JointCRep.
     """
-    p = ArgumentParser()
+    p = ArgumentParser(
+        description="Script to run the JointCRep algorithm.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    # Add the command line arguments
     p.add_argument('-a', '--algorithm', type=str, default='JointCRep')
-    p.add_argument('-K', '--K', type=int, default=4)  # number of communities
-    p.add_argument('-A', '--adj', type=str, default='highschool_data.dat')
-    p.add_argument('-f', '--in_folder', type=str, default='')  # path of the input folder
-    p.add_argument('-o', '-O', '--out_folder', type=str, default='')  # path of the output folder
-    p.add_argument('-e', '--ego', type=str, default='source')  # name of the source of the edge
-    p.add_argument('-t', '--alter', type=str, default='target')  # name of the target of the edge
-    # flag to call the undirected network
-    p.add_argument('--undirected', type=bool, default=False)
-    # flag to force a dense transformation in input
-    p.add_argument('-d', '--force_dense', type=bool, default=False)
+    p.add_argument('-K', '--K', type=int, default=4,
+                   help='Number of communities')
+    p.add_argument('-A', '--adj', type=str, default='highschool_data.dat',
+                   help='Name of the network')
+    p.add_argument('-f', '--in_folder', type=str, default='',
+                   help='Path of the input folder')
+    p.add_argument('-o', '-O', '--out_folder', type=str, default='',
+                   help='Path of the output folder')
+    p.add_argument('-e', '--ego', type=str, default='source',
+                   help='Name of the source of the edge')
+    p.add_argument('-t', '--alter', type=str, default='target',
+                   help='Name of the target of the edge')
+    p.add_argument('--undirected', type=bool, default=False,
+                   help='Flag to treat the network as undirected')
+    p.add_argument('-d', '--force_dense', type=bool, default=False,
+                   help='Flag to force a dense transformation in input')
+    p.add_argument('-F', '--flag_conv', type=str, choices=['log', 'deltas'], default='log',
+                   help='Flag for convergence')
+    p.add_argument('--noselfloop', type=bool, default=True,
+                   help='Flag to remove self-loops')
+    p.add_argument('--binary', type=bool, default=True,
+                   help='Flag to make the network binary')
     p.add_argument(
-        '-F',
-        '--flag_conv',
-        type=str,
-        choices=['log', 'deltas'],
-        default='log')  # flag for convergence
-    p.add_argument('--noselfloop', type=bool, default=True)  # flag to remove self-loops
-    p.add_argument('--binary', type=bool, default=True)   # flag to make the network binary
-    # flag to plot the log-likelihood
-    p.add_argument('--plot_loglikelihood', type=bool, default=False)
-    p.add_argument('--rseed', type=int, default=0)  # random seed
-    p.add_argument('--num_realizations', type=int, default=50)  # number of realizations
-    p.add_argument('-v', '--verbose', action='store_true')  # print verbose
+        '--plot_loglikelihood',
+        type=bool,
+        default=False,
+        help='Flag to plot the log-likelihood')
+    p.add_argument('--rseed', type=int, default=0, help='Random seed')
+    p.add_argument('--num_realizations', type=int, default=50,
+                   help='Number of realizations')
+    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')
+
+    # Parse the command line arguments
     args = p.parse_args()
 
     # setting to run the algorithm

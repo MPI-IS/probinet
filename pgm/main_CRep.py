@@ -3,6 +3,7 @@ Performing the inference in the given single-layer directed network.
 Implementation of CRep algorithm.
 """
 
+import argparse
 from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
@@ -19,33 +20,38 @@ def main():
     """
     Main function for CRep.
     """
-    p = ArgumentParser()
-    p.add_argument('-a',
-                   '--algorithm',
-                   type=str,
-                   choices=['CRep', 'CRepnc', 'CRep0'],
-                   default='CRep')  # configuration
-    p.add_argument('-K', '--K', type=int, default=None)  # number of communities
-    p.add_argument('-A', '--adj', type=str,
-                   default='syn111.dat')  # name of the network
-    p.add_argument('-f',
-                   '--in_folder',
-                   type=str,
-                   default='')  # path of the input network
-    p.add_argument('-o', '-O', '--out_folder', type=str, default='')  # path of the output folder
-    p.add_argument('-e', '--ego', type=str,
-                   default='source')  # name of the source of the edge
-    p.add_argument('-t', '--alter', type=str,
-                   default='target')  # name of the target of the edge
+    p = ArgumentParser(description="Script to run the CRep algorithm.",
+                       formatter_class=argparse.ArgumentDefaultsHelpFormatter
+                       )
+
+    # Add the command line arguments
+    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],  # ,# TODO: add this: 'CRepnc', 'CRep0'
+                   default='CRep',
+                   # help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
+                   )  # configuration
+    p.add_argument('-K', '--K', type=int, default=None,
+                   help='Number of communities')
+    p.add_argument('-A', '--adj', type=str, default='syn111.dat',
+                   help='Name of the network')
+    p.add_argument('-f', '--in_folder', type=str, default='',
+                   help='Path of the input network')
+    p.add_argument('-o', '-O', '--out_folder', type=str, default='',
+                   help='Path of the output folder')
+    p.add_argument('-e', '--ego', type=str, default='source',
+                   help='Name of the source of the edge')
+    p.add_argument('-t', '--alter', type=str, default='target',
+                   help='Name of the target of the edge')
     p.add_argument(
-        '-d', '--force_dense', type=bool,
-        default=False)  # flag to force a dense transformation in input
-    p.add_argument('-F',
-                   '--flag_conv',
-                   type=str,
-                   choices=['log', 'deltas'],
-                   default='log')  # flag for convergence
-    p.add_argument('-v', '--verbose', action='store_true')  # print verbose
+        '-d',
+        '--force_dense',
+        type=bool,
+        default=False,
+        help='Flag to force a dense transformation in input')
+    p.add_argument('-F', '--flag_conv', type=str, choices=['log', 'deltas'], default='log',
+                   help='Flag for convergence')
+    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')
+
+    # Parse the command line arguments
     args = p.parse_args()
 
     # setting to run the algorithm
