@@ -32,17 +32,20 @@ To get started, follow these steps:
 
 ## Usage
 
-Run the PGM package as a whole with the `main_*` commands, e.g. if you are interested in running the `CRep` algorithm,
-you can do it by running::
+Run the PGM package as a whole with the `run_*` commands. Here is a list of supported commands:
+
+- `run_CRep`: Runs the `CRep` algorithm.
+- `run_JointCRep`: Runs the `JointCRep` algorithm.
+
+For example, if you are interested in running the `CRep` algorithm, you can do it by running:
 
 ```bash
-    python main_CRep.py
+    run_CRep
 ```
-
 A list of the parameters that can be passed as arguments is available by running::
 
 ```bash
-    python main_CRep.py --help
+    run_CRep --help
 ```
 
 ## Tests

@@ -9,7 +9,7 @@ from numpy import ndarray
 import pandas as pd
 
 from . import preprocessing as prep
-from .statistics import print_graph_stat
+from .stats import print_graph_stat
 
 # pylint: disable=too-many-arguments, too-many-instance-attributes,
 # too-many-locals, too-many-branches, too-many-statements
@@ -57,7 +57,8 @@ def import_data(dataset: Path,
 
     # read adjacency file
     df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
-    print(f"{dataset} shape: {df_adj.shape}")
+    if verbose:  # TODO: Add a logger
+        print(f"{dataset} shape: {df_adj.shape}")
 
     # A = read_graph(df_adj=df_adj, ego=ego, alter=alter, noselfloop=True)
     A = read_graph(
@@ -69,8 +70,9 @@ def import_data(dataset: Path,
         verbose=verbose,
         binary=binary)
     nodes = list(A[0].nodes())
-    print('\nNumber of nodes =', len(nodes))
-    print('Number of layers =', len(A))
+    if verbose:
+        print('\nNumber of nodes =', len(nodes))
+        print('Number of layers =', len(A))
     # save the network in a tensor
     if force_dense:
         B, rw = prep.build_B_from_A(A, nodes=nodes)
@@ -222,7 +224,7 @@ def read_graph_jointcrep(
     for l in range(L):
         A[l].add_nodes_from(nodes)
 
-    for index, row in df_adj.iterrows():
+    for _, row in df_adj.iterrows():
         v1 = row[ego]
         v2 = row[alter]
         for l in range(L):

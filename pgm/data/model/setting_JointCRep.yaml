@@ -13,11 +13,3 @@ use_approximation: False
 files: "../data/input/theta.npz"
 plot_loglik: False
 
-#inf: 10000000000.0
-#err_max: 0.000000000001
-#err: 0.1
-#num_realizations: 3
-#convergence_tol: 0.0001
-#decision: 10
-#max_iter: 500
-#verbose: True

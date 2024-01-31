@@ -46,6 +46,11 @@ dev = [
     "unittest-xml-reporting"
 ]
 
+# CLI
+[project.scripts]
+run_CRep = "pgm.main_CRep:main"
+run_JointCRep = "pgm.main_JointCRep:main"
+
 # Setuptools
 [tool.setuptools]
 packages = ["pgm"]

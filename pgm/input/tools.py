@@ -226,29 +226,6 @@ def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
     return np.allclose(a, a.T, rtol=rtol, atol=atol)
 
 
-def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
-                    rtol: float = 1e-05, atol: float = 1e-08) -> bool:
-    """
-    Check if a matrix or a list of matrices is symmetric.
-
-    Parameters
-    ----------
-    a : ndarray or list
-        Input data.
-    rtol : float
-           Relative tolerance.
-    atol : float
-              Absolute tolerance.
-    Returns
-    -------
-    True if the matrix is symmetric, False otherwise.
-    """
-    if isinstance(a, list):
-        return all(np.allclose(mat, mat.T, rtol=rtol, atol=atol) for mat in a)
-
-    return np.allclose(a, a.T, rtol=rtol, atol=atol)
-
-
 def build_edgelist(A: skt.sptensor, l: int) -> pd.DataFrame:
     """
     Build the edgelist for a given layer, a in DataFrame format.

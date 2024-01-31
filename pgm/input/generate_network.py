@@ -16,12 +16,11 @@ import pandas as pd
 from scipy.optimize import brentq
 from scipy.sparse import tril, triu
 
-from . import statistics as stats
 from . import tools as tl
 from ..model.jointcrep import transpose_tensor
 from ..output.evaluate import _lambda0_full
 from ..output.plot import plot_A
-from .statistics import print_graph_stat
+from .stats import print_graph_stat, reciprocal_edges
 from .tools import check_symmetric, Exp_ija_matrix, normalize_nonzero_membership, output_adjacency
 
 # TODO: add type hints into a separte script
@@ -268,7 +267,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
 
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
-        reciprocity_c = np.round(stats.reciprocal_edges(G), 3)
+        reciprocity_c = np.round(reciprocal_edges(G), 3)
 
         if self.verbose:
             print(
@@ -420,7 +419,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
 
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
-        reciprocity_c = np.round(stats.reciprocal_edges(G), 3)
+        reciprocity_c = np.round(reciprocal_edges(G), 3)
 
         if self.verbose:
             print(
@@ -514,7 +513,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
 
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
-        reciprocity_c = np.round(stats.reciprocal_edges(G), 3)
+        reciprocity_c = np.round(reciprocal_edges(G), 3)
 
         if self.verbose:
             print(
@@ -1066,7 +1065,8 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
     - It models pairwise joint distributions with Bivariate Bernoulli distributions
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # pylint: disable=super-init-not-called
+        # TODO: incorporate the __init__ where it should
 
         if "eta" in kwargs:
             eta = kwargs["eta"]
