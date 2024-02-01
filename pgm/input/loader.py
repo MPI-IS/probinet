@@ -94,31 +94,31 @@ def read_graph(
         verbose: bool = True,
         binary: bool = True) -> List:
     """
-        Create the graph by adding edges and nodes.
+    Create the graph by adding edges and nodes.
 
-        Return the list MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    Return the list MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
 
-        Parameters
-        ----------
-        df_adj: DataFrame
-                 Pandas DataFrame object containing the edges of the graph.
-        ego: str
-              Name of the column to consider as source of the edge.
-        alter: str
-                Name of the column to consider as target of the edge.
-        undirected: bool
-                     If set to True, the algorithm considers an undirected graph.
-        noselfloop: bool
-                     If set to True, the algorithm removes the self - loops.
-        verbose: bool
-                  Flag to print details.
-        binary: bool
-                 If set to True, read the graph with binary edges.
+    Parameters
+    ----------
+    df_adj: DataFrame
+             Pandas DataFrame object containing the edges of the graph.
+    ego: str
+          Name of the column to consider as source of the edge.
+    alter: str
+            Name of the column to consider as target of the edge.
+    undirected: bool
+                 If set to True, the algorithm considers an undirected graph.
+    noselfloop: bool
+                 If set to True, the algorithm removes the self - loops.
+    verbose: bool
+              Flag to print details.
+    binary: bool
+             If set to True, read the graph with binary edges.
 
-        Returns
-        -------
-        A: list
-            List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    Returns
+    -------
+    A: list
+        List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
     """
 
     # build nodes

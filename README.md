@@ -6,9 +6,9 @@ scientific publications. Our focus lies in advancing network analysis techniques
 approaches that relax restrictive assumptions, enabling the modeling of joint distributions of data and latent
 variables.
 
-The PGM package is designed to be a comprehensive and user-friendly toolset for researchers and practitioners engaging
+The ``pgm`` package is designed to be a comprehensive and user-friendly toolset for researchers and practitioners engaging
 in probabilistic generative modeling for networks. Our goal is to provide a unified resource that brings together
-diverse advances scattered across different code repositories. By doing so, we aim to simplify the use of machine
+different advances scattered across many code repositories. By doing so, we aim to simplify the use of machine
 learning tasks on networks, including node clustering (community detection), anomaly detection, and the generation of
 synthetic data from latent variables.
 
@@ -32,7 +32,7 @@ To get started, follow these steps:
 
 ## Usage
 
-Run the PGM package as a whole with the `run_*` commands. Here is a list of supported commands:
+Run the `pgm` package as a whole with the `run_*` commands. Here is a list of supported commands:
 
 - `run_CRep`: Runs the `CRep` algorithm.
 - `run_JointCRep`: Runs the `JointCRep` algorithm.

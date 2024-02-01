@@ -5,7 +5,8 @@
    :caption: Contents
 
    api
-   Examples <tutorials/CRep>
+   Tutorial: A Beginner's Guide to Probabilistic Generative Models and the CRep Algorithm <tutorials/CRep>
+   Tutorial: Decoding Network Patterns with JointCRep: A User-Friendly Guide <tutorials/JointCRep>
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
@@ -17,7 +18,7 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Delve into the tutorials to learn more about the package on the section Examples.
+Delve into the tutorials to learn more about the package on the left panel.
 
 
 

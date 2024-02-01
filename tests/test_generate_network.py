@@ -159,6 +159,10 @@ class TestGMReciprocity(unittest.TestCase):
 
 
 class TestBaseSyntheticNetwork(unittest.TestCase):
+    """
+    Test cases for the BaseSyntheticNetwork class.
+    """
+
     def setUp(self):
         self.N = 100
         self.L = 1
