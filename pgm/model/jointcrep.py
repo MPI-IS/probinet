@@ -1253,8 +1253,8 @@ class JointCRep:
                    Total number of iterations.
         """
         # Check if the output folder exists, otherwise create it
-        if not os.path.exists(self.out_folder):
-            os.makedirs(self.out_folder)
+        self.out_folder = Path(self.out_folder)
+        self.out_folder.mkdir(parents=True, exist_ok=True)
 
         # Check if the output folder is a Path
         if not isinstance(self.out_folder, Path):

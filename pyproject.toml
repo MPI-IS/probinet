@@ -50,6 +50,7 @@ dev = [
 [project.scripts]
 run_CRep = "pgm.main_CRep:main"
 run_JointCRep = "pgm.main_JointCRep:main"
+run_MTCOV = "pgm.main_MTCOV:main"
 
 # Setuptools
 [tool.setuptools]

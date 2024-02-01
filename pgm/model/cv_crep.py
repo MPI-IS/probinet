@@ -6,9 +6,6 @@ import yaml
 
 from .crep import CRep
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
-# pylint: disable=fixme
-
 
 def fit_model(B, B_T, data_T_vals, nodes, algo, **conf):
     """
@@ -43,7 +40,7 @@ def fit_model(B, B_T, data_T_vals, nodes, algo, **conf):
 
     # setting to run the algorithm
     with open(conf['out_folder'] + '/setting_' + algo + '.yaml', 'w', encoding='utf8') as f:
-        yaml.dump(conf, f)
+        yaml.dump(conf, f)  # TODO: change this package data
 
     model = CRep()
     uf, vf, wf, nuf, maxPSL = model.fit(data=B,

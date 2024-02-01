@@ -2,7 +2,6 @@
 Implementation of CRep algorithm.
 """
 
-import argparse
 from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
@@ -19,41 +18,63 @@ def main():
     """
     Main function for CRep.
     """
-    p = ArgumentParser(description="Script to run the CRep algorithm.",
-                       formatter_class=argparse.ArgumentDefaultsHelpFormatter
-                       )
+    # Step 1: Parse the command-line arguments
+    p = ArgumentParser(description="Script to run the CRep algorithm.")
 
     # Add the command line arguments
-    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],  # TODO: add this: 'CRepnc', 'CRep0'
+    p.add_argument('-a', '--algorithm', type=str, choices=['CRep'],  # ,# TODO: add this: 'CRepnc', 'CRep0'
                    default='CRep',
-                   # help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
-                   )  # configuration
+                   help='Choose the algorithm to run: CRep, CRepnc, CRep0.')  # configuration
     p.add_argument('-K', '--K', type=int, default=None,
-                   help='Number of communities')
+                   help='Number of communities')  # number of communities
     p.add_argument('-A', '--adj', type=str, default='syn111.dat',
-                   help='Name of the network')
+                   help='Name of the network')  # name of the network
     p.add_argument('-f', '--in_folder', type=str, default='',
-                   help='Path of the input network')
+                   help='Path of the input network')  # path of the input network
     p.add_argument('-o', '-O', '--out_folder', type=str, default='',
-                   help='Path of the output folder')
+                   help='Path of the output folder')  # path of the output folder
     p.add_argument('-e', '--ego', type=str, default='source',
-                   help='Name of the source of the edge')
+                   help='Name of the source of the edge')  # name of the source of the edge
     p.add_argument('-t', '--alter', type=str, default='target',
-                   help='Name of the target of the edge')
+                   help='Name of the target of the edge')  # name of the target of the edge
     p.add_argument(
         '-d',
         '--force_dense',
         type=bool,
         default=False,
-        help='Flag to force a dense transformation in input')
+        help='Flag to force a dense transformation in input')  # flag to force a dense transformation in input
     p.add_argument('-F', '--flag_conv', type=str, choices=['log', 'deltas'], default='log',
-                   help='Flag for convergence')
-    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')
+                   help='Flag for convergence')  # flag for convergence
+    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')  # print verbose
 
     # Parse the command line arguments
     args = p.parse_args()
 
     # setting to run the algorithm
+
+    # Step 2: Import the data
+
+    ego = args.ego
+    alter = args.alter
+    force_dense = args.force_dense  # Sparse matrices
+    in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
+                'input' if args.in_folder == '' else Path(args.in_folder)
+    adj = Path(args.adj)
+
+    # Import data:
+    network = in_folder / adj  # network complete path
+
+    A, B, B_T, data_T_vals = import_data(
+        network,
+        ego=ego,
+        alter=alter,
+        force_dense=force_dense,
+        header=0,
+        verbose=args.verbose
+    )
+    nodes = A[0].nodes()
+
+    # Step 3: Load the configuration settings
 
     config_path = 'setting_' + args.algorithm + '.yaml'
     with files('pgm.data.model').joinpath(config_path).open('rb') as fp:
@@ -66,13 +87,14 @@ def main():
     if args.K is not None:
         conf['K'] = args.K
 
-    # Ensure the output folder exists
-    out_folder_path = Path(conf['out_folder'])
-    out_folder_path.mkdir(parents=True, exist_ok=True)
-
     # Print the configuration file
     if args.verbose:
         print(yaml.dump(conf))
+
+    # Step 4: Create the output directory
+
+    out_folder_path = Path(conf['out_folder'])
+    out_folder_path.mkdir(parents=True, exist_ok=True)
 
     # Save the configuration file
     output_config_path = conf['out_folder'] + '/setting_' + \
@@ -80,27 +102,9 @@ def main():
     with open(output_config_path, 'w', encoding='utf8') as f:
         yaml.dump(conf, f)
 
-    # Import data
-    ego = args.ego
-    alter = args.alter
-    force_dense = args.force_dense  # Sparse matrices
-    in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
-        'input' if args.in_folder == '' else Path(args.in_folder)
-    adj = Path(args.adj)
 
-    # Import data:
-    network = in_folder / adj  # network complete path
-    A, B, B_T, data_T_vals = import_data(
-        network,
-        ego=ego,
-        alter=alter,
-        force_dense=force_dense,
-        header=0,
-        verbose=args.verbose
-    )
-    nodes = A[0].nodes()
+    # Step 5: Run CRep
 
-    # Run CRep
     if args.verbose:
         print(f'\n### Run {args.algorithm} ###')
     model = CRep()

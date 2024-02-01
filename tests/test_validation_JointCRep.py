@@ -108,4 +108,4 @@ class BaseTestCase(unittest.TestCase):
         self.assertTrue(np.array_equal(thetaGT['eta'], theta['eta']))
 
         # Remove output npz files after testing using os module
-        os.remove((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz'))
+        (self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz').unlink()

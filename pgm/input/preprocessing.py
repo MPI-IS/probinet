@@ -3,19 +3,21 @@ It provides functions for preprocessing and constructing adjacency tensors from 
 The script facilitates the creation of both dense and sparse adjacency tensors, considering edge
 weights, and ensures proper formatting of input data tensors.
 """
-from typing import Any, List, Optional, Tuple
+
+from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
-from numpy import ndarray
 import numpy as np
-from sktensor import sptensor
+import scipy
 import sktensor as skt
+from numpy import ndarray
+from sktensor import sptensor
 
 from . import tools
 
 
-def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tuple[
-        ndarray, List[Any]]:
+def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
+                   calculate_reciprocity: bool = True) -> Union[ndarray, Tuple[ndarray, List[Any]]]:
     """
     Create the numpy adjacency tensor of a networkX graph.
 
@@ -25,14 +27,13 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tu
         List of MultiDiGraph NetworkX objects.
     nodes : list, optional
         List of nodes IDs. If not provided, use all nodes in the first graph as the default.
+    calculate_reciprocity : bool, optional
+        Whether to calculate reciprocity or not. Default is True.
 
     Returns
     -------
-    B : ndarray
-        Graph adjacency tensor.
-    rw : list
-         List whose elements are reciprocity (considering the weights of the edges) values,
-         one per each layer.
+    B : ndarray or Tuple[ndarray, List[Any]]
+        Graph adjacency tensor. If calculate_reciprocity is True, returns a tuple with B and a list of reciprocity values.
 
     Raises
     ------
@@ -40,6 +41,9 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tu
         If any graph in A has a different set of vertices than the first graph.
         If any weight in B is not an integer.
     """
+
+    def _calculate_reciprocity(B_layer):
+        return np.multiply(B_layer, B_layer.T).sum() / B_layer.sum()
 
     # Get the number of nodes in the first graph of the list A
     N = A[0].number_of_nodes()
@@ -76,13 +80,21 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tu
                                        nodelist=nodes)
 
         # Calculate reciprocity for the current layer and append it to the rw list
-        rw.append(np.multiply(B[l], B[l].T).sum() / B[l].sum())
+        if calculate_reciprocity:
+            rw.append(_calculate_reciprocity(B[l]))
 
-    return B, rw
+    if calculate_reciprocity:
+        return B, rw
+    else:
+        return B
 
 
-def build_sparse_B_from_A(A: List[nx.MultiDiGraph]) -> Tuple[
-        sptensor, sptensor, ndarray, List[Any]]:
+def build_sparse_B_from_A(A: List[nx.MultiDiGraph],
+                          calculate_reciprocity: bool = False) -> Union[sptensor,
+                                                                        Tuple[sptensor,
+                                                                              sptensor,
+                                                                              ndarray,
+                                                                              List[Any]]]:
     """
     Create the sptensor adjacency tensor of a networkX graph.
 
@@ -90,18 +102,13 @@ def build_sparse_B_from_A(A: List[nx.MultiDiGraph]) -> Tuple[
     ----------
     A : list
         List of MultiDiGraph NetworkX objects.
+    calculate_reciprocity : bool, optional
+        Whether to calculate and return the reciprocity values. Default is False.
 
     Returns
     -------
-    data : sptensor
-           Graph adjacency tensor.
-    data_T : sptensor
-             Graph adjacency tensor (transpose).
-    v_T : ndarray
-          Array with values of entries A[j, i] given non-zero entry (i, j).
-    rw : list
-         List whose elements are reciprocity (considering the weights of the edges) values, one
-         per each layer.
+    data : sptensor or Tuple[sptensor, sptensor, ndarray, List[Any]]
+           Graph adjacency tensor. If calculate_reciprocity is True, returns a tuple with the adjacency tensor, its transpose, an array with values of entries A[j, i] given non-zero entry (i, j), and a list of reciprocity values.
     """
 
     # Get the number of nodes in the first graph of the list A
@@ -126,7 +133,8 @@ def build_sparse_B_from_A(A: List[nx.MultiDiGraph]) -> Tuple[
         b_T = nx.to_scipy_sparse_array(A[l]).transpose()
 
         # Calculate reciprocity for the current layer and append it to the rw list
-        rw.append(np.sum(b.multiply(b_T)) / np.sum(b))
+        if calculate_reciprocity:
+            rw.append(np.sum(b.multiply(b_T)) / np.sum(b))
 
         # Get the non-zero indices for the original and transposed arrays
         nz = b.nonzero()
@@ -148,7 +156,10 @@ def build_sparse_B_from_A(A: List[nx.MultiDiGraph]) -> Tuple[
     data = skt.sptensor(subs_, v, shape=(L, N, N), dtype=v.dtype)
     data_T = skt.sptensor(subs_T_, vT, shape=(L, N, N), dtype=vT.dtype)
 
-    return data, data_T, v_T, rw
+    if calculate_reciprocity:
+        return data, data_T, v_T, rw
+    else:
+        return data
 
 
 def preprocess(A: np.ndarray) -> sptensor:
@@ -176,3 +187,27 @@ def preprocess(A: np.ndarray) -> sptensor:
         A = skt.dtensor(A)
 
     return A
+
+
+def preprocess_X(X):
+    """
+        Pre-process input data matrix.
+        If the input is sparse, returns a scipy sparse matrix. Otherwise, returns a numpy array.
+
+        Parameters
+        ----------
+        X : ndarray
+            Input data (matrix).
+
+        Returns
+        -------
+        X : scipy sparse matrix/ndarray
+            Pre-processed data. If the input is sparse, returns a scipy sparse matrix. Otherwise, returns a numpy array.
+    """
+
+    if not X.dtype == np.dtype(int).type:
+        X = X.astype(int)
+    if np.logical_and(isinstance(X, np.ndarray), scipy.sparse.issparse(X)):
+        X = scipy.sparse.csr_matrix(X)
+
+    return X
