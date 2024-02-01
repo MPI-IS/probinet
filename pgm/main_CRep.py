@@ -2,10 +2,11 @@
 Implementation of CRep algorithm.
 """
 
+import argparse
+import time
 from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
-import time
 
 import numpy as np
 import yaml
@@ -19,12 +20,15 @@ def main():
     Main function for CRep.
     """
     # Step 1: Parse the command-line arguments
-    p = ArgumentParser(description="Script to run the CRep algorithm.")
-
+    p = ArgumentParser(description="Script to run the CRep algorithm.",
+                       formatter_class=argparse.ArgumentDefaultsHelpFormatter
+                       )
     # Add the command line arguments
-    p.add_argument('-a', '--algorithm', type=str, choices=['CRep'],  # ,# TODO: add this: 'CRepnc', 'CRep0'
+    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],
+                   # TODO: add this: 'CRepnc', 'CRep0'
                    default='CRep',
-                   help='Choose the algorithm to run: CRep, CRepnc, CRep0.')  # configuration
+                   help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
+                   )  # configuration
     p.add_argument('-K', '--K', type=int, default=None,
                    help='Number of communities')  # number of communities
     p.add_argument('-A', '--adj', type=str, default='syn111.dat',
@@ -105,7 +109,7 @@ def main():
 
     # Step 5: Run CRep
 
-    if args.verbose:
+    if args.verbose: # TODO: Add a logger
         print(f'\n### Run {args.algorithm} ###')
     model = CRep()
     time_start = time.time()

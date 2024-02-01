@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
-from numpy import ndarray
 import numpy as np
 import pandas as pd
+from numpy import ndarray
 
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
-from .statistics import print_graph_stat
+from .stats import print_graph_stat
 
 
 def import_data(dataset: Path,

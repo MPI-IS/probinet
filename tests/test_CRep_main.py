@@ -1,6 +1,6 @@
-from pathlib import Path
 import sys
 import tempfile
+from pathlib import Path
 from unittest import mock, TestCase
 
 import networkx as nx
@@ -34,7 +34,7 @@ class TestCRepMain(TestCase):
             'K': 3,
             'assortative': True,
             'constrained': True,
-            'end_file': '_test',
+            'end_file': '_CRep',
             'eta0': None,
             'files': 'config/data/input/theta_gt111.npz',
             'fix_eta': False,
