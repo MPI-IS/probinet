@@ -24,7 +24,7 @@ def main():
                        )
 
     # Add the command line arguments
-    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],  # ,# TODO: add this: 'CRepnc', 'CRep0'
+    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],  # TODO: add this: 'CRepnc', 'CRep0'
                    default='CRep',
                    # help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
                    )  # configuration

@@ -14,7 +14,6 @@ import sktensor as skt
 from . import tools
 
 
-
 def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None) -> Tuple[
         ndarray, List[Any]]:
     """

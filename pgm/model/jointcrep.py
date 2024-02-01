@@ -289,13 +289,18 @@ class JointCRep:
 
         self.AAtSum = (data.vals * data_T_vals).sum()
 
+        # The following part of the code is responsible for running the Expectation-Maximization (EM) algorithm for a
+        # specified number of realizations (self.num_realizations):
         for r in range(self.num_realizations):
 
+            # For each realization (r), it initializes the parameters, updates the old variables
+            # and updates the cache.
             self._initialize(nodes=nodes)
-
             self._update_old_variables()
             self._update_cache(data, subs_nz)
-            # convergence local variables
+
+            # It sets up local variables for convergence checking. coincide and it are counters, convergence is a
+            # boolean flag, and loglik is the initial pseudo log-likelihood.
             coincide, it = 0, 0
             convergence = False
             loglik = self.inf
@@ -304,10 +309,18 @@ class JointCRep:
                 print(f'Updating realization {r} ...')
             loglik_values = []
             time_start = time.time()
-            # --- single step iteration update ---
+            # It enters a while loop that continues until either convergence is achieved or the maximum number of
+            # iterations (self.max_iter) is reached.
             while np.logical_and(not convergence, it < self.max_iter):
-                # main EM update: updates memberships and calculates max difference new vs old
+                #  it performs the main EM update (self._update_em(data, data_T_vals, subs_nz, denominator=E))
+                # which updates the memberships and calculates the maximum difference
+                # between new and old parameters.
                 delta_u, delta_v, delta_w, delta_eta = self._update_em(data, subs_nz)
+
+                # Depending on the convergence flag (self.flag_conv), it checks for convergence using either the
+                # pseudo log-likelihood values (self._check_for_convergence(data, it, loglik, coincide, convergence,
+                # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
+                # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
                 if self.flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data, it, loglik, coincide, convergence)
@@ -326,6 +339,9 @@ class JointCRep:
                 else:
                     raise ValueError('flag_conv can be either log or deltas!')
 
+            # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
+            # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
+            # pseudo log-likelihood.
             if self.flag_conv == 'log':
                 if maxL < loglik:
                     self._update_optimal_parameters()
@@ -345,7 +361,6 @@ class JointCRep:
             if self.verbose:
                 print(f'Nreal = {r} - Log-likelihood = {loglik} - iterations = {it} - '
                       f'time = {np.round(time.time() - time_start, 2)} seconds\n')
-            # print(f'Best real = {best_r} - maxL = {maxL} - best iterations = {final_it}')
 
             # end cycle over realizations
 

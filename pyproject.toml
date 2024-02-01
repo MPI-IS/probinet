@@ -99,10 +99,11 @@ skip_empty = true
 [tool.mypy]
 ignore_missing_imports = true
 
+## sktensor needs numpy 1.22.0 but then python 3.11 gives errors; we can upgrade to 3.11 when sktensor is removed
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py310 # sktensor needs numpy 1.22.0 but then python 3.11 gives errors; we can upgrade to 3.11 when sktensor is removed
+envlist = py310, docs
 [testenv]
 description =
     run unit tests
@@ -110,4 +111,9 @@ extras =
     dev
 commands =
     python -m xmlrunner
+[testenv:docs]
+basepython = python3.10
+commands =
+    sphinx-build -d "{envtmpdir}{/}doctree" doc/source/ "{toxworkdir}{/}docs_out" --color -b html
+    python -c 'print(r"documentation available under file://{toxworkdir}{/}docs_out{/}index.html")'
 """
