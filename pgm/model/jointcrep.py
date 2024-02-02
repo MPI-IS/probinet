@@ -5,7 +5,6 @@
 
 from __future__ import print_function
 
-import os
 from pathlib import Path
 import time
 from typing import Any, List, Union
@@ -211,8 +210,15 @@ class JointCRep:
             undirected: bool = False,
             assortative: bool = True,
             use_approximation: bool = False,
-            **extra_params
-            ):
+            **extra_params: dict[str, Any]
+            ) -> tuple[np.ndarray[Any,
+                                  np.dtype[np.float64]],
+                       np.ndarray[Any,
+                                  np.dtype[np.float64]],
+                       np.ndarray[Any,
+                                  np.dtype[np.float64]],
+                       float,
+                       float]:
         """
         Model directed networks by using a probabilistic generative model based on a Bivariate
         Bernoulli distribution that assumes community parameters and a pair interaction

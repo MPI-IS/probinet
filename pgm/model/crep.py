@@ -165,8 +165,7 @@ class CRep:
                                              dtype[np.float64]],
                                      ndarray[Any,
                                              dtype[np.float64]],
-                                     ndarray[Any,
-                                             dtype[Any]],
+                                     float,
                                      float]:
         """
         Model directed networks by using a probabilistic generative model that assume community

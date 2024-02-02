@@ -87,16 +87,16 @@ def import_data(dataset: Path,
 
 def import_data_mtcov(
         in_folder: Union[str, Path],
-        adj_name='adj.csv',
-        cov_name='X.csv',
-        ego='source',
-        egoX='Name',
-        alter='target',
-        attr_name='Metadata',
-        undirected=False,
-        force_dense=True,
-        noselfloop=True,
-        verbose=True):
+        adj_name: Union[str, Path] = 'adj.csv',
+        cov_name: Union[str, Path] = 'X.csv',
+        ego: str = 'source',
+        egoX: str = 'Name',
+        alter: str = 'target',
+        attr_name: str = 'Metadata',
+        undirected: bool = False,
+        force_dense: bool = True,
+        noselfloop: bool = True,
+        verbose: bool = True):
     """
         Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
 
@@ -257,7 +257,11 @@ def read_graph(
     return A
 
 
-def read_design_matrix(df_X, nodes, attribute=None, ego='Name', verbose=True):
+def read_design_matrix(df_X: pd.DataFrame,
+                       nodes: List,
+                       attribute: str = None,
+                       ego: str = 'Name',
+                       verbose: bool = True):
     """
         Create the design matrix with the one-hot encoding of the given attribute.
 

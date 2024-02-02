@@ -1,6 +1,6 @@
 """
-Performing community detection in multilayer networks considering both the topology of interactions and node
-attributes. Implementation of MTCOV algorithm.
+    Performing community detection in multilayer networks considering both the topology of interactions and node
+    attributes. Implementation of MTCOV algorithm.
 """
 
 from argparse import ArgumentParser

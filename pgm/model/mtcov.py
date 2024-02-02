@@ -6,9 +6,10 @@
 from pathlib import Path
 import sys
 import time
-from typing import Any, List, Union
+from typing import Any, List, Tuple, Union
 
 import numpy as np
+from numpy.random import RandomState
 import scipy.sparse
 import sktensor as skt
 from termcolor import colored
@@ -19,18 +20,23 @@ from ..output.plot import plot_L
 
 
 class MTCOV:
+    """
+    Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and
+    node attributes to extract overlapping communities in directed and undirected multilayer networks.
+    """
+
     def __init__(self,
-                 inf=1e10,
-                 err_max=0.0000001,
-                 err=0.1,
-                 num_realizations=1,
-                 convergence_tol=0.0001,
-                 decision=10,
-                 max_iter=500,
-                 verbose=False,
+                 inf: float = 1e10,
+                 err_max: float = 0.0000001,
+                 err: float = 0.1,
+                 num_realizations: int = 1,
+                 convergence_tol: float = 0.0001,
+                 decision: int = 10,
+                 max_iter: int = 500,
+                 verbose: bool = False,
                  plot_loglik: bool = False,  # flag to plot the log-likelihood
                  flag_conv: str = 'log'  # flag to choose the convergence criterion
-                 ):
+                 ) -> None:
 
         self.inf = inf  # initial value of the pseudo log-likelihood
         self.err_max = err_max  # minimum value for the parameters
@@ -48,10 +54,10 @@ class MTCOV:
                                gamma: float,
                                undirected: bool,
                                assortative: bool,
-                               data: Union[skt.dtensor, skt.sptensor],
-                               data_X: Union[skt.dtensor, skt.sptensor],
+                               data: Union[skt.dtensor, skt.sptensor, np.ndarray],
+                               data_X: Union[skt.dtensor, skt.sptensor,np.ndarray],
                                K: int,
-                               **extra_params
+                               **extra_params: dict[str, Any]
                                ) -> None:
 
         if initialization not in {0, 1}:  # indicator for choosing how to initialize u, v and w
@@ -125,19 +131,27 @@ class MTCOV:
             self.w_f = np.zeros((self.L, self.K, self.K), dtype=float)
 
     def fit(self,
-            data,
-            data_X,
-            flag_conv,
+            data: Union[skt.dtensor, skt.sptensor],
+            data_X: np.ndarray,
+            flag_conv: str,
             nodes: List[Any],
-            batch_size,
+            batch_size: int,
             gamma: float = 0.5,
             rseed: int = 0,
             K: int = 3,
             initialization: int = 0,
             undirected: bool = False,
             assortative: bool = True,
-            **extra_params
-            ):
+            **extra_params: dict[str, Any]
+            ) -> tuple[np.ndarray[Any,
+                                  np.dtype[np.float64]],
+                       np.ndarray[Any,
+                                  np.dtype[np.float64]],
+                       np.ndarray[Any,
+                                  np.dtype[np.float64]],
+                       np.ndarray[Any,
+                                  np.dtype[np.float64]],
+                       float]:
         """
         Performing community detection in multilayer networks considering both the topology of interactions and node
         attributes via EM updates.
@@ -241,13 +255,17 @@ class MTCOV:
                 delta_u, delta_v, delta_w, delta_beta = self._update_em(data, data_X, subs_nz,
                                                                         subs_X_nz)
                 if flag_conv == 'log':
-                    it, loglik, coincide, convergence = self._check_for_convergence(data, data_X,
-                                                                                    it, loglik,
-                                                                                    coincide,
-                                                                                    convergence,
-                                                                                    batch_size,
-                                                                                    subset_N,
-                                                                                    Subs, SubsX)
+                    it, loglik, coincide, convergence = self._check_for_convergence(
+                        data,
+                        data_X,
+                        it,
+                        loglik,
+                        coincide,
+                        convergence,
+                        batch_size,
+                        subset_N,
+                        Subs, SubsX
+                    )
                     loglik_values.append(loglik)
                 elif flag_conv == 'deltas':
                     it, coincide, convergence = self._check_for_convergence_delta(it, coincide,
@@ -300,7 +318,7 @@ class MTCOV:
 
         return self.u_f, self.v_f, self.w_f, self.beta_f, maxL
 
-    def _initialize(self, rng, nodes):
+    def _initialize(self, rng: RandomState, nodes: List[int]) -> None:
         """
             Random initialization of the parameters U, V, W, beta.
 
@@ -409,7 +427,7 @@ class MTCOV:
         max_entry = np.max(self.u)
         self.u += max_entry * self.err * rng.random_sample(self.u.shape)
 
-    def _initialize_v(self, rng, nodes):
+    def _initialize_v(self, rng: RandomState, nodes: List[int]) -> None:
         """
             Initialize in-coming membership matrix v from file.
 
@@ -430,7 +448,7 @@ class MTCOV:
             max_entry = np.max(self.v)
             self.v += max_entry * self.err * rng.random_sample(self.v.shape)
 
-    def _initialize_beta(self, rng):
+    def _initialize_beta(self, rng: RandomState) -> None:
         """
             Initialize beta matrix beta from file.
 
@@ -445,7 +463,7 @@ class MTCOV:
         max_entry = np.max(self.beta)
         self.beta += max_entry * self.err * rng.random_sample(self.beta.shape)
 
-    def _initialize_w(self, rng):
+    def _initialize_w(self, rng: RandomState) -> None:
         """
             Initialize affinity tensor w from file.
 
@@ -465,7 +483,7 @@ class MTCOV:
         max_entry = np.max(self.w)
         self.w += max_entry * self.err * rng.random_sample(self.w.shape)
 
-    def _update_old_variables(self):
+    def _update_old_variables(self) -> None:
         """
             Update values of the parameters in the previous iteration.
         """
@@ -475,20 +493,24 @@ class MTCOV:
         self.w_old = np.copy(self.w)
         self.beta_old = np.copy(self.beta)
 
-    def _update_cache(self, data, subs_nz, data_X, subs_X_nz):
+    def _update_cache(self,
+                      data: Union[skt.dtensor, skt.sptensor],
+                      subs_nz: Tuple[np.ndarray],
+                      data_X: np.ndarray,
+                      subs_X_nz: Tuple[np.ndarray]) -> None:
         """
-            Update the cache used in the em_update.
+        Update the cache used in the em_update.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            data_X : ndarray
-                     Object representing the one-hot encoding version of the design matrix.
-            subs_X_nz : tuple
-                        Indices of elements of data_X that are non-zero.
+        Parameters
+        ----------
+        data : Union[skt.dtensor, skt.sptensor]
+               Graph adjacency tensor.
+        subs_nz : Tuple[np.ndarray]
+                  Indices of elements of data that are non-zero.
+        data_X : np.ndarray
+                 Object representing the one-hot encoding version of the design matrix.
+        subs_X_nz : Tuple[np.ndarray]
+                    Indices of elements of data_X that are non-zero.
         """
 
         # A
@@ -536,24 +558,28 @@ class MTCOV:
 
         return nz_recon_I
 
-    def _pi0_nz(self, subs_X_nz, u, v, beta):
+    def _pi0_nz(self,
+                subs_X_nz: Tuple[np.ndarray],
+                u: np.ndarray,
+                v: np.ndarray,
+                beta: np.ndarray) -> np.ndarray:
         """
-            Compute the mean pi0 (pi_iz) for only non-zero entries (denominator of hizk).
+        Compute the mean pi0 (pi_iz) for only non-zero entries (denominator of hizk).
 
-            Parameters
-            ----------
-            subs_X_nz : tuple
-                        Indices of elements of data_X that are non-zero.
-            u : ndarray
-                Out-going membership matrix.
-            v : ndarray
-                In-coming membership matrix.
-            beta : ndarray
-                   Beta matrix.
+        Parameters
+        ----------
+        subs_X_nz : tuple
+                    Indices of elements of data_X that are non-zero.
+        u : ndarray
+            Out-going membership matrix.
+        v : ndarray
+            In-coming membership matrix.
+        beta : ndarray
+               Beta matrix.
 
-            Returns
-            -------
-            Mean pi0 (pi_iz) for only non-zero entries.
+        Returns
+        -------
+        Mean pi0 (pi_iz) for only non-zero entries.
         """
 
         if self.undirected:
@@ -561,31 +587,35 @@ class MTCOV:
         else:
             return np.einsum('Ik,kz->Iz', u[subs_X_nz[0], :] + v[subs_X_nz[0], :], beta)
 
-    def _update_em(self, data, data_X, subs_nz, subs_X_nz):
+    def _update_em(self,
+                   data: Union[skt.dtensor, skt.sptensor],
+                   data_X: np.ndarray,
+                   subs_nz: Tuple[np.ndarray],
+                   subs_X_nz: Tuple[np.ndarray]) -> Tuple[float, float, float, float]:
         """
-            Update parameters via EM procedure.
+        Update parameters via EM procedure.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            data_X : ndarray
-                     Object representing the one-hot encoding version of the design matrix.
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            subs_X_nz : tuple
-                        Indices of elements of data_X that are non-zero.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_X : ndarray
+                 Object representing the one-hot encoding version of the design matrix.
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        subs_X_nz : tuple
+                    Indices of elements of data_X that are non-zero.
 
-            Returns
-            -------
-            d_u : float
-                  Maximum distance between the old and the new membership matrix U.
-            d_v : float
-                  Maximum distance between the old and the new membership matrix V.
-            d_beta : float
-                     Maximum distance between the old and the new beta matrix.
-            d_w : float
-                  Maximum distance between the old and the new affinity tensor W.
+        Returns
+        -------
+        d_u : float
+              Maximum distance between the old and the new membership matrix U.
+        d_v : float
+              Maximum distance between the old and the new membership matrix V.
+        d_beta : float
+                 Maximum distance between the old and the new beta matrix.
+        d_w : float
+              Maximum distance between the old and the new affinity tensor W.
         """
 
         if self.gamma < 1.:
@@ -695,19 +725,19 @@ class MTCOV:
 
         return dist_w
 
-    def _update_beta(self, subs_X_nz):
+    def _update_beta(self, subs_X_nz: Tuple[np.ndarray]) -> float:
         """
-            Update beta matrix.
+        Update beta matrix.
 
-            Parameters
-            ----------
-            subs_X_nz : tuple
-                        Indices of elements of data_X that are non-zero.
+        Parameters
+        ----------
+        subs_X_nz : tuple
+                    Indices of elements of data_X that are non-zero.
 
-            Returns
-            -------
-            dist_beta : float
-                        Maximum distance between the old and the new beta matrix.
+        Returns
+        -------
+        dist_beta : float
+                    Maximum distance between the old and the new beta matrix.
         """
 
         if self.undirected:
@@ -728,21 +758,23 @@ class MTCOV:
 
         return dist_beta
 
-    def _update_U(self, subs_nz, subs_X_nz):
+    def _update_U(self,
+                  subs_nz: Tuple[np.ndarray],
+                  subs_X_nz: Tuple[np.ndarray]) -> float:
         """
-            Update out-going membership matrix.
+        Update out-going membership matrix.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            subs_X_nz : tuple
-                        Indices of elements of data_X that are non-zero.
+        Parameters
+        ----------
+        subs_nz : Tuple[np.ndarray]
+                  Indices of elements of data that are non-zero.
+        subs_X_nz : Tuple[np.ndarray]
+                    Indices of elements of data_X that are non-zero.
 
-            Returns
-            -------
-            dist_u : float
-                     Maximum distance between the old and the new membership matrix U.
+        Returns
+        -------
+        dist_u : float
+                 Maximum distance between the old and the new membership matrix U.
         """
 
         self.u = self._update_membership(subs_nz, subs_X_nz, self.u, self.v, self.w, self.beta, 1)
@@ -758,25 +790,23 @@ class MTCOV:
 
         return dist_u
 
-    def _update_V(self, subs_nz, subs_X_nz):
+    def _update_V(self,
+                  subs_nz: Tuple[np.ndarray],
+                  subs_X_nz: Tuple[np.ndarray]) -> float:
         """
-            Update in-coming membership matrix.
-            Same as _update_U but with:
-            data <-> data_T
-            w <-> w_T
-            u <-> v
+        Update in-coming membership matrix.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            subs_X_nz : tuple
-                        Indices of elements of data_X that are non-zero.
+        Parameters
+        ----------
+        subs_nz : Tuple[np.ndarray]
+                  Indices of elements of data that are non-zero.
+        subs_X_nz : Tuple[np.ndarray]
+                    Indices of elements of data_X that are non-zero.
 
-            Returns
-            -------
-            dist_v : float
-                     Maximum distance between the old and the new membership matrix V.
+        Returns
+        -------
+        dist_v : float
+                 Maximum distance between the old and the new membership matrix V.
         """
 
         self.v = self._update_membership(subs_nz, subs_X_nz, self.u, self.v, self.w, self.beta, 2)
@@ -792,32 +822,39 @@ class MTCOV:
 
         return dist_v
 
-    def _update_membership(self, subs_nz, subs_X_nz, u, v, w, beta, m):
+    def _update_membership(self,
+                           subs_nz: Tuple[np.ndarray],
+                           subs_X_nz: Tuple[np.ndarray],
+                           u: np.ndarray,
+                           v: np.ndarray,
+                           w: np.ndarray,
+                           beta: np.ndarray,
+                           m: int) -> np.ndarray:
         """
-            Main procedure to update membership matrices.
+        Main procedure to update membership matrices.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            subs_X_nz : tuple
-                        Indices of elements of data_X that are non-zero.
-            u : ndarray
-                Out-going membership matrix.
-            v : ndarray
-                In-coming membership matrix.
-            w : ndarray
-                Affinity tensor.
-            beta : ndarray
-                   Beta matrix.
-            m : int
-                Mode in which the Khatri-Rao product of the membership matrix is multiplied with the tensor: if 1 it
-                works with the matrix U; if 2 it works with V.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        subs_X_nz : tuple
+                    Indices of elements of data_X that are non-zero.
+        u : ndarray
+            Out-going membership matrix.
+        v : ndarray
+            In-coming membership matrix.
+        w : ndarray
+            Affinity tensor.
+        beta : ndarray
+               Beta matrix.
+        m : int
+            Mode in which the Khatri-Rao product of the membership matrix is multiplied with the tensor: if 1 it
+            works with the matrix U; if 2 it works with V.
 
-            Returns
-            -------
-            out : ndarray
-                  Update of the membership matrix.
+        Returns
+        -------
+        out : ndarray
+              Update of the membership matrix.
         """
 
         if not self.assortative:
@@ -993,23 +1030,26 @@ class MTCOV:
         else:
             return l
 
-    def _lambda0_full(self, u, v, w):
+    def _lambda0_full(self,
+                      u: np.ndarray,
+                      v: np.ndarray,
+                      w: np.ndarray) -> np.ndarray:
         """
-            Compute the mean M_ij^alpha for all entries.
+        Compute the mean M_ij^alpha for all entries.
 
-            Parameters
-            ----------
-            u : ndarray
-                Out-going membership matrix.
-            v : ndarray
-                In-coming membership matrix.
-            w : ndarray
-                Affinity tensor.
+        Parameters
+        ----------
+        u : ndarray
+            Out-going membership matrix.
+        v : ndarray
+            In-coming membership matrix.
+        w : ndarray
+            Affinity tensor.
 
-            Returns
-            -------
-            M : ndarray
-                Mean M_ij^alpha for all entries.
+        Returns
+        -------
+        M : ndarray
+            Mean M_ij^alpha for all entries.
         """
 
         if w.ndim == 2:
@@ -1073,7 +1113,10 @@ class MTCOV:
         self.w_f = np.copy(self.w)
         self.beta_f = np.copy(self.beta)
 
-    def output_results(self, maxL, nodes, final_it):
+    def output_results(self,
+                       maxL: float,
+                       nodes: List[int],
+                       final_it: int) -> None:
         """
             Output results.
 

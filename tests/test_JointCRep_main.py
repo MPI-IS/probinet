@@ -1,4 +1,3 @@
-from pathlib import Path
 import sys
 import tempfile
 from unittest import mock, TestCase
@@ -52,7 +51,7 @@ class TestJointCRepMain(
         }
 
         # Path to the generated configuration file
-        config_file_path = Path(self.temp_output_folder) / 'setting_JointCRep.yaml'
+        config_file_path = self.temp_output_folder / 'setting_JointCRep.yaml'
 
         # Load the actual configuration from the file
         with open(config_file_path, 'r', encoding='utf8') as f:

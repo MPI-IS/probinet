@@ -5,12 +5,13 @@ import os
 import unittest
 
 import numpy as np
+import pandas as pd
 from scipy import sparse
 import sktensor as skt
 
 from pgm.input.tools import (
     can_cast, Exp_ija_matrix, get_item_array_from_subs, is_sparse, normalize_nonzero_membership,
-    output_adjacency, sptensor_from_dense_array, transpose_ij2, transpose_ij3)
+    output_adjacency, sptensor_from_dense_array, transpose_ij2, transpose_ij3, write_design_Matrix)
 
 from .fixtures import decimal, rtol
 
@@ -110,3 +111,31 @@ class TestToolsModule(unittest.TestCase):
         output_adjacency(A, out_folder, label)
 
         self.assertTrue(os.path.exists(out_folder + label + '.dat'))
+
+
+class TestWriteDesignMatrix(unittest.TestCase):
+    def setUp(self):
+        self.metadata = {"node1": "metadata1", "node2": "metadata2"}
+        self.perc = 0.5
+        self.folder = "./"
+        self.fname = "test_X_"
+        self.nodeID = "Node"
+        self.attr_name = "Metadata"
+        df = pd.DataFrame.from_dict(self.metadata, orient='index', columns=[self.attr_name])
+        df.reset_index(inplace=True)
+        df.columns = [self.nodeID, self.attr_name]
+        self.expected_output = df
+
+    def test_write_design_Matrix(self):
+        write_design_Matrix(
+            self.metadata,
+            self.perc,
+            self.folder,
+            self.fname,
+            self.nodeID,
+            self.attr_name)
+        output_file = self.folder + self.fname + \
+            str(self.perc)[0] + '_' + str(self.perc)[2] + '.csv'
+        output_df = pd.read_csv(output_file)
+        pd.testing.assert_frame_equal(output_df, self.expected_output)
+        os.remove(output_file)  # clean up after test

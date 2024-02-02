@@ -86,7 +86,10 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
     if not calculate_reciprocity:
         rw = None
 
-    return B, rw
+    if calculate_reciprocity:
+        return B, rw
+    else:
+        return B
 
 
 def build_sparse_B_from_A(A: List[nx.MultiDiGraph],

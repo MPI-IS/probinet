@@ -18,9 +18,10 @@ def main():
     """
     Main function for JointCRep.
     """
-    # Step 1: Parse the command-line arguments
-    p = ArgumentParser(description="Script to run the JointCRep algorithm.")
 
+    # Step 1: Parse the command-line arguments
+    p = ArgumentParser(
+        description="Script to run the JointCRep algorithm.")
     # Add the command line arguments
     p.add_argument('-a', '--algorithm', type=str, default='JointCRep')
     p.add_argument('-K', '--K', type=int, default=4,

@@ -4,7 +4,7 @@ checking if an object can be cast to an integer, normalizing matrices, determini
 tensors, and converting between dense and sparse representations.
 """
 import os
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -275,22 +275,26 @@ def output_adjacency(A: List, out_folder: str, label: str):
     print(f'Adjacency matrix saved in: {out_folder + outfile}')
 
 
-def write_adjacency(G, folder='./', fname='adj.csv', ego='source', alter='target'):
+def write_adjacency(G: List[nx.MultiDiGraph],
+                    folder: str = './',
+                    fname: str = 'adj.csv',
+                    ego: str = 'source',
+                    alter: str = 'target'):
     """
-        Save the adjacency tensor to file.
+    Save the adjacency tensor to file.
 
-        Parameters
-        ----------
-        G : list
-            List of MultiDiGraph NetworkX objects.
-        folder : str
-                 Path of the folder where to save the files.
-        fname : str
-                Name of the adjacency tensor file.
-        ego : str
-              Name of the column to consider as source of the edge.
-        alter : str
-                Name of the column to consider as target of the edge.
+    Parameters
+    ----------
+    G : list
+        List of MultiDiGraph NetworkX objects.
+    folder : str
+             Path of the folder where to save the files.
+    fname : str
+            Name of the adjacency tensor file.
+    ego : str
+          Name of the column to consider as source of the edge.
+    alter : str
+            Name of the column to consider as target of the edge.
     """
 
     N = G[0].number_of_nodes()
@@ -316,29 +320,29 @@ def write_adjacency(G, folder='./', fname='adj.csv', ego='source', alter='target
 
 
 def write_design_Matrix(
-        metadata,
-        perc,
-        folder='./',
-        fname='X_',
-        nodeID='Name',
-        attr_name='Metadata'):
+        metadata: Dict[str, str],
+        perc: float,
+        folder: str = './',
+        fname: str = 'X_',
+        nodeID: str = 'Name',
+        attr_name: str = 'Metadata'):
     """
-        Save the design matrix to file.
+    Save the design matrix to file.
 
-        Parameters
-        ----------
-        metadata : dict
-                   Dictionary where the keys are the node labels and the values are the metadata associated to them.
-        perc : float
-               Fraction of match between communities and metadata.
-        folder : str
-                 Path of the folder where to save the files.
-        fname : str
-                Name of the design matrix file.
-        nodeID : str
-                 Name of the column with the node labels.
-        attr_name : str
-                    Name of the column to consider as attribute.
+    Parameters
+    ----------
+    metadata : dict
+               Dictionary where the keys are the node labels and the values are the metadata associated to them.
+    perc : float
+           Fraction of match between communities and metadata.
+    folder : str
+             Path of the folder where to save the files.
+    fname : str
+            Name of the design matrix file.
+    nodeID : str
+             Name of the column with the node labels.
+    attr_name : str
+                Name of the column to consider as attribute.
     """
 
     X = pd.DataFrame.from_dict(metadata, orient='index', columns=[attr_name])

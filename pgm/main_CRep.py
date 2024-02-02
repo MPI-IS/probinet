@@ -23,6 +23,7 @@ def main():
     p = ArgumentParser(description="Script to run the CRep algorithm.",
                        formatter_class=argparse.ArgumentDefaultsHelpFormatter
                        )
+
     # Add the command line arguments
     p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],
                    # TODO: add this: 'CRepnc', 'CRep0'
