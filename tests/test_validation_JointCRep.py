@@ -1,10 +1,9 @@
 """
 This is the test module for the JointCRep algorithm.
 """
-
 from importlib.resources import files
-import os
 from pathlib import Path
+import tempfile
 import unittest
 
 import numpy as np
@@ -13,10 +12,9 @@ import yaml
 from pgm.input.loader import import_data
 from pgm.model.jointcrep import JointCRep
 
-# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
+GT_OUTPUT_DIR = Path(__file__).parent / 'outputs'
 
-
-class BaseTestCase(unittest.TestCase):
+class JointCRepValidationTestCase(unittest.TestCase):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -58,7 +56,7 @@ class BaseTestCase(unittest.TestCase):
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
-        conf['out_folder'] = Path(__file__).parent / conf['out_folder']
+        conf['out_folder'] = self.temp_output_folder / conf['out_folder']
 
         conf['end_file'] = '_OUT_JointCRep'  # Adding a suffix to the output files
 
@@ -71,6 +69,14 @@ class BaseTestCase(unittest.TestCase):
         # Run model
 
         self.model = JointCRep()
+        
+    def run(self, result=None):
+        # Create a temporary directory for the duration of the test
+        with tempfile.TemporaryDirectory() as temp_output_folder:
+            # Store the path to the temporary directory in an instance variable
+            self.temp_output_folder = Path(temp_output_folder)
+            # Call the parent class's run method to execute the test
+            super().run(result)
 
     # test case function to check the JointCRep.set_name function
     def test_import_data(self):
@@ -92,10 +98,12 @@ class BaseTestCase(unittest.TestCase):
                            nodes=self.nodes,
                            **self.conf)
 
-        theta = np.load((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix(
+        theta = np.load((self.temp_output_folder / self.model.out_folder / str('theta' +
+                                                                               self.model.end_file)).with_suffix(
             '.npz'))
         # This reads the synthetic data Ground Truth output
-        thetaGT = np.load((self.model.out_folder / 'theta_GT_JointCRep').with_suffix('.npz'))
+        thetaGT = np.load((GT_OUTPUT_DIR / ('theta_GT_' + self.algorithm)).with_suffix(
+            '.npz'))
 
         self.assertTrue(np.array_equal(self.model.u_f, theta['u']))
         self.assertTrue(np.array_equal(self.model.v_f, theta['v']))

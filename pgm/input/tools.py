@@ -11,10 +11,6 @@ import numpy as np
 import pandas as pd
 import sktensor as skt
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
-# too-many-statements
-# pylint: disable=fixme
-
 
 def can_cast(string: Union[int, float, str]) -> bool:
     """
@@ -203,29 +199,6 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     M = np.einsum('ijkq,kq->ij', M, w)
 
     return M
-
-
-def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
-                    rtol: float = 1e-05, atol: float = 1e-08) -> bool:
-    """
-    Check if a matrix or a list of matrices is symmetric.
-
-    Parameters
-    ----------
-    a : ndarray or list
-        Input data.
-    rtol : float
-           Relative convergence_tol.
-    atol : float
-              Absolute convergence_tol.
-    Returns
-    -------
-    True if the matrix is symmetric, False otherwise.
-    """
-    if isinstance(a, list):
-        return all(np.allclose(mat, mat.T, rtol=rtol, atol=atol) for mat in a)
-
-    return np.allclose(a, a.T, rtol=rtol, atol=atol)
 
 
 def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],

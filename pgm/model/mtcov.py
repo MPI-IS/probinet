@@ -93,6 +93,9 @@ class MTCOV:
                 msg = f'Ignoring extra parameter {extra_param}.'
                 print(msg)  # Add the warning
 
+        if "files" in extra_params:
+            self.files = extra_params["files"]
+
         if "out_inference" in extra_params:
             self.out_inference = extra_params["out_inference"]
         else:
@@ -108,7 +111,8 @@ class MTCOV:
             self.end_file = ''
 
         # values of the parameters used during the update
-        self.beta = np.zeros((self.K, self.Z), dtype=float)  # beta matrix # TODO: check with martina why this does not work if commented
+        # beta matrix # TODO: check with martina why this does not work if commented
+        self.beta = np.zeros((self.K, self.Z), dtype=float)
 
         # values of the affinity tensor
         if self.assortative:  # purely diagonal matrix
@@ -273,11 +277,9 @@ class MTCOV:
                     maxL = loglik
                     final_it = it
                     conv = convergence
-                    best_r = r
             if self.verbose:
                 print(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
                       f'time = {np.round(time.time() - time_start, 2)} seconds')
-                # print(f'Best real = {best_r} - maxL = {maxL} - best iterations = {final_it}')
 
             self.rseed += self.rng.randint(10000)
             # end cycle over realizations

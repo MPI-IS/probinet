@@ -84,8 +84,7 @@ max-line-length = 100
 
 [tool.pylint.MESSAGES_CONTROL]
 disable = ["C", # convention
-    "R"] # refactoring
-
+]
 # Coverage
 [tool.coverage.run]
 branch = true

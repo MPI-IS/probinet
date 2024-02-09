@@ -3,10 +3,10 @@ Implementation of CRep algorithm.
 """
 
 import argparse
-import time
 from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
+import time
 
 import numpy as np
 import yaml
@@ -30,31 +30,29 @@ def main():
                    help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
                    )  # configuration
     p.add_argument('-K', '--K', type=int, default=None,
-                   help='Number of communities')  # number of communities
+                   help='Number of communities')
     p.add_argument('-A', '--adj', type=str, default='syn111.dat',
-                   help='Name of the network')  # name of the network
+                   help='Name of the network')
     p.add_argument('-f', '--in_folder', type=str, default='',
-                   help='Path of the input network')  # path of the input network
+                   help='Path of the input network')
     p.add_argument('-o', '-O', '--out_folder', type=str, default='',
-                   help='Path of the output folder')  # path of the output folder
+                   help='Path of the output folder')
     p.add_argument('-e', '--ego', type=str, default='source',
-                   help='Name of the source of the edge')  # name of the source of the edge
+                   help='Name of the source of the edge')
     p.add_argument('-t', '--alter', type=str, default='target',
-                   help='Name of the target of the edge')  # name of the target of the edge
+                   help='Name of the target of the edge')
     p.add_argument(
         '-d',
         '--force_dense',
         type=bool,
         default=False,
-        help='Flag to force a dense transformation in input')  # flag to force a dense transformation in input
+        help='Flag to force a dense transformation in input')
     p.add_argument('-F', '--flag_conv', type=str, choices=['log', 'deltas'], default='log',
-                   help='Flag for convergence')  # flag for convergence
-    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')  # print verbose
+                   help='Flag for convergence')
+    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')
 
     # Parse the command line arguments
     args = p.parse_args()
-
-    # setting to run the algorithm
 
     # Step 2: Import the data
 
@@ -62,7 +60,7 @@ def main():
     alter = args.alter
     force_dense = args.force_dense  # Sparse matrices
     in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
-                'input' if args.in_folder == '' else Path(args.in_folder)
+        'input' if args.in_folder == '' else Path(args.in_folder)
     adj = Path(args.adj)
 
     # Import data:
@@ -106,10 +104,9 @@ def main():
     with open(output_config_path, 'w', encoding='utf8') as f:
         yaml.dump(conf, f)
 
-
     # Step 5: Run CRep
 
-    if args.verbose: # TODO: Add a logger
+    if args.verbose:  # TODO: Add a logger
         print(f'\n### Run {args.algorithm} ###')
     model = CRep()
     time_start = time.time()

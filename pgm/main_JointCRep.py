@@ -13,8 +13,6 @@ import yaml
 from .input.loader import import_data
 from .model.jointcrep import JointCRep
 
-# pylint: disable=too-many-locals
-
 
 def main():
     """

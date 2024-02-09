@@ -8,8 +8,6 @@ import numpy as np
 
 from pgm.model.cv import extract_mask_kfold, shuffle_indices_all_matrix
 
-# pylint: disable=missing-function-docstring, too-many-locals
-
 
 class TestCV(unittest.TestCase):
     """

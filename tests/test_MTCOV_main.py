@@ -1,6 +1,6 @@
+from pathlib import Path
 import sys
 import tempfile
-from pathlib import Path
 from unittest import mock, TestCase
 
 import networkx as nx

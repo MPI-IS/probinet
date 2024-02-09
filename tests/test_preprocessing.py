@@ -10,8 +10,6 @@ import sktensor as skt
 from pgm.input import tools
 from pgm.input.preprocessing import build_B_from_A, build_sparse_B_from_A, preprocess
 
-# pylint: disable=missing-function-docstring, too-many-locals
-
 
 class TestPreprocessing(unittest.TestCase):
     """
