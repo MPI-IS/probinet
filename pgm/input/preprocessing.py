@@ -89,12 +89,11 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
     return B, rw
 
 
-
 def build_sparse_B_from_A(A: List[nx.MultiDiGraph],
                           calculate_reciprocity: bool = False) -> Union[Tuple[sptensor,
                                                                               sptensor,
                                                                               ndarray,
-List[Any]], sptensor]:
+                                                                              List[Any]], sptensor]:
     """
     Create the sptensor adjacency tensor of a networkX graph.
 

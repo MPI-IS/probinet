@@ -137,12 +137,12 @@ class MTCov:
             flag_conv: str = 'log',
             batch_size: int = None,
             gamma: float = 0.5,
-            rseed: int = 0,
+            rseed: int = 107261,
             K: int = 3,
             initialization: int = 0,
             undirected: bool = False,
             assortative: bool = True,
-            **extra_params: dict[str, Any] # TODO: could this be done in another way? mypy keeps
+            **extra_params: dict[str, Any]  # TODO: could this be done in another way? mypy keeps
             # complaining about the types of the values
             ) -> tuple[np.ndarray[Any,
                                   np.dtype[np.float64]],
@@ -310,7 +310,7 @@ class MTCov:
             try:
                 print(colored('Solution failed to converge in {0} EM steps!'.format(self.max_iter),
                               'blue'))
-            except BaseException:
+            except BaseException: # TODO: check with martina what this is for
                 print('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
 
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
@@ -458,7 +458,7 @@ class MTCov:
             rng : RandomState
                   Container for the Mersenne Twister pseudo-random number generator.
         """
-        
+
         self.beta = self.theta['beta']
 
         max_entry = np.max(self.beta)

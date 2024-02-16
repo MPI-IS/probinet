@@ -57,7 +57,7 @@ def main():
 
     # Step 2: Import the data
 
-    A, B, X, nodes = import_data_mtcov(in_folder,
+    _, B, X, nodes = import_data_mtcov(in_folder,
                                        adj_name=Path(args.adj_name),
                                        cov_name=Path(args.cov_name),
                                        ego=args.ego,
@@ -114,7 +114,7 @@ def main():
     print(args)
     time_start = time.time()
     model = MTCov(verbose=args.verbose
-    )
+                  )
     _ = model.fit(
         data=B,
         data_X=Xs,

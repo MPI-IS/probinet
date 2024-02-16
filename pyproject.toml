@@ -48,6 +48,7 @@ dev = [
 
 # CLI
 [project.scripts]
+run_model = "pgm.main:main"
 run_CRep = "pgm.main_CRep:main"
 run_JointCRep = "pgm.main_JointCRep:main"
 run_MTCov = "pgm.main_MTCov:main"

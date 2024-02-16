@@ -32,7 +32,7 @@ def parse_args():
                    default='CRep', help='Choose the algorithm to run: CRep, JointCRep.')
     p.add_argument('-K', '--K', type=int, default=None, help='Number of communities')
     p.add_argument('-g', '--gamma', type=float, default=0.5, help='Scaling hyper parameter')
-    p.add_argument('--rseed', type=int, default=0, help='Random seed')
+    p.add_argument('--rseed', type=int, default=None, help='Random seed')
     p.add_argument('--num_realizations', type=int, default=5, help='Number of realizations')
 
     # Input/Output related arguments
@@ -156,8 +156,8 @@ def main():
         # Change K if given
         if args.K is not None:
             conf['K'] = args.K
-
-        conf['rseed'] = args.rseed
+        if args.rseed is not None: # if it has a value, then update the configuration
+            conf['rseed'] = args.rseed
 
         # Algorithm specific settings
         algorithm_settings = {
@@ -175,7 +175,8 @@ def main():
 
         return conf
 
-    # Use the function to set the configuration. We need to update the config file based on the command line arguments.
+    # Use the function to set the configuration. We need to update the config
+    # file based on the command line arguments.
     conf = set_config(args, conf)
 
     # Print the configuration file

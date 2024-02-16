@@ -203,7 +203,7 @@ class JointCRep:
             data_T: skt.sptensor,
             data_T_vals: np.ndarray,
             nodes: List[Any],
-            rseed: int = 0,
+            rseed: int = 10,
             K: int = 3,
             initialization: int = 0,
             eta0: Union[float, None] = None,

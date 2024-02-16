@@ -10,6 +10,7 @@ import nbformat
 
 # pylint: disable=missing-function-docstring, too-many-locals
 
+
 class TestNotebooks(unittest.TestCase):
     """
     Test cases for the notebooks.

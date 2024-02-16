@@ -48,7 +48,7 @@ class TestMain(TestCase):
             'out_folder': self.temp_output_folder,
             'out_inference': True,
             'plot_loglik': False,
-            'rseed': 0,
+            'rseed': 10,
             'use_approximation': False,
         }
         self.expected_config['MTCov'] = {
@@ -167,7 +167,6 @@ class TestMain(TestCase):
         sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.temp_output_folder),
                     '-K', str(K), '-F', 'deltas', '-A', 'custom_network.dat']
         # sys.argv += ['-F', 'deltas', '-A', 'custom_network.dat']
-
 
         # Call the main function
         main_function()
