@@ -40,14 +40,8 @@ def main():
     p.add_argument('-g', '--gamma', type=float, default=0.5)  # scaling hyper parameter
     # flag to call the undirected network
     p.add_argument('-u', '--undirected', type=bool, default=False)
-    p.add_argument(
-        '-F',
-        '--flag_conv',
-        type=str,
-        choices=[
-            'log',
-            'deltas'],
-        default='log')  # flag for convergence
+    p.add_argument('-F', '--flag_conv', type=str, choices=['log', 'deltas'],
+                   default='log')  # flag for convergence
     # flag to force a dense transformation in input
     p.add_argument('-d', '--force_dense', type=bool, default=False)
     # size of the batch used to compute the likelihood
@@ -116,10 +110,10 @@ def main():
 
     if args.verbose:
         print('\n### Run MTCov ###')
-        print(f'Setting: \nK = {args.C}\ngamma = {args.gamma}\n')
-
+    print(f'Setting: \nK = {args.K}\ngamma = {args.gamma}\n')
+    print(args)
     time_start = time.time()
-    model = MTCov(
+    model = MTCov(verbose=args.verbose
     )
     _ = model.fit(
         data=B,

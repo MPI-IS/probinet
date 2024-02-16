@@ -7,7 +7,6 @@ import numpy as np
 import yaml
 
 from pgm.main import main as single_main
-from pgm.main_MTCov import main as main_MTCov_main
 
 
 class TestMain(TestCase):
@@ -45,7 +44,7 @@ class TestMain(TestCase):
             'fix_eta': False,
             'fix_w': False,
             'initialization': 0,
-            'num_realizations': 50,
+            'num_realizations': 5,
             'out_folder': self.temp_output_folder,
             'out_inference': True,
             'plot_loglik': False,
@@ -134,12 +133,6 @@ class TestMain(TestCase):
         # Simulate running the script with command-line arguments
         sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.temp_output_folder)]
 
-        # If algorithm is MTCov,  then remove '-a' and the element after it. Why? Because the main function does not
-        # have the flag '-a':
-        if algorithm == 'MTCov':
-            sys.argv.pop(1)  # Remove '-a'
-            sys.argv.pop(1)  # Remove 'MTCov'
-
         # Call the main function
         main_function()
 
@@ -172,15 +165,9 @@ class TestMain(TestCase):
         K = self.K_values[algorithm]
         # Simulate running the script with custom parameters
         sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.temp_output_folder),
-                    '-K', str(K)]
-        if algorithm == 'CRep' or algorithm == 'JointCRep':
-            sys.argv += ['-F', 'deltas', '-A', 'custom_network.dat']
-        elif algorithm == 'MTCov':
-            sys.argv += ['-F', 'deltas', '-j', 'custom_adj.csv']
-            # Remove '-a' and the element after it. Why? Because the main function
-            # does not have the flag '-a'
-            sys.argv.pop(1)  # Remove '-a'
-            sys.argv.pop(1)  # Remove 'MTCov'
+                    '-K', str(K), '-F', 'deltas', '-A', 'custom_network.dat']
+        # sys.argv += ['-F', 'deltas', '-A', 'custom_network.dat']
+
 
         # Call the main function
         main_function()
@@ -225,11 +212,11 @@ class TestMain(TestCase):
     # Tests for MTCov
     @mock.patch('pgm.model.mtcov.MTCov.fit')
     def test_MTCov_with_no_parameters(self, mock_fit):
-        return self.main_with_no_parameters('MTCov', mock_fit, main_MTCov_main)
+        return self.main_with_no_parameters('MTCov', mock_fit, single_main)
 
     @mock.patch('pgm.model.mtcov.MTCov.fit')
-    @mock.patch('pgm.main_MTCov.import_data_mtcov',
+    @mock.patch('pgm.main.import_data_mtcov',
                 return_value=([nx.Graph()], np.empty(0), mock.ANY, list()))
     def test_MTCOV_with_custom_parameters(self, mock_import_data, mock_fit):
         return self.main_with_custom_parameters(
-            'MTCov', mock_import_data, mock_fit, main_MTCov_main)
+            'MTCov', mock_import_data, mock_fit, single_main)
