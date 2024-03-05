@@ -19,6 +19,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Explore the tutorials available on the left to learn more about the package.
+Explore the tutorials available on the side panel to learn more about the package.
 
 Thank you for choosing Probabilistic Generative Models. Let's dive into advanced network analysis and generative modeling together!

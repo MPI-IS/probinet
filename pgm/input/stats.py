@@ -131,7 +131,9 @@ def probabilities(
         sizes: List[int],
         N: int = 100,
         C: int = 2,
-        avg_degree: float = 4.) -> np.ndarray:
+        avg_degree: float = 4.,
+        alpha: float = 0.1,
+        beta: float = None) -> np.ndarray:
     """
     Return the CxC array with probabilities between and within groups.
 
@@ -147,14 +149,18 @@ def probabilities(
         Number of communities.
     avg_degree : float
                  Average degree over the nodes.
+    alpha : float
+            Alpha value. Default is 0.1.
+    beta : float
+           Beta value. Default is 0.3 * alpha.
 
     Returns
     -------
     p : np.ndarray
         Ar
     """
-    alpha = 0.1
-    beta = alpha * 0.3
+    if beta is None:
+        beta = alpha * 0.3
     p1 = avg_degree * C / N
     if structure == 'assortative':
         p = p1 * alpha * np.ones((len(sizes), len(sizes)))  # secondary-probabilities
@@ -171,5 +177,4 @@ def probabilities(
         p[0, 1] = p1
         p[1, 0] = beta * p1
 
-    print(p)
     return p
