@@ -17,12 +17,20 @@ from .tools import log_and_raise_error
 # too-many-locals, too-many-branches, too-many-statements
 def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None) -> None:
     """
-    Print the statistics of the graph A.
+    Print the statistics of the graph G.
+
+    This function calculates and prints various statistics of the input graph such as the number of edges,
+    average degree in each layer, sparsity, and reciprocity. If the weights of the edges are provided,
+    it also calculates and prints the reciprocity considering the weights of the edges.
 
     Parameters
     ----------
     G : list
-        List of MultiDiGraph NetworkX objects.
+        List of MultiDiGraph NetworkX objects representing the layers of the graph.
+    rw : list, optional
+        List of floats representing the weights of the edges in each layer of the graph.
+        If not provided, the function will consider the graph as unweighted.
+
     """
 
     L = len(G)
