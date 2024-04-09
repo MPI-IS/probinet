@@ -57,16 +57,16 @@ class MTCovTestCase(BaseTest):
         self.model = MTCov()
 
     def test_import_data(self):
-        print("Start import data test\n")
+        # Check if the force_dense flag is set to True
         if self.force_dense:
+            # If force_dense is True, assert that the sum of all elements in the matrix B is greater than 0
             self.assertTrue(self.B.sum() > 0)
-            print('B has ', self.B.sum(), ' total weight.')
         else:
+            # If force_dense is False, assert that the sum of all values in the sparse matrix B is greater than 0
             self.assertTrue(self.B.vals.sum() > 0)
-            print('B has ', self.B.vals.sum(), ' total weight.')
 
     def test_running_algorithm(self):
-        print("\nStart running algorithm test\n")
+
 
         _ = self.model.fit(data=self.B,
                            data_X=self.Xs,

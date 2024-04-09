@@ -1,9 +1,9 @@
 """
 Implementation of CRep and JointCRep algorithm.
 """
-
 import argparse
 from importlib.resources import files
+import logging
 from pathlib import Path
 import time
 
@@ -12,6 +12,7 @@ import sktensor as skt
 import yaml
 
 from .input.loader import import_data, import_data_mtcov
+from .input.tools import log_and_raise_error
 from .model.crep import CRep
 from .model.jointcrep import JointCRep
 from .model.mtcov import MTCov
@@ -65,7 +66,10 @@ def parse_args():
     p.add_argument('-b', '--batch_size', type=int, default=None)
 
     # Other arguments
-    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')
+    p.add_argument('-l', '--log_level', type=str, choices=['D', 'I', 'W', 'E', 'C'],
+                   default='W', help='Set the logging level')
+    p.add_argument('--log_file', type=str, default=None, help='Log file to write to')
+
 
     # Parse the command line arguments
     args = p.parse_args()
@@ -102,13 +106,16 @@ def parse_args():
     return args
 
 
-def main():
+def main(): # pylint: disable=too-many-branches, too-many-statements
     """
     Main function for CRep/JointCRep/MTCov.
     """
     # Step 1: Parse the command-line arguments
 
     args = parse_args()
+
+    # Configure the logger
+    configure_logger(args)
 
     # Step 2: Import the data
 
@@ -137,7 +144,6 @@ def main():
                                              undirected=undirected,
                                              force_dense=args.force_dense,
                                              noselfloop=noselfloop,
-                                             verbose=args.verbose,
                                              binary=binary,
                                              header=0)
         nodes = A[0].nodes()
@@ -152,8 +158,8 @@ def main():
                                            attr_name=args.attr_name,
                                            undirected=undirected,
                                            force_dense=args.force_dense,
-                                           noselfloop=True,
-                                           verbose=args.verbose)
+                                           noselfloop=True
+                                           )
         Xs = np.array(X)
         B_T = None
         data_T_vals = None
@@ -201,8 +207,7 @@ def main():
     conf = set_config(args, conf)
 
     # Print the configuration file
-    if args.verbose:
-        print(yaml.dump(conf))
+    logging.info('\n' + yaml.dump(conf))
 
     # Step 4: Create the output directory
 
@@ -215,7 +220,7 @@ def main():
     with open(output_config_path, 'w', encoding='utf-8') as f:
         yaml.dump(conf, f)
 
-    def fit_model(model, algorithm, B, B_T, data_T_vals, Xs, nodes, conf):
+    def fit_model(model, algorithm, B, B_T, data_T_vals, Xs, nodes, conf): # pylint: disable=too-many-arguments
         """
         Fit the model to the data.
         """
@@ -227,22 +232,23 @@ def main():
 
     # Step 5: Run the algorithm
 
-    # Print verbose information if verbose flag is set
-    if args.verbose:
-        print(f'\n### Running {args.algorithm} ###')
-        print(f'Setting: \nK = {conf["K"]}')
-        if args.algorithm == 'MTCov':
-            print(f'gamma = {conf["gamma"]}')
+    logging.info(f'### Running {args.algorithm} ###')
+    logging.info(f'Setting: K = {conf["K"]}')
+    if args.algorithm == 'MTCov':
+        logging.info(f'gamma = {conf["gamma"]}')
 
     # Map algorithm names to their classes
     algorithm_classes = {'CRep': CRep, 'JointCRep': JointCRep, 'MTCov': MTCov}
 
     # Create the model
     if args.algorithm in algorithm_classes:
-        model = algorithm_classes[args.algorithm](verbose=args.verbose, flag_conv=args.flag_conv)
-                                                  #num_realizations=args.num_realizations)
+        model = algorithm_classes[args.algorithm](
+            flag_conv=args.flag_conv)
+
     else:
-        raise ValueError('Algorithm not implemented.')
+        message = 'Algorithm not implemented.'
+        error_type = ValueError
+        log_and_raise_error(logging, error_type, message)
 
     # Time the execution
     time_start = time.time()
@@ -251,7 +257,46 @@ def main():
     fit_model(model, args.algorithm, B, B_T, data_T_vals, Xs, nodes, conf)
 
     # Print the time elapsed
-    if args.verbose:
-        print(f'\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.')
+    logging.info(f'Time elapsed: {np.round(time.time() - time_start, 2)} seconds.')
 
 
+def configure_logger(args):
+    '''
+    Configure the logger based on the command-line arguments.
+    '''
+
+    # Map the first letter to the corresponding logging level
+    log_level_map = {
+        'D': 'DEBUG',
+        'I': 'INFO',
+        'W': 'WARNING',
+        'E': 'ERROR',
+        'C': 'CRITICAL'
+    }
+    # Set the logging level based on the first letter
+    log_level = log_level_map.get(args.log_level.upper(), 'WARNING')
+
+    # Configure the logger
+
+    # Get the numeric value of the log level
+    numeric_level = getattr(logging, log_level, None)
+
+    # Check if the log level is valid
+    if not isinstance(numeric_level, int):
+        # If the log level is not valid, raise an error
+        raise ValueError(f'Invalid log level: {args.log_level}')
+
+    # Check if a log file was provided
+    if args.log_file is not None:
+        # If a log file was provided, configure the logger to write to that file
+        logging.basicConfig(filename=args.log_file, level=numeric_level,
+                            format='%(levelname)s:%(message)s')
+    else:
+        # If no log file was provided, configure the logger to write to the console
+        logging.basicConfig(level=numeric_level, format='%(levelname)s:%(message)s')
+
+    # Set the log level for the root logger
+    logging.getLogger().setLevel(numeric_level)
+
+    # Log the current date and time
+    logging.info(f"Program started at {time.strftime('%Y-%m-%d %H:%M:%S')}")

@@ -8,7 +8,6 @@ err_max: 0.000000000001
 err: 0.1
 initialization: 0
 undirected: False
-verbose: False
 out_inference: True
 out_folder: "../data/output/"
 end_file: "_CRepnc"

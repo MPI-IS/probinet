@@ -2,7 +2,7 @@
 Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and node
 attributes to extract overlapping communities in directed and undirected multilayer networks.
 """
-
+import logging
 from pathlib import Path
 import sys
 import time
@@ -12,16 +12,15 @@ import numpy as np
 from numpy.random import RandomState
 import scipy.sparse
 import sktensor as skt
-from termcolor import colored
 from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess, preprocess_X
-from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
+from ..input.tools import log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative
 from ..model.crep import FitParams
 from ..output.plot import plot_L
 
 
-class MTCov:
+class MTCov: # pylint: disable=too-many-instance-attributes
     """
     Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
@@ -35,7 +34,6 @@ class MTCov:
                  convergence_tol: float = 0.0001,
                  decision: int = 10,
                  max_iter: int = 500,
-                 verbose: bool = False,
                  plot_loglik: bool = False,  # flag to plot the log-likelihood
                  flag_conv: str = 'log'  # flag to choose the convergence criterion
                  ) -> None:
@@ -47,7 +45,6 @@ class MTCov:
         self.convergence_tol = convergence_tol  # convergence_tol parameter for convergence
         self.decision = decision  # convergence parameter
         self.max_iter = max_iter  # maximum number of EM steps before aborting
-        self.verbose = verbose  # print verbose
         self.plot_loglik = plot_loglik  # flag to plot the log-likelihood
         self.flag_conv = flag_conv
 
@@ -65,13 +62,18 @@ class MTCov:
         if "files" in extra_params:
             self.files = extra_params["files"]
         else:
-            raise ValueError('The input file is missing.')
+            message = 'The input file is missing.'
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
 
         if initialization not in {0, 1}:  # indicator for choosing how to initialize u, v and w
-            raise ValueError(
+            message = (
                 'The initialization parameter can be either 0 or 1. It is used as an indicator to '
                 'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
                 'will be generated randomly, otherwise they will upload from file.')
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
+
         self.initialization = initialization
 
         if self.initialization == 1:
@@ -104,7 +106,7 @@ class MTCov:
         for extra_param in extra_params:
             if extra_param not in available_extra_params:
                 msg = f'Ignoring extra parameter {extra_param}.'
-                print(msg)  # Add the warning
+                logging.warning(msg)  # Add the warning
 
         if "out_inference" in extra_params:
             self.out_inference = extra_params["out_inference"]
@@ -234,7 +236,7 @@ class MTCov:
                 subset_N = None
                 Subs = None
                 SubsX = None
-        print(f'batch_size: {batch_size}\n')
+        logging.info(f'batch_size: {batch_size}\n')
 
         for r in range(self.num_realizations):
 
@@ -249,8 +251,7 @@ class MTCov:
             if flag_conv == 'log':
                 loglik = self.inf
 
-            if self.verbose:
-                print('Updating realization {0} ...'.format(r), end=' ')
+            logging.info('Updating realization {0} ...'.format(r))
             loglik_values = []
             time_start = time.time()
             # --- single step iteration update ---
@@ -279,8 +280,9 @@ class MTCov:
                                                                                   delta_beta,
                                                                                   convergence)
                 else:
-                    print(colored('Error! flag_conv can be either "log" or "deltas"', 'red'))
-                    break
+                    message = 'Error! flag_conv can be either "log" or "deltas"'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
 
             if flag_conv == 'log':
                 if maxL < loglik:
@@ -301,17 +303,16 @@ class MTCov:
                     final_it = it
                     conv = convergence
                     # best_r = r
-            if self.verbose:
-                print(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
+            logging.info(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
                       f'time = {np.round(time.time() - time_start, 2)} seconds')
-                # print(f'Best real = {best_r} - maxL = {maxL} - best iterations = {final_it}')
+
 
             self.rseed += self.rng.randint(10000)
             # end cycle over realizations
 
         if np.logical_and(final_it == self.max_iter, not conv):
             # convergence is not reached
-            print('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
+            logging.warning('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
 
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
@@ -334,8 +335,7 @@ class MTCov:
         """
 
         if self.initialization == 0:
-            if self.verbose:
-                print('U, V, W and beta are initialized randomly.')
+            logging.info('U, V, W and beta are initialized randomly.')
             self._randomize_u_v(rng)
             if self.gamma != 0:
                 self._randomize_beta(rng)
@@ -343,8 +343,7 @@ class MTCov:
                 self._randomize_w(rng)
 
         elif self.initialization == 1:
-            if self.verbose:
-                print(f'U, V, W and beta are initialized using the input file: {self.files}')
+            logging.info(f'U, V, W and beta are initialized using the input file: {self.files}')
             self._initialize_u(rng, nodes)
             self._initialize_v(rng, nodes)
             self._initialize_beta(rng)
@@ -993,7 +992,7 @@ class MTCov:
         l = (1. - self.gamma) * lG + self.gamma * lX
 
         if np.isnan(l):
-            print("Likelihood is NaN!!!!")
+            logging.error("Likelihood is NaN!!!!")
             sys.exit(1)
         else:
             return l
@@ -1050,7 +1049,7 @@ class MTCov:
         l = (1. - self.gamma) * lG + self.gamma * lX
 
         if np.isnan(l):
-            print("Likelihood is NaN!!!!")
+            logging.error("Likelihood is NaN!!!!")
             sys.exit(1)
         else:
             return l
@@ -1173,5 +1172,5 @@ class MTCov:
                             beta=self.beta_f,
                             max_it=final_it,
                             nodes=nodes, maxL=maxL)
-        print(f'\nInferred parameters saved in: {outfile.resolve()}')
-        print('To load: theta=np.load(filename), then e.g. theta["u"]')
+        logging.info(f'Inferred parameters saved in: {outfile.resolve()}')
+        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')

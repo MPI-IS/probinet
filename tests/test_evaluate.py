@@ -89,14 +89,3 @@ class TestEvaluateFunctions(unittest.TestCase):
 
         # Check the shape of the result
         self.assertEqual(expectation.shape, (self.L, self.N, self.N))
-
-    @unittest.skip("Reason: Not implemented yet")
-    def test_PSloglikelihood(self):
-        # Test PSloglikelihood function
-
-        # Calculate pseudo log-likelihood
-        psloglikelihood_result = PSloglikelihood(self.B, self.u, self.v, self.w, self.eta,
-                                                 mask=self.mask)
-
-        # Check if psloglikelihood_result is a number
-        self.assertIsInstance(psloglikelihood_result, float)

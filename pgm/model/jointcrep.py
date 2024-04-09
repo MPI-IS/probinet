@@ -5,31 +5,30 @@ The latent variables are related to community memberships and a pair interaction
 
 from __future__ import print_function
 
+import logging
 from pathlib import Path
 import time
 from typing import Any, List, Union
 
 import numpy as np
 import sktensor as skt
-from termcolor import colored
 from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
-    check_symmetric, get_item_array_from_subs, sp_uttkrp, sp_uttkrp_assortative, transpose_tensor)
+    check_symmetric, get_item_array_from_subs, log_and_raise_error, sp_uttkrp,
+    sp_uttkrp_assortative, transpose_tensor)
 from ..output.plot import plot_L
 from .crep import FitParams
 
 # TODO: remove repeated parts once mixin is implemented
 
-
-
-class JointCRep:
+class JointCRep: # pylint: disable=too-many-instance-attributes
     """
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
 
-    def __init__(self,
+    def __init__(self, # pylint: disable=too-many-arguments
                  inf: float = 1e10,  # initial value of the log-likelihood
                  err_max: float = 1e-12,  # minimum value for the parameters
                  err: float = 0.1,  # noise for the initialization
@@ -38,7 +37,6 @@ class JointCRep:
                  convergence_tol: float = 0.0001,  # convergence_tol parameter for convergence
                  decision: int = 10,  # convergence parameter
                  max_iter: int = 500,  # maximum number of EM steps before aborting
-                 verbose: bool = True,  # flag to print details
                  plot_loglik: bool = False,  # flag to plot the log-likelihood
                  flag_conv: str = 'log'  # flag to choose the convergence criterion
                  ) -> None:
@@ -49,34 +47,36 @@ class JointCRep:
         self.convergence_tol = convergence_tol
         self.decision = decision
         self.max_iter = max_iter
-        self.verbose = verbose
         self.plot_loglik = plot_loglik
         self.flag_conv = flag_conv
 
-    def __check_fit_params(self,
+    def __check_fit_params(self, # pylint: disable=too-many-arguments
                            initialization: int,
                            eta0: Union[float, None],
                            undirected: bool,
                            assortative: bool,
-                           #use_approximation: bool,
                            data: Union[skt.dtensor, skt.sptensor],
                            K: int,
                            **extra_params: Unpack[FitParams]
                            ) -> None:
 
-        if initialization not in {
-                0, 1, 2, 3}:  # indicator for choosing how to initialize u, v and w
-            raise ValueError(
-                'The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
-                'indicator to initialize the membership matrices u and v and the affinity '
-                'matrix w. If it is 0, they will be generated randomly; 1 means only '
-                'the affinity matrix w will be uploaded from file; 2 implies the '
-                'membership matrices u and v will be uploaded from file and 3 all u, '
-                'v and w will be initialized through an input file.')
+        if initialization not in {0, 1, 2,
+                                  3}:  # indicator for choosing how to initialize u, v and w
+            message = ('The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
+                       'indicator to initialize the membership matrices u and v and the affinity '
+                       'matrix w. If it is 0, they will be generated randomly; 1 means only '
+                       'the affinity matrix w will be uploaded from file; 2 implies the '
+                       'membership matrices u and v will be uploaded from file and 3 all u, '
+                       'v and w will be initialized through an input file.')
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
         self.initialization = initialization
+
         if (eta0 is not None) and (
                 eta0 <= 0.):  # initial value for the pair interaction coefficient
-            raise ValueError('If not None, the eta0 parameter has to be greater than 0.!')
+            message = 'If not None, the eta0 parameter has to be greater than 0.!'
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
 
         self.eta0 = eta0  # initial value for the reciprocity coefficient
         self.undirected = undirected  # flag to call the undirected network
@@ -100,14 +100,16 @@ class JointCRep:
         for extra_param in extra_params:
             if extra_param not in available_extra_params:
                 msg = f'Ignoring extra parameter {extra_param}.'
-                print(msg)  # Add the warning
+                logging.warning(msg)  # Add the warning
 
         if "fix_eta" in extra_params:
             self.fix_eta = extra_params["fix_eta"]
 
             if self.fix_eta:
                 if self.eta0 is None:
-                    raise ValueError('If fix_eta=True, provide a value for eta0.')
+                    message = 'If fix_eta=True, provide a value for eta0.'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
         else:
             self.fix_eta = False
 
@@ -115,7 +117,9 @@ class JointCRep:
             self.fix_w = extra_params["fix_w"]
             if self.fix_w:
                 if self.initialization not in {1, 3}:
-                    raise ValueError('If fix_w=True, the initialization has to be either 1 or 3.')
+                    message = 'If fix_w=True, the initialization has to be either 1 or 3.'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
         else:
             self.fix_w = False
 
@@ -123,8 +127,9 @@ class JointCRep:
             self.fix_communities = extra_params["fix_communities"]
             if self.fix_communities:
                 if self.initialization not in {2, 3}:
-                    raise ValueError(
-                        'If fix_communities=True, the initialization has to be either 2 or 3.')
+                    message = 'If fix_communities=True, the initialization has to be either 2 or 3.'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
         else:
             self.fix_communities = False
 
@@ -170,10 +175,9 @@ class JointCRep:
 
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 1):
-                raise ValueError(
-                    'If undirected=True, the parameter eta has to be fixed equal to 1'
-                    ' (s.t. log(eta)=0).')
-
+                message = 'If undirected=True, the parameter eta has to be fixed equal to 1 (s.t. log(eta)=0).'
+                error_type = ValueError
+                log_and_raise_error(logging, error_type, message)
         # values of the parameters used during the update
         self.u = np.zeros((self.N, self.K), dtype=float)  # out-going membership
         self.v = np.zeros((self.N, self.K), dtype=float)  # in-going membership
@@ -313,8 +317,7 @@ class JointCRep:
             convergence = False
             loglik = self.inf
 
-            if self.verbose:
-                print(f'Updating realization {r} ...')
+            logging.info(f'Updating realization {r} ...')
             loglik_values = []
             time_start = time.time()
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
@@ -333,19 +336,20 @@ class JointCRep:
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data, it, loglik, coincide, convergence)
                     loglik_values.append(loglik)
-                    if self.verbose:
-                        if not it % 100:
-                            print(f'Nreal = {r} - Log-likelihood = {loglik} - iterations = {it} - '
-                                  f'time = {np.round(time.time() - time_start, 2)} seconds')
+                    if not it % 100:
+                        logging.info(f'Nreal = {r} - Log-likelihood = {loglik} - iterations ='
+                                 f' {it} - '
+                              f'time = {np.round(time.time() - time_start, 2)} seconds')
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = self._check_for_convergence_delta(
                         it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)
-                    if self.verbose:
-                        if not it % 100:
-                            print(f'Nreal = {r} - iterations = {it} - '
-                                  f'time = {np.round(time.time() - time_start, 2)} seconds')
+                    if not it % 100:
+                        logging.info(f'Nreal = {r} - iterations = {it} - '
+                              f'time = {np.round(time.time() - time_start, 2)} seconds')
                 else:
-                    raise ValueError('flag_conv can be either log or deltas!')
+                    message = 'flag_conv can be either log or deltas!'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
 
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
             # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
@@ -366,23 +370,16 @@ class JointCRep:
                     final_it = it
                     conv = convergence
                     best_r = r
-            if self.verbose:
-                print(f'Nreal = {r} - Log-likelihood = {loglik} - iterations = {it} - '
+            logging.info(f'Nreal = {r} - Log-likelihood = {loglik} - iterations = {it} - '
                       f'time = {np.round(time.time() - time_start, 2)} seconds\n')
 
             # end cycle over realizations
 
-        print(f'Best real = {best_r} - maxL = {maxL} - best iterations = {final_it}')
+        logging.info(f'Best real = {best_r} - maxL = {maxL} - best iterations = {final_it}')
 
         if np.logical_and(final_it == self.max_iter, not conv):
-            # convergence not reaches
-            try:
-                print(
-                    colored(
-                        f'Solution failed to converge in {self.max_iter} EM steps!',
-                        'blue'))
-            except IOError:
-                print(f'Solution failed to converge in {self.max_iter} EM steps!')
+            # convergence is not reached
+            logging.warning(f'Solution failed to converge in {self.max_iter} EM steps!')
 
         if np.logical_and(self.plot_loglik, self.flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
@@ -405,34 +402,29 @@ class JointCRep:
         if self.eta0 is not None:
             self.eta = self.eta0
         else:
-            if self.verbose:
-                print('eta is initialized randomly.')
+            logging.info('eta is initialized randomly.')
             self._randomize_eta()
 
         if self.initialization == 0:
-            if self.verbose:
-                print('u, v and w are initialized randomly.')
+            logging.info('u, v and w are initialized randomly.')
             self._randomize_w()
             self._randomize_u_v()
 
         elif self.initialization == 1:
-            if self.verbose:
-                print(f'w is initialized using the input file: {self.files}.')
-                print('u and v are initialized randomly.')
+            logging.info(f'w is initialized using the input file: {self.files}.')
+            logging.info(f'u and v are initialized randomly.')
             self._initialize_w()
             self._randomize_u_v()
 
         elif self.initialization == 2:
-            if self.verbose:
-                print(f'u and v are initialized using the input file: {self.files}.')
-                print('w is initialized randomly.')
+            logging.info(f'u and v are initialized using the input file: {self.files}.')
+            logging.info(f'w is initialized randomly.')
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._randomize_w()
 
         elif self.initialization == 3:
-            if self.verbose:
-                print(f'u, v and w are initialized using the input file: {self.files}.')
+            logging.info(f'u, v and w are initialized using the input file: {self.files}.')
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._initialize_w()
@@ -467,7 +459,7 @@ class JointCRep:
         and normalize each row.
         """
 
-        self.u = self.rng.random_sample(self.u.shape)  # TODO: check with martina
+        self.u = self.rng.random_sample(self.u.shape)
         # row_sums = self.u.sum(axis=1)
         # self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
@@ -1027,7 +1019,9 @@ class JointCRep:
 
         den = self.lambdalambdaT.sum()
         if not den > 0.:
-            raise ValueError('eta update_approx has zero denominator!')
+            message = 'eta update_approx has zero denominator!'
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
 
         self.eta = self.AAtSum / den
 
@@ -1051,8 +1045,9 @@ class JointCRep:
         if st > 0:
             return self.AAtSum / st
 
-        print(self.lambdalambdaT, self.Z)
-        raise ValueError('eta fix point has zero denominator!')
+        message = 'eta fix point has zero denominator!'
+        error_type = ValueError
+        log_and_raise_error(logging, error_type, message)
 
     def _update_eta(self) -> float:
         """
@@ -1230,7 +1225,9 @@ class JointCRep:
         l = ft + st - tt
 
         if np.isnan(l):
-            raise ValueError('log-likelihood is NaN!')
+            message = 'log-likelihood is NaN!'
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
 
         return l
 
@@ -1270,5 +1267,5 @@ class JointCRep:
                             max_it=final_it,
                             maxL=maxL,
                             nodes=nodes)
-        print(f'\nInferred parameters saved in: {outfile.resolve()}')
-        print('To load: theta=np.load(filename), then e.g. theta["u"]')
+        logging.info(f'Inferred parameters saved in: {outfile.resolve()}')
+        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')

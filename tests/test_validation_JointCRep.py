@@ -44,7 +44,6 @@ class  JointCRepTestCase(BaseTest):
                 undirected=self.undirected,
                 force_dense=self.force_dense,
                 noselfloop=True,
-                verbose=True,
                 binary=True,
                 header=0
             )
@@ -75,17 +74,17 @@ class  JointCRepTestCase(BaseTest):
 
     # test case function to check the JointCRep.set_name function
     def test_import_data(self):
-        print("Start import data test\n")
+
+        # Check if the force_dense flag is set to True
         if self.force_dense:
+            # If force_dense is True, assert that the sum of all elements in the matrix B is greater than 0
             self.assertTrue(self.B.sum() > 0)
-            print('B has ', self.B.sum(), ' total weight.')
         else:
+            # If force_dense is False, assert that the sum of all values in the sparse matrix B is greater than 0
             self.assertTrue(self.B.vals.sum() > 0)
-            print('B has ', self.B.vals.sum(), ' total weight.')
 
     # test case function to check the JointCRep.get_name function
     def test_running_algorithm(self):
-        print("\nStart running algorithm test\n")
 
         _ = self.model.fit(data=self.B,
                            data_T=self.B_T,

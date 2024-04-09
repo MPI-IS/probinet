@@ -16,4 +16,3 @@ output_parameters: true
 over: 0.0
 seed: 111
 structure: assortative
-verbose: true

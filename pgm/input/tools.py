@@ -3,6 +3,7 @@ It provides utility functions to handle matrices, tensors, and sparsity. It incl
 checking if an object can be cast to an integer, normalizing matrices, determining sparsity in
 tensors, and converting between dense and sparse representations.
 """
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
@@ -12,7 +13,6 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 import sktensor as skt
 
-# pylint: disable=fixme
 
 def can_cast(string: Union[int, float, str]) -> bool:
     """
@@ -33,6 +33,7 @@ def can_cast(string: Union[int, float, str]) -> bool:
         int(string)
         return True
     except ValueError:
+        logging.error(f'Cannot cast {string} to integer.')
         return False
 
 
@@ -293,7 +294,7 @@ def output_adjacency(A: List, out_folder: str, label: str):
     df.to_csv(out_folder + outfile, index=False, sep=' ')
 
     # Print the location where the adjacency matrix is saved
-    print(f'Adjacency matrix saved in: {out_folder + outfile}')
+    logging.info(f'Adjacency matrix saved in: {out_folder + outfile}')
 
 
 def write_adjacency(G: List[nx.MultiDiGraph],
@@ -337,7 +338,7 @@ def write_adjacency(G: List[nx.MultiDiGraph],
     cols.extend(['L' + str(l) for l in range(1, L + 1)])
     df = pd.DataFrame(df_list, columns=cols)
     df.to_csv(path_or_buf=folder + fname, index=False)
-    print('Adjacency tensor saved in:', folder + fname)
+    logging.info('Adjacency tensor saved in:', folder + fname)
 
 
 def write_design_Matrix(
@@ -370,7 +371,7 @@ def write_design_Matrix(
     X[nodeID] = X.index
     X = X.loc[:, [nodeID, attr_name]]
     X.to_csv(path_or_buf=folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv', index=False)
-    print('Design matrix saved in:', folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv')
+    logging.info('Design matrix saved in:', folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv')
 
 
 def transpose_tensor(M: np.ndarray) -> np.ndarray:
@@ -422,7 +423,9 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
           of the membership matrix.
     """
     if len(subs) < 3:
-        raise ValueError("subs_nz should have at least 3 elements.")
+        message = "subs_nz should have at least 3 elements."
+        error_type = ValueError
+        log_and_raise_error(logging, error_type, message)
 
     if m == 1:
         D, K = u.shape
@@ -477,7 +480,9 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
           of the membership matrix.
     """
     if len(subs) < 3:
-        raise ValueError("subs_nz should have at least 3 elements.")
+        message = "subs_nz should have at least 3 elements."
+        error_type = ValueError
+        log_and_raise_error(logging, error_type, message)
 
     if m == 1:
         D, K = u.shape
@@ -497,3 +502,11 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
         out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out
+
+def log_and_raise_error(error_type, message):
+
+    # Log the error message
+    logging.error(message)
+
+    # Raise the exception
+    raise error_type(message)

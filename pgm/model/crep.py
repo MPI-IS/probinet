@@ -2,6 +2,7 @@
 Class definition of CRep, the algorithm to perform inference in networks with reciprocity.
 The latent variables are related to community memberships and reciprocity value.
 """
+import logging
 from pathlib import Path
 import sys
 import time
@@ -10,11 +11,11 @@ from typing import Any, List, Optional, Tuple, TypedDict, Union
 from numpy import dtype, ndarray
 import numpy as np
 import sktensor as skt
-from termcolor import colored
 from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess
-from ..input.tools import get_item_array_from_subs, sp_uttkrp, sp_uttkrp_assortative
+from ..input.tools import (
+    get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import _lambda0_full
 
 
@@ -41,7 +42,6 @@ class CRep:
                  convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
                  decision: int = 10,  # convergence parameter
                  max_iter: int = 1000,  # maximum number of EM steps before aborting
-                 verbose: bool = True,  # flag to print details
                  flag_conv: str = 'log',  # flag to choose the convergence criterion
                  ) -> None:
         self.inf = inf
@@ -51,7 +51,6 @@ class CRep:
         self.convergence_tol = convergence_tol
         self.decision = decision
         self.max_iter = max_iter
-        self.verbose = verbose
         self.flag_conv = flag_conv
 
     def __check_fit_params(self,
@@ -63,21 +62,18 @@ class CRep:
                            K: int,
                            constrained: bool,
                            **extra_params:Unpack[FitParams]) -> None:
-        if initialization not in {
-            0, 1, 2, 3
-        }:  # indicator for choosing how to initialize u, v and w
-            raise ValueError(
-                'The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
-                'indicator to initialize the membership matrices u and v and the affinity matrix w.'
-                'If it is 0, they will be generated randomly; 1 means only the affinity matrix w '
-                'will be uploaded from file; 2 implies the membership matrices u and v will be '
-                'uploaded from file and 3 all u, v and w will be initialized through an input '
-                'file.')
+
+        if initialization not in {0, 1, 2, 3}:
+            message = 'The initialization parameter can be either 0, 1, 2 or 3.'
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
         self.initialization = initialization
+
+
         if eta0 is not None:
             if (eta0 < 0) or (eta0 > 1):
-                raise ValueError(
-                    'The reciprocity coefficient eta0 has to be in [0, 1]!')
+                message = 'The reciprocity coefficient eta0 has to be in [0, 1]!'
+                log_and_raise_error(logging, error_type, message)
         self.eta0 = eta0  # initial value for the reciprocity coefficient
         self.undirected = undirected  # flag to call the undirected network
         self.assortative = assortative  # flag to call the assortative network
@@ -98,15 +94,16 @@ class CRep:
         ]
         for extra_param in extra_params:
             if extra_param not in available_extra_params:
-                msg = f'Parameter {extra_param} is not available.'
-                print(msg)  # Add the warning
-                # self.logger.warn(msg) # TODO: check this out
+                message = f'Parameter {extra_param} is not available.'
+                logging.warning(message)  # Add the warning
         if "fix_eta" in extra_params:
             self.fix_eta = extra_params["fix_eta"]
 
             if self.fix_eta:
                 if self.eta0 is None:
-                    raise ValueError('If fix_eta=True, provide a value for eta0.')
+                    message = 'If fix_eta=True, provide a value for eta0.'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
         else:
             self.fix_eta = False
 
@@ -114,9 +111,9 @@ class CRep:
             self.fix_w = extra_params["fix_w"]
             if self.fix_w:
                 if self.initialization not in {1, 3}:
-                    raise ValueError(
-                        'If fix_w=True, the initialization has to be either 1 or 3.'
-                    )
+                    message = 'If fix_w=True, the initialization has to be either 1 or 3.'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
         else:
             self.fix_w = False
 
@@ -124,9 +121,9 @@ class CRep:
             self.fix_communities = extra_params["fix_communities"]
             if self.fix_communities:
                 if self.initialization not in {2, 3}:
-                    raise ValueError(
-                        'If fix_communities=True, the initialization has to be either 2 or 3.'
-                    )
+                    message = 'If fix_communities=True, the initialization has to be either 2 or 3.'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
         else:
             self.fix_communities = False
 
@@ -151,9 +148,9 @@ class CRep:
 
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 0):
-                raise ValueError(
-                    'If undirected=True, the parameter eta has to be fixed equal to 0.'
-                )
+                message = 'If undirected=True, the parameter eta has to be fixed equal to 0.'
+                error_type = ValueError
+                log_and_raise_error(logging, error_type, message)
 
     def fit(self,
             data: Union[skt.dtensor,
@@ -260,8 +257,7 @@ class CRep:
             convergence = False
             loglik = self.inf
 
-            if self.verbose:
-                print(f'Updating realization {r} ...')
+            logging.info(f'Updating realization {r} ...')
             time_start = time.time()
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
             # iterations (self.max_iter) is reached.
@@ -285,24 +281,26 @@ class CRep:
                         convergence,
                         data_T=data_T,
                         mask=mask)
-                    if self.verbose:
-                        if not it % 100:
-                            print(
-                                f'Nreal = {r} - Pseudo Log-likelihood = {loglik} '
-                                f'- iterations = {it} - '
-                                f'time = {np.round(time.time() - time_start, 2)} seconds')
+
+                    if not it % 100:
+                        logging.info(
+                            f'Nreal = {r} - Pseudo Log-likelihood = {loglik} '
+                            f'- iterations = {it} - '
+                            f'time = {np.round(time.time() - time_start, 2)} seconds')
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = self._check_for_convergence_delta(
                         it, coincide, delta_u, delta_v, delta_w, delta_eta,
                         convergence)
-                    if self.verbose:
-                        if not it % 100:
-                            print(
-                                f'Nreal = {r} - iterations = {it} - '
-                                f'time = {np.round(time.time() - time_start, 2)} seconds'
-                            )
+
+                    if not it % 100:
+                        logging.info(
+                            f'Nreal = {r} - iterations = {it} - '
+                            f'time = {np.round(time.time() - time_start, 2)} seconds'
+                        )
                 else:
-                    raise ValueError('flag_conv can be either log or deltas!')
+                    message = 'flag_conv can be either log or deltas!'
+                    error_type = ValueError
+                    log_and_raise_error(logging, error_type, message)
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
             # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
             # pseudo log-likelihood.
@@ -319,11 +317,11 @@ class CRep:
                     maxL = loglik
                     self.final_it = it
                     conv = convergence
-            if self.verbose:
-                print(
-                    f'Nreal = {r} - Pseudo Log-likelihood = {loglik} - iterations = {it} - '
-                    f'time = {np.round(time.time() - time_start, 2)} seconds\n'
-                )
+
+            logging.info(
+                f'Nreal = {r} - Pseudo Log-likelihood = {loglik} - iterations = {it} - '
+                f'time = {np.round(time.time() - time_start, 2)} seconds\n'
+            )
 
             # end cycle over realizations
 
@@ -331,14 +329,7 @@ class CRep:
 
         if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence not reached
-            try:
-                print(
-                    colored(
-                        f'Solution failed to converge in {self.max_iter} EM steps!',
-                        'blue'))
-            # Raise exception if print fails
-            except IOError:
-                print(f'Solution failed to converge in {self.max_iter} EM steps!')
+            logging.error(f'Solution failed to converge in {self.max_iter} EM steps!')
 
         if self.out_inference:
             self.output_results(nodes)
@@ -360,38 +351,38 @@ class CRep:
         if self.eta0 is not None:
             self.eta = self.eta0
         else:
-            if self.verbose:
-                print('eta is initialized randomly.')
+
+            logging.info('eta is initialized randomly.')
             self._randomize_eta()
 
         if self.initialization == 0:
-            if self.verbose:
-                print('u, v and w are initialized randomly.')
+
+            logging.info('u, v and w are initialized randomly.')
             self._randomize_w()
             self._randomize_u_v()
 
         elif self.initialization == 1:
-            if self.verbose:
-                print(f'w is initialized using the input file: {self.files}.')
-                print('u and v are initialized randomly.')
+
+            logging.info(f'w is initialized using the input file: {self.files}.')
+            logging.info('u and v are initialized randomly.')
             self._initialize_w()
             self._randomize_u_v()
 
         elif self.initialization == 2:
-            if self.verbose:
-                print(
-                    f'u and v are initialized using the input file: {self.files}.'
-                )
-                print('w is initialized randomly.')
+
+            logging.info(
+                f'u and v are initialized using the input file: {self.files}.'
+            )
+            logging.info('w is initialized randomly.')
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._randomize_w()
 
         elif self.initialization == 3:
-            if self.verbose:
-                print(
-                    f'u, v and w are initialized using the input file: {self.files}.'
-                )
+
+            logging.info(
+                f'u, v and w are initialized using the input file: {self.files}.'
+            )
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._initialize_w()
@@ -554,18 +545,24 @@ class CRep:
                 nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
                                         self.w[subs_nz[0], :, :])
             else:
-                raise ValueError("subs_nz should have at least 2 elements.")
+                message = "subs_nz should have at least 2 elements."
+                error_type = ValueError
+                log_and_raise_error(logging, error_type, message)
         else:
             if len(subs_nz) >= 2:
                 nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
                                         self.w[subs_nz[0], :])
             else:
-                raise ValueError("subs_nz should have at least 2 elements.")
+                message = "subs_nz should have at least 2 elements."
+                error_type = ValueError
+                log_and_raise_error(logging, error_type, message)
 
         if len(subs_nz) >= 3:
             nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, self.v[subs_nz[2], :])
         else:
-            raise ValueError("subs_nz should have at least 3 elements.")
+            message = "subs_nz should have at least 3 elements."
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
 
         return nz_recon_I
 
@@ -767,7 +764,9 @@ class CRep:
                  Maximum distance between the old and the new affinity tensor w.
         """
         if len(subs_nz) < 3:
-            raise ValueError("subs_nz should have at least 3 elements.")
+            message = "subs_nz should have at least 3 elements."
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -810,7 +809,9 @@ class CRep:
                  Maximum distance between the old and the new affinity tensor w.
         """
         if len(subs_nz) < 3:
-            raise ValueError("subs_nz should have at least 3 elements.")
+            message = "subs_nz should have at least 3 elements."
+            error_type = ValueError
+            log_and_raise_error(logging, error_type, message)
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -1023,7 +1024,7 @@ class CRep:
         l += Alog.sum()
 
         if np.isnan(l):
-            print("PSLikelihood is NaN!!!!")
+            logging.error("PSLikelihood is NaN!!!!")
             sys.exit(1)
         else:
             return l
@@ -1061,6 +1062,6 @@ class CRep:
                             max_it=self.final_it,
                             maxPSL=self.maxPSL,
                             nodes=nodes)
-        if self.verbose:
-            print(f'\nInferred parameters saved in: {outfile.resolve()}')
-            print('To load: theta=np.load(filename), then e.g. theta["u"]')
+
+        logging.info(f'Inferred parameters saved in: {outfile.resolve()}')
+        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')

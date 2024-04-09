@@ -4,10 +4,13 @@ calculates metrics such as the number of nodes, layers, edges, average degree, w
 reciprocity, and more. It aims to provide a comprehensive overview of the structural properties of
 the input graphs, considering both directed and weighted edges.
 """
+import logging
 from typing import List, Optional
 
 import networkx as nx
 import numpy as np
+
+from .tools import log_and_raise_error
 
 
 # pylint: disable=too-many-arguments, too-many-instance-attributes,
@@ -25,27 +28,27 @@ def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None)
     L = len(G)
     N = G[0].number_of_nodes()
 
-    print('Number of edges and average degree in each layer:')
+    logging.info('Number of edges and average degree in each layer:')
     for l in range(L):
         E = G[l].number_of_edges()
         k = 2 * float(E) / float(N)
-        print(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
+        logging.info(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
 
         weights = [d['weight'] for u, v, d in list(G[l].edges(data=True))]
         if not np.array_equal(weights, np.ones_like(weights)):
             M = np.sum([d['weight'] for u, v, d in list(G[l].edges(data=True))])
             kW = 2 * float(M) / float(N)
-            print(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
+            logging.info(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
 
-        print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
+        logging.info(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
 
-        print(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
-        print(
+        logging.info(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
+        logging.info(
             f'Reciprocity (intended as the proportion of bi-directional edges over the unordered '
-            f'pairs) = {np.round(reciprocal_edges(G[l]), 3)}\n')
+            f'pairs) = {np.round(reciprocal_edges(G[l]), 3)}')
 
         if rw is not None:
-            print(
+            logging.info(
                 f'Reciprocity (considering the weights of the edges) = {np.round(rw[l], 3)}'
             )
 
@@ -62,7 +65,7 @@ def print_graph_stat_MTCov(A: List[nx.MultiDiGraph]) -> None:
 
     L = len(A)
     N = A[0].number_of_nodes()
-    print('Number of edges and average degree in each layer:')
+    logging.info('Number of edges and average degree in each layer:')
     avg_edges = 0.
     avg_density = 0.
     avg_M = 0.
@@ -73,7 +76,7 @@ def print_graph_stat_MTCov(A: List[nx.MultiDiGraph]) -> None:
         k = 2 * float(E) / float(N)
         avg_edges += E
         avg_density += k
-        print(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
+        logging.info(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
 
         weights = [d['weight'] for u, v, d in list(A[l].edges(data=True))]
         if not np.array_equal(weights, np.ones_like(weights)):
@@ -82,18 +85,18 @@ def print_graph_stat_MTCov(A: List[nx.MultiDiGraph]) -> None:
             kW = 2 * float(M) / float(N)
             avg_M += M
             avg_densityW += kW
-            print(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
+            logging.info(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
 
-        print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
+        logging.info(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
 
-    print('\nAverage edges over all layers:', np.round(avg_edges / L, 3))
-    print('Average degree over all layers:', np.round(avg_density / L, 2))
-    print('Total number of edges:', avg_edges)
+    logging.info('\nAverage edges over all layers:', np.round(avg_edges / L, 3))
+    logging.info('Average degree over all layers:', np.round(avg_density / L, 2))
+    logging.info('Total number of edges:', avg_edges)
     if not unweighted:
-        print('Average edges over all layers (weighted):', np.round(avg_M / L, 3))
-        print('Average degree over all layers (weighted):', np.round(avg_densityW / L, 2))
-        print('Total number of edges (weighted):', avg_M)
-    print(f'Sparsity = {np.round(avg_edges / (N * N * L), 3)}')
+        logging.info('Average edges over all layers (weighted):', np.round(avg_M / L, 3))
+        logging.info('Average degree over all layers (weighted):', np.round(avg_densityW / L, 2))
+        logging.info('Total number of edges (weighted):', avg_M)
+    logging.info(f'Sparsity = {np.round(avg_edges / (N * N * L), 3)}')
 
 
 def reciprocal_edges(G: nx.MultiDiGraph) -> float:
@@ -119,7 +122,9 @@ def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     n_overlap_edge = n_all_edge - n_undirected
 
     if n_all_edge == 0:
-        raise nx.NetworkXError("Not defined for empty graphs.")
+        message = "Not defined for empty graphs."
+        error_type = nx.NetworkXError
+        log_and_raise_error(logging, error_type, message)
 
     reciprocity = float(n_overlap_edge) / float(n_undirected)
 
