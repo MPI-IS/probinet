@@ -122,12 +122,13 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                 'disassortative!')
         self.structure = structure
 
-    def reciprocity_planted_network(self,
-                                    parameters: Optional[Tuple[np.ndarray,
-                                                               np.ndarray,
-                                                               np.ndarray,
-                                                               float]] = None) -> Tuple[nx.MultiDiGraph,
-                                                                                        np.ndarray]:
+    def reciprocity_planted_network(
+            self,
+            parameters: Optional[Tuple[np.ndarray,
+                                       np.ndarray,
+                                       np.ndarray,
+                                       float]] = None
+    ) -> Tuple[nx.MultiDiGraph, np.ndarray]:
         """
         Generate a directed, possibly weighted network by using the reciprocity generative model.
         Can be used to generate benchmarks for networks with reciprocity.

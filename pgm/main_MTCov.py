@@ -113,8 +113,7 @@ def main():
     print(f'Setting: \nK = {args.K}\ngamma = {args.gamma}\n')
     print(args)
     time_start = time.time()
-    model = MTCov(verbose=args.verbose
-                  )
+    model = MTCov(verbose=args.verbose)
     _ = model.fit(
         data=B,
         data_X=Xs,

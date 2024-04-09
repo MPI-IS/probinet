@@ -3,7 +3,6 @@ Implementation of CRep and JointCRep algorithm.
 """
 
 import argparse
-from argparse import ArgumentParser
 from importlib.resources import files
 from pathlib import Path
 import time
@@ -22,7 +21,8 @@ def parse_args():
     """
     Parse the command-line arguments.
     """
-    p = ArgumentParser(description="Script to run the CRep, JointCRep, and MTCov algorithms.",
+    p = argparse.ArgumentParser(description="Script to run the CRep, JointCRep, and MTCov "
+                                            "algorithms.",
                        formatter_class=argparse.ArgumentDefaultsHelpFormatter
                        )
     # Add the command line arguments
@@ -33,7 +33,7 @@ def parse_args():
     p.add_argument('-K', '--K', type=int, default=None, help='Number of communities')
     p.add_argument('-g', '--gamma', type=float, default=0.5, help='Scaling hyper parameter')
     p.add_argument('--rseed', type=int, default=None, help='Random seed')
-    p.add_argument('--num_realizations', type=int, default=5, help='Number of realizations')
+    p.add_argument('--num_realizations', type=int, default=None, help='Number of realizations')
 
     # Input/Output related arguments
     p.add_argument('-A', '--adj_name', type=str, default='syn111.dat', help='Name of the network')
@@ -68,7 +68,38 @@ def parse_args():
     p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')
 
     # Parse the command line arguments
-    return p.parse_args()
+    args = p.parse_args()
+
+    # Set the output folder based on the algorithm if not provided
+    if args.out_folder == '':
+        args.out_folder = args.algorithm + '_output'
+
+    # Map algorithm names to their default adjacency matrix file names
+    default_adj_names = {
+        'CRep': 'syn111.dat',
+        'JointCRep': 'synthetic_data.dat',
+        'MTCov': 'adj.csv'
+    }
+
+    # Correcting default values based on the chosen algorithm
+    if args.adj_name == 'syn111.dat' and args.algorithm in default_adj_names:
+        args.adj_name = default_adj_names[args.algorithm]
+
+    if args.num_realizations is None:
+        if args.algorithm == 'JointCRep':
+            args.num_realizations = 3
+        else:
+            args.num_realizations = 5
+
+    if args.K is None:
+        if args.algorithm == 'MTCov':
+            args.K = 2
+        elif args.algorithm == 'JointCRep':
+            args.K = 4
+        else:
+            args.K = 3
+
+    return args
 
 
 def main():
@@ -78,17 +109,6 @@ def main():
     # Step 1: Parse the command-line arguments
 
     args = parse_args()
-
-    # Map algorithm names to their default adjacency matrix file names
-    default_adj_names = {
-        'CRep': 'syn111.dat',
-        'JointCRep': 'highschool_data.dat',
-        'MTCov': 'adj.csv'
-    }
-
-    # Correcting default values based on the chosen algorithm
-    if args.adj_name == 'syn111.dat' and args.algorithm in default_adj_names:
-        args.adj_name = default_adj_names[args.algorithm]
 
     # Step 2: Import the data
 
@@ -146,8 +166,7 @@ def main():
         conf = yaml.safe_load(fp)
 
     # Change the output folder
-    conf['out_folder'] = args.algorithm + \
-        '_output/' if args.out_folder == '' else args.out_folder
+    conf['out_folder'] = args.out_folder
 
     def set_config(args, conf):
         """
@@ -218,8 +237,8 @@ def main():
 
     # Create the model
     if args.algorithm in algorithm_classes:
-        model = algorithm_classes[args.algorithm](verbose=args.verbose, flag_conv=args.flag_conv,
-                                                  num_realizations=args.num_realizations)
+        model = algorithm_classes[args.algorithm](verbose=args.verbose, flag_conv=args.flag_conv)
+                                                  #num_realizations=args.num_realizations)
     else:
         raise ValueError('Algorithm not implemented.')
 
@@ -234,5 +253,3 @@ def main():
         print(f'\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.')
 
 
-if __name__ == '__main__':
-    main()

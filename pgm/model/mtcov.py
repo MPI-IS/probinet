@@ -137,7 +137,7 @@ class MTCov:
             flag_conv: str = 'log',
             batch_size: int = None,
             gamma: float = 0.5,
-            rseed: int = 107261,
+            rseed: int = 0,
             K: int = 3,
             initialization: int = 0,
             undirected: bool = False,

@@ -14,6 +14,8 @@ synthetic data from latent variables.
 
 ## Installation
 
+This package requires Python 3.10. Please ensure you have this version before proceeding with the installation.
+
 To get started, follow these steps:
 
 1. Create a virtual environment. For example, using ``venv``::

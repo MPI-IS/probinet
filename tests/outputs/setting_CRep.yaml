@@ -1,0 +1,12 @@
+K: 5
+assortative: true
+constrained: true
+end_file: _CRep
+eta0: null
+files: config/data/input/theta_gt111.npz
+fix_eta: false
+initialization: 0
+out_folder: outputs/
+out_inference: true
+rseed: 0
+undirected: false
