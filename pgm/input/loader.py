@@ -13,7 +13,7 @@ import pandas as pd
 from sktensor import sptensor
 
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
-from .stats import print_graph_stat
+from .stats import print_graph_stat, print_graph_stat_MTCov
 
 
 def import_data(dataset: str,
@@ -67,9 +67,6 @@ def import_data(dataset: str,
         noselfloop=noselfloop,
         binary=binary)
     nodes = list(A[0].nodes())
-
-    logging.info(f'Number of nodes = {len(nodes)}')
-    logging.info(f'Number of layers = {len(A)}')
 
     # Save the network in a tensor
     if force_dense:
@@ -171,15 +168,13 @@ def import_data_mtcov(
         binary=False)
 
     nodes = list(A[0].nodes)
-    logging.info(f'Number of nodes = {len(nodes)}')
-    logging.info(f'Number of layers = {len(A)}')
 
     # Get the current logging level
     current_level = logging.getLogger().getEffectiveLevel()
 
     # Check if the current level is INFO or lower
     if current_level <= logging.DEBUG:
-        print_graph_stat(A)
+        print_graph_stat_MTCov(A)
 
     # save the multilayer network in a tensor with all layers
     if force_dense:

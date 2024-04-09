@@ -5,9 +5,9 @@
    :caption: Contents
 
    api
-   Tutorial: A Beginner's Guide to Probabilistic Generative Models and the MTCov Algorithm<tutorials/MTCov>
-   Tutorial: Generating model-based networks using the CRep algorithm <tutorials/CRep>
-   Tutorial: Decoding Network Patterns with JointCRep: A User-Friendly Guide <tutorials/JointCRep>
+   Tutorial: A Beginner's Guide to Probabilistic Generative Models and the MTCov Algorithm<tutorials/MTCov.ipynb>
+   Tutorial: Generating model-based networks using the CRep algorithm <tutorials/CRep.ipynb>
+   Tutorial: Decoding Network Patterns with JointCRep: A User-Friendly Guide <tutorials/JointCRep.ipynb>
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
