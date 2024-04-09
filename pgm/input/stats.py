@@ -51,9 +51,6 @@ def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None)
         logging.info(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
 
         logging.info(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G[l]), 3)}')
-        logging.info(
-            f'Reciprocity (intended as the proportion of bi-directional edges over the unordered '
-            f'pairs) = {np.round(reciprocal_edges(G[l]), 3)}')
 
         if rw is not None:
             logging.info(
@@ -97,9 +94,9 @@ def print_graph_stat_MTCov(A: List[nx.MultiDiGraph]) -> None:
 
         logging.info(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
 
-    logging.info('\nAverage edges over all layers:', np.round(avg_edges / L, 3))
-    logging.info('Average degree over all layers:', np.round(avg_density / L, 2))
-    logging.info('Total number of edges:', avg_edges)
+    logging.info('\nAverage edges over all layers: %s', np.round(avg_edges / L, 3))
+    logging.info('Average degree over all layers: %s', np.round(avg_density / L, 2))
+    logging.info('Total number of edges: %s', avg_edges)
     if not unweighted:
         logging.info('Average edges over all layers (weighted):', np.round(avg_M / L, 3))
         logging.info('Average degree over all layers (weighted):', np.round(avg_densityW / L, 2))

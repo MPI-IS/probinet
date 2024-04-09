@@ -154,7 +154,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
 
         Returns
         -------
-        G: MultiDigraph
+        G: MultiDiGraph
            MultiDiGraph NetworkX object.
         A: np.ndarray
             The adjacency matrix of the generated network.
@@ -256,7 +256,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         np.fill_diagonal(M, 0)
 
         # Compute the expected reciprocity in the network
-        rw = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())  # expected reciprocity
+        Exp_r = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())  # expected reciprocity
 
         # Generate the network G and the adjacency matrix A using the latent variables
         G = nx.MultiDiGraph()
@@ -316,8 +316,8 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         Sparsity_cof = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
-        # Compute the proportion of bi-directional edges over the unordered pairs of nodes
-        reciprocity_c = np.round(reciprocal_edges(G), 3)
+        # Compute the weighted reciprocity
+        rw = np.multiply(A, A.T).sum() / A.sum()
 
         # Print the details of the network
         logging.info(
@@ -338,11 +338,11 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                      f'Number of edges: {G.number_of_edges()}')
         logging.info(f'Average degree (2E/N): {Sparsity_cof}')
         logging.info(f'Average weighted degree (2M/N): {ave_w_deg}')
-        logging.info(f'Expected reciprocity: {np.round(rw, 3)}')
+        logging.info(f'Expected reciprocity: {np.round(Exp_r, 3)}')
+        logging.info(f'Reciprocity (networkX) = {np.round(nx.reciprocity(G), 3)}')
         logging.info(
-            f'Reciprocity (intended as the proportion of bi-directional edges over the  '
-            f'unordered pairs): '
-            f'{reciprocity_c}\n')
+            f'Reciprocity (considering the weights of the edges) = {np.round(rw, 3)}'
+        )
 
         # Output the parameters of the network if output_parameters is True
         if self.output_parameters:
