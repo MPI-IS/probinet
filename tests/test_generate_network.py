@@ -178,52 +178,6 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
             self.show_plots,
             **self.kwargs)
 
-
-class TestBaseSyntheticNetwork(unittest.TestCase):
-    def setUp(self):
-        self.N = 100
-        self.L = 1
-        self.K = 2
-        self.seed = 0
-        self.out_folder = "data/input/synthetic/"
-        self.output_net = True
-        self.show_details = True
-        self.show_plots = True
-        self.kwargs = {}
-        self.base_synthetic_network = BaseSyntheticNetwork(
-            self.N,
-            self.L,
-            self.K,
-            self.seed,
-            self.out_folder,
-            self.output_net,
-            self.show_details,
-            self.show_plots,
-            **self.kwargs)
-
-
-class TestBaseSyntheticNetwork(unittest.TestCase):
-    def setUp(self):
-        self.N = 100
-        self.L = 1
-        self.K = 2
-        self.seed = 0
-        self.out_folder = "data/input/synthetic/"
-        self.output_net = True
-        self.show_details = True
-        self.show_plots = True
-        self.kwargs = {}
-        self.base_synthetic_network = BaseSyntheticNetwork(
-            self.N,
-            self.L,
-            self.K,
-            self.seed,
-            self.out_folder,
-            self.output_net,
-            self.show_details,
-            self.show_plots,
-            **self.kwargs)
-
     def test_init(self):
         self.assertEqual(self.base_synthetic_network.N, self.N)
         self.assertEqual(self.base_synthetic_network.L, self.L)

@@ -36,7 +36,7 @@ Run the `pgm` package as a whole with the `run_*` commands. Here is a list of su
 
 - `run_CRep`: Runs the `CRep` algorithm.
 - `run_JointCRep`: Runs the `JointCRep` algorithm.
-- `run_MTCOV`: Runs the `MTCOV` algorithm.
+- `run_MTCov`: Runs the `MTCov` algorithm.
 
 For example, if you are interested in running the `CRep` algorithm, you can do it by running:
 

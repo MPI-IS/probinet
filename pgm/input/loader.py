@@ -8,6 +8,7 @@ import networkx as nx
 from numpy import ndarray
 import numpy as np
 import pandas as pd
+from sktensor import sptensor
 
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
 from .stats import print_graph_stat
@@ -96,7 +97,7 @@ def import_data_mtcov(
         undirected: bool = False,
         force_dense: bool = True,
         noselfloop: bool = True,
-        verbose: bool = True):
+        verbose: bool = True) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
     """
         Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
 
@@ -105,27 +106,27 @@ def import_data_mtcov(
         Parameters
         ----------
         in_folder : str
-                    Path of the folder containing the input files.
-        adj_name : str
-                   Input file name of the adjacency tensor.
-        cov_name : str
-                   Input file name of the design matrix.
-        ego : str
-              Name of the column to consider as source of the edge.
-        egoX : str
-               Name of the column to consider as node IDs in the design matrix-attribute dataset.
-        alter : str
-                Name of the column to consider as target of the edge.
-        attr_name : str
-                    Name of the attribute to consider in the analysis.
-        undirected : bool
-                     If set to True, the algorithm considers an undirected graph.
-        force_dense : bool
-                      If set to True, the algorithm is forced to consider a dense adjacency tensor.
-        noselfloop : bool
-                     If set to True, the algorithm removes the self-loops.
-        verbose : bool
-                  Flag to print details.
+                Path of the folder containing the input files.
+    adj_name : str
+               Input file name of the adjacency tensor.
+    cov_name : str
+               Input file name of the design matrix.
+    ego : str
+          Name of the column to consider as source of the edge.
+    egoX : str
+           Name of the column to consider as node IDs in the design matrix-attribute dataset.
+    alter : str
+            Name of the column to consider as target of the edge.
+    attr_name : str
+                Name of the attribute to consider in the analysis.
+    undirected : bool
+                 If set to True, the algorithm considers an undirected graph.
+    force_dense : bool
+                  If set to True, the algorithm is forced to consider a dense adjacency tensor.
+    noselfloop : bool
+                 If set to True, the algorithm removes the self-loops.
+    verbose : bool
+              Flag to print details.
 
         Returns
         -------
@@ -140,7 +141,7 @@ def import_data_mtcov(
     """
 
     # df_adj = pd.read_csv(in_folder + adj_name, index_col=0) # read adjacency file
-    df_adj = pd.read_csv(in_folder / adj_name)  # read adjacency file
+    df_adj = pd.read_csv(in_folder/ adj_name)  # read adjacency file
     print('\nAdjacency shape: {0}'.format(df_adj.shape))
 
     df_X = pd.read_csv(in_folder / cov_name)  # read the csv file with the covariates
@@ -259,7 +260,7 @@ def read_graph(
 
 def read_design_matrix(df_X: pd.DataFrame,
                        nodes: List,
-                       attribute: str = None,
+                       attribute: Union[str, None] = None,
                        ego: str = 'Name',
                        verbose: bool = True):
     """

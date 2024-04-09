@@ -51,7 +51,7 @@ class TestJointCRepMain(
         }
 
         # Path to the generated configuration file
-        config_file_path = self.temp_output_folder / 'setting_JointCRep.yaml'
+        config_file_path = self.temp_output_folder + '/setting_JointCRep.yaml'
 
         # Load the actual configuration from the file
         with open(config_file_path, 'r', encoding='utf8') as f:

@@ -1,6 +1,6 @@
 """
     Performing community detection in multilayer networks considering both the topology of interactions and node
-    attributes. Implementation of MTCOV algorithm.
+    attributes. Implementation of MTCov algorithm.
 """
 
 from argparse import ArgumentParser
@@ -13,12 +13,12 @@ import sktensor as skt
 import yaml
 
 from .input.loader import import_data_mtcov
-from .model.mtcov import MTCOV
+from .model.mtcov import MTCov
 
 
 def main():
     '''
-    Main function for MTCOV.
+    Main function for MTCov.
     '''
 
     # Step 1: Parse the command-line arguments
@@ -92,12 +92,12 @@ def main():
         args.flag_conv = 'deltas'
 
     # Step 3: Load the configuration settings
-    with (files('pgm.data.model').joinpath('setting_MTCOV.yaml').open('rb')
+    with (files('pgm.data.model').joinpath('setting_MTCov.yaml').open('rb')
           as fp):
         conf = yaml.safe_load(fp)
 
     # Change the output folder
-    conf['out_folder'] = 'MTCOV' \
+    conf['out_folder'] = 'MTCov' \
         '_output/' if args.out_folder == '' else args.out_folder
 
     # Change K if given
@@ -115,18 +115,18 @@ def main():
 
     # Save the configuration file
     output_config_path = conf['out_folder'] + '/setting_' + \
-        'MTCOV.yaml'
+        'MTCov.yaml'
     with open(output_config_path, 'w', encoding='utf8') as f:
         yaml.dump(conf, f)
 
     # Step 5: Run JointCRep
 
     if args.verbose:
-        print('\n### Run MTCOV ###')
+        print('\n### Run MTCov ###')
         print(f'Setting: \nK = {args.C}\ngamma = {args.gamma}\n')
 
     time_start = time.time()
-    model = MTCOV(
+    model = MTCov(
     )
     _ = model.fit(
         data=B,

@@ -48,7 +48,7 @@ def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None)
             )
 
 
-def print_graph_stat_mtcov(A: List[nx.MultiDiGraph]) -> None:
+def print_graph_stat_MTCov(A: List[nx.MultiDiGraph]) -> None:
     """
         Print the statistics of the graph A.
 
@@ -61,10 +61,10 @@ def print_graph_stat_mtcov(A: List[nx.MultiDiGraph]) -> None:
     L = len(A)
     N = A[0].number_of_nodes()
     print('Number of edges and average degree in each layer:')
-    avg_edges = 0
-    avg_density = 0
-    avg_M = 0
-    avg_densityW = 0
+    avg_edges = 0.
+    avg_density = 0.
+    avg_M = 0.
+    avg_densityW = 0.
     unweighted = True
     for l in range(L):
         E = A[l].number_of_edges()

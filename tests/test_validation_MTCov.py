@@ -7,7 +7,7 @@ import numpy as np
 import yaml
 
 from pgm.input.loader import import_data_mtcov
-from pgm.model.mtcov import MTCOV
+from pgm.model.mtcov import MTCov
 
 GT_OUTPUT_DIR = Path(__file__).parent / 'outputs'
 class MTCovValidationTestCase(unittest.TestCase):
@@ -16,12 +16,12 @@ class MTCovValidationTestCase(unittest.TestCase):
         """
         Set up the test case.
         """
-        self.algorithm = 'MTCOV'
+        self.algorithm = 'MTCov'
         self.C = 2
         self.gamma = 0.5
         self.out_folder = 'outputs/'
         self.end_file = '_test'
-        self.adj_name = Path('adj.csv')
+        self.adj_name = 'adj.csv'
         self.cov_name = Path('X.csv')
         self.ego = 'source'
         self.alter = 'target'
@@ -56,7 +56,7 @@ class MTCovValidationTestCase(unittest.TestCase):
 
         self.conf['end_file'] = '_OUT_' + self.algorithm  # Adding a suffix to the output files
 
-        self.model = MTCOV()
+        self.model = MTCov()
 
     def run(self, result=None):
         # Create a temporary directory for the duration of the test

@@ -1,5 +1,5 @@
 """
-    Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and node
+    Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and node
     attributes to extract overlapping communities in directed and undirected multilayer networks.
 """
 
@@ -19,9 +19,9 @@ from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
 from ..output.plot import plot_L
 
 
-class MTCOV:
+class MTCov:
     """
-    Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and
+    Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
     """
 
@@ -59,6 +59,11 @@ class MTCOV:
                                K: int,
                                **extra_params: dict[str, Any]
                                ) -> None:
+
+        if "files" in extra_params:
+            self.files = extra_params["files"]
+        else:
+            raise ValueError('The input file is missing.')
 
         if initialization not in {0, 1}:  # indicator for choosing how to initialize u, v and w
             raise ValueError(
@@ -142,7 +147,8 @@ class MTCOV:
             initialization: int = 0,
             undirected: bool = False,
             assortative: bool = True,
-            **extra_params: dict[str, Any]
+            **extra_params: dict[str, Any] # TODO: could this be done in another way? mypy keeps
+            # complaining about the types of the values
             ) -> tuple[np.ndarray[Any,
                                   np.dtype[np.float64]],
                        np.ndarray[Any,
@@ -981,7 +987,12 @@ class MTCOV:
         else:
             return l
 
-    def __Likelihood_batch(self, data, data_X, subset_N, Subs, SubsX):
+    def __Likelihood_batch(self,
+                           data: Union[skt.dtensor, skt.sptensor],
+                           data_X: np.ndarray,
+                           subset_N: Union[List[int], None],
+                           Subs: Union[List[Tuple[int, int, int]], None],
+                           SubsX: Union[List[Tuple[int, int]], None]) -> float:
         """
             Compute the log-likelihood of a batch of data.
 
@@ -1132,10 +1143,6 @@ class MTCOV:
         # Check if the output folder exists, otherwise create it
         self.out_folder = Path(self.out_folder)
         self.out_folder.mkdir(parents=True, exist_ok=True)
-
-        # Check if the output folder is a Path
-        if not isinstance(self.out_folder, Path):
-            self.out_folder = Path(self.out_folder)
 
         outfile = (self.out_folder / str('theta' + self.end_file)
                    ).with_suffix('.npz')
