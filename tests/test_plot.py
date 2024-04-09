@@ -8,8 +8,6 @@ import networkx as nx
 
 from pgm.output.plot import mapping, plot_hard_membership
 
-# pylint: disable=missing-function-docstring, too-many-locals
-
 
 class TestPlotHardMembership(unittest.TestCase):
     """

@@ -13,11 +13,8 @@ import sktensor as skt
 from termcolor import colored
 
 from ..input.preprocessing import preprocess
-from ..input.tools import get_item_array_from_subs
+from ..input.tools import get_item_array_from_subs, sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import _lambda0_full
-
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
-# pylint: disable=fixme
 
 
 class CRep:
@@ -1061,112 +1058,3 @@ class CRep:
         if self.verbose:
             print(f'\nInferred parameters saved in: {outfile.resolve()}')
             print('To load: theta=np.load(filename), then e.g. theta["u"]')
-
-
-def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
-              v: np.ndarray, w: np.ndarray) -> np.ndarray:
-    """
-    Compute the Khatri-Rao product (sparse version).
-
-    Parameters
-    ----------
-    vals : ndarray
-           Values of the non-zero entries.
-    subs : tuple
-           Indices of elements that are non-zero. It is a n-tuple of array-likes and the length
-           of tuple n must be
-           equal to the dimension of tensor.
-    m : int
-        Mode in which the Khatri-Rao product of the membership matrix is multiplied with the
-        tensor: if 1 it
-        works with the matrix u; if 2 it works with v.
-    u : ndarray
-        Out-going membership matrix.
-    v : ndarray
-        In-coming membership matrix.
-    w : ndarray
-        Affinity tensor.
-
-    Returns
-    -------
-    out : ndarray
-          Matrix which is the result of the matrix product of the unfolding of the tensor and
-          the Khatri-Rao product
-          of the membership matrix.
-    """
-    if len(subs) < 3:
-        raise ValueError("subs_nz should have at least 3 elements.")
-
-    if m == 1:
-        D, K = u.shape
-        out = np.zeros_like(u)
-    elif m == 2:
-        D, K = v.shape
-        out = np.zeros_like(v)
-
-    for k in range(K):
-        tmp = vals.copy()
-        if m == 1:  # we are updating u
-            tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
-                    v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
-        elif m == 2:  # we are updating v
-            tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
-                    u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
-        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
-
-    return out
-
-
-def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
-                          u: np.ndarray, v: np.ndarray,
-                          w: np.ndarray) -> np.ndarray:
-    """
-    Compute the Khatri-Rao product (sparse version) with the assumption of assortativity.
-
-    Parameters
-    ----------
-    vals : ndarray
-           Values of the non-zero entries.
-    subs : tuple
-           Indices of elements that are non-zero. It is a n-tuple of array-likes and the length
-           of tuple n must be
-           equal to the dimension of tensor.
-    m : int
-        Mode in which the Khatri-Rao product of the membership matrix is multiplied with the
-        tensor: if 1 it
-        works with the matrix u; if 2 it works with v.
-    u : ndarray
-        Out-going membership matrix.
-    v : ndarray
-        In-coming membership matrix.
-    w : ndarray
-        Affinity tensor.
-
-    Returns
-    -------
-    out : ndarray
-          Matrix which is the result of the matrix product of the unfolding of the tensor and
-          the Khatri-Rao product
-          of the membership matrix.
-    """
-    if len(subs) < 3:
-        raise ValueError("subs_nz should have at least 3 elements.")
-
-    if m == 1:
-        D, K = u.shape
-        out = np.zeros_like(u)
-    elif m == 2:
-        D, K = v.shape
-        out = np.zeros_like(v)
-
-    for k in range(K):
-        tmp = vals.copy()
-        if m == 1:  # we are updating u
-            tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(
-                tmp.dtype)
-        elif m == 2:  # we are updating v
-            tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(
-                tmp.dtype)
-        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
-
-    return out

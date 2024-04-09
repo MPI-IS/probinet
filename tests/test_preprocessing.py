@@ -10,8 +10,6 @@ import sktensor as skt
 from pgm.input import tools
 from pgm.input.preprocessing import build_B_from_A, build_sparse_B_from_A, preprocess
 
-# pylint: disable=missing-function-docstring, too-many-locals
-
 
 class TestPreprocessing(unittest.TestCase):
     """
@@ -88,7 +86,7 @@ class TestPreprocessing(unittest.TestCase):
         expected_v_T = np.array([0.0, 0.0, 0.0])
         expected_rw = [0.0, 0.0]
 
-        data, data_T, v_T, rw = build_sparse_B_from_A(A)
+        data, data_T, v_T, rw = build_sparse_B_from_A(A, calculate_reciprocity=True)
 
         # Use np.testing.assert_array_almost_equal for comparing arrays with floating-point values
         np.testing.assert_array_almost_equal(data.subs, expected_data.subs)

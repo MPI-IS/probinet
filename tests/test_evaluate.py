@@ -9,8 +9,6 @@ from pgm.output.evaluate import (
     _lambda0_full, calculate_AUC, calculate_conditional_expectation, calculate_expectation,
     PSloglikelihood)
 
-# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
-
 
 class TestEvaluateFunctions(unittest.TestCase):
     """

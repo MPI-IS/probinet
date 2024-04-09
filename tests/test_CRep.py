@@ -8,8 +8,6 @@ import numpy as np
 
 from pgm.model.crep import CRep, sp_uttkrp, sp_uttkrp_assortative
 
-# pylint: disable=missing-function-docstring, missing-module-docstring, too-many-locals, too-many-instance-attributes
-
 
 class TestCRepHelpers(unittest.TestCase):
     """

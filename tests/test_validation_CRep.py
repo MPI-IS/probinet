@@ -1,10 +1,10 @@
 """
 This is the test module for the CRep algorithm.
 """
-
 from importlib.resources import files
 import os
 from pathlib import Path
+import tempfile
 import unittest
 
 import numpy as np
@@ -16,10 +16,8 @@ from pgm.output.evaluate import calculate_opt_func, PSloglikelihood
 
 from .fixtures import decimal
 
-# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
-
-
-class BaseTestCase(unittest.TestCase):
+GT_OUTPUT_DIR = Path(__file__).parent / 'outputs'
+class CRepValidationTestCase(unittest.TestCase):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -56,7 +54,7 @@ class BaseTestCase(unittest.TestCase):
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
-        conf['out_folder'] = Path(__file__).parent / conf['out_folder']
+        conf['out_folder'] = self.temp_output_folder / conf['out_folder']
 
         conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
 
@@ -65,6 +63,14 @@ class BaseTestCase(unittest.TestCase):
         self.conf = conf
 
         self.model = CRep()
+
+    def run(self, result=None):
+        # Create a temporary directory for the duration of the test
+        with tempfile.TemporaryDirectory() as temp_output_folder:
+            # Store the path to the temporary directory in an instance variable
+            self.temp_output_folder = Path(temp_output_folder)
+            # Call the parent class's run method to execute the test
+            super().run(result)
 
     # test case function to check the crep.set_name function
     def test_import_data(self):
@@ -88,9 +94,12 @@ class BaseTestCase(unittest.TestCase):
                            data_T_vals=self.data_T_vals,
                            nodes=self.nodes,
                            **self.conf)
-        theta = np.load((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix(
+
+        theta = np.load((self.temp_output_folder / self.model.out_folder / str('theta' +
+                                                                               self.model.end_file)).with_suffix(
             '.npz'))
-        thetaGT = np.load((self.model.out_folder / str('theta_GT_CRep')).with_suffix(
+        # This reads the synthetic data Ground Truth output
+        thetaGT = np.load((GT_OUTPUT_DIR / ('theta_GT_' + self.algorithm)).with_suffix(
             '.npz'))
 
         self.assertTrue(np.array_equal(self.model.u_f, theta['u']))

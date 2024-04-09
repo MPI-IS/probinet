@@ -19,14 +19,15 @@ def main():
     """
     Main function for CRep.
     """
+    # Step 1: Parse the command-line arguments
     p = ArgumentParser(description="Script to run the CRep algorithm.",
                        formatter_class=argparse.ArgumentDefaultsHelpFormatter
                        )
-
     # Add the command line arguments
-    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],  # TODO: add this: 'CRepnc', 'CRep0'
+    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],
+                   # TODO: add this: 'CRepnc', 'CRep0'
                    default='CRep',
-                   # help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
+                   help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
                    )  # configuration
     p.add_argument('-K', '--K', type=int, default=None,
                    help='Number of communities')
@@ -53,7 +54,29 @@ def main():
     # Parse the command line arguments
     args = p.parse_args()
 
-    # setting to run the algorithm
+    # Step 2: Import the data
+
+    ego = args.ego
+    alter = args.alter
+    force_dense = args.force_dense  # Sparse matrices
+    in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
+        'input' if args.in_folder == '' else Path(args.in_folder)
+    adj = Path(args.adj)
+
+    # Import data:
+    network = in_folder / adj  # network complete path
+
+    A, B, B_T, data_T_vals = import_data(
+        network,
+        ego=ego,
+        alter=alter,
+        force_dense=force_dense,
+        header=0,
+        verbose=args.verbose
+    )
+    nodes = A[0].nodes()
+
+    # Step 3: Load the configuration settings
 
     config_path = 'setting_' + args.algorithm + '.yaml'
     with files('pgm.data.model').joinpath(config_path).open('rb') as fp:
@@ -66,13 +89,14 @@ def main():
     if args.K is not None:
         conf['K'] = args.K
 
-    # Ensure the output folder exists
-    out_folder_path = Path(conf['out_folder'])
-    out_folder_path.mkdir(parents=True, exist_ok=True)
-
     # Print the configuration file
     if args.verbose:
         print(yaml.dump(conf))
+
+    # Step 4: Create the output directory
+
+    out_folder_path = Path(conf['out_folder'])
+    out_folder_path.mkdir(parents=True, exist_ok=True)
 
     # Save the configuration file
     output_config_path = conf['out_folder'] + '/setting_' + \
@@ -80,28 +104,9 @@ def main():
     with open(output_config_path, 'w', encoding='utf8') as f:
         yaml.dump(conf, f)
 
-    # Import data
-    ego = args.ego
-    alter = args.alter
-    force_dense = args.force_dense  # Sparse matrices
-    in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
-        'input' if args.in_folder == '' else Path(args.in_folder)
-    adj = Path(args.adj)
+    # Step 5: Run CRep
 
-    # Import data:
-    network = in_folder / adj  # network complete path
-    A, B, B_T, data_T_vals = import_data(
-        network,
-        ego=ego,
-        alter=alter,
-        force_dense=force_dense,
-        header=0,
-        verbose=args.verbose
-    )
-    nodes = A[0].nodes()
-
-    # Run CRep
-    if args.verbose:
+    if args.verbose:  # TODO: Add a logger
         print(f'\n### Run {args.algorithm} ###')
     model = CRep()
     time_start = time.time()

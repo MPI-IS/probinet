@@ -10,7 +10,6 @@ import networkx as nx
 import numpy as np
 
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches, too-many-statements
 def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None) -> None:
     """
     Print the statistics of the graph A.
@@ -49,6 +48,52 @@ def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None)
             )
 
 
+def print_graph_stat_mtcov(A):
+    """
+        Print the statistics of the graph A.
+
+        Parameters
+        ----------
+        A : list
+            List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    """
+
+    L = len(A)
+    N = A[0].number_of_nodes()
+    print('Number of edges and average degree in each layer:')
+    avg_edges = 0
+    avg_density = 0
+    avg_M = 0
+    avg_densityW = 0
+    unweighted = True
+    for l in range(L):
+        E = A[l].number_of_edges()
+        k = 2 * float(E) / float(N)
+        avg_edges += E
+        avg_density += k
+        print(f'E[{l}] = {E} - <k> = {np.round(k, 3)}')
+
+        weights = [d['weight'] for u, v, d in list(A[l].edges(data=True))]
+        if not np.array_equal(weights, np.ones_like(weights)):
+            unweighted = False
+            M = np.sum([d['weight'] for u, v, d in list(A[l].edges(data=True))])
+            kW = 2 * float(M) / float(N)
+            avg_M += M
+            avg_densityW += kW
+            print(f'M[{l}] = {M} - <k_weighted> = {np.round(kW, 3)}')
+
+        print(f'Sparsity [{l}] = {np.round(E / (N * N), 3)}')
+
+    print('\nAverage edges over all layers:', np.round(avg_edges / L, 3))
+    print('Average degree over all layers:', np.round(avg_density / L, 2))
+    print('Total number of edges:', avg_edges)
+    if not unweighted:
+        print('Average edges over all layers (weighted):', np.round(avg_M / L, 3))
+        print('Average degree over all layers (weighted):', np.round(avg_densityW / L, 2))
+        print('Total number of edges (weighted):', avg_M)
+    print(f'Sparsity = {np.round(avg_edges / (N * N * L), 3)}')
+
+
 def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     """
     Compute the proportion of bi-directional edges, by considering the unordered pairs.
@@ -77,3 +122,48 @@ def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     reciprocity = float(n_overlap_edge) / float(n_undirected)
 
     return reciprocity
+
+
+def probabilities(structure, sizes, N=100, C=2, avg_degree=4.):
+    """
+        Return the CxC array with probabilities between and within groups.
+
+        Parameters
+        ----------
+        structure : str
+                    Structure of the layer, e.g. assortative, disassortative, core-periphery or directed-biased.
+        sizes : list
+                List with the sizes of blocks.
+        N : int
+            Number of nodes.
+        C : int
+            Number of communities.
+        avg_degree : float
+                     Average degree over the nodes.
+
+        Returns
+        -------
+        p : ndarray
+            Array with probabilities between and within groups.
+    """
+
+    alpha = 0.1
+    beta = alpha * 0.3
+    p1 = avg_degree * C / N
+    if structure == 'assortative':
+        p = p1 * alpha * np.ones((len(sizes), len(sizes)))  # secondary-probabilities
+        np.fill_diagonal(p, p1)  # primary-probabilities
+    elif structure == 'disassortative':
+        p = p1 * np.ones((len(sizes), len(sizes)))
+        np.fill_diagonal(p, alpha * p1)
+    elif structure == 'core-periphery':
+        p = p1 * np.ones((len(sizes), len(sizes)))
+        np.fill_diagonal(np.fliplr(p), alpha * p1)
+        p[1, 1] = beta * p1
+    elif structure == 'directed-biased':
+        p = alpha * p1 * np.ones((len(sizes), len(sizes)))
+        p[0, 1] = p1
+        p[1, 0] = beta * p1
+
+    print(p)
+    return p

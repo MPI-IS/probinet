@@ -6,13 +6,10 @@ tensors, and converting between dense and sparse representations.
 import os
 from typing import List, Tuple, Union
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import sktensor as skt
-
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
-# too-many-statements
-# pylint: disable=fixme
 
 
 def can_cast(string: Union[int, float, str]) -> bool:
@@ -214,9 +211,9 @@ def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
     a : ndarray or list
         Input data.
     rtol : float
-           Relative tolerance.
+           Relative convergence_tol.
     atol : float
-              Absolute tolerance.
+              Absolute convergence_tol.
     Returns
     -------
     True if the matrix is symmetric, False otherwise.
@@ -278,6 +275,79 @@ def output_adjacency(A: List, out_folder: str, label: str):
     print(f'Adjacency matrix saved in: {out_folder + outfile}')
 
 
+def write_adjacency(G, folder='./', fname='adj.csv', ego='source', alter='target'):
+    """
+        Save the adjacency tensor to file.
+
+        Parameters
+        ----------
+        G : list
+            List of MultiDiGraph NetworkX objects.
+        folder : str
+                 Path of the folder where to save the files.
+        fname : str
+                Name of the adjacency tensor file.
+        ego : str
+              Name of the column to consider as source of the edge.
+        alter : str
+                Name of the column to consider as target of the edge.
+    """
+
+    N = G[0].number_of_nodes()
+    L = len(G)
+    B = np.empty(shape=[len(G), N, N])
+    for l in range(len(G)):
+        B[l, :, :] = nx.to_numpy_array(G[l], weight='weight')
+    df = []
+    for i in range(N):
+        for j in range(N):
+            Z = 0
+            for l in range(L):
+                Z += B[l][i][j]
+            if Z > 0:
+                data = [i, j]
+                data.extend([int(B[a][i][j]) for a in range(L)])
+                df.append(data)
+    cols = [ego, alter]
+    cols.extend(['L' + str(l) for l in range(1, L + 1)])
+    df = pd.DataFrame(df, columns=cols)
+    df.to_csv(path_or_buf=folder + fname, index=False)
+    print('Adjacency tensor saved in:', folder + fname)
+
+
+def write_design_Matrix(
+        metadata,
+        perc,
+        folder='./',
+        fname='X_',
+        nodeID='Name',
+        attr_name='Metadata'):
+    """
+        Save the design matrix to file.
+
+        Parameters
+        ----------
+        metadata : dict
+                   Dictionary where the keys are the node labels and the values are the metadata associated to them.
+        perc : float
+               Fraction of match between communities and metadata.
+        folder : str
+                 Path of the folder where to save the files.
+        fname : str
+                Name of the design matrix file.
+        nodeID : str
+                 Name of the column with the node labels.
+        attr_name : str
+                    Name of the column to consider as attribute.
+    """
+
+    X = pd.DataFrame.from_dict(metadata, orient='index', columns=[attr_name])
+    X[nodeID] = X.index
+    X = X.loc[:, [nodeID, attr_name]]
+    X.to_csv(path_or_buf=folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv', index=False)
+    print('Design matrix saved in:', folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv')
+
+
 def transpose_tensor(M: np.ndarray) -> np.ndarray:
     """
     Given M tensor, it returns its transpose: for each dimension a, compute the transpose ij->ji.
@@ -293,3 +363,112 @@ def transpose_tensor(M: np.ndarray) -> np.ndarray:
     """
 
     return np.einsum('aij->aji', M)
+
+
+def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
+              v: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """
+    Compute the Khatri-Rao product (sparse version).
+
+    Parameters
+    ----------
+    vals : ndarray
+           Values of the non-zero entries.
+    subs : tuple
+           Indices of elements that are non-zero. It is a n-tuple of array-likes and the length
+           of tuple n must be
+           equal to the dimension of tensor.
+    m : int
+        Mode in which the Khatri-Rao product of the membership matrix is multiplied with the
+        tensor: if 1 it
+        works with the matrix u; if 2 it works with v.
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity tensor.
+
+    Returns
+    -------
+    out : ndarray
+          Matrix which is the result of the matrix product of the unfolding of the tensor and
+          the Khatri-Rao product
+          of the membership matrix.
+    """
+    if len(subs) < 3:
+        raise ValueError("subs_nz should have at least 3 elements.")
+
+    if m == 1:
+        D, K = u.shape
+        out = np.zeros_like(u)
+    elif m == 2:
+        D, K = v.shape
+        out = np.zeros_like(v)
+
+    for k in range(K):
+        tmp = vals.copy()
+        if m == 1:  # we are updating u
+            tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
+                    v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
+        elif m == 2:  # we are updating v
+            tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
+                    u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
+        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
+
+    return out
+
+
+def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
+                          u: np.ndarray, v: np.ndarray,
+                          w: np.ndarray) -> np.ndarray:
+    """
+    Compute the Khatri-Rao product (sparse version) with the assumption of assortativity.
+
+    Parameters
+    ----------
+    vals : ndarray
+           Values of the non-zero entries.
+    subs : tuple
+           Indices of elements that are non-zero. It is a n-tuple of array-likes and the length
+           of tuple n must be
+           equal to the dimension of tensor.
+    m : int
+        Mode in which the Khatri-Rao product of the membership matrix is multiplied with the
+        tensor: if 1 it
+        works with the matrix u; if 2 it works with v.
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity tensor.
+
+    Returns
+    -------
+    out : ndarray
+          Matrix which is the result of the matrix product of the unfolding of the tensor and
+          the Khatri-Rao product
+          of the membership matrix.
+    """
+    if len(subs) < 3:
+        raise ValueError("subs_nz should have at least 3 elements.")
+
+    if m == 1:
+        D, K = u.shape
+        out = np.zeros_like(u)
+    elif m == 2:
+        D, K = v.shape
+        out = np.zeros_like(v)
+
+    for k in range(K):
+        tmp = vals.copy()
+        if m == 1:  # we are updating u
+            tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(
+                tmp.dtype)
+        elif m == 2:  # we are updating v
+            tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(
+                tmp.dtype)
+        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
+
+    return out

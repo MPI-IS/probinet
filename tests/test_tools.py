@@ -14,8 +14,6 @@ from pgm.input.tools import (
 
 from .fixtures import decimal, rtol
 
-# pylint: disable=missing-function-docstring, too-many-locals
-
 
 class TestToolsModule(unittest.TestCase):
     """

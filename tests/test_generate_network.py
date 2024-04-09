@@ -10,8 +10,6 @@ from pgm.input.generate_network import affinity_matrix, BaseSyntheticNetwork, GM
 
 from .fixtures import rtol
 
-# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
-
 
 class TestGMReciprocity(unittest.TestCase):
     """
@@ -159,10 +157,6 @@ class TestGMReciprocity(unittest.TestCase):
 
 
 class TestBaseSyntheticNetwork(unittest.TestCase):
-    """
-    Test cases for the BaseSyntheticNetwork class.
-    """
-
     def setUp(self):
         self.N = 100
         self.L = 1
