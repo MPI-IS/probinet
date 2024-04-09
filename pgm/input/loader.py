@@ -141,7 +141,7 @@ def import_data_mtcov(
     """
 
     # df_adj = pd.read_csv(in_folder + adj_name, index_col=0) # read adjacency file
-    df_adj = pd.read_csv(in_folder/ adj_name)  # read adjacency file
+    df_adj = pd.read_csv(in_folder / adj_name)  # read adjacency file
     print('\nAdjacency shape: {0}'.format(df_adj.shape))
 
     df_X = pd.read_csv(in_folder / cov_name)  # read the csv file with the covariates

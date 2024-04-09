@@ -34,7 +34,7 @@ class TestMTCovMain(TestCase):
 
         expected_config = {
             "K": 2,
-            "gamma":0.5,
+            "gamma": 0.5,
             "rseed": 107261,
             "initialization": 0,
             "out_inference": True,

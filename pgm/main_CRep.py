@@ -54,8 +54,6 @@ def main():
 
     # Step 2: Import the data
 
-    # Step 2: Import the data
-
     ego = args.ego
     alter = args.alter
     force_dense = args.force_dense  # Sparse matrices
@@ -63,9 +61,7 @@ def main():
         'input' if args.in_folder == '' else Path(args.in_folder)
     adj = Path(args.adj)
 
-    # Import data:
     network = in_folder / adj  # network complete path
-
     A, B, B_T, data_T_vals = import_data(
         network,
         ego=ego,

@@ -1,0 +1,15 @@
+K: 5
+assortative: false
+end_file: _JointCRep
+eta0: null
+files: ../data/input/theta.npz
+fix_communities: false
+fix_eta: false
+fix_w: false
+initialization: 0
+num_realizations: 5
+out_folder: outputs/
+out_inference: true
+plot_loglik: false
+rseed: 10
+use_approximation: false
