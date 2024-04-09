@@ -1,6 +1,8 @@
 """
 Functions for handling the data.
 """
+from importlib.resources import files
+import os
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
@@ -14,7 +16,7 @@ from .preprocessing import build_B_from_A, build_sparse_B_from_A
 from .stats import print_graph_stat
 
 
-def import_data(dataset: Path,
+def import_data(dataset: str,
                 ego: str = 'source',
                 alter: str = 'target',
                 force_dense: bool = True,
@@ -87,9 +89,9 @@ def import_data(dataset: Path,
 
 
 def import_data_mtcov(
-        in_folder: Union[str, Path],
-        adj_name: Union[str, Path] = 'adj.csv',
-        cov_name: Union[str, Path] = 'X.csv',
+        in_folder: str,
+        adj_name: str = 'adj.csv',
+        cov_name: str = 'X.csv',
         ego: str = 'source',
         egoX: str = 'Name',
         alter: str = 'target',
@@ -140,11 +142,25 @@ def import_data_mtcov(
             List of nodes IDs.
     """
 
-    # df_adj = pd.read_csv(in_folder + adj_name, index_col=0) # read adjacency file
-    df_adj = pd.read_csv(in_folder / adj_name)  # read adjacency file
+    def get_data_path(in_folder):
+        '''
+        Try to treat in_folder as a package data path, if that fails, treat in_folder as a file path
+        '''
+        try:
+            # Try to treat in_folder as a package data path
+            return files(in_folder)
+        except (ModuleNotFoundError, FileNotFoundError):
+            # If that fails, treat in_folder as a file path
+            return Path(in_folder)
+
+    # Check if in_folder is a package data path or a file path
+    in_folder_path = get_data_path(in_folder)
+    
+    # Read the adjacency file
+    df_adj = pd.read_csv(in_folder_path/ adj_name)  # read adjacency file
     print('\nAdjacency shape: {0}'.format(df_adj.shape))
 
-    df_X = pd.read_csv(in_folder / cov_name)  # read the csv file with the covariates
+    df_X = pd.read_csv(in_folder_path / cov_name)  # read the csv file with the covariates
     print('Indiv shape: ', df_X.shape)
 
     # create the graph adding nodes and edges
@@ -165,7 +181,7 @@ def import_data_mtcov(
 
     # save the multilayer network in a tensor with all layers
     if force_dense:
-        B = build_B_from_A(A, nodes=nodes, calculate_reciprocity=False)
+        B, _ = build_B_from_A(A, nodes=nodes, calculate_reciprocity=False)
     else:
         B = build_sparse_B_from_A(A)
 

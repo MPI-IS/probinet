@@ -1,6 +1,7 @@
 """
 This is the test module for the CRep algorithm.
 """
+
 from importlib.resources import files
 from pathlib import Path
 
@@ -61,14 +62,6 @@ class BaseTestCase(BaseTest):
 
         self.model = CRep()
 
-    def run(self, result=None):
-        # Create a temporary directory for the duration of the test
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            # Store the path to the temporary directory in an instance variable
-            self.temp_output_folder = Path(temp_output_folder)
-            # Call the parent class's run method to execute the test
-            super().run(result)
-
     # test case function to check the crep.set_name function
     def test_import_data(self):
         """
@@ -91,15 +84,14 @@ class BaseTestCase(BaseTest):
                            data_T_vals=self.data_T_vals,
                            nodes=self.nodes,
                            **self.conf)
-
-        theta = np.load((self.temp_output_folder / self.model.out_folder / str('theta' +
-                                                                               self.model.end_file)).with_suffix(
+        theta = np.load((Path(self.model.out_folder) / str('theta' +
+                                                         self.model.end_file)).with_suffix(
             '.npz'))
 
         # This reads the synthetic data Ground Truth output
         thetaGT_path = Path(__file__).parent /'outputs' / 'theta_GT_CRep'
         thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
-        
+
         # Asserting the model information
 
         # Assert that the model's u_f attribute is close to the 'u' value in the theta dictionary

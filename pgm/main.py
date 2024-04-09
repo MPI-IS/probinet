@@ -104,7 +104,7 @@ def parse_args():
 
 def main():
     """
-    Main function for CRep/JointCRep.
+    Main function for CRep/JointCRep/MTCov.
     """
     # Step 1: Parse the command-line arguments
 
@@ -124,11 +124,13 @@ def main():
         undirected = args.undirected
 
     # Set the input folder path
-    in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
-        'input' if args.in_folder == '' else Path(args.in_folder)
-
+    if args.in_folder == '':
+        in_folder = (Path(__file__).parent / 'data' / 'input').resolve()
+    else:
+        in_folder = args.in_folder
+    in_folder = str(in_folder)
     if args.algorithm != 'MTCov':
-        network = in_folder / args.adj_name
+        network = in_folder + '/' + args.adj_name
         A, B, B_T, data_T_vals = import_data(network,
                                              ego=args.ego,
                                              alter=args.alter,
@@ -142,8 +144,8 @@ def main():
         Xs = None
     else:
         A, B, X, nodes = import_data_mtcov(in_folder,
-                                           adj_name=Path(args.adj_name),
-                                           cov_name=Path(args.cov_name),
+                                           adj_name=args.adj_name,
+                                           cov_name=args.cov_name,
                                            ego=args.ego,
                                            alter=args.alter,
                                            egoX=args.egoX,

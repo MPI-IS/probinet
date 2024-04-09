@@ -1,6 +1,7 @@
 """
 This is the test module for the JointCRep algorithm.
 """
+
 from importlib.resources import files
 from pathlib import Path
 
@@ -11,7 +12,7 @@ import yaml
 from pgm.input.loader import import_data
 from pgm.model.jointcrep import JointCRep
 
-GT_OUTPUT_DIR = Path(__file__).parent / 'outputs'
+# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 
 
 class  JointCRepTestCase(BaseTest):
@@ -71,14 +72,6 @@ class  JointCRepTestCase(BaseTest):
         # Run model
 
         self.model = JointCRep()
-        
-    def run(self, result=None):
-        # Create a temporary directory for the duration of the test
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            # Store the path to the temporary directory in an instance variable
-            self.temp_output_folder = Path(temp_output_folder)
-            # Call the parent class's run method to execute the test
-            super().run(result)
 
     # test case function to check the JointCRep.set_name function
     def test_import_data(self):
@@ -100,8 +93,8 @@ class  JointCRepTestCase(BaseTest):
                            nodes=self.nodes,
                            **self.conf)
 
-        theta = np.load((self.temp_output_folder / self.model.out_folder / str('theta' +
-                                                                               self.model.end_file)).with_suffix(
+        theta = np.load((Path(self.model.out_folder) / str('theta' +
+                                                         self.model.end_file)).with_suffix(
             '.npz'))
 
         # This reads the synthetic data Ground Truth output

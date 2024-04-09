@@ -42,6 +42,9 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
         If any weight in B is not an integer.
     """
 
+    def _calculate_reciprocity(B_layer):
+        return np.multiply(B_layer, B_layer.T).sum() / B_layer.sum()
+
     # Get the number of nodes in the first graph of the list A
     N = A[0].number_of_nodes()
 
@@ -87,11 +90,12 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
     return B, rw
 
 
+
 def build_sparse_B_from_A(A: List[nx.MultiDiGraph],
                           calculate_reciprocity: bool = False) -> Union[Tuple[sptensor,
                                                                               sptensor,
                                                                               ndarray,
-                                                                              List[Any]], sptensor]:
+List[Any]], sptensor]:
     """
     Create the sptensor adjacency tensor of a networkX graph.
 

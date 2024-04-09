@@ -1,7 +1,6 @@
 """
 Test cases for the tools module.
 """
-import os
 from pathlib import Path
 import unittest
 

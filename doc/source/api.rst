@@ -18,6 +18,4 @@ API
     pgm.output
     pgm.output.evaluate
     pgm.output.plot
-    pgm.main_CRep
-    pgm.main_JointCRep
-    pgm.main_MTCov
+    pgm.main

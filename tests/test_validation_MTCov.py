@@ -32,7 +32,7 @@ class MTCovTestCase(BaseTest):
         self.batch_size = None
 
         # Import data
-        pgm_data_input_path = files('pgm.data.input')
+        pgm_data_input_path = 'pgm.data.input'
         self.A, self.B, self.X, self.nodes = import_data_mtcov(pgm_data_input_path,
                                                                adj_name=self.adj_name,
                                                                cov_name=self.cov_name,
@@ -75,7 +75,8 @@ class MTCovTestCase(BaseTest):
                            batch_size=self.batch_size,
                            **self.conf)
 
-        theta = np.load((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix(
+        theta = np.load((Path(self.model.out_folder) / str('theta' +
+                                                         self.model.end_file)).with_suffix(
             '.npz'))
 
         # This reads the synthetic data Ground Truth output

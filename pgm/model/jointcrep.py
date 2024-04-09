@@ -12,13 +12,16 @@ from typing import Any, List, Union
 import numpy as np
 import sktensor as skt
 from termcolor import colored
+from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess
-from ..input.tools import check_symmetric, get_item_array_from_subs, transpose_tensor
+from ..input.tools import (
+    check_symmetric, get_item_array_from_subs, sp_uttkrp, sp_uttkrp_assortative, transpose_tensor)
 from ..output.plot import plot_L
-from .crep import sp_uttkrp, sp_uttkrp_assortative
+from .crep import FitParams
 
 # TODO: remove repeated parts once mixin is implemented
+
 
 
 class JointCRep:
@@ -55,10 +58,10 @@ class JointCRep:
                            eta0: Union[float, None],
                            undirected: bool,
                            assortative: bool,
-                           use_approximation: bool,
+                           #use_approximation: bool,
                            data: Union[skt.dtensor, skt.sptensor],
                            K: int,
-                           **extra_params
+                           **extra_params: Unpack[FitParams]
                            ) -> None:
 
         if initialization not in {
@@ -78,7 +81,6 @@ class JointCRep:
         self.eta0 = eta0  # initial value for the reciprocity coefficient
         self.undirected = undirected  # flag to call the undirected network
         self.assortative = assortative  # flag to call the assortative network
-        self.use_approximation = use_approximation  # flag to use the approximation in the updates
 
         self.N = data.shape[1]
         self.L = data.shape[0]
@@ -130,7 +132,7 @@ class JointCRep:
             self.files = extra_params["files"]
 
         if self.initialization > 0:
-            self.theta = np.load(self.files.resolve(), allow_pickle=True)
+            self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
             if self.initialization == 1:
                 dfW = self.theta['w']
                 self.L = dfW.shape[0]
@@ -163,6 +165,8 @@ class JointCRep:
 
         if "use_approximation" in extra_params:
             self.use_approximation = extra_params["use_approximation"]
+        else:
+            self.use_approximation = False
 
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 1):
@@ -195,8 +199,8 @@ class JointCRep:
             self.w_old = np.zeros((self.L, self.K, self.K), dtype=float)
             self.w_f = np.zeros((self.L, self.K, self.K), dtype=float)
 
-        if self.fix_eta:
-            self.eta = self.eta_old = self.eta_f = self.eta0
+        if self.fix_eta:# TODO: Check with Martina what the type of this should be
+            self.eta = self.eta_old = self.eta_f = self.eta0 # type: ignore
 
     def fit(self,
             data: Union[skt.dtensor, skt.sptensor],
@@ -209,8 +213,7 @@ class JointCRep:
             eta0: Union[float, None] = None,
             undirected: bool = False,
             assortative: bool = True,
-            use_approximation: bool = False,
-            **extra_params: dict[str, Any]
+            **extra_params: Unpack[FitParams]
             ) -> tuple[np.ndarray[Any,
                                   np.dtype[np.float64]],
                        np.ndarray[Any,
@@ -274,7 +277,6 @@ class JointCRep:
                                 eta0=eta0,
                                 undirected=undirected,
                                 assortative=assortative,
-                                use_approximation=use_approximation,
                                 **extra_params)
 
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
@@ -457,10 +459,7 @@ class JointCRep:
                             self.w[i, k, q] = self.rng.random_sample(1)
                         else:
                             self.w[i, k, q] = self.w[i, q, k] = self.err * self.rng.random_sample(1)
-        # if self.assortative:
-        #     self.w = self.rng.random_sample((self.L, self.K)) # TODO: check with martina
-        # else:
-        #     self.w = np.zeros((self.L, self.K, self.K))
+
 
     def _randomize_u_v(self) -> None:
         """
@@ -536,7 +535,7 @@ class JointCRep:
         self.u_old = np.copy(self.u)
         self.v_old = np.copy(self.v)
         self.w_old = np.copy(self.w)
-        self.eta_old = np.copy(self.eta)
+        self.eta_old = np.copy(self.eta) # type: ignore
 
     def _update_cache(self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple) -> None:
         """
@@ -1036,7 +1035,7 @@ class JointCRep:
             self.eta = 0.  # and set to 0.
 
         dist_eta = abs(self.eta - self.eta_old)
-        self.eta_old = np.copy(self.eta)
+        self.eta_old = np.copy(self.eta) # type: ignore
 
         return dist_eta
 
@@ -1071,7 +1070,7 @@ class JointCRep:
             self.eta = 0.  # and set to 0.
 
         dist_eta = abs(self.eta - self.eta_old)
-        self.eta_old = np.copy(self.eta)
+        self.eta_old = np.copy(self.eta) # type: ignore
 
         return dist_eta
 
@@ -1243,7 +1242,7 @@ class JointCRep:
         self.u_f = np.copy(self.u)
         self.v_f = np.copy(self.v)
         self.w_f = np.copy(self.w)
-        self.eta_f = np.copy(self.eta)
+        self.eta_f = np.copy(self.eta) # type: ignore 
 
     def _output_results(self, maxL: float, nodes: List[Any], final_it: int) -> None:
         """
@@ -1259,15 +1258,10 @@ class JointCRep:
                    Total number of iterations.
         """
         # Check if the output folder exists, otherwise create it
-        self.out_folder = Path(self.out_folder)
-        self.out_folder.mkdir(parents=True, exist_ok=True)
-
-        # Check if the output folder is a Path
-        if not isinstance(self.out_folder, Path):
-            self.out_folder = Path(self.out_folder)
+        Path(self.out_folder).mkdir(parents=True, exist_ok=True)
 
         # Save the inferred parameters
-        outfile = (self.out_folder / str('theta' + self.end_file)).with_suffix('.npz')
+        outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
         np.savez_compressed(outfile,
                             u=self.u_f,
                             v=self.v_f,

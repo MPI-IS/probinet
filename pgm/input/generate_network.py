@@ -758,6 +758,7 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
             L: int = DEFAULT_L,
             K: int = DEFAULT_K,
             seed: int = DEFAULT_SEED,
+            eta: float = DEFAULT_ETA,
             out_folder: str = DEFAULT_OUT_FOLDER,
             output_net: bool = DEFAULT_OUTPUT_NET,
             show_details: bool = DEFAULT_SHOW_DETAILS,
@@ -770,6 +771,8 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
 
         # Set seed random number generator
         self.seed = seed
+        self.eta = eta # TODO: Check with martina if adding this here makes sense or it is in the
+        # kwargs
         self.prng = np.random.RandomState(self.seed)
 
         self.out_folder = out_folder

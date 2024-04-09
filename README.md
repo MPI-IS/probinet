@@ -46,8 +46,6 @@ To run a specific model, pass the model name as an argument with the `-a` flag. 
     run_model -a CRep
 ```
 
-Similarly, you can run other models like `JointCRep` and `MTCov` by replacing `CRep` with the respective model name.
-
 ## Tests
 
 To run the tests::

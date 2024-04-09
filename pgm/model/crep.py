@@ -5,18 +5,29 @@ The latent variables are related to community memberships and reciprocity value.
 from pathlib import Path
 import sys
 import time
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, TypedDict, Union
 
 from numpy import dtype, ndarray
 import numpy as np
 import sktensor as skt
 from termcolor import colored
+from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess
 from ..input.tools import get_item_array_from_subs, sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import _lambda0_full
 
 
+class FitParams(TypedDict):
+    out_inference: bool
+    out_folder: str
+    end_file: str
+    files: str
+    fix_eta: bool
+    fix_communities: bool
+    fix_w: bool
+    use_approximation: bool
+    
 class CRep:
     """
     Class to perform inference in networks with reciprocity.
@@ -51,7 +62,7 @@ class CRep:
                            data: Union[skt.dtensor, skt.sptensor],
                            K: int,
                            constrained: bool,
-                           **extra_params) -> None:
+                           **extra_params:Unpack[FitParams]) -> None:
         if initialization not in {
             0, 1, 2, 3
         }:  # indicator for choosing how to initialize u, v and w
@@ -122,7 +133,7 @@ class CRep:
         if "files" in extra_params:
             self.files = extra_params["files"]
         if self.initialization > 0:
-            self.theta = np.load(self.files.resolve(), allow_pickle=True)
+            self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
         if "out_inference" in extra_params:
             self.out_inference = extra_params["out_inference"]
@@ -159,7 +170,7 @@ class CRep:
             undirected: bool = False,
             assortative: bool = True,
             constrained: bool = True,
-            **extra_params) -> tuple[ndarray[Any,
+            **extra_params:Unpack[FitParams]) -> tuple[ndarray[Any,
                                              dtype[np.float64]],
                                      ndarray[Any,
                                              dtype[np.float64]],
@@ -653,9 +664,9 @@ class CRep:
         self.eta *= (self.data_M_nz * data_T_vals).sum() / Deta
 
         dist_eta = abs(self.eta - self.eta_old)
-        self.eta_old = np.copy(self.eta)  # type: ignore
+        self.eta_old = np.copy(self.eta) 
 
-        return dist_eta
+        return dist_eta # type: ignore
 
     def _update_U(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
@@ -1041,11 +1052,7 @@ class CRep:
         if not output_path.exists():
             output_path.mkdir(parents=True, exist_ok=True)
 
-        # Check if the output folder is a Path
-        if not isinstance(self.out_folder, Path):
-            self.out_folder = Path(self.out_folder)
-
-        outfile = (self.out_folder / str('theta' + self.end_file)).with_suffix('.npz')
+        outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
         np.savez_compressed(outfile,
                             u=self.u_f,
                             v=self.v_f,

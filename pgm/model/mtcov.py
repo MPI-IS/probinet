@@ -6,16 +6,18 @@ attributes to extract overlapping communities in directed and undirected multila
 from pathlib import Path
 import sys
 import time
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.random import RandomState
 import scipy.sparse
 import sktensor as skt
 from termcolor import colored
+from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
+from ..model.crep import FitParams
 from ..output.plot import plot_L
 
 
@@ -57,7 +59,7 @@ class MTCov:
                                data: Union[skt.dtensor, skt.sptensor, np.ndarray],
                                data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
                                K: int,
-                               **extra_params: dict[str, Any]
+                               **extra_params: Unpack[FitParams]
                                ) -> None:
 
         if "files" in extra_params:
@@ -119,6 +121,7 @@ class MTCov:
             self.end_file = ''
 
         # values of the parameters used during the update
+        self.beta = np.zeros((self.K, self.Z), dtype=float)
 
         # values of the affinity tensor
         if self.assortative:  # purely diagonal matrix
@@ -135,14 +138,14 @@ class MTCov:
             data_X: np.ndarray,
             nodes: List[Any],
             flag_conv: str = 'log',
-            batch_size: int = None,
+            batch_size: Optional[int]= None,
             gamma: float = 0.5,
             rseed: int = 0,
             K: int = 3,
             initialization: int = 0,
             undirected: bool = False,
             assortative: bool = True,
-            **extra_params: dict[str, Any]  # TODO: could this be done in another way? mypy keeps
+            **extra_params: Unpack[FitParams]  # TODO: could this be done in another way? mypy keeps
             # complaining about the types of the values
             ) -> tuple[np.ndarray[Any,
                                   np.dtype[np.float64]],
@@ -238,7 +241,7 @@ class MTCov:
             self._initialize(rng=np.random.RandomState(self.rseed), nodes=nodes)
 
             self._update_old_variables()
-            self._update_cache(data, subs_nz, data_X, subs_X_nz)
+            self._update_cache(data, subs_nz, data_X, subs_X_nz) # type: ignore
 
             # convergence local variables
             coincide, it = 0, 0
@@ -254,7 +257,7 @@ class MTCov:
             while np.logical_and(not convergence, it < self.max_iter):
                 # main EM update: updates memberships and calculates max difference new vs old
                 delta_u, delta_v, delta_w, delta_beta = self._update_em(data, data_X, subs_nz,
-                                                                        subs_X_nz)
+                                                                        subs_X_nz) # type: ignore
                 if flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data,
@@ -264,8 +267,9 @@ class MTCov:
                         coincide,
                         convergence,
                         batch_size,
-                        subset_N,
-                        Subs, SubsX
+                        subset_N, # type: ignore
+                        Subs, # type: ignore
+                        SubsX # type: ignore
                     )
                     loglik_values.append(loglik)
                 elif flag_conv == 'deltas':
@@ -285,18 +289,18 @@ class MTCov:
                     maxL = loglik
                     final_it = it
                     conv = convergence
-                    best_r = r
+                    # best_r = r
             elif flag_conv == 'deltas':
                 if not batch_size:
                     loglik = self.__Likelihood(data, data_X)
                 else:
-                    loglik = self.__Likelihood_batch(data, data_X, subset_N, Subs, SubsX)
+                    loglik = self.__Likelihood_batch(data, data_X, subset_N, Subs, SubsX) # type: ignore
                 if maxL < loglik:
                     self._update_optimal_parameters()
                     maxL = loglik
                     final_it = it
                     conv = convergence
-                    best_r = r
+                    # best_r = r
             if self.verbose:
                 print(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
                       f'time = {np.round(time.time() - time_start, 2)} seconds')
@@ -306,12 +310,8 @@ class MTCov:
             # end cycle over realizations
 
         if np.logical_and(final_it == self.max_iter, not conv):
-            # convergence not reaches
-            try:
-                print(colored('Solution failed to converge in {0} EM steps!'.format(self.max_iter),
-                              'blue'))
-            except BaseException: # TODO: check with martina what this is for
-                print('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
+            # convergence is not reached
+            print('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
 
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
@@ -893,9 +893,10 @@ class MTCov:
                                coincide: int,
                                convergence: bool,
                                batch_size: Union[int, None],
-                               subset_N: Union[List[int], None],
-                               Subs: Union[List[Tuple[int, int, int]], None],
-                               SubsX: List[Tuple[int, int]]) -> Tuple[int, float, int, bool]:
+                               subset_N: List[int],
+                               Subs: List[Tuple[int, int, int]],
+                               SubsX: List[Tuple[int, int]]) -> Tuple[
+        int, float, int, bool]:
         """
         Check for convergence by using the log-likelihood values.
 
@@ -1000,9 +1001,9 @@ class MTCov:
     def __Likelihood_batch(self,
                            data: Union[skt.dtensor, skt.sptensor],
                            data_X: np.ndarray,
-                           subset_N: Union[List[int], None],
-                           Subs: Union[List[Tuple[int, int, int]], None],
-                           SubsX: Union[List[Tuple[int, int]], None]) -> float:
+                           subset_N: List[int],
+                           Subs: List[Tuple[int, int, int]],
+                           SubsX: List[Tuple[int, int]]) -> float:
         """
         Compute the log-likelihood of a batch of data.
 
@@ -1038,7 +1039,10 @@ class MTCov:
             logP = np.log(self.pi0_nz)
         else:
             logP = np.log(0.5 * self.pi0_nz)
-        IDXs = [i for i, e in enumerate(SubsX) if (e[0] in subset_N)]
+        if size:
+            IDXs = [i for i, e in enumerate(SubsX) if (e[0] in subset_N)]
+        else:
+            IDXs = []
         X_attr = scipy.sparse.csr_matrix(data_X)
         Xlog = X_attr.data[IDXs] * logP[(IDXs, X_attr.nonzero()[1][IDXs])]
         lX = Xlog.sum()
@@ -1158,10 +1162,9 @@ class MTCov:
                        Total number of iterations.
         """
         # Check if the output folder exists, otherwise create it
-        self.out_folder = Path(self.out_folder)
-        self.out_folder.mkdir(parents=True, exist_ok=True)
+        Path(self.out_folder).mkdir(parents=True, exist_ok=True)
 
-        outfile = (self.out_folder / str('theta' + self.end_file)
+        outfile = (Path(self.out_folder) / str('theta' + self.end_file)
                    ).with_suffix('.npz')
         np.savez_compressed(outfile,
                             u=self.u_f,
