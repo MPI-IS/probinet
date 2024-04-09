@@ -24,8 +24,8 @@ def parse_args():
     """
     p = argparse.ArgumentParser(description="Script to run the CRep, JointCRep, and MTCov "
                                             "algorithms.",
-                       formatter_class=argparse.ArgumentDefaultsHelpFormatter
-                       )
+                                formatter_class=argparse.ArgumentDefaultsHelpFormatter
+                                )
     # Add the command line arguments
 
     # Algorithm related arguments
@@ -69,9 +69,8 @@ def parse_args():
 
     # Other arguments
     p.add_argument('-l', '--log_level', type=str, choices=['D', 'I', 'W', 'E', 'C'],
-                   default='W', help='Set the logging level')
+                   default='I', help='Set the logging level')
     p.add_argument('--log_file', type=str, default=None, help='Log file to write to')
-
 
     # Parse the command line arguments
     args = p.parse_args()
@@ -101,19 +100,18 @@ def parse_args():
         if args.algorithm == 'MTCov':
             args.K = 2
         elif args.algorithm == 'JointCRep':
-            args.K = 4
+            args.K = 2
         else:
             args.K = 3
 
     return args
 
 
-def main(): # pylint: disable=too-many-branches, too-many-statements
+def main():  # pylint: disable=too-many-branches, too-many-statements
     """
     Main function for CRep/JointCRep/MTCov.
     """
     # Step 1: Parse the command-line arguments
-
     args = parse_args()
 
     # Configure the logger
@@ -185,15 +183,11 @@ def main(): # pylint: disable=too-many-branches, too-many-statements
         # Change K if given
         if args.K is not None:
             conf['K'] = args.K
-        if args.rseed is not None: # if it has a value, then update the configuration
+        if args.rseed is not None:  # if it has a value, then update the configuration
             conf['rseed'] = args.rseed
 
         # Algorithm specific settings
         algorithm_settings = {
-            'JointCRep': {
-                'plot_loglik': args.plot_loglikelihood,
-                'num_realizations': args.num_realizations
-            },
             'MTCov': {
                 'gamma': args.gamma
             }
@@ -209,7 +203,7 @@ def main(): # pylint: disable=too-many-branches, too-many-statements
     conf = set_config(args, conf)
 
     # Print the configuration file
-    logging.info('\n' + yaml.dump(conf))
+    logging.debug('\n' + yaml.dump(conf))
 
     # Step 4: Create the output directory
 
@@ -222,7 +216,7 @@ def main(): # pylint: disable=too-many-branches, too-many-statements
     with open(output_config_path, 'w', encoding='utf-8') as f:
         yaml.dump(conf, f)
 
-    def fit_model(model, algorithm, B, B_T, data_T_vals, Xs, nodes, conf): # pylint: disable=too-many-arguments
+    def fit_model(model, algorithm, B, B_T, data_T_vals, Xs, nodes, conf):  # pylint: disable=too-many-arguments
         """
         Fit the model to the data.
         """
@@ -234,10 +228,10 @@ def main(): # pylint: disable=too-many-branches, too-many-statements
 
     # Step 5: Run the algorithm
 
-    logging.info(f'### Running {args.algorithm} ###')
     logging.info(f'Setting: K = {conf["K"]}')
     if args.algorithm == 'MTCov':
         logging.info(f'gamma = {conf["gamma"]}')
+    logging.info(f'### Running {args.algorithm} ###')
 
     # Map algorithm names to their classes
     algorithm_classes = {'CRep': CRep, 'JointCRep': JointCRep, 'MTCov': MTCov}
@@ -301,4 +295,4 @@ def configure_logger(args):
     logging.getLogger().setLevel(numeric_level)
 
     # Log the current date and time
-    logging.info(f"Program started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    logging.debug(f"Execution started at {time.strftime('%Y-%m-%d %H:%M:%S')}")

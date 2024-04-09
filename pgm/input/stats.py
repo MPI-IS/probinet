@@ -132,7 +132,7 @@ def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     if n_all_edge == 0:
         message = "Not defined for empty graphs."
         error_type = nx.NetworkXError
-        log_and_raise_error(logging, error_type, message)
+        log_and_raise_error(error_type, message)
 
     reciprocity = float(n_overlap_edge) / float(n_undirected)
 

@@ -54,7 +54,6 @@ if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 
-
 class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
     """
     A class to generate a directed, possibly weighted, network with reciprocity.
@@ -93,7 +92,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         self.outfile_adj = outfile_adj  # name for saving the adjacency matrix
         if (eta < 0) or (eta >= 1):  # reciprocity coefficient
             message = 'The reciprocity coefficient eta has to be in [0, 1)!'
-            error_type =  ValueError
+            error_type = ValueError
             log_and_raise_error(error_type, message)
         self.eta = eta
         if ExpM is None:  # expected number of edges
@@ -117,8 +116,9 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         if Normalization not in {
             0, 1
         }:  # indicator for choosing how to generate the latent variables
-            message = ('The Normalization parameter can be either 0 or 1! It is used as an '
-                      'indicator for generating the membership matrices u and v from a Dirichlet or a Gamma '
+            message = (
+                'The Normalization parameter can be either 0 or 1! It is used as an '
+                'indicator for generating the membership matrices u and v from a Dirichlet or a Gamma '
                 'distribution, respectively. It is used when there is overlapping.')
             error_type = ValueError
             log_and_raise_error(error_type, message)
@@ -126,7 +126,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         if structure not in {'assortative', 'disassortative'
                              }:  # structure of the affinity matrix W
             message = ('The structure of the affinity matrix w can be either assortative or '
-                            'disassortative!')
+                       'disassortative!')
             error_type = ValueError
             log_and_raise_error(error_type, message)
         self.structure = structure
@@ -335,7 +335,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
             f'component'
         )
         logging.info(f'Number of nodes: {G.number_of_nodes()} \n'
-              f'Number of edges: {G.number_of_edges()}')
+                     f'Number of edges: {G.number_of_edges()}')
         logging.info(f'Average degree (2E/N): {Sparsity_cof}')
         logging.info(f'Average weighted degree (2M/N): {ave_w_deg}')
         logging.info(f'Expected reciprocity: {np.round(rw, 3)}')
@@ -516,7 +516,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
             f'connected component'
         )
         logging.info(f'Number of nodes: {G.number_of_nodes()} \n'
-              f'Number of edges: {G.number_of_edges()}')
+                     f'Number of edges: {G.number_of_edges()}')
         logging.info(f'Average degree (2E/N): {Sparsity_cof}')
         logging.info(f'Average weighted degree (2M/N): {ave_w_deg}')
         logging.info(f'Expected reciprocity: {np.round(rw, 3)}')
@@ -625,7 +625,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
             f'component'
         )
         logging.info(f'Number of nodes: {G.number_of_nodes()} \n'
-              f'Number of edges: {G.number_of_edges()}')
+                     f'Number of edges: {G.number_of_edges()}')
         logging.info(f'Average degree (2E/N): {Sparsity_cof}')
         logging.info(f'Average weighted degree (2M/N): {ave_w_deg}')
         logging.info(
@@ -748,7 +748,6 @@ def affinity_matrix(structure: str = 'assortative',
         log_and_raise_error(error_type, message)
 
     return p
-
 
 
 class BaseSyntheticNetwork(metaclass=ABCMeta):
@@ -876,7 +875,7 @@ class StandardMMSBM(BaseSyntheticNetwork):
                 log_and_raise_error(error_type, message)
         else:
             message = (f"perc_overlapping parameter was not set. Defaulting to perc_overlapping"
-                   f"={DEFAULT_PERC_OVERLAPPING}")
+                       f"={DEFAULT_PERC_OVERLAPPING}")
             logging.warning(message)
             perc_overlapping = DEFAULT_PERC_OVERLAPPING
         self.perc_overlapping = perc_overlapping
@@ -891,7 +890,7 @@ class StandardMMSBM(BaseSyntheticNetwork):
                     log_and_raise_error(error_type, message)
             else:
                 message = (f"correlation_u_v parameter for overlapping communities was not set. "
-                       f"Defaulting to corr={DEFAULT_CORRELATION_U_V}")
+                           f"Defaulting to corr={DEFAULT_CORRELATION_U_V}")
                 logging.warning(message)
                 correlation_u_v = DEFAULT_CORRELATION_U_V
             self.correlation_u_v = correlation_u_v
@@ -900,7 +899,7 @@ class StandardMMSBM(BaseSyntheticNetwork):
                 alpha = kwargs["alpha"]
             else:
                 message = (f"alpha parameter of Dirichlet distribution was not set. "
-                       f"Defaulting to alpha={[DEFAULT_ALPHA] * self.K}")
+                           f"Defaulting to alpha={[DEFAULT_ALPHA] * self.K}")
                 logging.warning(message)
                 alpha = [DEFAULT_ALPHA] * self.K
             if isinstance(alpha, float):
@@ -926,7 +925,7 @@ class StandardMMSBM(BaseSyntheticNetwork):
             structure = kwargs["structure"]
         else:
             message = (f"structure parameter was not set. Defaulting to "
-                   f"structure={[DEFAULT_STRUCTURE] * self.L}")
+                       f"structure={[DEFAULT_STRUCTURE] * self.L}")
             logging.warning(message)
             structure = [DEFAULT_STRUCTURE] * self.L
         if isinstance(structure, str):

@@ -28,7 +28,8 @@ class FitParams(TypedDict):
     fix_communities: bool
     fix_w: bool
     use_approximation: bool
-    
+
+
 class CRep:
     """
     Class to perform inference in networks with reciprocity.
@@ -61,19 +62,19 @@ class CRep:
                            data: Union[skt.dtensor, skt.sptensor],
                            K: int,
                            constrained: bool,
-                           **extra_params:Unpack[FitParams]) -> None:
+                           **extra_params: Unpack[FitParams]) -> None:
 
         if initialization not in {0, 1, 2, 3}:
             message = 'The initialization parameter can be either 0, 1, 2 or 3.'
             error_type = ValueError
-            log_and_raise_error(logging, error_type, message)
+            log_and_raise_error(error_type, message)
         self.initialization = initialization
-
 
         if eta0 is not None:
             if (eta0 < 0) or (eta0 > 1):
                 message = 'The reciprocity coefficient eta0 has to be in [0, 1]!'
-                log_and_raise_error(logging, error_type, message)
+                error_type = ValueError
+                log_and_raise_error(error_type, message)
         self.eta0 = eta0  # initial value for the reciprocity coefficient
         self.undirected = undirected  # flag to call the undirected network
         self.assortative = assortative  # flag to call the assortative network
@@ -103,7 +104,7 @@ class CRep:
                 if self.eta0 is None:
                     message = 'If fix_eta=True, provide a value for eta0.'
                     error_type = ValueError
-                    log_and_raise_error(logging, error_type, message)
+                    log_and_raise_error(error_type, message)
         else:
             self.fix_eta = False
 
@@ -113,7 +114,7 @@ class CRep:
                 if self.initialization not in {1, 3}:
                     message = 'If fix_w=True, the initialization has to be either 1 or 3.'
                     error_type = ValueError
-                    log_and_raise_error(logging, error_type, message)
+                    log_and_raise_error(error_type, message)
         else:
             self.fix_w = False
 
@@ -123,7 +124,7 @@ class CRep:
                 if self.initialization not in {2, 3}:
                     message = 'If fix_communities=True, the initialization has to be either 2 or 3.'
                     error_type = ValueError
-                    log_and_raise_error(logging, error_type, message)
+                    log_and_raise_error(error_type, message)
         else:
             self.fix_communities = False
 
@@ -150,7 +151,7 @@ class CRep:
             if not (self.fix_eta and self.eta0 == 0):
                 message = 'If undirected=True, the parameter eta has to be fixed equal to 0.'
                 error_type = ValueError
-                log_and_raise_error(logging, error_type, message)
+                log_and_raise_error(error_type, message)
 
     def fit(self,
             data: Union[skt.dtensor,
@@ -167,14 +168,14 @@ class CRep:
             undirected: bool = False,
             assortative: bool = True,
             constrained: bool = True,
-            **extra_params:Unpack[FitParams]) -> tuple[ndarray[Any,
-                                             dtype[np.float64]],
-                                     ndarray[Any,
-                                             dtype[np.float64]],
-                                     ndarray[Any,
-                                             dtype[np.float64]],
-                                     float,
-                                     float]:
+            **extra_params: Unpack[FitParams]) -> tuple[ndarray[Any,
+                                                                dtype[np.float64]],
+                                                        ndarray[Any,
+                                                                dtype[np.float64]],
+                                                        ndarray[Any,
+                                                                dtype[np.float64]],
+                                                        float,
+                                                        float]:
         """
         Model directed networks by using a probabilistic generative model that assume community
         parameters and reciprocity coefficient. The inference is performed via EM algorithm.
@@ -257,7 +258,7 @@ class CRep:
             convergence = False
             loglik = self.inf
 
-            logging.info(f'Updating realization {r} ...')
+            logging.debug(f'Updating realization {r} ...')
             time_start = time.time()
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
             # iterations (self.max_iter) is reached.
@@ -283,7 +284,7 @@ class CRep:
                         mask=mask)
 
                     if not it % 100:
-                        logging.info(
+                        logging.debug(
                             f'Nreal = {r} - Pseudo Log-likelihood = {loglik} '
                             f'- iterations = {it} - '
                             f'time = {np.round(time.time() - time_start, 2)} seconds')
@@ -293,14 +294,14 @@ class CRep:
                         convergence)
 
                     if not it % 100:
-                        logging.info(
+                        logging.debug(
                             f'Nreal = {r} - iterations = {it} - '
                             f'time = {np.round(time.time() - time_start, 2)} seconds'
                         )
                 else:
                     message = 'flag_conv can be either log or deltas!'
                     error_type = ValueError
-                    log_and_raise_error(logging, error_type, message)
+                    log_and_raise_error(error_type, message)
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
             # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
             # pseudo log-likelihood.
@@ -318,7 +319,7 @@ class CRep:
                     self.final_it = it
                     conv = convergence
 
-            logging.info(
+            logging.debug(
                 f'Nreal = {r} - Pseudo Log-likelihood = {loglik} - iterations = {it} - '
                 f'time = {np.round(time.time() - time_start, 2)} seconds\n'
             )
@@ -352,35 +353,35 @@ class CRep:
             self.eta = self.eta0
         else:
 
-            logging.info('eta is initialized randomly.')
+            logging.debug('eta is initialized randomly.')
             self._randomize_eta()
 
         if self.initialization == 0:
 
-            logging.info('u, v and w are initialized randomly.')
+            logging.debug('u, v and w are initialized randomly.')
             self._randomize_w()
             self._randomize_u_v()
 
         elif self.initialization == 1:
 
-            logging.info(f'w is initialized using the input file: {self.files}.')
-            logging.info('u and v are initialized randomly.')
+            logging.debug(f'w is initialized using the input file: {self.files}.')
+            logging.debug('u and v are initialized randomly.')
             self._initialize_w()
             self._randomize_u_v()
 
         elif self.initialization == 2:
 
-            logging.info(
+            logging.debug(
                 f'u and v are initialized using the input file: {self.files}.'
             )
-            logging.info('w is initialized randomly.')
+            logging.debug('w is initialized randomly.')
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._randomize_w()
 
         elif self.initialization == 3:
 
-            logging.info(
+            logging.debug(
                 f'u, v and w are initialized using the input file: {self.files}.'
             )
             self._initialize_u(nodes)
@@ -547,7 +548,7 @@ class CRep:
             else:
                 message = "subs_nz should have at least 2 elements."
                 error_type = ValueError
-                log_and_raise_error(logging, error_type, message)
+                log_and_raise_error(error_type, message)
         else:
             if len(subs_nz) >= 2:
                 nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
@@ -555,14 +556,14 @@ class CRep:
             else:
                 message = "subs_nz should have at least 2 elements."
                 error_type = ValueError
-                log_and_raise_error(logging, error_type, message)
+                log_and_raise_error(error_type, message)
 
         if len(subs_nz) >= 3:
             nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, self.v[subs_nz[2], :])
         else:
             message = "subs_nz should have at least 3 elements."
             error_type = ValueError
-            log_and_raise_error(logging, error_type, message)
+            log_and_raise_error(error_type, message)
 
         return nz_recon_I
 
@@ -661,9 +662,9 @@ class CRep:
         self.eta *= (self.data_M_nz * data_T_vals).sum() / Deta
 
         dist_eta = abs(self.eta - self.eta_old)
-        self.eta_old = np.copy(self.eta) 
+        self.eta_old = np.copy(self.eta)
 
-        return dist_eta # type: ignore
+        return dist_eta  # type: ignore
 
     def _update_U(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
@@ -766,7 +767,7 @@ class CRep:
         if len(subs_nz) < 3:
             message = "subs_nz should have at least 3 elements."
             error_type = ValueError
-            log_and_raise_error(logging, error_type, message)
+            log_and_raise_error(error_type, message)
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -811,7 +812,7 @@ class CRep:
         if len(subs_nz) < 3:
             message = "subs_nz should have at least 3 elements."
             error_type = ValueError
-            log_and_raise_error(logging, error_type, message)
+            log_and_raise_error(error_type, message)
 
         uttkrp_DKQ = np.zeros_like(self.w)
 

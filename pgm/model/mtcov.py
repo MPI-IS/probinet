@@ -20,7 +20,7 @@ from ..model.crep import FitParams
 from ..output.plot import plot_L
 
 
-class MTCov: # pylint: disable=too-many-instance-attributes
+class MTCov:  # pylint: disable=too-many-instance-attributes
     """
     Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
@@ -72,7 +72,7 @@ class MTCov: # pylint: disable=too-many-instance-attributes
                 'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
                 'will be generated randomly, otherwise they will upload from file.')
             error_type = ValueError
-            log_and_raise_error(logging, error_type, message)
+            log_and_raise_error(error_type, message)
 
         self.initialization = initialization
 
@@ -140,7 +140,7 @@ class MTCov: # pylint: disable=too-many-instance-attributes
             data_X: np.ndarray,
             nodes: List[Any],
             flag_conv: str = 'log',
-            batch_size: Optional[int]= None,
+            batch_size: Optional[int] = None,
             gamma: float = 0.5,
             rseed: int = 0,
             K: int = 3,
@@ -236,14 +236,14 @@ class MTCov: # pylint: disable=too-many-instance-attributes
                 subset_N = None
                 Subs = None
                 SubsX = None
-        logging.info(f'batch_size: {batch_size}\n')
+        logging.debug(f'batch_size: {batch_size}\n')
 
         for r in range(self.num_realizations):
 
             self._initialize(rng=np.random.RandomState(self.rseed), nodes=nodes)
 
             self._update_old_variables()
-            self._update_cache(data, subs_nz, data_X, subs_X_nz) # type: ignore
+            self._update_cache(data, subs_nz, data_X, subs_X_nz)  # type: ignore
 
             # convergence local variables
             coincide, it = 0, 0
@@ -251,14 +251,14 @@ class MTCov: # pylint: disable=too-many-instance-attributes
             if flag_conv == 'log':
                 loglik = self.inf
 
-            logging.info('Updating realization {0} ...'.format(r))
+            logging.debug('Updating realization {0} ...'.format(r))
             loglik_values = []
             time_start = time.time()
             # --- single step iteration update ---
             while np.logical_and(not convergence, it < self.max_iter):
                 # main EM update: updates memberships and calculates max difference new vs old
                 delta_u, delta_v, delta_w, delta_beta = self._update_em(data, data_X, subs_nz,
-                                                                        subs_X_nz) # type: ignore
+                                                                        subs_X_nz)  # type: ignore
                 if flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data,
@@ -268,9 +268,9 @@ class MTCov: # pylint: disable=too-many-instance-attributes
                         coincide,
                         convergence,
                         batch_size,
-                        subset_N, # type: ignore
-                        Subs, # type: ignore
-                        SubsX # type: ignore
+                        subset_N,  # type: ignore
+                        Subs,  # type: ignore
+                        SubsX  # type: ignore
                     )
                     loglik_values.append(loglik)
                 elif flag_conv == 'deltas':
@@ -282,7 +282,7 @@ class MTCov: # pylint: disable=too-many-instance-attributes
                 else:
                     message = 'Error! flag_conv can be either "log" or "deltas"'
                     error_type = ValueError
-                    log_and_raise_error(logging, error_type, message)
+                    log_and_raise_error(error_type, message)
 
             if flag_conv == 'log':
                 if maxL < loglik:
@@ -296,16 +296,16 @@ class MTCov: # pylint: disable=too-many-instance-attributes
                 if not batch_size:
                     loglik = self.__Likelihood(data, data_X)
                 else:
-                    loglik = self.__Likelihood_batch(data, data_X, subset_N, Subs, SubsX) # type: ignore
+                    loglik = self.__Likelihood_batch(
+                        data, data_X, subset_N, Subs, SubsX)  # type: ignore
                 if maxL < loglik:
                     self._update_optimal_parameters()
                     maxL = loglik
                     final_it = it
                     conv = convergence
                     # best_r = r
-            logging.info(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
-                      f'time = {np.round(time.time() - time_start, 2)} seconds')
-
+            logging.debug(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
+                          f'time = {np.round(time.time() - time_start, 2)} seconds')
 
             self.rseed += self.rng.randint(10000)
             # end cycle over realizations
@@ -335,7 +335,7 @@ class MTCov: # pylint: disable=too-many-instance-attributes
         """
 
         if self.initialization == 0:
-            logging.info('U, V, W and beta are initialized randomly.')
+            logging.debug('U, V, W and beta are initialized randomly.')
             self._randomize_u_v(rng)
             if self.gamma != 0:
                 self._randomize_beta(rng)
@@ -343,7 +343,7 @@ class MTCov: # pylint: disable=too-many-instance-attributes
                 self._randomize_w(rng)
 
         elif self.initialization == 1:
-            logging.info(f'U, V, W and beta are initialized using the input file: {self.files}')
+            logging.debug(f'U, V, W and beta are initialized using the input file: {self.files}')
             self._initialize_u(rng, nodes)
             self._initialize_v(rng, nodes)
             self._initialize_beta(rng)
@@ -895,7 +895,7 @@ class MTCov: # pylint: disable=too-many-instance-attributes
                                subset_N: List[int],
                                Subs: List[Tuple[int, int, int]],
                                SubsX: List[Tuple[int, int]]) -> Tuple[
-        int, float, int, bool]:
+            int, float, int, bool]:
         """
         Check for convergence by using the log-likelihood values.
 

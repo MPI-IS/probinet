@@ -119,46 +119,36 @@ class TestGMReciprocity(unittest.TestCase):
 
     def test_invalid_eta(self):
         message = 'The reciprocity coefficient eta has to be in [0, 1)!'
-        #with self.assertLogs(level='ERROR') as cm:
         with self.assertRaises(ValueError) as context:
             GM_reciprocity(N=100, K=3, eta=-0.5)
         self.assertEqual(str(context.exception),
                              message)
-        #self.assertEqual(cm.output, ['ERROR:root:'+message])
 
     def test_invalid_over(self):
         message = 'The overlapping parameter has to be in [0, 1]!'
-        #with self.assertLogs(level='ERROR') as cm:
         with self.assertRaises(ValueError) as context:
             GM_reciprocity(N=100, K=3, over=1.5)
         self.assertEqual(str(context.exception), message)
-        #self.assertEqual(cm.output, ['ERROR:root:' + message])
 
     def test_invalid_corr(self):
         message = 'The correlation parameter corr has to be in [0, 1]!'
-        #with self.assertLogs(level='ERROR') as cm:
         with self.assertRaises(ValueError) as context:
             GM_reciprocity(N=100, K=3, corr=1.5)
         self.assertEqual(str(context.exception), message)
-        #self.assertEqual(cm.output, ['ERROR:root:'+message])
 
     def test_invalid_Normalization(self):
         message = ('The Normalization parameter can be either 0 or 1! It is used as an indicator for '
                    'generating the membership matrices u and v from a Dirichlet or a Gamma '
                    'distribution, respectively. It is used when there is overlapping.')
-        #with self.assertLogs(level='ERROR') as cm:
         with self.assertRaises(ValueError) as context:
             GM_reciprocity(N=100, K=3, Normalization=2)
         self.assertEqual(str(context.exception), message)
-        #self.assertEqual(cm.output, ['ERROR:root:'+message])
 
     def test_invalid_structure(self):
         message = 'The structure of the affinity matrix w can be either assortative or disassortative!'
-        #with self.assertLogs(level='ERROR') as cm:
         with self.assertRaises(ValueError) as context:
             GM_reciprocity(N=100, K=3, structure='invalid_structure')
         self.assertEqual(str(context.exception), message)
-        #self.assertEqual(cm.output, ['ERROR:root:'+message])
 
     def test_affinity_matrix_assortative(self):
         expected_result = np.array([[0.02, 0.002], [0.002, 0.02]])

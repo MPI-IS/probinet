@@ -47,6 +47,11 @@ To run a specific model, pass the model name as an argument with the `-a` flag. 
 ```bash
     run_model -a CRep
 ```
+The `run_model` command can be run at different logging levels. To run the command with the `DEBUG` level, use:
+
+```bash
+    run_model -a CRep -l D
+```
 
 ## Tests
 

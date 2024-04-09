@@ -57,7 +57,7 @@ def import_data(dataset: str,
 
     # read adjacency file
     df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
-    logging.info(f"Read adjacency file from {dataset}. The shape of the data is {df_adj.shape}.")
+    logging.debug(f"Read adjacency file from {dataset}. The shape of the data is {df_adj.shape}.")
 
     A = read_graph(
         df_adj=df_adj,
@@ -82,7 +82,7 @@ def import_data(dataset: str,
     current_level = logging.getLogger().getEffectiveLevel()
 
     # Check if the current level is INFO or lower
-    if current_level <= logging.INFO:
+    if current_level <= logging.DEBUG:
         print_graph_stat(A, rw)
 
     return A, B, B_T, data_T_vals
@@ -178,7 +178,7 @@ def import_data_mtcov(
     current_level = logging.getLogger().getEffectiveLevel()
 
     # Check if the current level is INFO or lower
-    if current_level <= logging.INFO:
+    if current_level <= logging.DEBUG:
         print_graph_stat(A)
 
     # save the multilayer network in a tensor with all layers
@@ -229,8 +229,7 @@ def read_graph(
     # build nodes
     egoID = df_adj[ego].unique()
     alterID = df_adj[alter].unique()
-    nodes = list(set(egoID).union(set(alterID)))
-    nodes.sort()
+    nodes = sorted(set(egoID).union(set(alterID)))
 
     L = df_adj.shape[1] - 2  # number of layers
     # build the multilayer NetworkX graph: create a list of graphs, as many
@@ -239,7 +238,6 @@ def read_graph(
         A = [nx.MultiGraph() for _ in range(L)]
     else:
         A = [nx.MultiDiGraph() for _ in range(L)]
-
 
     logging.debug('Creating the network ...')
     # set the same set of nodes and order over all layers
@@ -265,7 +263,7 @@ def read_graph(
 
     # remove self-loops
     if noselfloop:
-        logging.info('Removing self loops')
+        logging.debug('Removing self loops')
         for l in range(L):
             A[l].remove_edges_from(list(nx.selfloop_edges(A[l])))
 

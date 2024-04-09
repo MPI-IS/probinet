@@ -338,7 +338,7 @@ def write_adjacency(G: List[nx.MultiDiGraph],
     cols.extend(['L' + str(l) for l in range(1, L + 1)])
     df = pd.DataFrame(df_list, columns=cols)
     df.to_csv(path_or_buf=folder + fname, index=False)
-    logging.info('Adjacency tensor saved in:', folder + fname)
+    logging.info(f'Adjacency tensor saved in: {folder + fname}')
 
 
 def write_design_Matrix(
@@ -371,7 +371,7 @@ def write_design_Matrix(
     X[nodeID] = X.index
     X = X.loc[:, [nodeID, attr_name]]
     X.to_csv(path_or_buf=folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv', index=False)
-    logging.info('Design matrix saved in:', folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv')
+    logging.debug(f'Design matrix saved in: {folder}{fname}{str(perc)[0]}_{str(perc)[2]}.csv')
 
 
 def transpose_tensor(M: np.ndarray) -> np.ndarray:
@@ -425,7 +425,7 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
     if len(subs) < 3:
         message = "subs_nz should have at least 3 elements."
         error_type = ValueError
-        log_and_raise_error(logging, error_type, message)
+        log_and_raise_error(error_type, message)
 
     if m == 1:
         D, K = u.shape
@@ -482,7 +482,7 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
     if len(subs) < 3:
         message = "subs_nz should have at least 3 elements."
         error_type = ValueError
-        log_and_raise_error(logging, error_type, message)
+        log_and_raise_error(error_type, message)
 
     if m == 1:
         D, K = u.shape
@@ -502,6 +502,7 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
         out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out
+
 
 def log_and_raise_error(error_type, message):
 
