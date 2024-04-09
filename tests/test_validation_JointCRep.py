@@ -62,6 +62,8 @@ class JointCRepValidationTestCase(unittest.TestCase):
 
         self.conf = conf
 
+        self.conf['K'] = self.K
+
         self.L = len(self.A)
 
         self.N = len(self.nodes)
