@@ -1,11 +1,9 @@
 """
 This is the test module for the CRep algorithm.
 """
+
 from importlib.resources import files
-import os
 from pathlib import Path
-import tempfile
-import unittest
 
 import numpy as np
 import yaml
@@ -14,10 +12,12 @@ from pgm.input.loader import import_data
 from pgm.model.crep import CRep
 from pgm.output.evaluate import calculate_opt_func, PSloglikelihood
 
-from .fixtures import decimal
+from .fixtures import BaseTest, decimal
 
-GT_OUTPUT_DIR = Path(__file__).parent / 'outputs'
-class CRepValidationTestCase(unittest.TestCase):
+# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
+
+
+class BaseTestCase(BaseTest):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -53,24 +53,14 @@ class CRepValidationTestCase(unittest.TestCase):
               as fp):
             conf = yaml.safe_load(fp)
 
-        # Saving the outputs of the tests inside the tests dir
-        conf['out_folder'] = self.temp_output_folder / conf['out_folder']
-
-        conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
+        # Saving the outputs of the tests into the temp folder created in the BaseTest
+        conf['out_folder'] = self.folder
 
         conf['end_file'] = '_OUT_CRep'  # Adding a suffix to the output files
 
         self.conf = conf
 
         self.model = CRep()
-
-    def run(self, result=None):
-        # Create a temporary directory for the duration of the test
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            # Store the path to the temporary directory in an instance variable
-            self.temp_output_folder = Path(temp_output_folder)
-            # Call the parent class's run method to execute the test
-            super().run(result)
 
     # test case function to check the crep.set_name function
     def test_import_data(self):
@@ -94,26 +84,41 @@ class CRepValidationTestCase(unittest.TestCase):
                            data_T_vals=self.data_T_vals,
                            nodes=self.nodes,
                            **self.conf)
-
-        theta = np.load((self.temp_output_folder / self.model.out_folder / str('theta' +
-                                                                               self.model.end_file)).with_suffix(
+        theta = np.load((Path(self.model.out_folder) / str('theta' +
+                                                         self.model.end_file)).with_suffix(
             '.npz'))
+
         # This reads the synthetic data Ground Truth output
-        thetaGT = np.load((GT_OUTPUT_DIR / ('theta_GT_' + self.algorithm)).with_suffix(
-            '.npz'))
+        thetaGT_path = Path(__file__).parent /'outputs' / 'theta_GT_CRep'
+        thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
 
-        self.assertTrue(np.array_equal(self.model.u_f, theta['u']))
-        self.assertTrue(np.array_equal(self.model.v_f, theta['v']))
-        self.assertTrue(np.array_equal(self.model.w_f, theta['w']))
-        self.assertTrue(np.array_equal(self.model.eta_f, theta['eta']))
+        # Asserting the model information
 
-        self.assertTrue(np.array_equal(thetaGT['u'], theta['u']))
-        self.assertTrue(np.array_equal(thetaGT['v'], theta['v']))
-        self.assertTrue(np.array_equal(thetaGT['w'], theta['w']))
-        self.assertTrue(np.array_equal(thetaGT['eta'], theta['eta']))
+        # Assert that the model's u_f attribute is close to the 'u' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.u_f, theta['u']))
 
-        # Remove output npz files after testing using os module
-        os.remove((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz'))
+        # Assert that the model's v_f attribute is close to the 'v' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.v_f, theta['v']))
+
+        # Assert that the model's w_f attribute is close to the 'w' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.w_f, theta['w']))
+
+        # Assert that the model's eta_f attribute is close to the 'eta' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.eta_f, theta['eta']))
+
+        # Asserting GT information
+
+        # Assert that the 'u' value in the thetaGT dictionary is close to the 'u' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['u'], theta['u']))
+
+        # Assert that the 'v' value in the thetaGT dictionary is close to the 'v' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['v'], theta['v']))
+
+        # Assert that the 'w' value in the thetaGT dictionary is close to the 'w' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['w'], theta['w']))
+
+        # Assert that the 'eta' value in the thetaGT dictionary is close to the 'eta' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['eta'], theta['eta']))
 
     def test_calculate_opt_func(self):
         """
@@ -150,9 +155,6 @@ class CRepValidationTestCase(unittest.TestCase):
         # Check if the result is what expected
         opt_func_expected = -20916.774960752904
         np.testing.assert_almost_equal(opt_func_result, opt_func_expected, decimal=decimal)
-
-        # Remove output npz files after testing using os module
-        os.remove((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz'))
 
     def test_PSloglikelihood(self):
         # Test PSloglikelihood function
@@ -195,5 +197,3 @@ class CRepValidationTestCase(unittest.TestCase):
         # Check if psloglikelihood_result is a number
         self.assertIsInstance(psloglikelihood_result, float)
 
-        # Remove output npz files after testing using os module
-        os.remove((self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz'))

@@ -10,6 +10,8 @@ import networkx as nx
 import numpy as np
 
 
+# pylint: disable=too-many-arguments, too-many-instance-attributes,
+# too-many-locals, too-many-branches, too-many-statements
 def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None) -> None:
     """
     Print the statistics of the graph A.
@@ -48,7 +50,7 @@ def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None)
             )
 
 
-def print_graph_stat_mtcov(A):
+def print_graph_stat_MTCov(A: List[nx.MultiDiGraph]) -> None:
     """
         Print the statistics of the graph A.
 
@@ -61,10 +63,10 @@ def print_graph_stat_mtcov(A):
     L = len(A)
     N = A[0].number_of_nodes()
     print('Number of edges and average degree in each layer:')
-    avg_edges = 0
-    avg_density = 0
-    avg_M = 0
-    avg_densityW = 0
+    avg_edges = 0.
+    avg_density = 0.
+    avg_M = 0.
+    avg_densityW = 0.
     unweighted = True
     for l in range(L):
         E = A[l].number_of_edges()
@@ -124,32 +126,42 @@ def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     return reciprocity
 
 
-def probabilities(structure, sizes, N=100, C=2, avg_degree=4.):
+def probabilities(
+        structure: str,
+        sizes: List[int],
+        N: int = 100,
+        K: int = 2,
+        avg_degree: float = 4.,
+        alpha: float = 0.1,
+        beta: Optional[float] = None) -> np.ndarray:
     """
-        Return the CxC array with probabilities between and within groups.
+    Return the CxC array with probabilities between and within groups.
 
-        Parameters
-        ----------
-        structure : str
-                    Structure of the layer, e.g. assortative, disassortative, core-periphery or directed-biased.
-        sizes : list
-                List with the sizes of blocks.
-        N : int
-            Number of nodes.
-        C : int
-            Number of communities.
-        avg_degree : float
-                     Average degree over the nodes.
+    Parameters
+    ----------
+    structure : str
+                Structure of the layer, e.g. assortative, disassortative, core-periphery or directed-biased.
+    sizes : List[int]
+            List with the sizes of blocks.
+    N : int
+        Number of nodes.
+    K : int
+        Number of communities.
+    avg_degree : float
+                 Average degree over the nodes.
+    alpha : float
+            Alpha value. Default is 0.1.
+    beta : float
+           Beta value. Default is 0.3 * alpha.
 
-        Returns
-        -------
-        p : ndarray
-            Array with probabilities between and within groups.
+    Returns
+    -------
+    p : np.ndarray
+        Ar
     """
-
-    alpha = 0.1
-    beta = alpha * 0.3
-    p1 = avg_degree * C / N
+    if beta is None:
+        beta = alpha * 0.3
+    p1 = avg_degree * K / N
     if structure == 'assortative':
         p = p1 * alpha * np.ones((len(sizes), len(sizes)))  # secondary-probabilities
         np.fill_diagonal(p, p1)  # primary-probabilities
@@ -165,5 +177,4 @@ def probabilities(structure, sizes, N=100, C=2, avg_degree=4.):
         p[0, 1] = p1
         p[1, 0] = beta * p1
 
-    print(p)
     return p

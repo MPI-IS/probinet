@@ -1,6 +1,8 @@
 """
 Functions for handling the data.
 """
+from importlib.resources import files
+import os
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
@@ -8,12 +10,13 @@ import networkx as nx
 from numpy import ndarray
 import numpy as np
 import pandas as pd
+from sktensor import sptensor
 
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
 from .stats import print_graph_stat
 
 
-def import_data(dataset: Path,
+def import_data(dataset: str,
                 ego: str = 'source',
                 alter: str = 'target',
                 force_dense: bool = True,
@@ -86,64 +89,78 @@ def import_data(dataset: Path,
 
 
 def import_data_mtcov(
-        in_folder: Union[str, Path],
-        adj_name='adj.csv',
-        cov_name='X.csv',
-        ego='source',
-        egoX='Name',
-        alter='target',
-        attr_name='Metadata',
-        undirected=False,
-        force_dense=True,
-        noselfloop=True,
-        verbose=True):
+        in_folder: str,
+        adj_name: str = 'adj.csv',
+        cov_name: str = 'X.csv',
+        ego: str = 'source',
+        egoX: str = 'Name',
+        alter: str = 'target',
+        attr_name: str = 'Metadata',
+        undirected: bool = False,
+        force_dense: bool = True,
+        noselfloop: bool = True,
+        verbose: bool = True) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
     """
-        Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
+    Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
 
-        Return the NetworkX graph, its numpy adjacency tensor and the dummy version of the design matrix.
+    Return the NetworkX graph, its numpy adjacency tensor and the dummy version of the design matrix.
 
-        Parameters
-        ----------
-        in_folder : str
-                    Path of the folder containing the input files.
-        adj_name : str
-                   Input file name of the adjacency tensor.
-        cov_name : str
-                   Input file name of the design matrix.
-        ego : str
-              Name of the column to consider as source of the edge.
-        egoX : str
-               Name of the column to consider as node IDs in the design matrix-attribute dataset.
-        alter : str
-                Name of the column to consider as target of the edge.
-        attr_name : str
-                    Name of the attribute to consider in the analysis.
-        undirected : bool
-                     If set to True, the algorithm considers an undirected graph.
-        force_dense : bool
-                      If set to True, the algorithm is forced to consider a dense adjacency tensor.
-        noselfloop : bool
-                     If set to True, the algorithm removes the self-loops.
-        verbose : bool
-                  Flag to print details.
+    Parameters
+    ----------
+    in_folder : str
+                Path of the folder containing the input files.
+    adj_name : str
+               Input file name of the adjacency tensor.
+    cov_name : str
+               Input file name of the design matrix.
+    ego : str
+          Name of the column to consider as source of the edge.
+    egoX : str
+           Name of the column to consider as node IDs in the design matrix-attribute dataset.
+    alter : str
+            Name of the column to consider as target of the edge.
+    attr_name : str
+                Name of the attribute to consider in the analysis.
+    undirected : bool
+                 If set to True, the algorithm considers an undirected graph.
+    force_dense : bool
+                  If set to True, the algorithm is forced to consider a dense adjacency tensor.
+    noselfloop : bool
+                 If set to True, the algorithm removes the self-loops.
+    verbose : bool
+              Flag to print details.
 
-        Returns
-        -------
-        A : list
-            List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
-        B : ndarray/sptensor
-            Graph adjacency tensor.
-        X_attr : DataFrame
-                 Pandas DataFrame object representing the one-hot encoding version of the design matrix.
-        nodes : list
-                List of nodes IDs.
+    Returns
+    -------
+    A : list
+        List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    B : ndarray/sptensor
+        Graph adjacency tensor.
+    X_attr : DataFrame
+             Pandas DataFrame object representing the one-hot encoding version of the design matrix.
+    nodes : list
+            List of nodes IDs.
     """
 
-    # df_adj = pd.read_csv(in_folder + adj_name, index_col=0) # read adjacency file
-    df_adj = pd.read_csv(in_folder / adj_name)  # read adjacency file
+    def get_data_path(in_folder):
+        '''
+        Try to treat in_folder as a package data path, if that fails, treat in_folder as a file path
+        '''
+        try:
+            # Try to treat in_folder as a package data path
+            return files(in_folder)
+        except (ModuleNotFoundError, FileNotFoundError):
+            # If that fails, treat in_folder as a file path
+            return Path(in_folder)
+
+    # Check if in_folder is a package data path or a file path
+    in_folder_path = get_data_path(in_folder)
+    
+    # Read the adjacency file
+    df_adj = pd.read_csv(in_folder_path/ adj_name)  # read adjacency file
     print('\nAdjacency shape: {0}'.format(df_adj.shape))
 
-    df_X = pd.read_csv(in_folder / cov_name)  # read the csv file with the covariates
+    df_X = pd.read_csv(in_folder_path / cov_name)  # read the csv file with the covariates
     print('Indiv shape: ', df_X.shape)
 
     # create the graph adding nodes and edges
@@ -164,7 +181,7 @@ def import_data_mtcov(
 
     # save the multilayer network in a tensor with all layers
     if force_dense:
-        B = build_B_from_A(A, nodes=nodes, calculate_reciprocity=False)
+        B, _ = build_B_from_A(A, nodes=nodes, calculate_reciprocity=False)
     else:
         B = build_sparse_B_from_A(A)
 
@@ -257,7 +274,11 @@ def read_graph(
     return A
 
 
-def read_design_matrix(df_X, nodes, attribute=None, ego='Name', verbose=True):
+def read_design_matrix(df_X: pd.DataFrame,
+                       nodes: List,
+                       attribute: Union[str, None] = None,
+                       ego: str = 'Name',
+                       verbose: bool = True):
     """
         Create the design matrix with the one-hot encoding of the given attribute.
 

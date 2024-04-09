@@ -3,7 +3,7 @@ It provides a set of plotting functions for visualizing the results of the gener
 """
 from typing import Dict, List, Optional, Tuple
 
-from matplotlib import gridspec
+from matplotlib import colormaps, gridspec
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import networkx as nx
@@ -302,7 +302,7 @@ def plot_graph(
         with_labels=False,
         width=edgewidth,
         edge_color=edgewidth,
-        edge_cmap=plt.cm.Greys,  # pylint: disable=no-member
+        edge_cmap=colormaps['Greys'],
         edge_vmin=0,
         edge_vmax=1,
         arrows=True,
@@ -327,7 +327,7 @@ def plot_graph(
         with_labels=False,
         width=edgewidth,
         edge_color=edgewidth,
-        edge_cmap=plt.cm.Greys,  # pylint: disable=no-member
+        edge_cmap=colormaps['Greys'],
         edge_vmin=0,
         edge_vmax=1,
         arrows=True,
@@ -340,7 +340,8 @@ def plot_graph(
     return fig
 
 
-def plot_precision_recall(conf_matrix: np.ndarray, cm: str = 'Blues') -> plt.Figure:
+def plot_precision_recall(conf_matrix: np.ndarray,
+                          cm: str = 'Blues') -> plt.Figure:
     """
     Plot precision and recall of a given confusion matrix.
 
@@ -372,8 +373,8 @@ def plot_precision_recall(conf_matrix: np.ndarray, cm: str = 'Blues') -> plt.Fig
         cmap=cm,
         vmin=0,
         vmax=1)
-    plt.xticks([0, 1, 2, 3], labels=[(0, 0), (0, 1), (1, 0), (1, 1)], fontsize=13)
-    plt.yticks([0, 1, 2, 3], labels=[(0, 0), (0, 1), (1, 0), (1, 1)], fontsize=13)
+    plt.xticks([0, 1, 2, 3], labels=['(0, 0)', '(0, 1)', '(1, 0)', '(1, 1)'], fontsize=13)
+    plt.yticks([0, 1, 2, 3], labels=['(0, 0)', '(0, 1)', '(1, 0)', '(1, 1)'], fontsize=13)
     plt.ylabel('True', fontsize=15)
     plt.xlabel('Predicted', fontsize=15)
     plt.title('Precision', fontsize=17)
@@ -381,7 +382,7 @@ def plot_precision_recall(conf_matrix: np.ndarray, cm: str = 'Blues') -> plt.Fig
     # normalized by column
     plt.subplot(gs[0, 1])
     plt.imshow(conf_matrix / np.sum(conf_matrix, axis=0)[np.newaxis, :], cmap=cm, vmin=0, vmax=1)
-    plt.xticks([0, 1, 2, 3], labels=[(0, 0), (0, 1), (1, 0), (1, 1)], fontsize=13)
+    plt.xticks([0, 1, 2, 3], labels=['(0, 0)', '(0, 1)', '(1, 0)', '(1, 1)'], fontsize=13)
     plt.tick_params(
         axis='y',
         which='both',

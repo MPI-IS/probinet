@@ -1,21 +1,25 @@
 """
 Test cases for the tools module.
 """
-import os
+from pathlib import Path
 import unittest
 
+import networkx as nx
 import numpy as np
+import pandas as pd
 from scipy import sparse
+from scipy.sparse import coo_matrix
 import sktensor as skt
 
 from pgm.input.tools import (
-    can_cast, Exp_ija_matrix, get_item_array_from_subs, is_sparse, normalize_nonzero_membership,
-    output_adjacency, sptensor_from_dense_array, transpose_ij2, transpose_ij3)
+    build_edgelist, can_cast, Exp_ija_matrix, get_item_array_from_subs, is_sparse,
+    normalize_nonzero_membership, output_adjacency, sptensor_from_dense_array, transpose_ij2,
+    transpose_ij3, write_adjacency, write_design_Matrix)
 
-from .fixtures import decimal, rtol
+from .fixtures import BaseTest, decimal, rtol
 
 
-class TestToolsModule(unittest.TestCase):
+class TestTensors(unittest.TestCase):
     """
     Test cases for the tools module.
     """
@@ -109,4 +113,97 @@ class TestToolsModule(unittest.TestCase):
         # This gives: AttributeError: 'DataFrame' object has no attribute 'append'
         output_adjacency(A, out_folder, label)
 
-        self.assertTrue(os.path.exists(out_folder + label + '.dat'))
+        self.assertTrue(Path(out_folder + label + '.dat').is_file())
+
+
+class TestWriteDesignMatrix(BaseTest):
+    def setUp(self):
+        self.metadata = {"node1": "metadata1", "node2": "metadata2"}
+        self.perc = 0.5
+        self.fname = "test_X_"
+        self.nodeID = "Node"
+        self.attr_name = "Metadata"
+        df = pd.DataFrame.from_dict(self.metadata, orient='index', columns=[self.attr_name])
+        df.reset_index(inplace=True)
+        df.columns = [self.nodeID, self.attr_name]
+        self.expected_output = df
+
+    def test_write_design_Matrix(self):
+        write_design_Matrix(
+            self.metadata,
+            self.perc,
+            self.folder,
+            self.fname,
+            self.nodeID,
+            self.attr_name)
+        output_file = self.folder + self.fname + \
+            str(self.perc)[0] + '_' + str(self.perc)[2] + '.csv'
+        output_df = pd.read_csv(output_file)
+        pd.testing.assert_frame_equal(output_df, self.expected_output)
+
+
+# @unittest.skip("Reason: Not implemented yet")
+class TestAdjacencyFunctions(BaseTest):
+    def setUp(self):
+        self.A = [nx.MultiDiGraph(), nx.MultiDiGraph()]
+        self.G = [nx.MultiDiGraph(), nx.MultiDiGraph()]
+        # self.out_folder = "./"
+        self.label = "test_output"
+        self.fname = "test_write.csv"
+        self.ego = "source"
+        self.alter = "target"
+
+    def test_write_adjacency(self):
+        write_adjacency(self.G, self.folder, self.fname, self.ego, self.alter)
+        self.assertTrue((Path(self.folder) / self.fname).is_file())
+
+    def test_build_edgelist(self):
+        # Create a sparse tensor with known data
+
+        row = np.array([0, 3, 1, 0])
+        col = np.array([0, 3, 1, 2])
+        data = np.array([4, 5, 7, 9])
+        A = coo_matrix((data, (row, col)), shape=(4, 4), dtype=np.int32)
+
+        # Call the function with the tensor and a known layer index
+        result = build_edgelist(A, 1)
+
+        # Create the expected result
+        expected_result = pd.DataFrame({
+            'source': [0, 3, 1, 0],
+            'target': [0, 3, 1, 2],
+            'L1': [4, 5, 7, 9]
+        }, dtype=np.int32)
+
+        # Assert that the result is as expected
+        pd.testing.assert_frame_equal(result, expected_result)
+
+
+class TestOutputAdjacency(BaseTest):
+    def setUp(self):
+        # Create a list of sparse matrices
+        self.A = [coo_matrix(([1, 2, 3], ([0, 1, 2], [0, 1, 2])), shape=(3, 3))
+                  for _ in range(3)]
+        self.label = 'test_output_adjacency'
+
+    def test_output_adjacency(self):
+        # Call the function with the test inputs
+        output_adjacency(self.A, self.folder, self.label)
+
+        # Check if the output file exists
+        self.assertTrue(Path(self.folder + self.label + '.dat').is_file())
+
+        # Load the output file into a DataFrame
+        df = pd.read_csv(self.folder + self.label + '.dat', sep=' ')
+
+        # Create the expected DataFrame
+        df_list = [pd.DataFrame({
+            'source': [0, 1, 2],
+            'target': [0, 1, 2],
+            'L' + str(layer): [1, 2, 3]
+        }) for layer in range(len(self.A))]
+
+        expected_df = pd.concat(df_list).reset_index(drop=True)
+
+        # Check if the output DataFrame matches the expected DataFrame
+        pd.testing.assert_frame_equal(df, expected_df)

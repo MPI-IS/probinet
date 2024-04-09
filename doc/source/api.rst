@@ -13,9 +13,9 @@ API
     pgm.model
     pgm.model.crep
     pgm.model.jointcrep
+    pgm.model.mtcov
     pgm.model.cv
     pgm.output
     pgm.output.evaluate
     pgm.output.plot
-    pgm.main_CRep
-    pgm.main_JointCRep
+    pgm.main

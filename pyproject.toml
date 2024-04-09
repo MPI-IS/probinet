@@ -48,9 +48,7 @@ dev = [
 
 # CLI
 [project.scripts]
-run_CRep = "pgm.main_CRep:main"
-run_JointCRep = "pgm.main_JointCRep:main"
-run_MTCOV = "pgm.main_MTCOV:main"
+run_model = "pgm.main:main"
 
 # Setuptools
 [tool.setuptools]
@@ -116,4 +114,8 @@ basepython = python3.10
 commands =
     sphinx-build -d "{envtmpdir}{/}doctree" doc/source/ "{toxworkdir}{/}docs_out" --color -b html
     python -c 'print(r"documentation available under file://{toxworkdir}{/}docs_out{/}index.html")'
+[testenv:type]
+deps = mypy
+skip_install = true
+commands = mypy --install-types pgm
 """

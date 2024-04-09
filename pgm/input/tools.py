@@ -3,14 +3,16 @@ It provides utility functions to handle matrices, tensors, and sparsity. It incl
 checking if an object can be cast to an integer, normalizing matrices, determining sparsity in
 tensors, and converting between dense and sparse representations.
 """
-import os
-from typing import List, Tuple, Union
+from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
 import pandas as pd
+from scipy.sparse import coo_matrix
 import sktensor as skt
 
+# pylint: disable=fixme
 
 def can_cast(string: Union[int, float, str]) -> bool:
     """
@@ -224,14 +226,14 @@ def check_symmetric(a: Union[np.ndarray, List[np.ndarray]],
     return np.allclose(a, a.T, rtol=rtol, atol=atol)
 
 
-def build_edgelist(A: skt.sptensor, l: int) -> pd.DataFrame:
+def build_edgelist(A: coo_matrix, l: int) -> pd.DataFrame:
     """
     Build the edgelist for a given layer, a in DataFrame format.
 
     Parameters
     ----------
     A : ndarray or sptensor
-        List of scipy sparse matrices, one for each layer
+        Adjacency tensor.
     l : int
         Layer index.
     Returns
@@ -239,8 +241,15 @@ def build_edgelist(A: skt.sptensor, l: int) -> pd.DataFrame:
     Dataframe with the edgelist for a given layer.
     """
 
-    A_coo = A.tocoo()  # TODO: Solve this issue with Martina
+    # Convert the input sparse matrix A to COOrdinate format
+    A_coo = A.tocoo()
+
+    # Create a dictionary with 'source', 'target', and 'L' keys
+    # 'source' and 'target' represent the row and column indices of non-zero elements in A
+    # 'L' represents the data of non-zero elements in A
     data_dict = {'source': A_coo.row, 'target': A_coo.col, 'L' + str(l): A_coo.data}
+
+    # Convert the dictionary to a pandas DataFrame
     df_res = pd.DataFrame(data_dict)
 
     return df_res
@@ -262,35 +271,51 @@ def output_adjacency(A: List, out_folder: str, label: str):
         Label of the output file.
     """
 
+    # Concatenate the label with '.dat' to form the output file name
     outfile = label + '.dat'
-    if not os.path.exists(out_folder):
-        os.makedirs(out_folder)
 
-    L = len(A)
-    df = pd.DataFrame()
-    for l in range(L):
-        dfl = build_edgelist(A[l], l)
-        df = df.append(dfl)
+    # Create a Path object for the output folder
+    out_folder_path = Path(out_folder)
+
+    # Create the output directory. If the directory already exists, no exception is raised.
+    # parents=True ensures that any missing parent directories are also created.
+    out_folder_path.mkdir(parents=True, exist_ok=True)
+
+    # For each layer in A, build an edge list and store them in a list
+    df_list = [build_edgelist(A[l], l) for l in range(len(A))]
+
+    # Concatenate all the DataFrames in the list into a single DataFrame
+    df = pd.concat(df_list)
+
+    # Save the DataFrame to a CSV file in the output directory
+    # index=False prevents pandas from writing row indices in the CSV file
+    # sep=' ' specifies that the fields are separated by a space
     df.to_csv(out_folder + outfile, index=False, sep=' ')
+
+    # Print the location where the adjacency matrix is saved
     print(f'Adjacency matrix saved in: {out_folder + outfile}')
 
 
-def write_adjacency(G, folder='./', fname='adj.csv', ego='source', alter='target'):
+def write_adjacency(G: List[nx.MultiDiGraph],
+                    folder: str = './',
+                    fname: str = 'adj.csv',
+                    ego: str = 'source',
+                    alter: str = 'target'):
     """
-        Save the adjacency tensor to file.
+    Save the adjacency tensor to file.
 
-        Parameters
-        ----------
-        G : list
-            List of MultiDiGraph NetworkX objects.
-        folder : str
-                 Path of the folder where to save the files.
-        fname : str
-                Name of the adjacency tensor file.
-        ego : str
-              Name of the column to consider as source of the edge.
-        alter : str
-                Name of the column to consider as target of the edge.
+    Parameters
+    ----------
+    G : list
+        List of MultiDiGraph NetworkX objects.
+    folder : str
+             Path of the folder where to save the files.
+    fname : str
+            Name of the adjacency tensor file.
+    ego : str
+          Name of the column to consider as source of the edge.
+    alter : str
+            Name of the column to consider as target of the edge.
     """
 
     N = G[0].number_of_nodes()
@@ -298,7 +323,7 @@ def write_adjacency(G, folder='./', fname='adj.csv', ego='source', alter='target
     B = np.empty(shape=[len(G), N, N])
     for l in range(len(G)):
         B[l, :, :] = nx.to_numpy_array(G[l], weight='weight')
-    df = []
+    df_list = []
     for i in range(N):
         for j in range(N):
             Z = 0
@@ -307,38 +332,38 @@ def write_adjacency(G, folder='./', fname='adj.csv', ego='source', alter='target
             if Z > 0:
                 data = [i, j]
                 data.extend([int(B[a][i][j]) for a in range(L)])
-                df.append(data)
+                df_list.append(data)
     cols = [ego, alter]
     cols.extend(['L' + str(l) for l in range(1, L + 1)])
-    df = pd.DataFrame(df, columns=cols)
+    df = pd.DataFrame(df_list, columns=cols)
     df.to_csv(path_or_buf=folder + fname, index=False)
     print('Adjacency tensor saved in:', folder + fname)
 
 
 def write_design_Matrix(
-        metadata,
-        perc,
-        folder='./',
-        fname='X_',
-        nodeID='Name',
-        attr_name='Metadata'):
+        metadata: Dict[str, str],
+        perc: float,
+        folder: str = './',
+        fname: str = 'X_',
+        nodeID: str = 'Name',
+        attr_name: str = 'Metadata'):
     """
-        Save the design matrix to file.
+    Save the design matrix to file.
 
-        Parameters
-        ----------
-        metadata : dict
-                   Dictionary where the keys are the node labels and the values are the metadata associated to them.
-        perc : float
-               Fraction of match between communities and metadata.
-        folder : str
-                 Path of the folder where to save the files.
-        fname : str
-                Name of the design matrix file.
-        nodeID : str
-                 Name of the column with the node labels.
-        attr_name : str
-                    Name of the column to consider as attribute.
+    Parameters
+    ----------
+    metadata : dict
+               Dictionary where the keys are the node labels and the values are the metadata associated to them.
+    perc : float
+           Fraction of match between communities and metadata.
+    folder : str
+             Path of the folder where to save the files.
+    fname : str
+            Name of the design matrix file.
+    nodeID : str
+             Name of the column with the node labels.
+    attr_name : str
+                Name of the column to consider as attribute.
     """
 
     X = pd.DataFrame.from_dict(metadata, orient='index', columns=[attr_name])
