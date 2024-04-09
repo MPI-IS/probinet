@@ -55,6 +55,7 @@ class TestMain(TestCase):
         }
         self.expected_config['MTCov'] = {
             "K": 2,
+            "gamma": 0.5,
             "rseed": 107261,
             "initialization": 0,
             "out_inference": True,
@@ -109,8 +110,22 @@ class TestMain(TestCase):
             'plot_loglik',
             'num_realizations',
         ]
-        self.input_names['MTCov'] = ['data', 'data_X', 'nodes', 'flag_conv', 'K', 'assortative', 'end_file', 'files',
-                                     'initialization', 'out_folder', 'out_inference', 'rseed', 'batch_size']
+        self.input_names['MTCov'] = [
+            'data',
+            'data_X',
+            'nodes',
+            'flag_conv',
+            'K',
+            'gamma',
+            'assortative',
+            'end_file',
+            'files',
+            'initialization',
+            'out_folder',
+            'out_inference',
+            'rseed',
+            'batch_size'
+        ]
         self.K_values = {}
         self.K_values['CRep'] = 5
         self.K_values['JointCRep'] = 5
@@ -163,7 +178,8 @@ class TestMain(TestCase):
             sys.argv += ['-F', 'deltas', '-A', 'custom_network.dat']
         elif algorithm == 'MTCov':
             sys.argv += ['-F', 'deltas', '-j', 'custom_adj.csv']
-            # Remove '-a' and the element after it. Why? Because the main function does not have the flag '-a'
+            # Remove '-a' and the element after it. Why? Because the main function
+            # does not have the flag '-a'
             sys.argv.pop(1)  # Remove '-a'
             sys.argv.pop(1)  # Remove 'MTCov'
 
@@ -204,7 +220,8 @@ class TestMain(TestCase):
     @mock.patch('pgm.main_JointCRep.import_data',
                 return_value=([nx.Graph()], mock.ANY, mock.ANY, mock.ANY))
     def test_JointCRep_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters('JointCRep', mock_import_data, mock_fit, main_JointCRep_main)
+        return self.main_with_custom_parameters(
+            'JointCRep', mock_import_data, mock_fit, main_JointCRep_main)
 
     # Tests for MTCov
     @mock.patch('pgm.model.mtcov.MTCov.fit')
@@ -214,5 +231,6 @@ class TestMain(TestCase):
     @mock.patch('pgm.model.mtcov.MTCov.fit')
     @mock.patch('pgm.main_MTCov.import_data_mtcov',
                 return_value=([nx.Graph()], np.empty(0), mock.ANY, list()))
-    def test_MTCov_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters('MTCov', mock_import_data, mock_fit, main_MTCov_main)
+    def test_MTCOV_with_custom_parameters(self, mock_import_data, mock_fit):
+        return self.main_with_custom_parameters(
+            'MTCov', mock_import_data, mock_fit, main_MTCov_main)

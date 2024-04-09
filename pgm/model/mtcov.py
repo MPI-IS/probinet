@@ -1,6 +1,6 @@
 """
-    Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and node
-    attributes to extract overlapping communities in directed and undirected multilayer networks.
+Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and node
+attributes to extract overlapping communities in directed and undirected multilayer networks.
 """
 
 from pathlib import Path
@@ -55,7 +55,7 @@ class MTCov:
                                undirected: bool,
                                assortative: bool,
                                data: Union[skt.dtensor, skt.sptensor, np.ndarray],
-                               data_X: Union[skt.dtensor, skt.sptensor,np.ndarray],
+                               data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
                                K: int,
                                **extra_params: dict[str, Any]
                                ) -> None:
@@ -104,9 +104,6 @@ class MTCov:
                 msg = f'Ignoring extra parameter {extra_param}.'
                 print(msg)  # Add the warning
 
-        if "files" in extra_params:
-            self.files = extra_params["files"]
-
         if "out_inference" in extra_params:
             self.out_inference = extra_params["out_inference"]
         else:
@@ -122,8 +119,6 @@ class MTCov:
             self.end_file = ''
 
         # values of the parameters used during the update
-        # beta matrix # TODO: check with martina why this does not work if commented
-        self.beta = np.zeros((self.K, self.Z), dtype=float)
 
         # values of the affinity tensor
         if self.assortative:  # purely diagonal matrix
@@ -138,9 +133,9 @@ class MTCov:
     def fit(self,
             data: Union[skt.dtensor, skt.sptensor],
             data_X: np.ndarray,
-            flag_conv: str,
             nodes: List[Any],
-            batch_size: int,
+            flag_conv: str = 'log',
+            batch_size: int = None,
             gamma: float = 0.5,
             rseed: int = 0,
             K: int = 3,
@@ -301,9 +296,11 @@ class MTCov:
                     maxL = loglik
                     final_it = it
                     conv = convergence
+                    best_r = r
             if self.verbose:
                 print(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
                       f'time = {np.round(time.time() - time_start, 2)} seconds')
+                # print(f'Best real = {best_r} - maxL = {maxL} - best iterations = {final_it}')
 
             self.rseed += self.rng.randint(10000)
             # end cycle over realizations
@@ -353,7 +350,7 @@ class MTCov:
             self._initialize_beta(rng)
             self._initialize_w(rng)
 
-    def _randomize_u_v(self, rng):
+    def _randomize_u_v(self, rng: RandomState) -> None:
         """
             Assign a random number in (0, 1.) to each entry of the membership matrices U and V, and normalize each row.
 
@@ -384,12 +381,10 @@ class MTCov:
             rng : RandomState
                   Container for the Mersenne Twister pseudo-random number generator.
         """
+
         if rng is None:
             rng = np.random.RandomState(self.rseed)
-        for k in range(self.K):
-            for z in range(self.Z):
-                self.beta[k, z] = rng.random_sample(1)
-        # normalization: each row of the matrix beta has to sum to 1
+        self.beta = rng.random_sample((self.K, self.Z))
         self.beta = (self.beta.T / np.sum(self.beta, axis=1)).T
 
     def _randomize_w(self, rng):
@@ -415,16 +410,16 @@ class MTCov:
                         else:
                             self.w[i, k, q] = self.w[i, q, k] = self.err * rng.random_sample(1)
 
-    def _initialize_u(self, rng, nodes):
+    def _initialize_u(self, rng: RandomState, nodes: List[int]) -> None:
         """
-            Initialize out-going membership matrix u from file.
+        Initialize out-going membership matrix u from file.
 
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-            nodes : list
-                    List of nodes IDs.
+        Parameters
+        ----------
+        rng : RandomState
+              Container for the Mersenne Twister pseudo-random number generator.
+        nodes : list
+                List of nodes IDs.
         """
 
         self.u = self.theta['u']
@@ -463,7 +458,7 @@ class MTCov:
             rng : RandomState
                   Container for the Mersenne Twister pseudo-random number generator.
         """
-
+        
         self.beta = self.theta['beta']
 
         max_entry = np.max(self.beta)
@@ -535,25 +530,29 @@ class MTCov:
         else:
             self.data_pi_nz = data_X.data / self.pi0_nz
 
-    def _lambda0_nz(self, subs_nz, u, v, w):
+    def _lambda0_nz(self,
+                    subs_nz: Tuple[np.ndarray],
+                    u: np.ndarray,
+                    v: np.ndarray,
+                    w: np.ndarray) -> np.ndarray:
         """
-            Compute the mean lambda0 (M_ij^alpha) for only non-zero entries (denominator of pijkl).
+        Compute the mean lambda0 (M_ij^alpha) for only non-zero entries (denominator of pijkl).
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            u : ndarray
-                Out-going membership matrix.
-            v : ndarray
-                In-coming membership matrix.
-            w : ndarray
-                Affinity tensor.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        u : ndarray
+            Out-going membership matrix.
+        v : ndarray
+            In-coming membership matrix.
+        w : ndarray
+            Affinity tensor.
 
-            Returns
-            -------
-            nz_recon_I : ndarray
-                         Mean lambda0 (M_ij^alpha) for only non-zero entries.
+        Returns
+        -------
+        nz_recon_I : ndarray
+                     Mean lambda0 (M_ij^alpha) for only non-zero entries.
         """
 
         if not self.assortative:
@@ -654,17 +653,17 @@ class MTCov:
 
     def _update_W(self, subs_nz):
         """
-            Update affinity tensor.
+        Update affinity tensor.
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_w : float
-                     Maximum distance between the old and the new affinity tensor W.
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor W.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -693,19 +692,19 @@ class MTCov:
 
         return dist_w
 
-    def _update_W_assortative(self, subs_nz):
+    def _update_W_assortative(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
-            Update affinity tensor (assuming assortativity).
+        Update affinity tensor (assuming assortativity).
 
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
-            Returns
-            -------
-            dist_w : float
-                     Maximum distance between the old and the new affinity tensor W.
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor W.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -886,44 +885,53 @@ class MTCov:
 
         return out
 
-    def _check_for_convergence(self, data, data_X, it, loglik, coincide, convergence, batch_size,
-                               subset_N, Subs, SubsX):
+    def _check_for_convergence(self,
+                               data: Union[skt.dtensor, skt.sptensor],
+                               data_X: np.ndarray,
+                               it: int,
+                               loglik: float,
+                               coincide: int,
+                               convergence: bool,
+                               batch_size: Union[int, None],
+                               subset_N: Union[List[int], None],
+                               Subs: Union[List[Tuple[int, int, int]], None],
+                               SubsX: List[Tuple[int, int]]) -> Tuple[int, float, int, bool]:
         """
-            Check for convergence by using the log-likelihood values.
+        Check for convergence by using the log-likelihood values.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            data_X : ndarray
-                     Object representing the one-hot encoding version of the design matrix.
-            it : int
-                 Number of iteration.
-            loglik : float
-                     Log-likelihood value.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the convergence_tol.
-            convergence : bool
-                          Flag for convergence.
-            batch_size : int/None
-                         Size of the subset of nodes to compute the likelihood with.
-            subset_N : list/None
-                       List with a subset of nodes.
-            Subs : list/None
-                   List with elements (a, i, j) of the non zero entries of data.
-            SubsX : list
-                    List with elements (i, z) of the non zero entries of data_X.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_X : ndarray
+                 Object representing the one-hot encoding version of the design matrix.
+        it : int
+             Number of iteration.
+        loglik : float
+                 Log-likelihood value.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
+        batch_size : int/None
+                     Size of the subset of nodes to compute the likelihood with.
+        subset_N : list/None
+                   List with a subset of nodes.
+        Subs : list/None
+               List with elements (a, i, j) of the non zero entries of data.
+        SubsX : list
+                List with elements (i, z) of the non zero entries of data_X.
 
-            Returns
-            -------
-            it : int
-                 Number of iteration.
-            loglik : float
-                     Log-likelihood value.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the convergence_tol.
-            convergence : bool
-                          Flag for convergence.
+        Returns
+        -------
+        it : int
+             Number of iteration.
+        loglik : float
+                 Log-likelihood value.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
         """
 
         if it % 10 == 0:
@@ -942,21 +950,23 @@ class MTCov:
 
         return it, loglik, coincide, convergence
 
-    def __Likelihood(self, data, data_X):
+    def __Likelihood(self,
+                     data: Union[skt.dtensor, skt.sptensor],
+                     data_X: np.ndarray) -> float:
         """
-            Compute the log-likelihood of the data.
+        Compute the log-likelihood of the data.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            data_X : ndarray
-                     Object representing the one-hot encoding version of the design matrix.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_X : ndarray
+                 Object representing the one-hot encoding version of the design matrix.
 
-            Returns
-            -------
-            l : float
-                Log-likelihood value.
+        Returns
+        -------
+        l : float
+            Log-likelihood value.
         """
 
         self.lambda0_ija = self._lambda0_full(self.u, self.v, self.w)
@@ -994,25 +1004,25 @@ class MTCov:
                            Subs: Union[List[Tuple[int, int, int]], None],
                            SubsX: Union[List[Tuple[int, int]], None]) -> float:
         """
-            Compute the log-likelihood of a batch of data.
+        Compute the log-likelihood of a batch of data.
 
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            data_X : ndarray
-                     Object representing the one-hot encoding version of the design matrix.
-            subset_N : list
-                       List with a subset of nodes.
-            Subs : list
-                   List with elements (a, i, j) of the non zero entries of data.
-            SubsX : list
-                    List with elements (i, z) of the non zero entries of data_X.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_X : ndarray
+                 Object representing the one-hot encoding version of the design matrix.
+        subset_N : list
+                   List with a subset of nodes.
+        Subs : list
+               List with elements (a, i, j) of the non zero entries of data.
+        SubsX : list
+                List with elements (i, z) of the non zero entries of data_X.
 
-            Returns
-            -------
-            l : float
-                Log-likelihood value.
+        Returns
+        -------
+        l : float
+            Log-likelihood value.
         """
 
         size = len(subset_N)
@@ -1072,35 +1082,42 @@ class MTCov:
 
         return M
 
-    def _check_for_convergence_delta(self, it, coincide, du, dv, dw, db, convergence):
+    def _check_for_convergence_delta(self,
+                                     it: int,
+                                     coincide: int,
+                                     du: float,
+                                     dv: float,
+                                     dw: float,
+                                     db: float,
+                                     convergence: bool) -> Tuple[int, int, bool]:
         """
-            Check for convergence by using the maximum distances between the old and the new parameters values.
+        Check for convergence by using the maximum distances between the old and the new parameters values.
 
-            Parameters
-            ----------
-            it : int
-                 Number of iteration.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the convergence_tol.
-            du : float
-                 Maximum distance between the old and the new membership matrix U.
-            dv : float
-                 Maximum distance between the old and the new membership matrix V.
-            dw : float
-                 Maximum distance between the old and the new affinity tensor W.
-            db : float
-                 Maximum distance between the old and the new beta matrix.
-            convergence : bool
-                          Flag for convergence.
+        Parameters
+        ----------
+        it : int
+             Number of iteration.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        du : float
+             Maximum distance between the old and the new membership matrix U.
+        dv : float
+             Maximum distance between the old and the new membership matrix V.
+        dw : float
+             Maximum distance between the old and the new affinity tensor W.
+        db : float
+             Maximum distance between the old and the new beta matrix.
+        convergence : bool
+                      Flag for convergence.
 
-            Returns
-            -------
-            it : int
-                 Number of iteration.
-            coincide : int
-                       Number of time the update of the log-likelihood respects the convergence_tol.
-            convergence : bool
-                          Flag for convergence.
+        Returns
+        -------
+        it : int
+             Number of iteration.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
         """
 
         if du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol and db < self.convergence_tol:
@@ -1114,9 +1131,9 @@ class MTCov:
 
         return it, coincide, convergence
 
-    def _update_optimal_parameters(self):
+    def _update_optimal_parameters(self) -> None:
         """
-            Update values of the parameters after convergence.
+        Update values of the parameters after convergence.
         """
 
         self.u_f = np.copy(self.u)

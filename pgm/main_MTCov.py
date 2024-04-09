@@ -1,6 +1,5 @@
 """
-    Performing community detection in multilayer networks considering both the topology of interactions and node
-    attributes. Implementation of MTCov algorithm.
+Implementation of the MTCov algorithm.
 """
 
 from argparse import ArgumentParser
@@ -28,25 +27,19 @@ def main():
         '--in_folder',
         type=str,
         default='')  # path of the input network
-    p.add_argument('-j', '--adj_name', type=str, default='adj.csv',
-                   help='Name of the network')
-    p.add_argument('-c', '--cov_name', type=str, default='X.csv',
-                   help='Name of the node attributes')
+    p.add_argument('-j', '--adj_name', type=str, default='adj.csv')  # name of the adjacency tensor
+    p.add_argument('-c', '--cov_name', type=str, default='X.csv')  # name of the design matrix
     p.add_argument('-e', '--ego', type=str, default='source',
                    help='Name of the source of the edge')  # name of the source of the edge
     p.add_argument('-t', '--alter', type=str, default='target',
                    help='Name of the target of the edge')  # name of the target of the edge
-    p.add_argument('-x', '--egoX', type=str, default='Name',
-                   help='Name of the node')
+    p.add_argument('-x', '--egoX', type=str, default='Name')  # name of the column with node labels
     # name of the attribute to consider
-    p.add_argument('-a', '--attr_name', type=str, default='Metadata',
-                   help='Name of the attribute to consider')
-    p.add_argument('-K', '--K', type=int, default=2,
-                   help='Number of communities')
-    p.add_argument('-g', '--gamma', type=float, default=0.5,
-                   help='Value of the gamma parameter')
-    p.add_argument('-u', '--undirected', type=bool, default=False,
-                   help='Flag to consider the network as undirected')
+    p.add_argument('-a', '--attr_name', type=str, default='Metadata')
+    p.add_argument('-K', '--K', type=int, default=2)  # number of communities
+    p.add_argument('-g', '--gamma', type=float, default=0.5)  # scaling hyper parameter
+    # flag to call the undirected network
+    p.add_argument('-u', '--undirected', type=bool, default=False)
     p.add_argument(
         '-F',
         '--flag_conv',
@@ -54,15 +47,15 @@ def main():
         choices=[
             'log',
             'deltas'],
-        default='log',
-        help='Flag for convergence')
-    p.add_argument('-d', '--force_dense', type=bool, default=False,
-                   help='Flag to force a dense transformation in input')
-    p.add_argument('-b', '--batch_size', type=int, default=None,
-                   help='Size of the batch used to compute the likelihood')
+        default='log')  # flag for convergence
+    # flag to force a dense transformation in input
+    p.add_argument('-d', '--force_dense', type=bool, default=False)
+    # size of the batch used to compute the likelihood
+    p.add_argument('-b', '--batch_size', type=int, default=None)
     p.add_argument('-o', '-O', '--out_folder', type=str, default='',
-                   help='Path of the output folder')
-    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')
+                   help='Path of the output folder')  # path of the output folder
+    p.add_argument('-v', '--verbose', action='store_true', help='Print verbose')  # print verbose
+
     args = p.parse_args()
 
     in_folder = Path.cwd().resolve() / 'pgm' / 'data' / \
@@ -70,7 +63,7 @@ def main():
 
     # Step 2: Import the data
 
-    _, B, X, nodes = import_data_mtcov(in_folder,
+    A, B, X, nodes = import_data_mtcov(in_folder,
                                        adj_name=Path(args.adj_name),
                                        cov_name=Path(args.cov_name),
                                        ego=args.ego,

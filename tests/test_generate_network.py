@@ -23,8 +23,10 @@ class TestGMReciprocity(unittest.TestCase):
 
     def _run_test(self, gm, expected_values):
         # Call the respective method
-        G = gm()
-
+        outputs = gm()
+        # Unpack the outputs
+        G = outputs[0]
+        # Compute the reciprocity and sparsity coefficient
         Sparsity_cof = np.round(
             2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
 
@@ -157,6 +159,56 @@ class TestGMReciprocity(unittest.TestCase):
 
 
 class TestBaseSyntheticNetwork(unittest.TestCase):
+    def setUp(self):
+        self.N = 100
+        self.L = 1
+        self.K = 2
+        self.seed = 0
+        self.out_folder = "data/input/synthetic/"
+        self.output_net = True
+        self.show_details = True
+        self.show_plots = True
+        self.kwargs = {}
+        self.base_synthetic_network = BaseSyntheticNetwork(
+            self.N,
+            self.L,
+            self.K,
+            self.seed,
+            self.out_folder,
+            self.output_net,
+            self.show_details,
+            self.show_plots,
+            **self.kwargs)
+
+
+class TestBaseSyntheticNetwork(unittest.TestCase):
+    def setUp(self):
+        self.N = 100
+        self.L = 1
+        self.K = 2
+        self.seed = 0
+        self.out_folder = "data/input/synthetic/"
+        self.output_net = True
+        self.show_details = True
+        self.show_plots = True
+        self.kwargs = {}
+        self.base_synthetic_network = BaseSyntheticNetwork(
+            self.N,
+            self.L,
+            self.K,
+            self.seed,
+            self.out_folder,
+            self.output_net,
+            self.show_details,
+            self.show_plots,
+            **self.kwargs)
+
+
+class TestBaseSyntheticNetwork(unittest.TestCase):
+    """
+    Test cases for the BaseSyntheticNetwork class.
+    """
+
     def setUp(self):
         self.N = 100
         self.L = 1

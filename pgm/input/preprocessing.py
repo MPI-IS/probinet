@@ -4,7 +4,7 @@ The script facilitates the creation of both dense and sparse adjacency tensors, 
 weights, and ensures proper formatting of input data tensors.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
 from numpy import ndarray
@@ -17,7 +17,7 @@ from . import tools
 
 
 def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
-                   calculate_reciprocity: bool = True) -> Tuple[ndarray, Union[None, List[Any]]]:
+                   calculate_reciprocity: bool = True) -> Union[ndarray, Tuple[ndarray, List[Any]]]:
     """
     Create the numpy adjacency tensor of a networkX graph.
 

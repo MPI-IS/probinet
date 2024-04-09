@@ -1,6 +1,6 @@
 """
-    Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
-    The latent variables are related to community memberships and a pair interaction value.
+Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
+The latent variables are related to community memberships and a pair interaction value.
 """
 
 from __future__ import print_function
