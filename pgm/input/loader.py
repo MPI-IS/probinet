@@ -99,13 +99,13 @@ def import_data_mtcov(
         noselfloop: bool = True,
         verbose: bool = True) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
     """
-        Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
+    Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
 
-        Return the NetworkX graph, its numpy adjacency tensor and the dummy version of the design matrix.
+    Return the NetworkX graph, its numpy adjacency tensor and the dummy version of the design matrix.
 
-        Parameters
-        ----------
-        in_folder : str
+    Parameters
+    ----------
+    in_folder : str
                 Path of the folder containing the input files.
     adj_name : str
                Input file name of the adjacency tensor.
@@ -128,20 +128,20 @@ def import_data_mtcov(
     verbose : bool
               Flag to print details.
 
-        Returns
-        -------
-        A : list
-            List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
-        B : ndarray/sptensor
-            Graph adjacency tensor.
-        X_attr : DataFrame
-                 Pandas DataFrame object representing the one-hot encoding version of the design matrix.
-        nodes : list
-                List of nodes IDs.
+    Returns
+    -------
+    A : list
+        List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    B : ndarray/sptensor
+        Graph adjacency tensor.
+    X_attr : DataFrame
+             Pandas DataFrame object representing the one-hot encoding version of the design matrix.
+    nodes : list
+            List of nodes IDs.
     """
 
     # df_adj = pd.read_csv(in_folder + adj_name, index_col=0) # read adjacency file
-    df_adj = pd.read_csv(in_folder/ adj_name)  # read adjacency file
+    df_adj = pd.read_csv(in_folder / adj_name)  # read adjacency file
     print('\nAdjacency shape: {0}'.format(df_adj.shape))
 
     df_X = pd.read_csv(in_folder / cov_name)  # read the csv file with the covariates

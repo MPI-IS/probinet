@@ -1,6 +1,6 @@
 from pathlib import Path
+import shutil
 import sys
-import tempfile
 from unittest import mock, TestCase
 
 import networkx as nx
@@ -12,13 +12,14 @@ from pgm.main_MTCov import main
 
 class TestMTCovMain(TestCase):
 
-    def run(self, result=None):
-        # Create a temporary directory for the duration of the test
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            # Store the path to the temporary directory in an instance variable
-            self.temp_output_folder = Path(temp_output_folder)
-            # Call the parent class's run method to execute the test
-            super().run(result)
+    def setUp(self):
+        # Create a temporary output folder for testing
+        self.temp_output_folder = Path('./temp_MTCOV_output/')
+        self.temp_output_folder.mkdir()
+
+    def tearDown(self):
+        # Remove the temporary output folder after the test
+        shutil.rmtree(self.temp_output_folder)
 
     @mock.patch('pgm.model.mtcov.MTCov.fit')
     def test_main_with_no_parameters(self, mock_fit):
@@ -33,6 +34,7 @@ class TestMTCovMain(TestCase):
 
         expected_config = {
             "K": 2,
+            "gamma": 0.5,
             "rseed": 107261,
             "initialization": 0,
             "out_inference": True,
@@ -52,17 +54,23 @@ class TestMTCovMain(TestCase):
         # Compare the actual and expected configurations
         self.assertEqual(actual_config, expected_config)
 
-        # Get the arguments passed to the mock
-        called_args = mock_fit.call_args
-
-        # Check if the fit method is called with the correct values
-        for key in expected_config:
-            self.assertEqual(called_args.kwargs[key], expected_config[key])
-
-        # Check if specific keys are present in the kwargs
-        for key in ['data', 'data_X', 'nodes']:
-            self.assertIn(key, called_args.kwargs, f"{key} not found in called_kwargs")
-
+        # Check if the fit method is called with the correct value of K
+        mock_fit.assert_called_with(
+            data=mock.ANY,
+            data_X=mock.ANY,
+            nodes=mock.ANY,
+            flag_conv='log',
+            K=expected_config['K'],  # Check if K is passed as an argument
+            gamma=expected_config['gamma'],
+            assortative=expected_config['assortative'],
+            end_file=expected_config['end_file'],
+            files=expected_config['files'],
+            initialization=expected_config['initialization'],
+            out_folder=expected_config['out_folder'],
+            out_inference=expected_config['out_inference'],
+            rseed=expected_config['rseed'],
+            batch_size=mock.ANY
+        )
 
     @mock.patch('pgm.model.mtcov.MTCov.fit')
     @mock.patch('pgm.main_MTCov.import_data_mtcov',
@@ -79,27 +87,20 @@ class TestMTCovMain(TestCase):
         # Check that the import_data method is called
         mock_import_data.assert_called_once()
 
-        input_names = [
-            'data',
-            'data_X',
-            'flag_conv',
-            'nodes',
-            'batch_size',
-            'K',
-            'rseed',
-            'initialization',
-            'out_inference',
-            'out_folder',
-            'end_file',
-            'assortative',
-            'files'
-        ]
-
-        # Get the arguments passed to the mock
-        called_args = mock_fit.call_args
-
-        # Check that the right input names are passed to the fit method
-        assert set(called_args.kwargs.keys()) == set(input_names)
-
-        #  K has correct value too
-        called_args.kwargs['K'] = K
+        # Check if the fit method is called with the correct values
+        mock_fit.assert_called_with(
+            data=mock.ANY,
+            data_X=mock.ANY,
+            flag_conv=mock.ANY,
+            nodes=mock.ANY,
+            batch_size=mock.ANY,
+            K=K,  # Check if K is passed as an argument
+            gamma=mock.ANY,
+            rseed=mock.ANY,
+            initialization=mock.ANY,
+            out_inference=mock.ANY,
+            out_folder=mock.ANY,
+            end_file=mock.ANY,
+            assortative=mock.ANY,
+            files=mock.ANY,
+        )

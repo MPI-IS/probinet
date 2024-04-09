@@ -1,4 +1,4 @@
-K: 4
+K: 5
 assortative: false
 end_file: _JointCRep
 eta0: null
@@ -7,8 +7,9 @@ fix_communities: false
 fix_eta: false
 fix_w: false
 initialization: 0
-out_folder: ./JointCRep_output/
-out_inference: false
+num_realizations: 5
+out_folder: outputs/
+out_inference: true
 plot_loglik: false
-rseed: 0
+rseed: 10
 use_approximation: false

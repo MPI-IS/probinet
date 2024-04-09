@@ -2,7 +2,7 @@
 Test cases for the tools module.
 """
 import os
-import tempfile
+from pathlib import Path
 import unittest
 
 import networkx as nx
@@ -17,7 +17,7 @@ from pgm.input.tools import (
     normalize_nonzero_membership, output_adjacency, sptensor_from_dense_array, transpose_ij2,
     transpose_ij3, write_adjacency, write_design_Matrix)
 
-from .fixtures import decimal, rtol
+from .fixtures import BaseTest, decimal, rtol
 
 
 class TestTensors(unittest.TestCase):
@@ -114,10 +114,10 @@ class TestTensors(unittest.TestCase):
         # This gives: AttributeError: 'DataFrame' object has no attribute 'append'
         output_adjacency(A, out_folder, label)
 
-        self.assertTrue(os.path.exists(out_folder + label + '.dat'))
+        self.assertTrue(Path(out_folder + label + '.dat').is_file())
 
 
-class TestWriteDesignMatrix(unittest.TestCase):
+class TestWriteDesignMatrix(BaseTest):
     def setUp(self):
         self.metadata = {"node1": "metadata1", "node2": "metadata2"}
         self.perc = 0.5
@@ -128,14 +128,6 @@ class TestWriteDesignMatrix(unittest.TestCase):
         df.reset_index(inplace=True)
         df.columns = [self.nodeID, self.attr_name]
         self.expected_output = df
-
-    def run(self, result=None):
-        # Create a temporary directory for the duration of the test
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            # Store the path to the temporary directory in an instance variable
-            self.folder = temp_output_folder + '/'
-            # Call the parent class's run method to execute the test
-            super().run(result)
 
     def test_write_design_Matrix(self):
         write_design_Matrix(
@@ -152,7 +144,7 @@ class TestWriteDesignMatrix(unittest.TestCase):
 
 
 # @unittest.skip("Reason: Not implemented yet")
-class TestAdjacencyFunctions(unittest.TestCase):
+class TestAdjacencyFunctions(BaseTest):
     def setUp(self):
         self.A = [nx.MultiDiGraph(), nx.MultiDiGraph()]
         self.G = [nx.MultiDiGraph(), nx.MultiDiGraph()]
@@ -162,17 +154,9 @@ class TestAdjacencyFunctions(unittest.TestCase):
         self.ego = "source"
         self.alter = "target"
 
-    def run(self, result=None):
-        # Create a temporary directory for the duration of the test
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            # Store the path to the temporary directory in an instance variable
-            self.temp_output_folder = temp_output_folder
-            # Call the parent class's run method to execute the test
-            super().run(result)
-
     def test_write_adjacency(self):
-        write_adjacency(self.G, self.temp_output_folder, self.fname, self.ego, self.alter)
-        self.assertTrue(os.path.isfile(self.temp_output_folder + self.fname))
+        write_adjacency(self.G, self.folder, self.fname, self.ego, self.alter)
+        self.assertTrue((Path(self.folder) / self.fname).is_file())
 
     def test_build_edgelist(self):
         # Create a sparse tensor with known data
@@ -196,30 +180,22 @@ class TestAdjacencyFunctions(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_result)
 
 
-class TestOutputAdjacency(unittest.TestCase):
+class TestOutputAdjacency(BaseTest):
     def setUp(self):
         # Create a list of sparse matrices
         self.A = [coo_matrix(([1, 2, 3], ([0, 1, 2], [0, 1, 2])), shape=(3, 3))
                   for _ in range(3)]
         self.label = 'test_output_adjacency'
 
-    def run(self, result=None):
-        # Create a temporary directory for the duration of the test
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            # Store the path to the temporary directory in an instance variable
-            self.out_folder = temp_output_folder + '/'
-            # Call the parent class's run method to execute the test
-            super().run(result)
-
     def test_output_adjacency(self):
         # Call the function with the test inputs
-        output_adjacency(self.A, self.out_folder, self.label)
+        output_adjacency(self.A, self.folder, self.label)
 
         # Check if the output file exists
-        self.assertTrue(os.path.exists(self.out_folder + self.label + '.dat'))
+        self.assertTrue(Path(self.folder + self.label + '.dat').is_file())
 
         # Load the output file into a DataFrame
-        df = pd.read_csv(self.out_folder + self.label + '.dat', sep=' ')
+        df = pd.read_csv(self.folder + self.label + '.dat', sep=' ')
 
         # Create the expected DataFrame
         df_list = [pd.DataFrame({

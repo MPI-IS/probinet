@@ -12,6 +12,7 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 import sktensor as skt
 
+# pylint: disable=fixme
 
 def can_cast(string: Union[int, float, str]) -> bool:
     """

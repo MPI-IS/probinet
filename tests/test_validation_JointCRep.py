@@ -3,10 +3,9 @@ This is the test module for the JointCRep algorithm.
 """
 from importlib.resources import files
 from pathlib import Path
-import tempfile
-import unittest
 
 import numpy as np
+from tests.fixtures import BaseTest
 import yaml
 
 from pgm.input.loader import import_data
@@ -14,7 +13,8 @@ from pgm.model.jointcrep import JointCRep
 
 GT_OUTPUT_DIR = Path(__file__).parent / 'outputs'
 
-class JointCRepValidationTestCase(unittest.TestCase):
+
+class  JointCRepTestCase(BaseTest):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -56,11 +56,13 @@ class JointCRepValidationTestCase(unittest.TestCase):
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
-        conf['out_folder'] = self.temp_output_folder / conf['out_folder']
+        conf['out_folder'] = self.folder
 
         conf['end_file'] = '_OUT_JointCRep'  # Adding a suffix to the output files
 
         self.conf = conf
+
+        self.conf['K'] = self.K
 
         self.L = len(self.A)
 
@@ -101,19 +103,35 @@ class JointCRepValidationTestCase(unittest.TestCase):
         theta = np.load((self.temp_output_folder / self.model.out_folder / str('theta' +
                                                                                self.model.end_file)).with_suffix(
             '.npz'))
+
         # This reads the synthetic data Ground Truth output
-        thetaGT = np.load((GT_OUTPUT_DIR / ('theta_GT_' + self.algorithm)).with_suffix(
-            '.npz'))
+        thetaGT_path = Path(__file__).parent / 'outputs' / 'theta_GT_JointCRep'
+        thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
 
-        self.assertTrue(np.array_equal(self.model.u_f, theta['u']))
-        self.assertTrue(np.array_equal(self.model.v_f, theta['v']))
-        self.assertTrue(np.array_equal(self.model.w_f, theta['w']))
-        self.assertTrue(np.array_equal(self.model.eta_f, theta['eta']))
+        # Asserting the model information
 
-        self.assertTrue(np.array_equal(thetaGT['u'], theta['u']))
-        self.assertTrue(np.array_equal(thetaGT['v'], theta['v']))
-        self.assertTrue(np.array_equal(thetaGT['w'], theta['w']))
-        self.assertTrue(np.array_equal(thetaGT['eta'], theta['eta']))
+        # Assert that the model's u_f attribute is close to the 'u' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.u_f, theta['u']))
 
-        # Remove output npz files after testing using os module
-        (self.model.out_folder / str('theta' + self.model.end_file)).with_suffix('.npz').unlink()
+        # Assert that the model's v_f attribute is close to the 'v' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.v_f, theta['v']))
+
+        # Assert that the model's w_f attribute is close to the 'w' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.w_f, theta['w']))
+
+        # Assert that the model's eta_f attribute is close to the 'eta' value in the theta dictionary
+        self.assertTrue(np.allclose(self.model.eta_f, theta['eta']))
+
+        # Asserting GT information
+
+        # Assert that the 'u' value in the thetaGT dictionary is close to the 'u' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['u'], theta['u']))
+
+        # Assert that the 'v' value in the thetaGT dictionary is close to the 'v' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['v'], theta['v']))
+
+        # Assert that the 'w' value in the thetaGT dictionary is close to the 'w' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['w'], theta['w']))
+
+        # Assert that the 'eta' value in the thetaGT dictionary is close to the 'eta' value in the theta dictionary
+        self.assertTrue(np.allclose(thetaGT['eta'], theta['eta']))

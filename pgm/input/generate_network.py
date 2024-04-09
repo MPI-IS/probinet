@@ -5,6 +5,7 @@ It builds a directed, possibly weighted, network.
 from abc import ABCMeta
 import math
 import os
+from pathlib import Path
 import sys
 from typing import List, Optional, Tuple
 import warnings
@@ -121,8 +122,13 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                 'disassortative!')
         self.structure = structure
 
-    def reciprocity_planted_network(self, parameters: Optional[
-            Tuple[np.ndarray, np.ndarray, np.ndarray, float]] = None) -> nx.MultiDiGraph:
+    def reciprocity_planted_network(
+            self,
+            parameters: Optional[Tuple[np.ndarray,
+                                       np.ndarray,
+                                       np.ndarray,
+                                       float]] = None
+    ) -> Tuple[nx.MultiDiGraph, np.ndarray]:
         """
         Generate a directed, possibly weighted network by using the reciprocity generative model.
         Can be used to generate benchmarks for networks with reciprocity.
@@ -141,85 +147,109 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         -------
         G: MultiDigraph
            MultiDiGraph NetworkX object.
+        A: np.ndarray
+            The adjacency matrix of the generated network.
         """
 
+        # Create a random number generator with a specific seed
         prng = np.random.RandomState(self.seed)  # pylint: disable=no-member
 
-        # Set latent variables u, v, w
-
+        # Check if parameters are provided
         if parameters is not None:
+            # If parameters are provided, set u, v, w, and eta to the provided values
             self.u, self.v, self.w, self.eta = parameters
         else:
-            # equal-size unmixed group membership
+            # If parameters are not provided, initialize u, v, and w
+            # Calculate the size of each community
             size = int(self.N / self.K)
+
+            # Initialize u and v as zero matrices
             self.u = np.zeros((self.N, self.K))
             self.v = np.zeros((self.N, self.K))
+
+            # Loop over all nodes
             for i in range(self.N):
+                # Calculate the community index for the current node
                 q = int(math.floor(float(i) / float(size)))
+
+                # If the community index is equal to the number of communities
                 if q == self.K:
+                    # Assign the last community to the remaining nodes
                     self.u[i:, self.K - 1] = 1.
                     self.v[i:, self.K - 1] = 1.
                 else:
+                    # Assign the current community to the nodes in the current range
                     for j in range(q * size, q * size + size):
                         self.u[j, q] = 1.
                         self.v[j, q] = 1.
+
+            # Generate the affinity matrix w
             self.w = affinity_matrix(structure=self.structure,
                                      N=self.N,
                                      K=self.K,
                                      a=0.1,
                                      b=0.3)
 
-            # in case of overlapping
+            # Check if there is overlapping in the communities
             if self.over != 0.:
-                overlapping = int(
-                    self.N *
-                    self.over)  # number of nodes belonging to more communities
+                # Calculate the number of nodes belonging to more communities
+                overlapping = int(self.N * self.over)
+                # Randomly select 'overlapping' number of nodes
                 ind_over = np.random.randint(len(self.u), size=overlapping)
+
+                # Check the normalization method
                 if self.Normalization == 0:
-                    # u and v from a Dirichlet distribution
-                    self.u[ind_over] = prng.dirichlet(
-                        self.alpha * np.ones(self.K), overlapping)
+                    # If Normalization is 0, generate u and v from a Dirichlet distribution
+                    self.u[ind_over] = prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
                         prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+
+                    # If correlation is 1, ensure u and v are close
                     if self.corr == 1.:
                         assert np.allclose(self.u, self.v)
+
+                    # If correlation is greater than 0, normalize v
                     if self.corr > 0:
                         self.v = tl.normalize_nonzero_membership(self.v)
                 elif self.Normalization == 1:
-                    # u and v from a Gamma distribution
-                    self.u[ind_over] = prng.gamma(self.ag,
-                                                  1. / self.beta,
-                                                  size=(overlapping, self.K))
+                    # If Normalization is 1, generate u and v from a Gamma distribution
+                    self.u[ind_over] = prng.gamma(
+                        self.ag, 1. / self.beta, size=(overlapping, self.K))
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
-                        prng.gamma(self.ag, 1. / self.beta,
-                                   size=(overlapping, self.K))
+                        prng.gamma(self.ag, 1. / self.beta, size=(overlapping, self.K))
+
+                    # Normalize u and v
                     self.u = tl.normalize_nonzero_membership(self.u)
                     self.v = tl.normalize_nonzero_membership(self.v)
 
+        # Compute the expected number of edges between each pair of nodes
         M0 = tl.Exp_ija_matrix(self.u, self.v, self.w)  # whose elements are lambda0_{ij}
         np.fill_diagonal(M0, 0)
 
-        c = (self.ExpM * (1. - self.eta)) / M0.sum()  # constant to enforce sparsity
+        # Compute the constant to enforce sparsity in the network
+        c = (self.ExpM * (1. - self.eta)) / M0.sum()
 
+        # Compute the expected number of edges between each pair of nodes considering reciprocity
         MM = (M0 + self.eta * tl.transpose_ij2(M0)) / \
              (1. - self.eta * self.eta)  # whose elements are m_{ij}
         Mt = tl.transpose_ij2(MM)
         MM0 = M0.copy()  # to be not influenced by c_lambda
 
+        # Adjust the affinity matrix w and the expected number of edges M0 by the constant c
         if parameters is None:
             self.w *= c  # only w is impact by that, u and v have a constraint,
             # their sum over k should sum to 1
         M0 *= c
         M0t = tl.transpose_ij2(M0)  # whose elements are lambda0_{ji}
 
+        # Compute the expected number of edges between each pair of nodes considering reciprocity
         M = (M0 + self.eta * M0t) / (1. - self.eta * self.eta)  # whose elements are m_{ij}
         np.fill_diagonal(M, 0)
 
+        # Compute the expected reciprocity in the network
         rw = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())  # expected reciprocity
 
-        # Generate network G (and adjacency matrix A) using the latent variables,
-        # with the generative model (A_ij,A_ji) ~ P(A_ij|u,v,w,eta) P(A_ji|A_ij,u,v,w,eta)
-
+        # Generate the network G and the adjacency matrix A using the latent variables
         G = nx.MultiDiGraph()
         for i in range(self.N):
             G.add_node(i)
@@ -229,20 +259,28 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
             for j in range(i + 1, self.N):
                 r = prng.rand(1)[0]
                 if r < 0.5:
+                    # Draw the number of edges from node i to node j from a Poisson distribution
                     A_ij = prng.poisson(M[i, j], 1)[0]  # draw A_ij from P(A_ij) = Poisson(m_ij)
                     if A_ij > 0:
                         G.add_edge(i, j, weight=A_ij)
+                    # Compute the expected number of edges from node j to node i considering
+                    # reciprocity
                     lambda_ji = M0[j, i] + self.eta * A_ij
+                    # Draw the number of edges from node j to node i from a Poisson distribution
                     A_ji = prng.poisson(
                         lambda_ji, 1
                     )[0]  # draw A_ji from P(A_ji|A_ij) = Poisson(lambda0_ji + eta*A_ij)
                     if A_ji > 0:
                         G.add_edge(j, i, weight=A_ji)
                 else:
+                    # Draw the number of edges from node j to node i from a Poisson distribution
                     A_ji = prng.poisson(M[j, i], 1)[0]  # draw A_ij from P(A_ij) = Poisson(m_ij)
                     if A_ji > 0:
                         G.add_edge(j, i, weight=A_ji)
+                    # Compute the expected number of edges from node i to node j considering
+                    # reciprocity
                     lambda_ij = M0[i, j] + self.eta * A_ji
+                    # Draw the number of edges from node i to node j from a Poisson distribution
                     A_ij = prng.poisson(
                         lambda_ij, 1
                     )[0]  # draw A_ji from P(A_ji|A_ij) = Poisson(lambda0_ji + eta*A_ij)
@@ -251,24 +289,28 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                 counter += 1
                 totM += A_ij + A_ji
 
-        # keep largest connected component
+        # Keep only the largest connected component of the network
         Gc = max(nx.weakly_connected_components(G), key=len)
         nodes_to_remove = set(G.nodes()).difference(Gc)
         G.remove_nodes_from(list(nodes_to_remove))
 
+        # Update the list of nodes and the number of nodes
         nodes = list(G.nodes())
         self.u = self.u[nodes]
         self.v = self.v[nodes]
         self.N = len(nodes)
 
+        # Convert the network to a sparse adjacency matrix
         A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight='weight')
 
+        # Compute the average degree and the average weighted degree in the network
         Sparsity_cof = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
-
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
+        # Compute the proportion of bi-directional edges over the unordered pairs of nodes
         reciprocity_c = np.round(reciprocal_edges(G), 3)
 
+        # Print the details of the network if verbose is True
         if self.verbose:
             print(
                 f'Number of links in the upper triangular matrix: {triu(A, k=1).nnz}\n'
@@ -294,16 +336,21 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                 f'unordered pairs): '
                 f'{reciprocity_c}\n')
 
+        # Output the parameters of the network if output_parameters is True
         if self.output_parameters:
             self.output_results(nodes)
 
+        # Output the adjacency matrix of the network if output_adj is True
         if self.output_adj:
             self.output_adjacency(G, outfile=self.outfile_adj)
 
-        return G
+        return G, A
 
-    def planted_network_cond_independent(self, parameters: Optional[
-            Tuple[np.ndarray, np.ndarray, np.ndarray]] = None) -> nx.MultiDiGraph:
+    def planted_network_cond_independent(self,
+                                         parameters: Optional[Tuple[np.ndarray,
+                                                                    np.ndarray,
+                                                                    np.ndarray]] = None) -> Tuple[nx.MultiDiGraph,
+                                                                                                  np.ndarray]:
         """
         Generate a directed, possibly weighted network without using reciprocity.
         It uses conditionally independent A_ij from a Poisson | (u,v,w).
@@ -317,75 +364,98 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         -------
         G: MultiDigraph
            MultiDiGraph NetworkX object.
+        A: np.ndarray
+            The adjacency matrix of the generated network.
         """
 
+        # Create a random number generator with a specific seed
         prng = np.random.RandomState(self.seed)  # pylint: disable=no-member
 
         # Set latent variables u,v,w
-
         if parameters is not None:
+            # If parameters are provided, set u, v, w to the provided values
             self.u, self.v, self.w = parameters
         else:
-            # equal-size unmixed group membership
+            # If parameters are not provided, initialize u, v, and w
+            # Calculate the size of each community
             size = int(self.N / self.K)
+
+            # Initialize u and v as zero matrices
             self.u = np.zeros((self.N, self.K))
             self.v = np.zeros((self.N, self.K))
+
+            # Loop over all nodes
             for i in range(self.N):
+                # Calculate the community index for the current node
                 q = int(math.floor(float(i) / float(size)))
+
+                # If the community index is equal to the number of communities
                 if q == self.K:
+                    # Assign the last community to the remaining nodes
                     self.u[i:, self.K - 1] = 1.
                     self.v[i:, self.K - 1] = 1.
                 else:
+                    # Assign the current community to the nodes in the current range
                     for j in range(q * size, q * size + size):
                         self.u[j, q] = 1.
                         self.v[j, q] = 1.
+
+            # Generate the affinity matrix w
             self.w = affinity_matrix(structure=self.structure,
                                      N=self.N,
                                      K=self.K,
                                      a=0.1,
                                      b=0.3)
 
-            # in case of overlapping
+            # Check if there is overlapping in the communities
             if self.over != 0.:
-                overlapping = int(
-                    self.N *
-                    self.over)  # number of nodes belonging to more communities
+                # Calculate the number of nodes belonging to more communities
+                overlapping = int(self.N * self.over)
+                # Randomly select 'overlapping' number of nodes
                 ind_over = np.random.randint(len(self.u), size=overlapping)
+
+                # Check the normalization method
                 if self.Normalization == 0:
-                    # u and v from a Dirichlet distribution
-                    self.u[ind_over] = prng.dirichlet(
-                        self.alpha * np.ones(self.K), overlapping)
+                    # If Normalization is 0, generate u and v from a Dirichlet distribution
+                    self.u[ind_over] = prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
                         prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+
+                    # If correlation is 1, ensure u and v are close
                     if self.corr == 1.:
                         assert np.allclose(self.u, self.v)
+
+                    # If correlation is greater than 0, normalize v
                     if self.corr > 0:
                         self.v = tl.normalize_nonzero_membership(self.v)
                 elif self.Normalization == 1:
-                    # u and v from a Gamma distribution
-                    self.u[ind_over] = prng.gamma(self.ag,
-                                                  1. / self.beta,
-                                                  size=(overlapping, self.K))
+                    # If Normalization is 1, generate u and v from a Gamma distribution
+                    self.u[ind_over] = prng.gamma(
+                        self.ag, 1. / self.beta, size=(overlapping, self.K))
                     self.v[ind_over] = self.corr * self.u[ind_over] + (1. - self.corr) * \
-                        prng.gamma(self.ag, 1. / self.beta,
-                                   size=(overlapping, self.K))
+                        prng.gamma(self.ag, 1. / self.beta, size=(overlapping, self.K))
+
+                    # Normalize u and v
                     self.u = tl.normalize_nonzero_membership(self.u)
                     self.v = tl.normalize_nonzero_membership(self.v)
 
+        # Compute the expected number of edges between each pair of nodes
         M0 = tl.Exp_ija_matrix(self.u, self.v, self.w)  # whose elements are lambda0_{ij}
         np.fill_diagonal(M0, 0)
         M0t = tl.transpose_ij2(M0)  # whose elements are lambda0_{ji}
 
+        # Compute the expected reciprocity in the network
         rw = (M0 * M0t).sum() / M0.sum()  # expected reciprocity
 
+        # Compute the constant to enforce sparsity in the network
         c = self.ExpM / float(M0.sum())  # constant to enforce sparsity
+
+        # Adjust the affinity matrix w and the expected number of edges M0 by the constant c
         if parameters is None:
-            self.w *= c  # only w is impact by that, u and v have a constraint, their sum
-            # over k should sum to 1
+            self.w *= c  # only w is impact by that, u and v have a constraint, their sum over k should sum to 1
 
         # Generate network G (and adjacency matrix A) using the latent variable,
         # with the generative model (A_ij) ~ P(A_ij|u,v,w)
-
         G = nx.MultiDiGraph()
         for i in range(self.N):
             G.add_node(i)
@@ -407,20 +477,23 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         nodes_to_remove = set(G.nodes()).difference(Gc)
         G.remove_nodes_from(list(nodes_to_remove))
 
+        # Update the list of nodes and the number of nodes
         nodes = list(G.nodes())
         self.u = self.u[nodes]
         self.v = self.v[nodes]
         self.N = len(nodes)
 
+        # Convert the network to a sparse adjacency matrix
         A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight='weight')
 
-        Sparsity_cof = np.round(
-            2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
-
+        # Calculate the average degree and the average weighted degree in the graph
+        Sparsity_cof = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
+        # Calculate the proportion of bi-directional edges over the unordered pairs of nodes
         reciprocity_c = np.round(reciprocal_edges(G), 3)
 
+        # Print the details of the network if verbose is True
         if self.verbose:
             print(
                 f'Number of links in the upper triangular matrix: {triu(A, k=1).nnz}\n'
@@ -445,15 +518,18 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                 f'unordered pairs): '
                 f'{reciprocity_c}\n')
 
+        # Output the parameters of the network if output_parameters is True
         if self.output_parameters:
             self.output_results(nodes)
 
+        # Output the adjacency matrix of the network if output_adj is True
         if self.output_adj:
             self.output_adjacency(G, outfile=self.outfile_adj)
 
-        return G
+        return G, A
 
-    def planted_network_reciprocity_only(self, p: Optional[float] = None) -> nx.MultiDiGraph:
+    def planted_network_reciprocity_only(
+            self, p: Optional[float] = None) -> Tuple[nx.MultiDiGraph, np.ndarray]:
         """
         Generate a directed, possibly weighted network using only reciprocity.
         One of the directed-edges is generated with probability p, the other with eta*A_ji,
@@ -468,25 +544,33 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         -------
         G: MultiDigraph
            MultiDiGraph NetworkX object.
+        A: np.ndarray
+            The adjacency matrix of the generated network.
         """
 
+        # Create a random number generator with a specific seed
         prng = np.random.RandomState(self.seed)  # pylint: disable=no-member
 
+        # If p is not provided, calculate it based on eta, k, and N
         if p is None:
             p = (1. - self.eta) * self.k * 0.5 / (self.N - 1.)
 
-        # Generate network G (and adjacency matrix A)
-
+        # Initialize a directed graph G
         G = nx.MultiDiGraph()
         for i in range(self.N):
             G.add_node(i)
 
+        # Initialize total weight of the graph
         totM = 0
+
+        # Generate edges for the graph
         for i in range(self.N):
             for j in range(i + 1, self.N):
+                # Draw two random numbers from Poisson distribution
                 A0 = prng.poisson(p, 1)[0]
                 A1 = prng.poisson(p + A0, 1)[0]
                 r = prng.rand(1)[0]
+                # Add edges to the graph based on the drawn numbers
                 if r < 0.5:
                     if A0 > 0:
                         G.add_edge(i, j, weight=A0)
@@ -497,24 +581,29 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                         G.add_edge(j, i, weight=A0)
                     if A1 > 0:
                         G.add_edge(i, j, weight=A1)
+                # Update total weight of the graph
                 totM += A0 + A1
 
-        # keep largest connected component
+        # Keep only the largest connected component of the graph
         Gc = max(nx.weakly_connected_components(G), key=len)
         nodes_to_remove = set(G.nodes()).difference(Gc)
         G.remove_nodes_from(list(nodes_to_remove))
 
+        # Update the list of nodes and the number of nodes
         nodes = list(G.nodes())
         self.N = len(nodes)
 
+        # Convert the graph to a sparse adjacency matrix
         A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight='weight')
 
+        # Calculate the average degree and the average weighted degree in the graph
         Sparsity_cof = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
-
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
+        # Calculate the proportion of bi-directional edges over the unordered pairs of nodes
         reciprocity_c = np.round(reciprocal_edges(G), 3)
 
+        # Print the details of the graph if verbose is True
         if self.verbose:
             print(
                 f'Number of links in the upper triangular matrix: {triu(A, k=1).nnz}\n'
@@ -538,10 +627,11 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                 f'unordered pairs): '
                 f'{reciprocity_c}\n')
 
+        # Output the adjacency matrix of the graph if output_adj is True
         if self.output_adj:
             self.output_adjacency(G, outfile=self.outfile_adj)
 
-        return G
+        return G, A
 
     def output_results(self, nodes: List[int]) -> None:
         """
@@ -578,17 +668,34 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                  Name of the adjacency matrix.
         """
 
+        # Create a Path object for the output directory
+        out_folder_path = Path(self.out_folder)
+
+        # Create output dir if it does not exist
+        out_folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Check if the output file name is provided
         if outfile is None:
+            # If not provided, generate a default file name using the seed and average degree
             outfile = 'syn' + str(self.seed) + '_k' + str(int(self.k)) + '.dat'
 
+        # Get the list of edges from the graph along with their data
         edges = list(G.edges(data=True))
+
         try:
+            # Try to extract the weight of each edge
             data = [[u, v, d['weight']] for u, v, d in edges]
         except KeyError:
+            # If the weight is not available, assign a default weight of 1
             data = [[u, v, 1] for u, v, d in edges]
 
+        # Create a DataFrame from the edge data
         df = pd.DataFrame(data, columns=['source', 'target', 'w'], index=None)
+
+        # Save the DataFrame to a CSV file
         df.to_csv(self.out_folder + outfile, index=False, sep=' ')
+
+        # If verbose mode is enabled, print the location of the saved file
         if self.verbose:
             print(f'Adjacency matrix saved in: {self.out_folder + outfile}')
 
@@ -863,10 +970,6 @@ class StandardMMSBM(BaseSyntheticNetwork):
                 self.w *= c
 
         Y = self.prng.poisson(self.M)
-
-        # Create networkx DiGraph objects for each layer for easier manipulation
-
-        # Create networkx DiGraph objects for each layer for easier manipulation
 
         # Create networkx DiGraph objects for each layer for easier manipulation
 

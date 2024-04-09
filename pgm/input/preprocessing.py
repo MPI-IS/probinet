@@ -4,7 +4,7 @@ The script facilitates the creation of both dense and sparse adjacency tensors, 
 weights, and ensures proper formatting of input data tensors.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
 from numpy import ndarray
@@ -17,7 +17,7 @@ from . import tools
 
 
 def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
-                   calculate_reciprocity: bool = True) -> Tuple[ndarray, Union[None, List[Any]]]:
+                   calculate_reciprocity: bool = True) -> Union[ndarray, Tuple[ndarray, List[Any]]]:
     """
     Create the numpy adjacency tensor of a networkX graph.
 
@@ -41,9 +41,6 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
         If any graph in A has a different set of vertices than the first graph.
         If any weight in B is not an integer.
     """
-
-    def _calculate_reciprocity(B_layer):
-        return np.multiply(B_layer, B_layer.T).sum() / B_layer.sum()
 
     # Get the number of nodes in the first graph of the list A
     N = A[0].number_of_nodes()
@@ -81,20 +78,20 @@ def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
 
         # Calculate reciprocity for the current layer and append it to the rw list
         if calculate_reciprocity:
-            rw.append(_calculate_reciprocity(B[l]))
+            rw_layer = np.multiply(B[l], B[l].T).sum() / B[l].sum()
+            rw.append(rw_layer)
 
     if not calculate_reciprocity:
-        rw = None
+        rw = []
 
     return B, rw
-
 
 
 def build_sparse_B_from_A(A: List[nx.MultiDiGraph],
                           calculate_reciprocity: bool = False) -> Union[Tuple[sptensor,
                                                                               sptensor,
                                                                               ndarray,
-List[Any]], sptensor]:
+                                                                              List[Any]], sptensor]:
     """
     Create the sptensor adjacency tensor of a networkX graph.
 

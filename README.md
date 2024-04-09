@@ -14,6 +14,8 @@ synthetic data from latent variables.
 
 ## Installation
 
+This package requires Python 3.10. Please ensure you have this version before proceeding with the installation.
+
 To get started, follow these steps:
 
 1. Create a virtual environment. For example, using ``venv``::
@@ -32,22 +34,19 @@ To get started, follow these steps:
 
 ## Usage
 
-Run the `pgm` package as a whole with the `run_*` commands. Here is a list of supported commands:
-
-- `run_CRep`: Runs the `CRep` algorithm.
-- `run_JointCRep`: Runs the `JointCRep` algorithm.
-- `run_MTCov`: Runs the `MTCov` algorithm.
-
-For example, if you are interested in running the `CRep` algorithm, you can do it by running:
+Run the `pgm` package as a whole with the `run_model` command. A list of the parameters that can be passed as arguments is available by running::
 
 ```bash
-    run_CRep
+    run_model --help
 ```
-A list of the parameters that can be passed as arguments is available by running::
+
+To run a specific model, pass the model name as an argument with the `-a` flag. For example, to run the `CRep` model, use:
 
 ```bash
-    run_CRep --help
+    run_model -a CRep
 ```
+
+Similarly, you can run other models like `JointCRep` and `MTCov` by replacing `CRep` with the respective model name.
 
 ## Tests
 

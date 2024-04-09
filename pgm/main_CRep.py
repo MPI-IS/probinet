@@ -23,25 +23,22 @@ def main():
     p = ArgumentParser(description="Script to run the CRep algorithm.",
                        formatter_class=argparse.ArgumentDefaultsHelpFormatter
                        )
-
     # Add the command line arguments
-    p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'CRepnc', 'CRep0'],
-                   # TODO: add this: 'CRepnc', 'CRep0'
+    p.add_argument('-a', '--algorithm', type=str, choices=['CRep'],  # ,# TODO: add this: 'CRepnc', 'CRep0'
                    default='CRep',
-                   help='Choose the algorithm to run: CRep, CRepnc, CRep0.'
-                   )  # configuration
+                   help='Choose the algorithm to run: CRep, CRepnc, CRep0.')  # configuration
     p.add_argument('-K', '--K', type=int, default=None,
-                   help='Number of communities')
+                   help='Number of communities')  # number of communities
     p.add_argument('-A', '--adj', type=str, default='syn111.dat',
-                   help='Name of the network')
+                   help='Name of the network')  # name of the network
     p.add_argument('-f', '--in_folder', type=str, default='',
-                   help='Path of the input network')
+                   help='Path of the input network')  # path of the input network
     p.add_argument('-o', '-O', '--out_folder', type=str, default='',
-                   help='Path of the output folder')
+                   help='Path of the output folder')  # path of the output folder
     p.add_argument('-e', '--ego', type=str, default='source',
-                   help='Name of the source of the edge')
+                   help='Name of the source of the edge')  # name of the source of the edge
     p.add_argument('-t', '--alter', type=str, default='target',
-                   help='Name of the target of the edge')
+                   help='Name of the target of the edge')  # name of the target of the edge
     p.add_argument(
         '-d',
         '--force_dense',
@@ -64,9 +61,7 @@ def main():
         'input' if args.in_folder == '' else Path(args.in_folder)
     adj = Path(args.adj)
 
-    # Import data:
     network = in_folder / adj  # network complete path
-
     A, B, B_T, data_T_vals = import_data(
         network,
         ego=ego,
@@ -105,9 +100,10 @@ def main():
     with open(output_config_path, 'w', encoding='utf8') as f:
         yaml.dump(conf, f)
 
+    # Run CRep
     # Step 5: Run CRep
 
-    if args.verbose:  # TODO: Add a logger
+    if args.verbose:
         print(f'\n### Run {args.algorithm} ###')
     model = CRep()
     time_start = time.time()
