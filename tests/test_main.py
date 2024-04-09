@@ -1,5 +1,4 @@
 import sys
-import tempfile
 from unittest import mock
 
 import networkx as nx
@@ -11,10 +10,6 @@ from pgm.main import main as single_main
 
 
 class TestMain(BaseTest):
-    def run(self, result=None):
-        with tempfile.TemporaryDirectory() as temp_output_folder:
-            self.temp_output_folder = temp_output_folder
-            super().run(result)
 
     def setUp(self):
         self.expected_config = {}
@@ -23,10 +18,10 @@ class TestMain(BaseTest):
         self.K_values = {}
 
     def main_with_no_parameters(self, algorithm, mock_fit, main_function):
-        sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.temp_output_folder)]
+        sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.folder)]
         main_function()
         mock_fit.assert_called_once()
-        config_file_path = self.temp_output_folder + '/setting_' + algorithm + '.yaml'
+        config_file_path = self.folder + '/setting_' + algorithm + '.yaml'
         with open(config_file_path, 'r', encoding='utf8') as f:
             actual_config = yaml.safe_load(f)
         self.assertEqual(actual_config, self.expected_config)
@@ -38,7 +33,7 @@ class TestMain(BaseTest):
 
     def main_with_custom_parameters(self, algorithm, mock_import_data, mock_fit, main_function):
         K = self.K_values
-        sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.temp_output_folder),
+        sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.folder),
                     '-K', str(K), '-F', 'deltas', '-A', 'custom_network.dat']
         main_function()
         mock_import_data.assert_called_once()
@@ -59,7 +54,7 @@ class TestMainCRep(TestMain):
             'files': 'config/data/input/theta_gt111.npz',
             'fix_eta': False,
             'initialization': 0,
-            'out_folder': str(self.temp_output_folder),
+            'out_folder': str(self.folder),
             'out_inference': True,
             'rseed': 0,
             'undirected': False
@@ -102,7 +97,7 @@ class TestMainJointCRep(TestMain):
     def setUp(self):
         super().setUp()
         self.expected_config = {
-            'K': 4,
+            'K': 2,
             'assortative': False,
             'end_file': '_JointCRep',
             'eta0': None,
@@ -111,10 +106,8 @@ class TestMainJointCRep(TestMain):
             'fix_eta': False,
             'fix_w': False,
             'initialization': 0,
-            'num_realizations': 3,
-            'out_folder': self.temp_output_folder,
+            'out_folder': self.folder,
             'out_inference': True,
-            'plot_loglik': False,
             'rseed': 10,
             'use_approximation': False,
         }
@@ -137,9 +130,7 @@ class TestMainJointCRep(TestMain):
             'fix_communities',
             'fix_w',
             'use_approximation',
-            'files',
-            'plot_loglik',
-            'num_realizations',
+            'files'
         ]
 
         self.K_values = 5
@@ -165,7 +156,7 @@ class TestMainMTCov(TestMain):
             "rseed": 107261,
             "initialization": 0,
             "out_inference": True,
-            "out_folder": str(self.temp_output_folder),
+            "out_folder": str(self.folder),
             "end_file": "_MTCov",
             "assortative": False,
             "files": "../data/input/theta.npz",

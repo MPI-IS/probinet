@@ -2,7 +2,7 @@
 Functions for handling the data.
 """
 from importlib.resources import files
-import os
+import logging
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
@@ -13,7 +13,7 @@ import pandas as pd
 from sktensor import sptensor
 
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
-from .stats import print_graph_stat
+from .stats import print_graph_stat, print_graph_stat_MTCov
 
 
 def import_data(dataset: str,
@@ -22,7 +22,6 @@ def import_data(dataset: str,
                 force_dense: bool = True,
                 undirected=False,
                 noselfloop=True,
-                verbose=True,
                 binary=True,
                 header: Optional[int] = None) -> Tuple[
         List, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
@@ -58,31 +57,28 @@ def import_data(dataset: str,
 
     # read adjacency file
     df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
-    if verbose:  # TODO: Add a logger
-        print(f"{dataset} shape: {df_adj.shape}")
-    if verbose:
-        print(f"{dataset} shape: {df_adj.shape}")
-
-    # A = read_graph(df_adj=df_adj, ego=ego, alter=alter, noselfloop=True)
+    logging.debug('Read adjacency file from %s. The shape of the data is %s.', dataset, df_adj.shape)
     A = read_graph(
         df_adj=df_adj,
         ego=ego,
         alter=alter,
         undirected=undirected,
         noselfloop=noselfloop,
-        verbose=verbose,
         binary=binary)
     nodes = list(A[0].nodes())
-    if verbose:
-        print('\nNumber of nodes =', len(nodes))
-        print('Number of layers =', len(A))
-    # save the network in a tensor
+
+    # Save the network in a tensor
     if force_dense:
         B, rw = build_B_from_A(A, nodes=nodes)
         B_T, data_T_vals = None, None
     else:
         B, B_T, data_T_vals, rw = build_sparse_B_from_A(A, calculate_reciprocity=True)
-    if verbose:
+
+    # Get the current logging level
+    current_level = logging.getLogger().getEffectiveLevel()
+
+    # Check if the current level is INFO or lower
+    if current_level <= logging.DEBUG:
         print_graph_stat(A, rw)
 
     return A, B, B_T, data_T_vals
@@ -98,8 +94,7 @@ def import_data_mtcov(
         attr_name: str = 'Metadata',
         undirected: bool = False,
         force_dense: bool = True,
-        noselfloop: bool = True,
-        verbose: bool = True) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
+        noselfloop: bool = True) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
     """
     Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
 
@@ -127,8 +122,6 @@ def import_data_mtcov(
                   If set to True, the algorithm is forced to consider a dense adjacency tensor.
     noselfloop : bool
                  If set to True, the algorithm removes the self-loops.
-    verbose : bool
-              Flag to print details.
 
     Returns
     -------
@@ -155,13 +148,14 @@ def import_data_mtcov(
 
     # Check if in_folder is a package data path or a file path
     in_folder_path = get_data_path(in_folder)
-    
+
     # Read the adjacency file
-    df_adj = pd.read_csv(in_folder_path/ adj_name)  # read adjacency file
-    print('\nAdjacency shape: {0}'.format(df_adj.shape))
+    logging.debug("Reading adjacency file...")
+    df_adj = pd.read_csv(in_folder_path / adj_name)  # read adjacency file
+    logging.debug('Adjacency shape: %s', df_adj.shape)
 
     df_X = pd.read_csv(in_folder_path / cov_name)  # read the csv file with the covariates
-    print('Indiv shape: ', df_X.shape)
+    logging.debug('Indiv shape: %s', df_X.shape)
 
     # create the graph adding nodes and edges
     A = read_graph(
@@ -170,14 +164,16 @@ def import_data_mtcov(
         alter=alter,
         undirected=undirected,
         noselfloop=noselfloop,
-        verbose=verbose,
         binary=False)
 
     nodes = list(A[0].nodes)
-    print('\nNumber of nodes =', len(nodes))
-    print('Number of layers =', len(A))
-    if verbose:
-        print_graph_stat(A)
+
+    # Get the current logging level
+    current_level = logging.getLogger().getEffectiveLevel()
+
+    # Check if the current level is INFO or lower
+    if current_level <= logging.DEBUG:
+        print_graph_stat_MTCov(A)
 
     # save the multilayer network in a tensor with all layers
     if force_dense:
@@ -186,7 +182,7 @@ def import_data_mtcov(
         B = build_sparse_B_from_A(A)
 
     # read the design matrix with covariates
-    X_attr = read_design_matrix(df_X, nodes, attribute=attr_name, ego=egoX, verbose=verbose)
+    X_attr = read_design_matrix(df_X, nodes, attribute=attr_name, ego=egoX)
 
     return A, B, X_attr, nodes
 
@@ -197,7 +193,6 @@ def read_graph(
         alter: str = 'target',
         undirected: bool = False,
         noselfloop: bool = True,
-        verbose: bool = True,
         binary: bool = True) -> List:
     """
     Create the graph by adding edges and nodes.
@@ -216,8 +211,6 @@ def read_graph(
                  If set to True, the algorithm considers an undirected graph.
     noselfloop: bool
                  If set to True, the algorithm removes the self-loops.
-    verbose: bool
-              Flag to print details.
     binary: bool
              If set to True, read the graph with binary edges.
 
@@ -230,8 +223,7 @@ def read_graph(
     # build nodes
     egoID = df_adj[ego].unique()
     alterID = df_adj[alter].unique()
-    nodes = list(set(egoID).union(set(alterID)))
-    nodes.sort()
+    nodes = sorted(set(egoID).union(set(alterID)))
 
     L = df_adj.shape[1] - 2  # number of layers
     # build the multilayer NetworkX graph: create a list of graphs, as many
@@ -241,8 +233,7 @@ def read_graph(
     else:
         A = [nx.MultiDiGraph() for _ in range(L)]
 
-    if verbose:
-        print('Creating the network ...', end=' ')
+    logging.debug('Creating the network ...')
     # set the same set of nodes and order over all layers
     for l in range(L):
         A[l].add_nodes_from(nodes)
@@ -266,8 +257,7 @@ def read_graph(
 
     # remove self-loops
     if noselfloop:
-        if verbose:
-            print('Removing self loops')
+        logging.debug('Removing self loops')
         for l in range(L):
             A[l].remove_edges_from(list(nx.selfloop_edges(A[l])))
 
@@ -277,8 +267,7 @@ def read_graph(
 def read_design_matrix(df_X: pd.DataFrame,
                        nodes: List,
                        attribute: Union[str, None] = None,
-                       ego: str = 'Name',
-                       verbose: bool = True):
+                       ego: str = 'Name'):
     """
         Create the design matrix with the one-hot encoding of the given attribute.
 
@@ -292,14 +281,13 @@ def read_design_matrix(df_X: pd.DataFrame,
                     Name of the attribute to consider in the analysis.
         ego : str
               Name of the column to consider as node IDs in the design matrix.
-        verbose : bool
-                  Flag to print details.
 
         Returns
         -------
         X_attr : DataFrame
                  Pandas DataFrame that represents the one-hot encoding version of the design matrix.
     """
+    logging.debug("Reading the design matrix...")
 
     X = df_X[df_X[ego].isin(nodes)]  # filter nodes
     X = X.set_index(ego).loc[nodes].reset_index()  # sort by nodes
@@ -308,10 +296,9 @@ def read_design_matrix(df_X: pd.DataFrame,
         X_attr = pd.get_dummies(X.iloc[:, 1])  # gets the first columns after the ego
     else:  # use one attribute as it is
         X_attr = pd.get_dummies(X[attribute])
-    print('\nDesign matrix shape: ', X_attr.shape)
 
-    if verbose:
-        print('Distribution of attribute {0}: '.format(attribute))
-        print(np.sum(X_attr, axis=0))
+    logging.debug('Design matrix shape: %s', X_attr.shape)
+    logging.debug('Distribution of attribute %s:', attribute)
+    logging.debug('%s', np.sum(X_attr, axis=0))
 
     return X_attr

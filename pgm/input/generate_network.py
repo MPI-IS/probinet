@@ -3,6 +3,7 @@ Class definition of the reciprocity generative model with the member functions r
 It builds a directed, possibly weighted, network.
 """
 from abc import ABCMeta
+import logging
 import math
 import os
 from pathlib import Path
@@ -22,7 +23,9 @@ from ..model.jointcrep import transpose_tensor
 from ..output.evaluate import _lambda0_full
 from ..output.plot import plot_A
 from .stats import print_graph_stat, reciprocal_edges
-from .tools import check_symmetric, Exp_ija_matrix, normalize_nonzero_membership, output_adjacency
+from .tools import (
+    check_symmetric, Exp_ija_matrix, log_and_raise_error, normalize_nonzero_membership,
+    output_adjacency)
 
 # TODO: add type hints into a separte script
 
@@ -74,8 +77,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                  out_folder: str = '../data/output/real_data/cv/',
                  output_parameters: bool = False,
                  output_adj: bool = False,
-                 outfile_adj: str = 'None',
-                 verbose: bool = False):
+                 outfile_adj: str = 'None'):
         self.N = N  # number of nodes
         self.K = K  # number of communities
         self.k = k  # average degree
@@ -88,10 +90,8 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         self.output_parameters = output_parameters  # flag for storing the parameters
         self.output_adj = output_adj  # flag for storing the generated adjacency matrix
         self.outfile_adj = outfile_adj  # name for saving the adjacency matrix
-        self.verbose = verbose  # flag to print details
         if (eta < 0) or (eta >= 1):  # reciprocity coefficient
-            raise ValueError(
-                'The reciprocity coefficient eta has to be in [0, 1)!')
+            log_and_raise_error(ValueError, 'The reciprocity coefficient eta has to be in [0, 1)!')
         self.eta = eta
         if ExpM is None:  # expected number of edges
             self.ExpM = int(self.N * self.k / 2.)
@@ -99,27 +99,28 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
             self.ExpM = int(ExpM)
             self.k = 2 * self.ExpM / float(self.N)
         if (over < 0) or (over > 1):  # fraction of nodes with mixed membership
-            raise ValueError('The over parameter has to be in [0, 1]!')
+            log_and_raise_error(ValueError, 'The overlapping parameter has to be in [0, 1]!')
         self.over = over
         if (corr < 0) or (
                 corr
                 > 1):  # correlation between u and v synthetically generated
-            raise ValueError(
-                'The correlation parameter corr has to be in [0, 1]!')
+            log_and_raise_error(ValueError, 'The correlation parameter corr has to be in [0, 1]!')
+
         self.corr = corr
         if Normalization not in {
             0, 1
         }:  # indicator for choosing how to generate the latent variables
-            raise ValueError(
-                'The Normalization parameter can be either 0 or 1! It is used as an indicator for '
-                'generating the membership matrices u and v from a Dirichlet or a Gamma '
+            message = (
+                'The Normalization parameter can be either 0 or 1! It is used as an '
+                'indicator for generating the membership matrices u and v from a Dirichlet or a Gamma '
                 'distribution, respectively. It is used when there is overlapping.')
+            log_and_raise_error(ValueError, message)
         self.Normalization = Normalization
         if structure not in {'assortative', 'disassortative'
                              }:  # structure of the affinity matrix W
-            raise ValueError(
-                'The structure of the affinity matrix w can be either assortative or '
-                'disassortative!')
+            message = ('The structure of the affinity matrix w can be either assortative or '
+                       'disassortative!')
+            log_and_raise_error(ValueError, message)
         self.structure = structure
 
     def reciprocity_planted_network(
@@ -145,7 +146,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
 
         Returns
         -------
-        G: MultiDigraph
+        G: MultiDiGraph
            MultiDiGraph NetworkX object.
         A: np.ndarray
             The adjacency matrix of the generated network.
@@ -247,7 +248,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         np.fill_diagonal(M, 0)
 
         # Compute the expected reciprocity in the network
-        rw = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())  # expected reciprocity
+        Exp_r = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())  # expected reciprocity
 
         # Generate the network G and the adjacency matrix A using the latent variables
         G = nx.MultiDiGraph()
@@ -307,34 +308,29 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         Sparsity_cof = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
         ave_w_deg = np.round(2 * totM / float(G.number_of_nodes()), 3)
 
-        # Compute the proportion of bi-directional edges over the unordered pairs of nodes
-        reciprocity_c = np.round(reciprocal_edges(G), 3)
+        # Compute the weighted reciprocity
+        rw = np.multiply(A, A.T).sum() / A.sum()
 
-        # Print the details of the network if verbose is True
-        if self.verbose:
-            print(
-                f'Number of links in the upper triangular matrix: {triu(A, k=1).nnz}\n'
-                f'Number of links in the lower triangular matrix: {tril(A, k=-1).nnz}'
-            )
-            print(
-                f'Sum of weights in the upper triangular matrix: '
-                f'{np.round(triu(A, k=1).sum(), 2)}\n'
-                f'Sum of weights in the lower triangular matrix: '
-                f'{np.round(tril(A, k=-1).sum(), 2)}\n'
-                f'Number of possible unordered pairs: {counter}')
-            print(
-                f'Removed {len(nodes_to_remove)} nodes, because not part of the largest connected '
-                f'component'
-            )
-            print(f'Number of nodes: {G.number_of_nodes()} \n'
-                  f'Number of edges: {G.number_of_edges()}')
-            print(f'Average degree (2E/N): {Sparsity_cof}')
-            print(f'Average weighted degree (2M/N): {ave_w_deg}')
-            print(f'Expected reciprocity: {np.round(rw, 3)}')
-            print(
-                f'Reciprocity (intended as the proportion of bi-directional edges over the  '
-                f'unordered pairs): '
-                f'{reciprocity_c}\n')
+        logging.info('Number of links in the upper triangular matrix: %s', 
+                     triu(A, k=1).nnz)
+        logging.info('Number of links in the lower triangular matrix: %s',
+                     tril(A, k=-1).nnz)
+        logging.info('Sum of weights in the upper triangular matrix: %s',
+                     np.round(triu(A, k=1).sum(), 2))
+        logging.info('Sum of weights in the lower triangular matrix: %s',
+                     np.round(tril(A, k=-1).sum(), 2))
+        logging.info('Number of possible unordered pairs: %s', counter)
+        logging.info('Removed %s nodes, because not part of the largest connected component',
+                     len(nodes_to_remove))
+        logging.info('Number of nodes: %s', G.number_of_nodes())
+        logging.info('Number of edges: %s', G.number_of_edges())
+        logging.info('Average degree (2E/N): %s', Sparsity_cof)
+        logging.info('Average weighted degree (2M/N): %s', ave_w_deg)
+        logging.info('Expected reciprocity: %s', np.round(Exp_r, 3))
+        logging.info('Reciprocity (networkX) = %s',
+                     np.round(nx.reciprocity(G), 3))
+        logging.info('Reciprocity (considering the weights of the edges) = %s',
+                     np.round(rw, 3))
 
         # Output the parameters of the network if output_parameters is True
         if self.output_parameters:
@@ -493,30 +489,22 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         # Calculate the proportion of bi-directional edges over the unordered pairs of nodes
         reciprocity_c = np.round(reciprocal_edges(G), 3)
 
-        # Print the details of the network if verbose is True
-        if self.verbose:
-            print(
-                f'Number of links in the upper triangular matrix: {triu(A, k=1).nnz}\n'
-                f'Number of links in the lower triangular matrix: {tril(A, k=-1).nnz}'
-            )
-            print(
-                f'Sum of weights in the upper triangular matrix: '
-                f'{np.round(triu(A, k=1).sum(), 2)}\n'
-                f'Sum of weights in the lower triangular matrix: '
-                f'{np.round(tril(A, k=-1).sum(), 2)}')
-            print(
-                f'Removed {len(nodes_to_remove)} nodes, because not part of the largest '
-                f'connected component'
-            )
-            print(f'Number of nodes: {G.number_of_nodes()} \n'
-                  f'Number of edges: {G.number_of_edges()}')
-            print(f'Average degree (2E/N): {Sparsity_cof}')
-            print(f'Average weighted degree (2M/N): {ave_w_deg}')
-            print(f'Expected reciprocity: {np.round(rw, 3)}')
-            print(
-                f'Reciprocity (intended as the proportion of bi-directional edges over the '
-                f'unordered pairs): '
-                f'{reciprocity_c}\n')
+        logging.info('Number of links in the upper triangular matrix: %s', triu(A, k=1).nnz)
+        logging.info('Number of links in the lower triangular matrix: %s', tril(A, k=-1).nnz)
+        logging.info('Sum of weights in the upper triangular matrix: %s',
+                     np.round(triu(A, k=1).sum(), 2))
+        logging.info('Sum of weights in the lower triangular matrix: %s', np.round(tril(A, k=-1).sum(), 2))
+        logging.info('Removed %s nodes, because not part of the largest connected component',
+                     len(nodes_to_remove))
+        logging.info('Number of nodes: %s',
+                     G.number_of_nodes())
+        logging.info('Number of edges: %s',
+                     G.number_of_edges())
+        logging.info('Average degree (2E/N): %s', Sparsity_cof)
+        logging.info('Average weighted degree (2M/N): %s', ave_w_deg)
+        logging.info('Expected reciprocity: %s', np.round(rw, 3))
+        logging.info('Reciprocity (intended as the proportion of bi-directional edges over the '
+                     'unordered pairs): %s', reciprocity_c)
 
         # Output the parameters of the network if output_parameters is True
         if self.output_parameters:
@@ -603,29 +591,22 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         # Calculate the proportion of bi-directional edges over the unordered pairs of nodes
         reciprocity_c = np.round(reciprocal_edges(G), 3)
 
-        # Print the details of the graph if verbose is True
-        if self.verbose:
-            print(
-                f'Number of links in the upper triangular matrix: {triu(A, k=1).nnz}\n'
-                f'Number of links in the lower triangular matrix: {tril(A, k=-1).nnz}'
-            )
-            print(
-                f'Sum of weights in the upper triangular matrix: '
-                f'{np.round(triu(A, k=1).sum(), 2)}\n'
-                f'Sum of weights in the lower triangular matrix: '
-                f'{np.round(tril(A, k=-1).sum(), 2)}')
-            print(
-                f'Removed {len(nodes_to_remove)} nodes, because not part of the largest connected '
-                f'component'
-            )
-            print(f'Number of nodes: {G.number_of_nodes()} \n'
-                  f'Number of edges: {G.number_of_edges()}')
-            print(f'Average degree (2E/N): {Sparsity_cof}')
-            print(f'Average weighted degree (2M/N): {ave_w_deg}')
-            print(
-                f'Reciprocity (intended as the proportion of bi-directional edges over the '
-                f'unordered pairs): '
-                f'{reciprocity_c}\n')
+        logging.info('Number of links in the upper triangular matrix: %s',
+                     triu(A, k=1).nnz)
+        logging.info('Number of links in the lower triangular matrix: %s',
+                     tril(A, k=-1).nnz)
+        logging.info('Sum of weights in the upper triangular matrix: %s',
+                     np.round(triu(A, k=1).sum(), 2))
+        logging.info('Sum of weights in the lower triangular matrix: %s',
+                     np.round(tril(A, k=-1).sum(), 2))
+        logging.info('Removed %s nodes, because not part of the largest connected component',
+                     len(nodes_to_remove))
+        logging.info('Number of nodes: %s', G.number_of_nodes())
+        logging.info('Number of edges: %s', G.number_of_edges())
+        logging.info('Average degree (2E/N): %s', Sparsity_cof)
+        logging.info('Average weighted degree (2M/N): %s', ave_w_deg)
+        logging.info('Reciprocity (intended as the proportion of bi-directional edges over the '
+                     'unordered pairs): %s', reciprocity_c)
 
         # Output the adjacency matrix of the graph if output_adj is True
         if self.output_adj:
@@ -651,9 +632,8 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                             w=self.w,
                             eta=self.eta,
                             nodes=nodes)
-        if self.verbose:
-            print(f'Parameters saved in: {output_parameters}.npz')
-            print('To load: theta=np.load(filename), then e.g. theta["u"]')
+        logging.info('Parameters saved in: %s', output_parameters + '.npz')
+        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
 
     def output_adjacency(self, G: nx.MultiDiGraph, outfile: Optional[str] = None) -> None:
         """
@@ -695,9 +675,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         # Save the DataFrame to a CSV file
         df.to_csv(self.out_folder + outfile, index=False, sep=' ')
 
-        # If verbose mode is enabled, print the location of the saved file
-        if self.verbose:
-            print(f'Adjacency matrix saved in: {self.out_folder + outfile}')
+        logging.info('Adjacency matrix saved in: %s',self.out_folder + outfile)
 
 
 def affinity_matrix(structure: str = 'assortative',
@@ -739,8 +717,9 @@ def affinity_matrix(structure: str = 'assortative',
         np.fill_diagonal(p, a * p1 * np.ones(K))  # secondary-probabilities
 
     else:
-        raise ValueError(
-            'The structure of the affinity matrix w can be either assortative or disassortative!')
+        message = ('The structure of the affinity matrix w can be either assortative or '
+                   'disassortative!')
+        log_and_raise_error(ValueError, message)
 
     return p
 
@@ -771,8 +750,7 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
 
         # Set seed random number generator
         self.seed = seed
-        self.eta = eta # TODO: Check with martina if adding this here makes sense or it is in the
-        # kwargs
+        self.eta = eta
         self.prng = np.random.RandomState(self.seed)
 
         self.out_folder = out_folder
@@ -820,11 +798,10 @@ class StandardMMSBM(BaseSyntheticNetwork):
         if "avg_degree" in kwargs:
             avg_degree = kwargs["avg_degree"]
             if avg_degree <= 0:  # (in = out) average degree
-                err_msg = "The average degree has to be greater than 0.!"
-                raise ValueError(err_msg)
+                log_and_raise_error(ValueError, "The average degree has to be greater than 0.!")
         else:
-            msg = f"avg_degree parameter was not set. Defaulting to avg_degree={DEFAULT_AVG_DEGREE}"
-            warnings.warn(msg)
+            message = f"avg_degree parameter was not set. Defaulting to avg_degree={DEFAULT_AVG_DEGREE}"
+            logging.warning(message)
             avg_degree = DEFAULT_AVG_DEGREE
         self.avg_degree = avg_degree
         self.ExpEdges = int(self.avg_degree * self.N * 0.5)
@@ -832,8 +809,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
         if "is_sparse" in kwargs:
             is_sparse = kwargs["is_sparse"]
         else:
-            msg = f"is_sparse parameter was not set. Defaulting to is_sparse={DEFAULT_IS_SPARSE}"
-            warnings.warn(msg)
+            message = f"is_sparse parameter was not set. Defaulting to is_sparse={DEFAULT_IS_SPARSE}"
+            logging.warning(message)
             is_sparse = DEFAULT_IS_SPARSE
         self.is_sparse = is_sparse
 
@@ -841,8 +818,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
             label = kwargs["label"]
         else:
             try:
-                msg = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta_seed"
-                warnings.warn(msg)
+                message = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta_seed"
+                logging.warning(message)
                 label = '_'.join(
                     [
                         str(), str(
@@ -853,8 +830,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
                             self.eta), str(
                             self.seed)])
             except AttributeError:
-                msg = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_seed"
-                warnings.warn(msg)
+                message = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_seed"
+                logging.warning(message)
                 label = '_'.join([str(), str(self.N), str(self.L), str(
                     self.K), str(self.avg_degree), str(self.seed)])
         self.label = label
@@ -863,14 +840,14 @@ class StandardMMSBM(BaseSyntheticNetwork):
 
         if "perc_overlapping" in kwargs:
             perc_overlapping = kwargs["perc_overlapping"]
-            if (perc_overlapping < 0) or (perc_overlapping >
-                                          1):  # fraction of nodes with mixed membership
-                err_msg = "The percentage of overlapping nodes has to be in [0, 1]!"
-                raise ValueError(err_msg)
+            if (perc_overlapping < 0) or (
+                    perc_overlapping > 1):  # fraction of nodes with mixed membership
+                log_and_raise_error(ValueError, "The percentage of overlapping nodes has to be in  "
+                                                "[0, 1]!")
         else:
-            msg = (f"perc_overlapping parameter was not set. Defaulting to perc_overlapping"
-                   f"={DEFAULT_PERC_OVERLAPPING}")
-            warnings.warn(msg)
+            message = (f"perc_overlapping parameter was not set. Defaulting to perc_overlapping"
+                       f"={DEFAULT_PERC_OVERLAPPING}")
+            logging.warning(message)
             perc_overlapping = DEFAULT_PERC_OVERLAPPING
         self.perc_overlapping = perc_overlapping
 
@@ -879,34 +856,32 @@ class StandardMMSBM(BaseSyntheticNetwork):
             if "correlation_u_v" in kwargs:
                 correlation_u_v = kwargs["correlation_u_v"]
                 if (correlation_u_v < 0) or (correlation_u_v > 1):
-                    err_msg = "The correlation between u and v has to be in [0, 1]!"
-                    raise ValueError(err_msg)
+                    log_and_raise_error(ValueError, "The correlation between u and v has to be in [0, 1]!")
             else:
-                msg = (f"correlation_u_v parameter for overlapping communities was not set. "
-                       f"Defaulting to corr={DEFAULT_CORRELATION_U_V}")
-                warnings.warn(msg)
+                message = (f"correlation_u_v parameter for overlapping communities was not set. "
+                           f"Defaulting to corr={DEFAULT_CORRELATION_U_V}")
+                logging.warning(message)
                 correlation_u_v = DEFAULT_CORRELATION_U_V
             self.correlation_u_v = correlation_u_v
 
             if "alpha" in kwargs:
                 alpha = kwargs["alpha"]
             else:
-                msg = (f"alpha parameter of Dirichlet distribution was not set. "
-                       f"Defaulting to alpha={[DEFAULT_ALPHA] * self.K}")
-                warnings.warn(msg)
+                message = (f"alpha parameter of Dirichlet distribution was not set. "
+                           f"Defaulting to alpha={[DEFAULT_ALPHA] * self.K}")
+                logging.warning(message)
                 alpha = [DEFAULT_ALPHA] * self.K
             if isinstance(alpha, float):
                 if alpha <= 0:
-                    err_msg = "Each entry of the Dirichlet parameter has to be positive!"
-                    raise ValueError(err_msg)
+                    log_and_raise_error(ValueError, "Each entry of the Dirichlet parameter has to be positive!")
 
                 alpha = [alpha] * self.K
             elif len(alpha) != self.K:
-                err_msg = "The parameter alpha should be a list of length K."
-                raise ValueError(err_msg)
+                log_and_raise_error(ValueError, "The parameter alpha should be a list of "
+                                                "length K.")
             if not all(alpha):
-                err_msg = "Each entry of the Dirichlet parameter has to be positive!"
-                raise ValueError(err_msg)
+                log_and_raise_error(ValueError, "Each entry of the Dirichlet parameter has to be "
+                                                "positive!")
             self.alpha = alpha
 
         # SETUP informed structure
@@ -914,25 +889,25 @@ class StandardMMSBM(BaseSyntheticNetwork):
         if "structure" in kwargs:
             structure = kwargs["structure"]
         else:
-            msg = (f"structure parameter was not set. Defaulting to "
-                   f"structure={[DEFAULT_STRUCTURE] * self.L}")
-            warnings.warn(msg)
+            message = (f"structure parameter was not set. Defaulting to "
+                       f"structure={[DEFAULT_STRUCTURE] * self.L}")
+            logging.warning(message)
             structure = [DEFAULT_STRUCTURE] * self.L
         if isinstance(structure, str):
             if structure not in ["assortative", "disassortative"]:
-                err_msg = ("The available structures for the affinity tensor w are: "
+                message = ("The available structures for the affinity tensor w are: "
                            "assortative, disassortative!")
-                raise ValueError(err_msg)
+                log_and_raise_error(ValueError, message)
             structure = [structure] * self.L
         elif len(structure) != self.L:
-            err_msg = ("The parameter structure should be a list of length L. "
+            message = ("The parameter structure should be a list of length L. "
                        "Each entry defines the structure of the corresponding layer!")
-            raise ValueError(err_msg)
+            log_and_raise_error(ValueError, message)
         for e in structure:
             if e not in ["assortative", "disassortative"]:
-                err_msg = ("The available structures for the affinity tensor w are: "
+                message = ("The available structures for the affinity tensor w are: "
                            "assortative, disassortative!")
-                raise ValueError(err_msg)
+                log_and_raise_error(ValueError, message)
         self.structure = structure
 
     def build_Y(self, parameters=None) -> None:
@@ -954,11 +929,13 @@ class StandardMMSBM(BaseSyntheticNetwork):
             # set latent variables
             self.u, self.v, self.w = parameters
             if self.u.shape != (self.N, self.K):
-                raise ValueError('The shape of the parameter u has to be (N, K).')
+                log_and_raise_error(ValueError, 'The shape of the parameter u has to be (N, K).')
+
             if self.v.shape != (self.N, self.K):
-                raise ValueError('The shape of the parameter v has to be (N, K).')
+                log_and_raise_error(ValueError, 'The shape of the parameter v has to be (N, K).')
+
             if self.w.shape != (self.L, self.K, self.K):
-                raise ValueError('The shape of the parameter w has to be (L, K, K).')
+                log_and_raise_error(ValueError, 'The shape of the parameter w has to be (L, K, K).')
 
         # Generate Y
 
@@ -1137,8 +1114,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
                 v=self.v,
                 w=self.w,
                 nodes=self.nodes)
-        print(f'Parameters saved in: {output_parameters}.npz')
-        print('To load: theta=np.load(filename), then e.g. theta["u"]')
+        logging.info('Parameters saved in: %s', output_parameters + '.npz')
+        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
 
     # pylint: disable=W0631
     def _plot_M(self, cmap: str = 'PuBuGn') -> None:
@@ -1177,10 +1154,11 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
         if "eta" in kwargs:
             eta = kwargs["eta"]
             if eta <= 0:  # pair interaction coefficient
-                raise ValueError('The pair interaction coefficient eta has to greater than 0.!')
+                message = 'The pair interaction coefficient eta has to be greater than 0!'
+                log_and_raise_error(ValueError, message)
         else:
-            msg = f"eta parameter was not set. Defaulting to eta={DEFAULT_ETA}"
-            warnings.warn(msg)
+            message = f"eta parameter was not set. Defaulting to eta={DEFAULT_ETA}"
+            logging.warning(message)
             eta = DEFAULT_ETA
         self.eta = eta
 
@@ -1222,11 +1200,13 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
             # set latent variables
             self.u, self.v, self.w = parameters
             if self.u.shape != (self.N, self.K):
-                raise ValueError('The shape of the parameter u has to be (N, K).')
+                log_and_raise_error(ValueError, 'The shape of the parameter u has to be (N, K).')
+
             if self.v.shape != (self.N, self.K):
-                raise ValueError('The shape of the parameter v has to be (N, K).')
+                log_and_raise_error(ValueError, 'The shape of the parameter v has to be (N, K).')
+
             if self.w.shape != (self.L, self.K, self.K):
-                raise ValueError('The shape of the parameter w has to be (L, K, K).')
+                log_and_raise_error(ValueError, 'The shape of the parameter w has to be (L, K, K).')
 
         # Generate Y
 
@@ -1245,7 +1225,6 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
             if self.is_sparse:
                 # constant to enforce sparsity
                 c = brentq(self._eq_c, 0.00001, 100., args=(self.ExpEdges, self.M0[l], self.eta))
-                # print(f'Constant to enforce sparsity: {np.round(c, 3)}')
                 self.M0[l] *= c
                 if parameters is None:
                     self.w[l] *= c

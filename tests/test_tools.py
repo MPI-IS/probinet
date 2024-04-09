@@ -99,21 +99,6 @@ class TestTensors(unittest.TestCase):
         result = Exp_ija_matrix(u, v, w)
         np.testing.assert_allclose(result, expected_result, rtol=rtol)
 
-    @unittest.skip("Reason: Not implemented yet")
-    def test_output_adjacency(self):
-        # Test output adjacency function.
-        # Create an empty scipy sparse matrix
-
-        i = [0, 0, 0, 1, 1, 1]
-        j = [0, 1, 2, 0, 3, 4]
-        A = [sparse.csr_matrix((np.ones_like(j), (i, j)))]
-
-        out_folder = 'tests/'
-        label = 'test_output_adjacency'
-        # This gives: AttributeError: 'DataFrame' object has no attribute 'append'
-        output_adjacency(A, out_folder, label)
-
-        self.assertTrue(Path(out_folder + label + '.dat').is_file())
 
 
 class TestWriteDesignMatrix(BaseTest):
@@ -142,7 +127,6 @@ class TestWriteDesignMatrix(BaseTest):
         pd.testing.assert_frame_equal(output_df, self.expected_output)
 
 
-# @unittest.skip("Reason: Not implemented yet")
 class TestAdjacencyFunctions(BaseTest):
     def setUp(self):
         self.A = [nx.MultiDiGraph(), nx.MultiDiGraph()]

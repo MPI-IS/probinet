@@ -24,8 +24,7 @@ dependencies = [
     "scikit-learn",
     "scikit-tensor-py3",
     "scipy==1.10.0",
-    "seaborn",
-    "termcolor",
+    "seaborn"
 ]
 
 [project.optional-dependencies]

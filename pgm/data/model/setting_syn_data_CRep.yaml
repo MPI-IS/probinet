@@ -16,4 +16,3 @@ out_folder: '../data/input/'
 output_parameters: True
 output_adj: True
 outfile_adj: null
-verbose: True
