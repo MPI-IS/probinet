@@ -30,15 +30,16 @@ def parse_args():
 
     # Algorithm related arguments
     p.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'JointCRep', 'MTCov'],
-                   default='CRep', help='Choose the algorithm to run: CRep, JointCRep.')
+                   default='CRep', help='Choose the algorithm to run: CRep, JointCRep, MTCov.')
     p.add_argument('-K', '--K', type=int, default=None, help='Number of communities')
-    p.add_argument('-g', '--gamma', type=float, default=0.5, help='Scaling hyper parameter')
+    p.add_argument('-g', '--gamma', type=float, default=0.5, help='Scaling hyper parameter in MTCov')
     p.add_argument('--rseed', type=int, default=None, help='Random seed')
     p.add_argument('--num_realizations', type=int, default=None, help='Number of realizations')
 
     # Input/Output related arguments
     p.add_argument('-A', '--adj_name', type=str, default='syn111.dat', help='Name of the network')
-    p.add_argument('-C', '--cov_name', type=str, default='X.csv')
+    p.add_argument('-C', '--cov_name', type=str, default='X.csv',
+                   help='Name of the design matrix used in MTCov')
     p.add_argument('-f', '--in_folder', type=str, default='', help='Path of the input folder')
     p.add_argument('-o', '-O', '--out_folder', type=str, default='',
                    help='Path of the output folder')
@@ -50,7 +51,7 @@ def parse_args():
     p.add_argument('-x', '--egoX', type=str, default='Name',
                    help='Name of the column with node labels')
     p.add_argument('-an', '--attr_name', type=str, default='Metadata',
-                   help='Name of the attribute to consider')
+                   help='Name of the attribute to consider in MTCov')
     p.add_argument('-u', '--undirected', type=bool, default=False,
                    help='Flag to treat the network as undirected')
     p.add_argument('--noselfloop', type=bool, default=True, help='Flag to remove self-loops')
@@ -63,7 +64,8 @@ def parse_args():
                    help='Flag for convergence')
     p.add_argument('--plot_loglikelihood', type=bool, default=False,
                    help='Flag to plot the log-likelihood')
-    p.add_argument('-b', '--batch_size', type=int, default=None)
+    p.add_argument('-b', '--batch_size', type=int, default=None,
+                   help='Size of the batch to use to compute the likelihood')
 
     # Other arguments
     p.add_argument('-l', '--log_level', type=str, choices=['D', 'I', 'W', 'E', 'C'],
