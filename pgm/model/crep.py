@@ -65,16 +65,14 @@ class CRep:
                            **extra_params: Unpack[FitParams]) -> None:
 
         if initialization not in {0, 1, 2, 3}:
-            message = 'The initialization parameter can be either 0, 1, 2 or 3.'
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, 'The initialization parameter can be either 0, 1, 2 '
+                                            'or 3.')
         self.initialization = initialization
 
         if eta0 is not None:
             if (eta0 < 0) or (eta0 > 1):
-                message = 'The reciprocity coefficient eta0 has to be in [0, 1]!'
-                error_type = ValueError
-                log_and_raise_error(error_type, message)
+                log_and_raise_error(ValueError, 'The reciprocity coefficient eta0 has to be in '
+                                                '[0, 1]!')
         self.eta0 = eta0  # initial value for the reciprocity coefficient
         self.undirected = undirected  # flag to call the undirected network
         self.assortative = assortative  # flag to call the assortative network
@@ -102,9 +100,7 @@ class CRep:
 
             if self.fix_eta:
                 if self.eta0 is None:
-                    message = 'If fix_eta=True, provide a value for eta0.'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, 'If fix_eta=True, provide a value for eta0.')
         else:
             self.fix_eta = False
 
@@ -112,9 +108,8 @@ class CRep:
             self.fix_w = extra_params["fix_w"]
             if self.fix_w:
                 if self.initialization not in {1, 3}:
-                    message = 'If fix_w=True, the initialization has to be either 1 or 3.'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, 'If fix_w=True, the initialization has to be '
+                                                    'either 1 or 3.')
         else:
             self.fix_w = False
 
@@ -122,9 +117,8 @@ class CRep:
             self.fix_communities = extra_params["fix_communities"]
             if self.fix_communities:
                 if self.initialization not in {2, 3}:
-                    message = 'If fix_communities=True, the initialization has to be either 2 or 3.'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, 'If fix_communities=True, the initialization has'
+                                                    ' to be either 2 or 3.')
         else:
             self.fix_communities = False
 
@@ -150,8 +144,7 @@ class CRep:
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 0):
                 message = 'If undirected=True, the parameter eta has to be fixed equal to 0.'
-                error_type = ValueError
-                log_and_raise_error(error_type, message)
+                log_and_raise_error(ValueError, message)
 
     def fit(self,
             data: Union[skt.dtensor,
@@ -258,7 +251,7 @@ class CRep:
             convergence = False
             loglik = self.inf
 
-            logging.debug(f'Updating realization {r} ...')
+            logging.debug('Updating realization %s ...', r)
             time_start = time.time()
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
             # iterations (self.max_iter) is reached.
@@ -299,9 +292,7 @@ class CRep:
                             f'time = {np.round(time.time() - time_start, 2)} seconds'
                         )
                 else:
-                    message = 'flag_conv can be either log or deltas!'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, 'flag_conv can be either log or deltas!')
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
             # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
             # pseudo log-likelihood.
@@ -358,23 +349,23 @@ class CRep:
 
         if self.initialization == 0:
 
-            logging.debug('u, v and w are initialized randomly.')
+            logging.debug('%s', 'u, v and w are initialized randomly.')
             self._randomize_w()
             self._randomize_u_v()
 
         elif self.initialization == 1:
 
-            logging.debug(f'w is initialized using the input file: {self.files}.')
-            logging.debug('u and v are initialized randomly.')
+            logging.debug('%s is initialized using the input file: %s', 'w', self.files)
+            logging.debug('%s', 'u and v are initialized randomly.')
             self._initialize_w()
             self._randomize_u_v()
 
         elif self.initialization == 2:
 
             logging.debug(
-                f'u and v are initialized using the input file: {self.files}.'
+                'u and v are initialized using the input file: %s', self.files
             )
-            logging.debug('w is initialized randomly.')
+            logging.debug('%s', 'w is initialized randomly.')
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._randomize_w()
@@ -382,7 +373,7 @@ class CRep:
         elif self.initialization == 3:
 
             logging.debug(
-                f'u, v and w are initialized using the input file: {self.files}.'
+                'u, v and w are initialized using the input file: %s', self.files
             )
             self._initialize_u(nodes)
             self._initialize_v(nodes)
@@ -396,7 +387,7 @@ class CRep:
         ----------
         """
 
-        self.eta = self.rng.random_sample(1)[0]
+        self.eta = float((self.rng.random_sample(1)[0]))
 
     def _randomize_w(self) -> None:
         """
@@ -500,7 +491,7 @@ class CRep:
         self.u_old = np.copy(self.u)
         self.v_old = np.copy(self.v)
         self.w_old = np.copy(self.w)
-        self.eta_old = np.copy(self.eta)
+        self.eta_old = float(self.eta)
 
     def _update_cache(self, data: Union[skt.dtensor, skt.sptensor],
                       data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray]) -> None:
@@ -546,24 +537,18 @@ class CRep:
                 nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
                                         self.w[subs_nz[0], :, :])
             else:
-                message = "subs_nz should have at least 2 elements."
-                error_type = ValueError
-                log_and_raise_error(error_type, message)
+                log_and_raise_error(ValueError, "subs_nz should have at least 2 elements.")
         else:
             if len(subs_nz) >= 2:
                 nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
                                         self.w[subs_nz[0], :])
             else:
-                message = "subs_nz should have at least 2 elements."
-                error_type = ValueError
-                log_and_raise_error(error_type, message)
+                log_and_raise_error(ValueError, "subs_nz should have at least 2 elements.")
 
         if len(subs_nz) >= 3:
             nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, self.v[subs_nz[2], :])
         else:
-            message = "subs_nz should have at least 3 elements."
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
         return nz_recon_I
 
@@ -662,9 +647,9 @@ class CRep:
         self.eta *= (self.data_M_nz * data_T_vals).sum() / Deta
 
         dist_eta = abs(self.eta - self.eta_old)
-        self.eta_old = np.copy(self.eta)
+        self.eta_old = float(self.eta)
 
-        return dist_eta  # type: ignore
+        return dist_eta
 
     def _update_U(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
@@ -765,9 +750,7 @@ class CRep:
                  Maximum distance between the old and the new affinity tensor w.
         """
         if len(subs_nz) < 3:
-            message = "subs_nz should have at least 3 elements."
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -810,9 +793,7 @@ class CRep:
                  Maximum distance between the old and the new affinity tensor w.
         """
         if len(subs_nz) < 3:
-            message = "subs_nz should have at least 3 elements."
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -1038,7 +1019,7 @@ class CRep:
         self.u_f = np.copy(self.u)
         self.v_f = np.copy(self.v)
         self.w_f = np.copy(self.w)
-        self.eta_f = np.copy(self.eta)  # type: ignore
+        self.eta_f = float(self.eta)
 
     def output_results(self, nodes: List[Any]) -> None:
         """
@@ -1064,5 +1045,5 @@ class CRep:
                             maxPSL=self.maxPSL,
                             nodes=nodes)
 
-        logging.info(f'Inferred parameters saved in: {outfile.resolve()}')
+        logging.info('Inferred parameters saved in: %s', outfile.resolve())
         logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')

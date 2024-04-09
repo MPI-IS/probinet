@@ -1,5 +1,4 @@
 K: 4
-N_real: 50
 assortative: false
 end_file: _JointCRep
 eta0: null
@@ -12,4 +11,3 @@ out_folder: tutorial_outputs/JointCRep
 out_inference: true
 rseed: 0
 use_approximation: false
-verbose: false

@@ -4,7 +4,7 @@ The script facilitates the creation of both dense and sparse adjacency tensors, 
 weights, and ensures proper formatting of input data tensors.
 """
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import networkx as nx
 from numpy import ndarray

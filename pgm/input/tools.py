@@ -33,7 +33,7 @@ def can_cast(string: Union[int, float, str]) -> bool:
         int(string)
         return True
     except ValueError:
-        logging.error(f'Cannot cast {string} to integer.')
+        logging.error('Cannot cast %s to integer.', string)
         return False
 
 
@@ -294,7 +294,7 @@ def output_adjacency(A: List, out_folder: str, label: str):
     df.to_csv(out_folder + outfile, index=False, sep=' ')
 
     # Print the location where the adjacency matrix is saved
-    logging.info(f'Adjacency matrix saved in: {out_folder + outfile}')
+    logging.info('Adjacency matrix saved in: %s', out_folder + outfile)
 
 
 def write_adjacency(G: List[nx.MultiDiGraph],
@@ -338,8 +338,7 @@ def write_adjacency(G: List[nx.MultiDiGraph],
     cols.extend(['L' + str(l) for l in range(1, L + 1)])
     df = pd.DataFrame(df_list, columns=cols)
     df.to_csv(path_or_buf=folder + fname, index=False)
-    logging.info(f'Adjacency tensor saved in: {folder + fname}')
-
+    logging.info('Adjacency tensor saved in: %s', folder + fname)
 
 def write_design_Matrix(
         metadata: Dict[str, str],
@@ -371,8 +370,7 @@ def write_design_Matrix(
     X[nodeID] = X.index
     X = X.loc[:, [nodeID, attr_name]]
     X.to_csv(path_or_buf=folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv', index=False)
-    logging.debug(f'Design matrix saved in: {folder}{fname}{str(perc)[0]}_{str(perc)[2]}.csv')
-
+    logging.debug('Design matrix saved in: %s%s%s_%s.csv', folder, fname, str(perc)[0], str(perc)[2])
 
 def transpose_tensor(M: np.ndarray) -> np.ndarray:
     """
@@ -423,9 +421,7 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
           of the membership matrix.
     """
     if len(subs) < 3:
-        message = "subs_nz should have at least 3 elements."
-        error_type = ValueError
-        log_and_raise_error(error_type, message)
+        log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
     if m == 1:
         D, K = u.shape
@@ -480,9 +476,7 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
           of the membership matrix.
     """
     if len(subs) < 3:
-        message = "subs_nz should have at least 3 elements."
-        error_type = ValueError
-        log_and_raise_error(error_type, message)
+        log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
     if m == 1:
         D, K = u.shape

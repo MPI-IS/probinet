@@ -1,0 +1,9 @@
+K: 2
+assortative: false
+end_file: _MTCov
+files: ../data/input/theta.npz
+gamma: 0.5
+initialization: 0
+out_folder: MTCov_output
+out_inference: true
+rseed: 107261

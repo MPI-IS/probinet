@@ -1,7 +1,6 @@
 """
 Test cases for the generate_network module.
 """
-import logging
 import unittest
 
 import networkx as nx
@@ -117,38 +116,39 @@ class TestGMReciprocity(unittest.TestCase):
         }
         self._run_test(gm.planted_network_reciprocity_only, expected_values)
 
-    def test_invalid_eta(self):
-        message = 'The reciprocity coefficient eta has to be in [0, 1)!'
+    def check_invalid_parameters(self, params, expected_message):
         with self.assertRaises(ValueError) as context:
-            GM_reciprocity(N=100, K=3, eta=-0.5)
-        self.assertEqual(str(context.exception),
-                             message)
+            GM_reciprocity(**params)
+        self.assertEqual(str(context.exception), expected_message)
+
+    def test_invalid_eta(self):
+        params = {'N': 100, 'K': 3, 'eta': -0.5}
+        expected_message = 'The reciprocity coefficient eta has to be in [0, 1)!'
+        self.check_invalid_parameters(params, expected_message)
 
     def test_invalid_over(self):
-        message = 'The overlapping parameter has to be in [0, 1]!'
-        with self.assertRaises(ValueError) as context:
-            GM_reciprocity(N=100, K=3, over=1.5)
-        self.assertEqual(str(context.exception), message)
+        params = {'N': 100, 'K': 3, 'over': 1.5}
+        expected_message = 'The overlapping parameter has to be in [0, 1]!'
+        self.check_invalid_parameters(params, expected_message)
 
     def test_invalid_corr(self):
-        message = 'The correlation parameter corr has to be in [0, 1]!'
-        with self.assertRaises(ValueError) as context:
-            GM_reciprocity(N=100, K=3, corr=1.5)
-        self.assertEqual(str(context.exception), message)
+        params = {'N': 100, 'K': 3, 'corr': 1.5}
+        expected_message = 'The correlation parameter corr has to be in [0, 1]!'
+        self.check_invalid_parameters(params, expected_message)
 
     def test_invalid_Normalization(self):
-        message = ('The Normalization parameter can be either 0 or 1! It is used as an indicator for '
-                   'generating the membership matrices u and v from a Dirichlet or a Gamma '
-                   'distribution, respectively. It is used when there is overlapping.')
-        with self.assertRaises(ValueError) as context:
-            GM_reciprocity(N=100, K=3, Normalization=2)
-        self.assertEqual(str(context.exception), message)
+        params = {'N': 100, 'K': 3, 'Normalization': 2}
+        expected_message = (
+            'The Normalization parameter can be either 0 or 1! It is used as an indicator for '
+            'generating the membership matrices u and v from a Dirichlet or a Gamma '
+            'distribution, respectively. It is used when there is overlapping.')
+        self.check_invalid_parameters(params, expected_message)
 
     def test_invalid_structure(self):
-        message = 'The structure of the affinity matrix w can be either assortative or disassortative!'
-        with self.assertRaises(ValueError) as context:
-            GM_reciprocity(N=100, K=3, structure='invalid_structure')
-        self.assertEqual(str(context.exception), message)
+        params = {'N': 100, 'K': 3, 'structure': 'invalid_structure'}
+        expected_message = 'The structure of the affinity matrix w can be either assortative or disassortative!'
+        self.check_invalid_parameters(params, expected_message)
+
 
     def test_affinity_matrix_assortative(self):
         expected_result = np.array([[0.02, 0.002], [0.002, 0.02]])
@@ -160,60 +160,13 @@ class TestGMReciprocity(unittest.TestCase):
         actual_result = affinity_matrix(structure='disassortative', N=100, K=2, a=0.1, b=0.3)
         np.testing.assert_allclose(actual_result, expected_result, rtol=rtol)
 
-
 class TestBaseSyntheticNetwork(unittest.TestCase):
     def setUp(self):
         self.N = 100
         self.L = 1
         self.K = 2
         self.seed = 0
-        self.out_folder = "data/input/synthetic/"
-        self.output_net = True
-        self.show_details = True
-        self.show_plots = True
-        self.kwargs = {}
-        self.base_synthetic_network = BaseSyntheticNetwork(
-            self.N,
-            self.L,
-            self.K,
-            self.seed,
-            self.out_folder,
-            self.output_net,
-            self.show_details,
-            self.show_plots,
-            **self.kwargs)
-
-
-class TestBaseSyntheticNetwork(unittest.TestCase):
-    def setUp(self):
-        self.N = 100
-        self.L = 1
-        self.K = 2
-        self.seed = 0
-        self.out_folder = "data/input/synthetic/"
-        self.output_net = True
-        self.show_details = True
-        self.show_plots = True
-        self.kwargs = {}
-        self.base_synthetic_network = BaseSyntheticNetwork(
-            self.N,
-            self.L,
-            self.K,
-            self.seed,
-            self.out_folder,
-            self.output_net,
-            self.show_details,
-            self.show_plots,
-            **self.kwargs)
-
-
-class TestBaseSyntheticNetwork(unittest.TestCase):
-    def setUp(self):
-        self.N = 100
-        self.L = 1
-        self.K = 2
-        self.seed = 0
-        self.eta = 50,
+        self.eta = 50
         self.out_folder = "data/input/synthetic/"
         self.output_net = True
         self.show_details = True

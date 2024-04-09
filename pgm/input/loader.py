@@ -57,8 +57,7 @@ def import_data(dataset: str,
 
     # read adjacency file
     df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
-    logging.debug(f"Read adjacency file from {dataset}. The shape of the data is {df_adj.shape}.")
-
+    logging.debug('Read adjacency file from %s. The shape of the data is %s.', dataset, df_adj.shape)
     A = read_graph(
         df_adj=df_adj,
         ego=ego,
@@ -153,10 +152,10 @@ def import_data_mtcov(
     # Read the adjacency file
     logging.debug("Reading adjacency file...")
     df_adj = pd.read_csv(in_folder_path / adj_name)  # read adjacency file
-    logging.debug(f'Adjacency shape: {df_adj.shape}')
+    logging.debug('Adjacency shape: %s', df_adj.shape)
 
     df_X = pd.read_csv(in_folder_path / cov_name)  # read the csv file with the covariates
-    logging.debug(f'Indiv shape: {df_X.shape}')
+    logging.debug('Indiv shape: %s', df_X.shape)
 
     # create the graph adding nodes and edges
     A = read_graph(
@@ -298,8 +297,8 @@ def read_design_matrix(df_X: pd.DataFrame,
     else:  # use one attribute as it is
         X_attr = pd.get_dummies(X[attribute])
 
-    logging.debug(f'Design matrix shape: {X_attr.shape}')
-    logging.debug(f'Distribution of attribute {attribute}: ')
-    logging.debug(f'{np.sum(X_attr, axis=0)}')
+    logging.debug('Design matrix shape: %s', X_attr.shape)
+    logging.debug('Distribution of attribute %s:', attribute)
+    logging.debug('%s', np.sum(X_attr, axis=0))
 
     return X_attr

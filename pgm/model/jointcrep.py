@@ -51,7 +51,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
         self.plot_loglik = plot_loglik
         self.flag_conv = flag_conv
 
-    def __check_fit_params(self,  # pylint: disable=too-many-arguments
+    def __check_fit_params(self,
                            initialization: int,
                            eta0: Union[float, None],
                            undirected: bool,
@@ -60,24 +60,22 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
                            K: int,
                            **extra_params: Unpack[FitParams]
                            ) -> None:
-
-        if initialization not in {0, 1, 2,
-                                  3}:  # indicator for choosing how to initialize u, v and w
+        if initialization not in {0, 1, 2, 3}:  # indicator for choosing how to initialize u,
+            # v and w
             message = ('The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
                        'indicator to initialize the membership matrices u and v and the affinity '
                        'matrix w. If it is 0, they will be generated randomly; 1 means only '
                        'the affinity matrix w will be uploaded from file; 2 implies the '
                        'membership matrices u and v will be uploaded from file and 3 all u, '
                        'v and w will be initialized through an input file.')
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, message)
+
         self.initialization = initialization
 
         if (eta0 is not None) and (
                 eta0 <= 0.):  # initial value for the pair interaction coefficient
             message = 'If not None, the eta0 parameter has to be greater than 0.!'
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, message)
 
         self.eta0 = eta0  # initial value for the reciprocity coefficient
         self.undirected = undirected  # flag to call the undirected network
@@ -108,9 +106,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
             if self.fix_eta:
                 if self.eta0 is None:
-                    message = 'If fix_eta=True, provide a value for eta0.'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, 'If fix_eta=True, provide a value for eta0.')
         else:
             self.fix_eta = False
 
@@ -119,8 +115,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
             if self.fix_w:
                 if self.initialization not in {1, 3}:
                     message = 'If fix_w=True, the initialization has to be either 1 or 3.'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, message)
         else:
             self.fix_w = False
 
@@ -129,8 +124,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
             if self.fix_communities:
                 if self.initialization not in {2, 3}:
                     message = 'If fix_communities=True, the initialization has to be either 2 or 3.'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, message)
         else:
             self.fix_communities = False
 
@@ -176,9 +170,9 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 1):
-                message = 'If undirected=True, the parameter eta has to be fixed equal to 1 (s.t. log(eta)=0).'
-                error_type = ValueError
-                log_and_raise_error(error_type, message)
+                message = ('If undirected=True, the parameter eta has to be fixed equal to 1 '
+                           '(s.t. log(eta)=0).')
+                log_and_raise_error(ValueError, message)
         # values of the parameters used during the update
         self.u = np.zeros((self.N, self.K), dtype=float)  # out-going membership
         self.v = np.zeros((self.N, self.K), dtype=float)  # in-going membership
@@ -318,7 +312,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
             convergence = False
             loglik = self.inf
 
-            logging.debug(f'Updating realization {r} ...')
+            logging.debug('Updating realization %s', r)
             loglik_values = []
             time_start = time.time()
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
@@ -338,23 +332,19 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
                         data, it, loglik, coincide, convergence)
                     loglik_values.append(loglik)
                     if not it % 100:
-                        logging.debug(f'Nreal = {r} - Log-likelihood = {loglik} - iterations ='
-                                      f' {it} - '
-                                      f'time = {np.round(time.time() - time_start, 2)} seconds')
+                        logging.debug('Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds', r, loglik, it, np.round(time.time() - time_start, 2))
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = self._check_for_convergence_delta(
                         it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)
                     if not it % 100:
-                        logging.debug(f'Nreal = {r} - iterations = {it} - '
-                                      f'time = {np.round(time.time() - time_start, 2)} seconds')
+                        logging.debug('Nreal = %s - iterations = %s - time = %s seconds',
+                                      r, it, np.round(time.time() - time_start, 2))
                 else:
-                    message = 'flag_conv can be either log or deltas!'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, 'flag_conv can be either log or deltas!')
 
-            # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
-            # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
-            # pseudo log-likelihood.
+            # After the while loop, it checks if the current pseudo log-likelihood is the maximum
+            # so far. If it is, it updates the optimal parameters (
+            # self._update_optimal_parameters()) and sets maxL to the current pseudo log-likelihood.
             if self.flag_conv == 'log':
                 if maxL < loglik:
                     self._update_optimal_parameters()
@@ -371,16 +361,17 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
                     final_it = it
                     conv = convergence
                     best_r = r
-            logging.debug(f'Nreal = {r} - Log-likelihood = {loglik} - iterations = {it} - '
-                          f'time = {np.round(time.time() - time_start, 2)} seconds\n')
+            logging.debug('Nreal = %s - Log-likelihood = %s - iterations = %s - '
+                          'time = %s seconds',r, loglik, it,
+                          np.round(time.time() - time_start, 2))
 
             # end cycle over realizations
 
-        logging.debug(f'Best real = {best_r} - maxL = {maxL} - best iterations = {final_it}')
+        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL, final_it)
 
         if np.logical_and(final_it == self.max_iter, not conv):
             # convergence is not reached
-            logging.warning(f'Solution failed to converge in {self.max_iter} EM steps!')
+            logging.warning('Solution failed to converge in %s EM steps!', self.max_iter)
 
         if np.logical_and(self.plot_loglik, self.flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
@@ -412,20 +403,20 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
             self._randomize_u_v()
 
         elif self.initialization == 1:
-            logging.debug(f'w is initialized using the input file: {self.files}.')
-            logging.debug(f'u and v are initialized randomly.')
+            logging.debug('w is initialized using the input file: %s', self.files)
+            logging.debug('u and v are initialized randomly.')
             self._initialize_w()
             self._randomize_u_v()
 
         elif self.initialization == 2:
-            logging.debug(f'u and v are initialized using the input file: {self.files}.')
-            logging.debug(f'w is initialized randomly.')
+            logging.debug('u and v are initialized using the input file: %s', self.files)
+            logging.debug('w is initialized randomly.')
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._randomize_w()
 
         elif self.initialization == 3:
-            logging.debug(f'u, v and w are initialized using the input file: {self.files}.')
+            logging.debug('u, v and w are initialized using the input file: %s', self.files)
             self._initialize_u(nodes)
             self._initialize_v(nodes)
             self._initialize_w()
@@ -1019,9 +1010,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         den = self.lambdalambdaT.sum()
         if not den > 0.:
-            message = 'eta update_approx has zero denominator!'
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, 'eta update_approx has zero denominator!')
 
         self.eta = self.AAtSum / den
 
@@ -1043,9 +1032,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
         """
         st = (self.lambdalambdaT / self.Z).sum()
         if st <= 0:
-            message = 'eta fix point has zero denominator!'
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, 'eta fix point has zero denominator!')
         return self.AAtSum / st
 
     def _update_eta(self) -> float:
@@ -1224,9 +1211,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
         l = ft + st - tt
 
         if np.isnan(l):
-            message = 'log-likelihood is NaN!'
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, 'log-likelihood is NaN!')
 
         return l
 
@@ -1266,5 +1251,5 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
                             max_it=final_it,
                             maxL=maxL,
                             nodes=nodes)
-        logging.info(f'Inferred parameters saved in: {outfile.resolve()}')
+        logging.info('Inferred parameters saved in: %s', outfile.resolve())
         logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')

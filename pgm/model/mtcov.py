@@ -20,7 +20,7 @@ from ..model.crep import FitParams
 from ..output.plot import plot_L
 
 
-class MTCov:  # pylint: disable=too-many-instance-attributes
+class MTCov:
     """
     Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
@@ -71,8 +71,7 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
                 'The initialization parameter can be either 0 or 1. It is used as an indicator to '
                 'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
                 'will be generated randomly, otherwise they will upload from file.')
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
+            log_and_raise_error(ValueError, message)
 
         self.initialization = initialization
 
@@ -107,6 +106,9 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
             if extra_param not in available_extra_params:
                 msg = f'Ignoring extra parameter {extra_param}.'
                 logging.warning(msg)  # Add the warning
+
+        if "files" in extra_params:
+            self.files = extra_params["files"]
 
         if "out_inference" in extra_params:
             self.out_inference = extra_params["out_inference"]
@@ -236,7 +238,7 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
                 subset_N = None
                 Subs = None
                 SubsX = None
-        logging.debug(f'batch_size: {batch_size}\n')
+        logging.debug('batch_size: %s', batch_size)
 
         for r in range(self.num_realizations):
 
@@ -251,7 +253,7 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
             if flag_conv == 'log':
                 loglik = self.inf
 
-            logging.debug('Updating realization {0} ...'.format(r))
+            logging.debug('Updating realization %s ...', r)
             loglik_values = []
             time_start = time.time()
             # --- single step iteration update ---
@@ -280,9 +282,8 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
                                                                                   delta_beta,
                                                                                   convergence)
                 else:
-                    message = 'Error! flag_conv can be either "log" or "deltas"'
-                    error_type = ValueError
-                    log_and_raise_error(error_type, message)
+                    log_and_raise_error(ValueError, 'Error! flag_conv can be either "log" or '
+                                                    '"deltas"')
 
             if flag_conv == 'log':
                 if maxL < loglik:
@@ -304,15 +305,16 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
                     final_it = it
                     conv = convergence
                     # best_r = r
-            logging.debug(f'Nreal = {r} - Loglikelihood = {loglik} - iterations = {it} - '
-                          f'time = {np.round(time.time() - time_start, 2)} seconds')
+            logging.debug('Nreal = %s - Loglikelihood = %s - iterations = %s - time = '
+                          '%s seconds', r, loglik, it,
+                          np.round(time.time() - time_start, 2))
 
             self.rseed += self.rng.randint(10000)
             # end cycle over realizations
 
         if np.logical_and(final_it == self.max_iter, not conv):
             # convergence is not reached
-            logging.warning('Solution failed to converge in {0} EM steps!'.format(self.max_iter))
+            logging.warning('Solution failed to converge in %s EM steps!', self.max_iter)
 
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
@@ -343,7 +345,7 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
                 self._randomize_w(rng)
 
         elif self.initialization == 1:
-            logging.debug(f'U, V, W and beta are initialized using the input file: {self.files}')
+            logging.debug('U, V, W and beta are initialized using the input file: %s', self.files)
             self._initialize_u(rng, nodes)
             self._initialize_v(rng, nodes)
             self._initialize_beta(rng)
@@ -409,16 +411,16 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
                         else:
                             self.w[i, k, q] = self.w[i, q, k] = self.err * rng.random_sample(1)
 
-    def _initialize_u(self, rng: RandomState, nodes: List[int]) -> None:
+    def _initialize_u(self, rng, nodes):
         """
-        Initialize out-going membership matrix u from file.
+            Initialize out-going membership matrix u from file.
 
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
-        nodes : list
-                List of nodes IDs.
+            Parameters
+            ----------
+            rng : RandomState
+                  Container for the Mersenne Twister pseudo-random number generator.
+            nodes : list
+                    List of nodes IDs.
         """
 
         self.u = self.theta['u']
@@ -529,29 +531,25 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
         else:
             self.data_pi_nz = data_X.data / self.pi0_nz
 
-    def _lambda0_nz(self,
-                    subs_nz: Tuple[np.ndarray],
-                    u: np.ndarray,
-                    v: np.ndarray,
-                    w: np.ndarray) -> np.ndarray:
+    def _lambda0_nz(self, subs_nz, u, v, w):
         """
-        Compute the mean lambda0 (M_ij^alpha) for only non-zero entries (denominator of pijkl).
+            Compute the mean lambda0 (M_ij^alpha) for only non-zero entries (denominator of pijkl).
 
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
+            Parameters
+            ----------
+            subs_nz : tuple
+                      Indices of elements of data that are non-zero.
+            u : ndarray
+                Out-going membership matrix.
+            v : ndarray
+                In-coming membership matrix.
+            w : ndarray
+                Affinity tensor.
 
-        Returns
-        -------
-        nz_recon_I : ndarray
-                     Mean lambda0 (M_ij^alpha) for only non-zero entries.
+            Returns
+            -------
+            nz_recon_I : ndarray
+                         Mean lambda0 (M_ij^alpha) for only non-zero entries.
         """
 
         if not self.assortative:
@@ -652,17 +650,17 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
 
     def _update_W(self, subs_nz):
         """
-        Update affinity tensor.
+            Update affinity tensor.
 
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
+            Parameters
+            ----------
+            subs_nz : tuple
+                      Indices of elements of data that are non-zero.
 
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor W.
+            Returns
+            -------
+            dist_w : float
+                     Maximum distance between the old and the new affinity tensor W.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -691,19 +689,19 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
 
         return dist_w
 
-    def _update_W_assortative(self, subs_nz: Tuple[np.ndarray]) -> float:
+    def _update_W_assortative(self, subs_nz):
         """
-        Update affinity tensor (assuming assortativity).
+            Update affinity tensor (assuming assortativity).
 
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
+            Parameters
+            ----------
+            subs_nz : tuple
+                      Indices of elements of data that are non-zero.
 
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor W.
+            Returns
+            -------
+            dist_w : float
+                     Maximum distance between the old and the new affinity tensor W.
         """
 
         uttkrp_DKQ = np.zeros_like(self.w)
@@ -992,10 +990,9 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
         l = (1. - self.gamma) * lG + self.gamma * lX
 
         if np.isnan(l):
-            logging.error("Likelihood is NaN!!!!")
-            sys.exit(1)
-        else:
-            return l
+            raise ValueError("Likelihood is NaN!!!!")
+
+        return l
 
     def __Likelihood_batch(self,
                            data: Union[skt.dtensor, skt.sptensor],
@@ -1085,42 +1082,35 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
 
         return M
 
-    def _check_for_convergence_delta(self,
-                                     it: int,
-                                     coincide: int,
-                                     du: float,
-                                     dv: float,
-                                     dw: float,
-                                     db: float,
-                                     convergence: bool) -> Tuple[int, int, bool]:
+    def _check_for_convergence_delta(self, it, coincide, du, dv, dw, db, convergence):
         """
-        Check for convergence by using the maximum distances between the old and the new parameters values.
+            Check for convergence by using the maximum distances between the old and the new parameters values.
 
-        Parameters
-        ----------
-        it : int
-             Number of iteration.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        du : float
-             Maximum distance between the old and the new membership matrix U.
-        dv : float
-             Maximum distance between the old and the new membership matrix V.
-        dw : float
-             Maximum distance between the old and the new affinity tensor W.
-        db : float
-             Maximum distance between the old and the new beta matrix.
-        convergence : bool
-                      Flag for convergence.
+            Parameters
+            ----------
+            it : int
+                 Number of iteration.
+            coincide : int
+                       Number of time the update of the log-likelihood respects the convergence_tol.
+            du : float
+                 Maximum distance between the old and the new membership matrix U.
+            dv : float
+                 Maximum distance between the old and the new membership matrix V.
+            dw : float
+                 Maximum distance between the old and the new affinity tensor W.
+            db : float
+                 Maximum distance between the old and the new beta matrix.
+            convergence : bool
+                          Flag for convergence.
 
-        Returns
-        -------
-        it : int
-             Number of iteration.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
+            Returns
+            -------
+            it : int
+                 Number of iteration.
+            coincide : int
+                       Number of time the update of the log-likelihood respects the convergence_tol.
+            convergence : bool
+                          Flag for convergence.
         """
 
         if du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol and db < self.convergence_tol:
@@ -1134,9 +1124,9 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
 
         return it, coincide, convergence
 
-    def _update_optimal_parameters(self) -> None:
+    def _update_optimal_parameters(self):
         """
-        Update values of the parameters after convergence.
+            Update values of the parameters after convergence.
         """
 
         self.u_f = np.copy(self.u)
@@ -1172,5 +1162,5 @@ class MTCov:  # pylint: disable=too-many-instance-attributes
                             beta=self.beta_f,
                             max_it=final_it,
                             nodes=nodes, maxL=maxL)
-        logging.info(f'Inferred parameters saved in: {outfile.resolve()}')
+        logging.info('Inferred parameters saved in: %s', outfile.resolve())
         logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
