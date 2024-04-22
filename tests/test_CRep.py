@@ -32,6 +32,10 @@ class TestCRepHelpers(unittest.TestCase):
         self.crep.assortative = True
         self.crep.constrained = True
 
+        # Parameters for the initialization of the model
+        self.crep.use_unit_uniform = True
+        self.crep.normalize_rows = True
+
         # Parameters for the non assortative case
         self.vals_ = np.array([1.0, 2.0, 3.0])
         self.subs_ = (np.array([0, 0, 1]), np.array([0, 1, 2]), np.array([0, 1, 2]))
@@ -51,7 +55,7 @@ class TestCRepHelpers(unittest.TestCase):
         self.w_a = np.array([[0.1, 0.2, 0]])  # lxk #in the other case, this is lxkxk
 
     def test_randomize_eta(self):
-        self.crep._randomize_eta()  # pylint: disable=protected-access
+        self.crep._randomize_eta(use_unit_uniform=True)  # pylint: disable=protected-access
         self.assertTrue(0 <= self.crep.eta <= 1)
 
     def test_randomize_w(self):

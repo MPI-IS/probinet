@@ -4,9 +4,8 @@ The latent variables are related to community memberships and reciprocity value.
 """
 import logging
 from pathlib import Path
-import sys
 import time
-from typing import Any, List, Optional, Tuple, TypedDict, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from numpy import dtype, ndarray
 import numpy as np
@@ -17,20 +16,10 @@ from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import _lambda0_full
+from .base import FitParams, ModelClass
 
 
-class FitParams(TypedDict):
-    out_inference: bool
-    out_folder: str
-    end_file: str
-    files: str
-    fix_eta: bool
-    fix_communities: bool
-    fix_w: bool
-    use_approximation: bool
-
-
-class CRep:
+class CRep(ModelClass):
     """
     Class to perform inference in networks with reciprocity.
     """
@@ -45,16 +34,16 @@ class CRep:
                  max_iter: int = 1000,  # maximum number of EM steps before aborting
                  flag_conv: str = 'log',  # flag to choose the convergence criterion
                  ) -> None:
-        self.inf = inf
-        self.err_max = err_max
-        self.err = err
-        self.num_realizations = num_realizations
-        self.convergence_tol = convergence_tol
-        self.decision = decision
-        self.max_iter = max_iter
-        self.flag_conv = flag_conv
+        super().__init__(inf,
+                         err_max,
+                         err,
+                         num_realizations,
+                         convergence_tol,
+                         decision,
+                         max_iter,
+                         flag_conv)
 
-    def __check_fit_params(self,
+    def check_fit_params(self,
                            initialization: int,
                            eta0: Union[float, None],
                            undirected: bool,
@@ -64,87 +53,27 @@ class CRep:
                            constrained: bool,
                            **extra_params: Unpack[FitParams]) -> None:
 
-        if initialization not in {0, 1, 2, 3}:
-            log_and_raise_error(ValueError, 'The initialization parameter can be either 0, 1, 2 '
-                                            'or 3.')
-        self.initialization = initialization
+        message = 'The initialization parameter can be either 0, 1, 2 or 3.'
 
-        if eta0 is not None:
-            if (eta0 < 0) or (eta0 > 1):
-                log_and_raise_error(ValueError, 'The reciprocity coefficient eta0 has to be in '
-                                                '[0, 1]!')
-        self.eta0 = eta0  # initial value for the reciprocity coefficient
-        self.undirected = undirected  # flag to call the undirected network
-        self.assortative = assortative  # flag to call the assortative network
-        self.constrained = constrained  # if True, use the config with constraints on the updates
+        super()._check_fit_params(
+            initialization,
+            eta0,
+            undirected,
+            assortative,
+            data,
+            K,
+            message=message,
+            **extra_params)
 
-        self.N = data.shape[1]
-        self.L = data.shape[0]
-        self.K = K
-
-        available_extra_params = [
-            'fix_eta',
-            'fix_w',
-            'fix_communities',
-            'files',
-            'out_inference',
-            'out_folder',
-            'end_file'
-        ]
-        for extra_param in extra_params:
-            if extra_param not in available_extra_params:
-                message = f'Parameter {extra_param} is not available.'
-                logging.warning(message)  # Add the warning
-        if "fix_eta" in extra_params:
-            self.fix_eta = extra_params["fix_eta"]
-
-            if self.fix_eta:
-                if self.eta0 is None:
-                    log_and_raise_error(ValueError, 'If fix_eta=True, provide a value for eta0.')
-        else:
-            self.fix_eta = False
-
-        if "fix_w" in extra_params:
-            self.fix_w = extra_params["fix_w"]
-            if self.fix_w:
-                if self.initialization not in {1, 3}:
-                    log_and_raise_error(ValueError, 'If fix_w=True, the initialization has to be '
-                                                    'either 1 or 3.')
-        else:
-            self.fix_w = False
-
-        if "fix_communities" in extra_params:
-            self.fix_communities = extra_params["fix_communities"]
-            if self.fix_communities:
-                if self.initialization not in {2, 3}:
-                    log_and_raise_error(ValueError, 'If fix_communities=True, the initialization has'
-                                                    ' to be either 2 or 3.')
-        else:
-            self.fix_communities = False
-
-        if "files" in extra_params:
-            self.files = extra_params["files"]
+        self.constrained = constrained
+        
+        # Parameters for the initialization of the model
+        self.use_unit_uniform = True
+        self.normalize_rows = True
+        
         if self.initialization > 0:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
-        if "out_inference" in extra_params:
-            self.out_inference = extra_params["out_inference"]
-        else:
-            self.out_inference = True
-        if "out_folder" in extra_params:
-            self.out_folder = extra_params["out_folder"]
-        else:
-            self.out_folder = Path('outputs')
-
-        if "end_file" in extra_params:
-            self.end_file = extra_params["end_file"]
-        else:
-            self.end_file = ''
-
-        if self.undirected:
-            if not (self.fix_eta and self.eta0 == 0):
-                message = 'If undirected=True, the parameter eta has to be fixed equal to 0.'
-                log_and_raise_error(ValueError, message)
 
     def fit(self,
             data: Union[skt.dtensor,
@@ -205,7 +134,7 @@ class CRep:
         maxL : float
                Maximum pseudo log-likelihood.
         """
-        self.__check_fit_params(data=data,
+        self.check_fit_params(data=data,
                                 K=K,
                                 initialization=initialization,
                                 eta0=eta0,
@@ -213,6 +142,7 @@ class CRep:
                                 assortative=assortative,
                                 constrained=constrained,
                                 **extra_params)
+        logging.debug('Fixing random seed to: %s', rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
@@ -241,8 +171,9 @@ class CRep:
 
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
+            logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
             self._initialize(nodes=nodes)
-            self._update_old_variables()
+            super()._update_old_variables()
             self._update_cache(data, data_T_vals, subs_nz)
 
             # It sets up local variables for convergence checking. coincide and it are counters, convergence is a
@@ -267,12 +198,13 @@ class CRep:
                 # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
                 # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
                 if self.flag_conv == 'log':
-                    it, loglik, coincide, convergence = self._check_for_convergence(
+                    it, loglik, coincide, convergence = super()._check_for_convergence(
                         data,
                         it,
                         loglik,
                         coincide,
                         convergence,
+                        use_pseudo_likelihood=True,
                         data_T=data_T,
                         mask=mask)
 
@@ -282,8 +214,13 @@ class CRep:
                             f'- iterations = {it} - '
                             f'time = {np.round(time.time() - time_start, 2)} seconds')
                 elif self.flag_conv == 'deltas':
-                    it, coincide, convergence = self._check_for_convergence_delta(
-                        it, coincide, delta_u, delta_v, delta_w, delta_eta,
+                    it, coincide, convergence = super()._check_for_convergence_delta(
+                        it,
+                        coincide,
+                        delta_u,
+                        delta_v,
+                        delta_w, 
+                        delta_eta,
                         convergence)
 
                     if not it % 100:
@@ -298,21 +235,21 @@ class CRep:
             # pseudo log-likelihood.
             if self.flag_conv == 'log':
                 if maxL < loglik:
-                    self._update_optimal_parameters()
+                    super()._update_optimal_parameters()
                     maxL = loglik
                     self.final_it = it
                     conv = convergence
             elif self.flag_conv == 'deltas':
                 loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
                 if maxL < loglik:
-                    self._update_optimal_parameters()
+                    super()._update_optimal_parameters()
                     maxL = loglik
                     self.final_it = it
                     conv = convergence
 
             logging.debug(
-                f'Nreal = {r} - Pseudo Log-likelihood = {loglik} - iterations = {it} - '
-                f'time = {np.round(time.time() - time_start, 2)} seconds\n'
+                'Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds',
+                r, loglik, it, time.time() - time_start
             )
 
             # end cycle over realizations
@@ -321,180 +258,69 @@ class CRep:
 
         if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence not reached
-            logging.error(f'Solution failed to converge in {self.max_iter} EM steps!')
-
+            logging.error('Solution failed to converge in %s EM steps!', self.max_iter)
         if self.out_inference:
-            self.output_results(nodes)
+            super()._output_results(self.maxPSL, nodes)
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
-    def _initialize(self, nodes: List[Any]) -> None:
-        """
-        Random initialization of the parameters u, v, w, eta.
+    # def _initialize(self, nodes: List[Any]) -> None:
+    #     """
+    #     Random initialization of the parameters u, v, w, eta.
+    #
+    #     Parameters
+    #     ----------
+    #     rng : RandomState
+    #           Container for the Mersenne Twister pseudo-random number generator.
+    #     nodes : list
+    #             List of nodes IDs.
+    #     """
+    #
+    #     if self.eta0 is not None:
+    #         self.eta = self.eta0
+    #     else:
+    #
+    #         logging.debug('eta is initialized randomly.')
+    #         super()._randomize_eta(use_unit_uniform=self.use_unit_uniform)
+    #
+    #     if self.initialization == 0:
+    #
+    #         logging.debug('%s', 'u, v and w are initialized randomly.')
+    #         super()._randomize_w()
+    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
+    #
+    #     elif self.initialization == 1:
+    #
+    #         logging.debug('%s is initialized using the input file: %s', 'w', self.files)
+    #         logging.debug('%s', 'u and v are initialized randomly.')
+    #         super()._initialize_w()
+    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
+    #
+    #     elif self.initialization == 2:
+    #
+    #         logging.debug(
+    #             'u and v are initialized using the input file: %s', self.files
+    #         )
+    #         logging.debug('%s', 'w is initialized randomly.')
+    #         super()._initialize_u(nodes)
+    #         super()._initialize_v(nodes)
+    #         super()._randomize_w()
+    #
+    #     elif self.initialization == 3:
+    #
+    #         logging.debug(
+    #             'u, v and w are initialized using the input file: %s', self.files
+    #         )
+    #         super()._initialize_u(nodes)
+    #         super()._initialize_v(nodes)
+    #         super()._initialize_w()
 
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
-        nodes : list
-                List of nodes IDs.
-        """
 
-        if self.eta0 is not None:
-            self.eta = self.eta0
-        else:
-
-            logging.debug('eta is initialized randomly.')
-            self._randomize_eta()
-
-        if self.initialization == 0:
-
-            logging.debug('%s', 'u, v and w are initialized randomly.')
-            self._randomize_w()
-            self._randomize_u_v()
-
-        elif self.initialization == 1:
-
-            logging.debug('%s is initialized using the input file: %s', 'w', self.files)
-            logging.debug('%s', 'u and v are initialized randomly.')
-            self._initialize_w()
-            self._randomize_u_v()
-
-        elif self.initialization == 2:
-
-            logging.debug(
-                'u and v are initialized using the input file: %s', self.files
-            )
-            logging.debug('%s', 'w is initialized randomly.')
-            self._initialize_u(nodes)
-            self._initialize_v(nodes)
-            self._randomize_w()
-
-        elif self.initialization == 3:
-
-            logging.debug(
-                'u, v and w are initialized using the input file: %s', self.files
-            )
-            self._initialize_u(nodes)
-            self._initialize_v(nodes)
-            self._initialize_w()
-
-    def _randomize_eta(self) -> None:
-        """
-        Generate a random number in (0, 1.).
-
-        Parameters
-        ----------
-        """
-
-        self.eta = float((self.rng.random_sample(1)[0]))
-
-    def _randomize_w(self) -> None:
-        """
-        Assign a random number in (0, 1.) to each entry of the affinity tensor w.
-
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
-        """
-        if self.assortative:
-            self.w = self.rng.random_sample((self.L, self.K))
-        else:
-            self.w = np.zeros((self.L, self.K, self.K))
-
-    def _randomize_u_v(self) -> None:
-        """
-        Assign a random number in (0, 1.) to each entry of the membership matrices u and v, and
-        normalize each row.
-
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
-        """
-
-        self.u = self.rng.random_sample((self.N, self.K))
-        row_sums = self.u.sum(axis=1)
-        self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
-
-        if not self.undirected:
-            self.v = self.rng.random_sample((self.N, self.K))
-            row_sums = self.v.sum(axis=1)
-            self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
-        else:
-            self.v = self.u
-
-    def _initialize_u(self, nodes: List[Any]) -> None:
-        """
-        Initialize out-going membership matrix u from file.
-
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
-        nodes : list
-                List of nodes IDs.
-        """
-
-        self.u = self.theta['u']
-        assert np.array_equal(nodes, self.theta['nodes'])
-
-        max_entry = np.max(self.u)
-        self.u += max_entry * self.err * self.rng.random_sample(self.u.shape)
-
-    def _initialize_v(self, nodes: List[Any]) -> None:
-        """
-        Initialize in-coming membership matrix v from file.
-
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
-        nodes : list
-                List of nodes IDs.
-        """
-
-        if self.undirected:
-            self.v = self.u
-        else:
-            self.v = self.theta['v']
-            assert np.array_equal(nodes, self.theta['nodes'])
-
-            max_entry = np.max(self.v)
-            self.v += max_entry * self.err * self.rng.random_sample(self.v.shape)
-
-    def _initialize_w(self) -> None:
-        """
-        Initialize affinity tensor w from file.
-
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
-        """
-
-        if self.assortative:
-            self.w = self.theta['w']
-            assert self.w.shape == (self.L, self.K)
-        else:
-            self.w = self.theta['w']
-
-        max_entry = np.max(self.w)
-        self.w += max_entry * self.err * self.rng.random_sample(self.w.shape)
-
-    def _update_old_variables(self) -> None:
-        """
-        Update values of the parameters in the previous iteration.
-        """
-
-        self.u_old = np.copy(self.u)
-        self.v_old = np.copy(self.v)
-        self.w_old = np.copy(self.w)
-        self.eta_old = float(self.eta)
-
-    def _update_cache(self, data: Union[skt.dtensor, skt.sptensor],
-                      data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray]) -> None:
+    def _update_cache(
+            self, 
+            data: Union[skt.dtensor, skt.sptensor],
+            data_T_vals: np.ndarray,
+            subs_nz: Tuple[np.ndarray]) -> None:
         """
         Update the cache used in the em_update.
 
@@ -508,7 +334,7 @@ class CRep:
                   Indices of elements of data that are non-zero.
         """
 
-        self.lambda0_nz = self._lambda0_nz(subs_nz)
+        self.lambda0_nz = super()._lambda_nz(subs_nz)
         self.M_nz = self.lambda0_nz + self.eta * data_T_vals
         self.M_nz[self.M_nz == 0] = 1
         if isinstance(data, skt.dtensor):
@@ -517,44 +343,14 @@ class CRep:
             self.data_M_nz = data.vals / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
-    def _lambda0_nz(self, subs_nz: Tuple[np.ndarray]) -> np.ndarray:
-        """
-        Compute the mean lambda0_ij for only non-zero entries.
 
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
 
-        Returns
-        -------
-        nz_recon_I : ndarray
-                     Mean lambda0_ij for only non-zero entries.
-        """
 
-        if not self.assortative:
-            if len(subs_nz) >= 2:
-                nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
-                                        self.w[subs_nz[0], :, :])
-            else:
-                log_and_raise_error(ValueError, "subs_nz should have at least 2 elements.")
-        else:
-            if len(subs_nz) >= 2:
-                nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
-                                        self.w[subs_nz[0], :])
-            else:
-                log_and_raise_error(ValueError, "subs_nz should have at least 2 elements.")
-
-        if len(subs_nz) >= 3:
-            nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, self.v[subs_nz[2], :])
-        else:
-            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
-
-        return nz_recon_I
-
-    def _update_em(self, data: Union[skt.dtensor, skt.sptensor],
-                   data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray],
-                   denominator: float) -> Tuple[float, float, float, float]:
+    def _update_em(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray],
+        denominator: float) -> Tuple[float, float, float, float]:
         """
         Update parameters via EM procedure.
 
@@ -852,113 +648,6 @@ class CRep:
 
         return uttkrp_DK
 
-    def _check_for_convergence(self,
-                               data: Union[skt.dtensor, skt.sptensor],
-                               it: int,
-                               loglik: float,
-                               coincide: int,
-                               convergence: bool,
-                               data_T: skt.sptensor,
-                               mask: Optional[np.ndarray] = None) -> Tuple[
-            int, float, int, bool]:
-        """
-        Check for convergence by using the pseudo log-likelihood values.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-           Graph adjacency tensor.
-        it : int
-         Number of iteration.
-        loglik : float
-             Pseudo log-likelihood value.
-        coincide : int
-               Number of time the update of the pseudo log-likelihood respects the
-               convergence_tol.
-        convergence : bool
-                  Flag for convergence.
-        data_T : sptensor/dtensor
-             Graph adjacency tensor (transpose).
-        mask : ndarray
-           Mask for selecting the held out set in the adjacency tensor in case of
-           cross-validation.
-
-        Returns
-        -------
-        it : int
-         Number of iteration.
-        loglik : float
-             Pseudo log-likelihood value.
-        coincide : int
-               Number of time the update of the pseudo log-likelihood respects the
-               convergence_tol.
-        convergence : bool
-                  Flag for convergence.
-        """
-        if it % 10 == 0:
-            old_L = loglik
-            loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
-            if abs(loglik - old_L) < self.convergence_tol:
-                coincide += 1
-            else:
-                coincide = 0
-        if coincide > self.decision:
-            convergence = True
-        it += 1
-
-        return it, loglik, coincide, convergence
-
-    def _check_for_convergence_delta(self,
-                                     it: int,
-                                     coincide: int,
-                                     du: float,
-                                     dv: float,
-                                     dw: float,
-                                     de: float,
-                                     convergence: bool) -> Tuple[int,
-                                                                 int,
-                                                                 bool]:
-        """
-        Check for convergence by using the maximum distances between the old and the new
-        parameters values.
-
-        Parameters
-        ----------
-        it : int
-             Number of iteration.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        du : float
-             Maximum distance between the old and the new membership matrix U.
-        dv : float
-             Maximum distance between the old and the new membership matrix V.
-        dw : float
-             Maximum distance between the old and the new affinity tensor W.
-        de : float
-             Maximum distance between the old and the new eta parameter.
-        convergence : bool
-                      Flag for convergence.
-
-        Returns
-        -------
-        it : int
-             Number of iteration.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
-        """
-
-        if (du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol
-                and de < self.convergence_tol):
-            coincide += 1
-        else:
-            coincide = 0
-        if coincide > self.decision:
-            convergence = True
-        it += 1
-
-        return it, coincide, convergence
 
     def _PSLikelihood(self, data: Union[skt.dtensor, skt.sptensor],
                       data_T: skt.sptensor,
@@ -1006,44 +695,11 @@ class CRep:
         l += Alog.sum()
 
         if np.isnan(l):
-            logging.error("PSLikelihood is NaN!!!!")
-            sys.exit(1)
-        else:
-            return l
+            message = "PSLikelihood is NaN!!!!"
+            error_type = ValueError
+            log_and_raise_error(error_type, message)
 
-    def _update_optimal_parameters(self) -> None:
-        """
-        Update values of the parameters after convergence.
-        """
+        return l
 
-        self.u_f = np.copy(self.u)
-        self.v_f = np.copy(self.v)
-        self.w_f = np.copy(self.w)
-        self.eta_f = float(self.eta)
-
-    def output_results(self, nodes: List[Any]) -> None:
-        """
-        Output results.
-
-        Parameters
-        ----------
-        nodes : list
-                List of nodes IDs.
-        """
-        # Check if the output folder exists, otherwise create it
-        output_path = Path(self.out_folder)
-        if not output_path.exists():
-            output_path.mkdir(parents=True, exist_ok=True)
-
-        outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
-        np.savez_compressed(outfile,
-                            u=self.u_f,
-                            v=self.v_f,
-                            w=self.w_f,
-                            eta=self.eta_f,
-                            max_it=self.final_it,
-                            maxPSL=self.maxPSL,
-                            nodes=nodes)
-
-        logging.info('Inferred parameters saved in: %s', outfile.resolve())
-        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
+    def get_max_label(self):
+        return "maxPSL"

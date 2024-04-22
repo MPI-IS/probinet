@@ -106,6 +106,10 @@ class BaseTestCase(BaseTest):
         # Assert that the model's eta_f attribute is close to the 'eta' value in the theta dictionary
         self.assertTrue(np.allclose(self.model.eta_f, theta['eta']))
 
+        # Assert the dictionary keys
+        assert all(key in theta for key in ['u', 'v', 'w', 'eta', 'max_it', 'maxPSL',
+                                            'nodes']), "Some keys are missing in the theta dictionary"
+
         # Asserting GT information
 
         # Assert that the 'u' value in the thetaGT dictionary is close to the 'u' value in the theta dictionary

@@ -8,7 +8,7 @@ from __future__ import print_function
 import logging
 from pathlib import Path
 import time
-from typing import Any, List, Union
+from typing import Any, List, Tuple, Union
 
 import numpy as np
 import sktensor as skt
@@ -19,12 +19,10 @@ from ..input.tools import (
     check_symmetric, get_item_array_from_subs, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
 from ..output.plot import plot_L
-from .crep import FitParams
-
-# TODO: remove repeated parts once mixin is implemented
+from .base import FitParams, ModelClass
 
 
-class JointCRep:  # pylint: disable=too-many-instance-attributes
+class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
     """
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
@@ -40,96 +38,48 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
                  max_iter: int = 500,  # maximum number of EM steps before aborting
                  plot_loglik: bool = False,  # flag to plot the log-likelihood
                  flag_conv: str = 'log'  # flag to choose the convergence criterion
-                 ) -> None:
-        self.inf = inf
-        self.err_max = err_max
-        self.err = err
-        self.num_realizations = num_realizations
-        self.convergence_tol = convergence_tol
-        self.decision = decision
-        self.max_iter = max_iter
-        self.plot_loglik = plot_loglik
-        self.flag_conv = flag_conv
+                 ):
+        super().__init__(
+            inf,
+            err_max,
+            err,
+            num_realizations,
+            convergence_tol,
+            decision,
+            max_iter,
+            plot_loglik,
+            flag_conv)
 
-    def __check_fit_params(self,
-                           initialization: int,
-                           eta0: Union[float, None],
-                           undirected: bool,
-                           assortative: bool,
-                           data: Union[skt.dtensor, skt.sptensor],
-                           K: int,
-                           **extra_params: Unpack[FitParams]
-                           ) -> None:
-        if initialization not in {0, 1, 2, 3}:  # indicator for choosing how to initialize u,
-            # v and w
-            message = ('The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
-                       'indicator to initialize the membership matrices u and v and the affinity '
-                       'matrix w. If it is 0, they will be generated randomly; 1 means only '
-                       'the affinity matrix w will be uploaded from file; 2 implies the '
-                       'membership matrices u and v will be uploaded from file and 3 all u, '
-                       'v and w will be initialized through an input file.')
-            log_and_raise_error(ValueError, message)
+    def check_fit_params(self,
+                         initialization: int,
+                         eta0: Union[float, None],
+                         undirected: bool,
+                         assortative: bool,
+                         data: Union[skt.dtensor, skt.sptensor],
+                         K: int,
+                         **extra_params: Unpack[FitParams]
+                         ) -> None:
 
-        self.initialization = initialization
+        message = ('The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
+                   'indicator to initialize the membership matrices u and v and the affinity '
+                   'matrix w. If it is 0, they will be generated randomly; 1 means only '
+                   'the affinity matrix w will be uploaded from file; 2 implies the '
+                   'membership matrices u and v will be uploaded from file and 3 all u, '
+                   'v and w will be initialized through an input file.')
+        # Call the check_fit_params method from the parent class
+        super()._check_fit_params(
+            initialization,
+            eta0,
+            undirected,
+            assortative,
+            data,
+            K,
+            message,
+            **extra_params)
 
-        if (eta0 is not None) and (
-                eta0 <= 0.):  # initial value for the pair interaction coefficient
-            message = 'If not None, the eta0 parameter has to be greater than 0.!'
-            log_and_raise_error(ValueError, message)
-
-        self.eta0 = eta0  # initial value for the reciprocity coefficient
-        self.undirected = undirected  # flag to call the undirected network
-        self.assortative = assortative  # flag to call the assortative network
-
-        self.N = data.shape[1]
-        self.L = data.shape[0]
-        self.K = K
-
-        available_extra_params = [
-            'fix_eta',
-            'fix_w',
-            'fix_communities',
-            'files',
-            'out_inference',
-            'out_folder',
-            'end_file',
-            'use_approximation'
-        ]
-
-        for extra_param in extra_params:
-            if extra_param not in available_extra_params:
-                msg = f'Ignoring extra parameter {extra_param}.'
-                logging.warning(msg)  # Add the warning
-
-        if "fix_eta" in extra_params:
-            self.fix_eta = extra_params["fix_eta"]
-
-            if self.fix_eta:
-                if self.eta0 is None:
-                    log_and_raise_error(ValueError, 'If fix_eta=True, provide a value for eta0.')
-        else:
-            self.fix_eta = False
-
-        if "fix_w" in extra_params:
-            self.fix_w = extra_params["fix_w"]
-            if self.fix_w:
-                if self.initialization not in {1, 3}:
-                    message = 'If fix_w=True, the initialization has to be either 1 or 3.'
-                    log_and_raise_error(ValueError, message)
-        else:
-            self.fix_w = False
-
-        if "fix_communities" in extra_params:
-            self.fix_communities = extra_params["fix_communities"]
-            if self.fix_communities:
-                if self.initialization not in {2, 3}:
-                    message = 'If fix_communities=True, the initialization has to be either 2 or 3.'
-                    log_and_raise_error(ValueError, message)
-        else:
-            self.fix_communities = False
-
-        if "files" in extra_params:
-            self.files = extra_params["files"]
+        # Parameters for the initialization of the model
+        self.normalize_rows = False
+        self.use_unit_uniform = False
 
         if self.initialization > 0:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
@@ -148,56 +98,11 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
                 self.N = dfU.shape[0]
                 assert self.K == dfU.shape[1]
 
-        if "out_inference" in extra_params:
-            # TODO: what happens if this is not given?
-            self.out_inference = extra_params["out_inference"]
-        else:
-            self.out_inference = True
-        if "out_folder" in extra_params:
-            self.out_folder = extra_params["out_folder"]
-        else:
-            self.out_folder = Path('outputs')
-
-        if "end_file" in extra_params:
-            self.end_file = extra_params["end_file"]
-        else:
-            self.end_file = ''
-
         if "use_approximation" in extra_params:
             self.use_approximation = extra_params["use_approximation"]
         else:
             self.use_approximation = False
-
-        if self.undirected:
-            if not (self.fix_eta and self.eta0 == 1):
-                message = ('If undirected=True, the parameter eta has to be fixed equal to 1 '
-                           '(s.t. log(eta)=0).')
-                log_and_raise_error(ValueError, message)
-        # values of the parameters used during the update
-        self.u = np.zeros((self.N, self.K), dtype=float)  # out-going membership
-        self.v = np.zeros((self.N, self.K), dtype=float)  # in-going membership
-        self.eta = 0.  # pair interaction term
-
-        # values of the parameters in the previous iteration
-        self.u_old = np.zeros((self.N, self.K), dtype=float)  # out-going membership
-        self.v_old = np.zeros((self.N, self.K), dtype=float)  # in-going membership
-        self.eta_old = 0.  # pair interaction coefficient
-
-        # final values after convergence --> the ones that maximize the log-likelihood
-        self.u_f = np.zeros((self.N, self.K), dtype=float)  # out-going membership
-        self.v_f = np.zeros((self.N, self.K), dtype=float)  # in-going membership
-        self.eta_f = 0.  # pair interaction coefficient
-
-        # values of the affinity tensor
-        if self.assortative:  # purely diagonal matrix
-            self.w = np.zeros((self.L, self.K), dtype=float)
-            self.w_old = np.zeros((self.L, self.K), dtype=float)
-            self.w_f = np.zeros((self.L, self.K), dtype=float)
-        else:
-            self.w = np.zeros((self.L, self.K, self.K), dtype=float)
-            self.w_old = np.zeros((self.L, self.K, self.K), dtype=float)
-            self.w_f = np.zeros((self.L, self.K, self.K), dtype=float)
-
+        # TODO: check if this can be removed
         if self.fix_eta:  # TODO: Check with Martina what the type of this should be
             self.eta = self.eta_old = self.eta_f = self.eta0  # type: ignore
 
@@ -270,14 +175,14 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
         maxL : float
                Maximum log-likelihood.
         """
-        self.__check_fit_params(data=data,
-                                K=K,
-                                initialization=initialization,
-                                eta0=eta0,
-                                undirected=undirected,
-                                assortative=assortative,
-                                **extra_params)
-
+        self.check_fit_params(data=data,
+                              K=K,
+                              initialization=initialization,
+                              eta0=eta0,
+                              undirected=undirected,
+                              assortative=assortative,
+                              **extra_params)
+        logging.debug('Fixing random seed to: %s', rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
@@ -302,8 +207,9 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
-            self._initialize(nodes=nodes)
-            self._update_old_variables()
+            logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
+            super()._initialize(nodes=nodes)
+            super()._update_old_variables()
             self._update_cache(data, subs_nz)
 
             # It sets up local variables for convergence checking. coincide and it are counters, convergence is a
@@ -328,17 +234,39 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
                 # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
                 # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
                 if self.flag_conv == 'log':
-                    it, loglik, coincide, convergence = self._check_for_convergence(
-                        data, it, loglik, coincide, convergence)
+                    it, loglik, coincide, convergence = super()._check_for_convergence(
+                        data,
+                        it,
+                        loglik,
+                        coincide,
+                        convergence,
+                        use_pseudo_likelihood=False)
                     loglik_values.append(loglik)
                     if not it % 100:
-                        logging.debug('Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds', r, loglik, it, np.round(time.time() - time_start, 2))
+                        logging.debug(
+                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds',
+                            r,
+                            loglik,
+                            it,
+                            np.round(
+                                time.time() -
+                                time_start,
+                                2))
                 elif self.flag_conv == 'deltas':
-                    it, coincide, convergence = self._check_for_convergence_delta(
-                        it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)
+                    it, coincide, convergence = super()._check_for_convergence_delta(
+                        it,
+                        coincide,
+                        delta_u,
+                        delta_v,
+                        delta_w,
+                        delta_eta,
+                        convergence)
+
                     if not it % 100:
-                        logging.debug('Nreal = %s - iterations = %s - time = %s seconds',
-                                      r, it, np.round(time.time() - time_start, 2))
+                        logging.debug(
+                            'Nreal = %s - iterations = %s - time = %s seconds',
+                            r, it, np.round(time.time() - time_start, 2)
+                        )
                 else:
                     log_and_raise_error(ValueError, 'flag_conv can be either log or deltas!')
 
@@ -347,180 +275,87 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
             # self._update_optimal_parameters()) and sets maxL to the current pseudo log-likelihood.
             if self.flag_conv == 'log':
                 if maxL < loglik:
-                    self._update_optimal_parameters()
+                    super()._update_optimal_parameters()
                     best_loglik = list(loglik_values)
                     maxL = loglik
-                    final_it = it
+                    self.final_it = it
                     conv = convergence
                     best_r = r
             elif self.flag_conv == 'deltas':
                 loglik = self._Likelihood(data)
                 if maxL < loglik:
-                    self._update_optimal_parameters()
+                    super()._update_optimal_parameters()
                     maxL = loglik
-                    final_it = it
+                    self.final_it = it
                     conv = convergence
                     best_r = r
             logging.debug('Nreal = %s - Log-likelihood = %s - iterations = %s - '
-                          'time = %s seconds',r, loglik, it,
+                          'time = %s seconds', r, loglik, it,
                           np.round(time.time() - time_start, 2))
 
             # end cycle over realizations
 
-        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL, final_it)
+        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL,
+                      self.final_it)
 
-        if np.logical_and(final_it == self.max_iter, not conv):
+        if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence is not reached
             logging.warning('Solution failed to converge in %s EM steps!', self.max_iter)
 
         if np.logical_and(self.plot_loglik, self.flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
 
+        self.maxL = maxL
+
         if self.out_inference:
-            self._output_results(maxL, nodes, final_it)
+            super()._output_results(self.maxL, nodes)
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
-    def _initialize(self, nodes: List[Any]) -> None:
-        """
-        Random initialization of the parameters u, v, w, eta.
+    # def _initialize(self, nodes: List[Any]) -> None:
+    #     """
+    #     Random initialization of the parameters u, v, w, eta.
+    #
+    #     Parameters
+    #     ----------
+    #     nodes : list
+    #             List of nodes IDs.
+    #     """
+    #
+    #     if self.eta0 is not None:
+    #         self.eta = self.eta0
+    #     else:
+    #         logging.debug('eta is initialized randomly.')
+    #         super()._randomize_eta(use_unit_uniform=False)
+    #
+    #     if self.initialization == 0:
+    #         logging.debug('u, v and w are initialized randomly.')
+    #         super()._randomize_w()
+    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
+    #
+    #     elif self.initialization == 1:
+    #         logging.debug('w is initialized using the input file: %s', self.files)
+    #         logging.debug('u and v are initialized randomly.')
+    #         self._initialize_w()
+    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
+    #
+    #     elif self.initialization == 2:
+    #         logging.debug('u and v are initialized using the input file: %s', self.files)
+    #         logging.debug('w is initialized randomly.')
+    #         super()._initialize_u(nodes)
+    #         super()._initialize_v(nodes)
+    #         super()._randomize_w()
+    #
+    #     elif self.initialization == 3:
+    #         logging.debug('u, v and w are initialized using the input file: %s', self.files)
+    #         super()._initialize_u(nodes)
+    #         super()._initialize_v(nodes)
+    #         super()._initialize_w()
 
-        Parameters
-        ----------
-        nodes : list
-                List of nodes IDs.
-        """
-
-        if self.eta0 is not None:
-            self.eta = self.eta0
-        else:
-            logging.debug('eta is initialized randomly.')
-            self._randomize_eta()
-
-        if self.initialization == 0:
-            logging.debug('u, v and w are initialized randomly.')
-            self._randomize_w()
-            self._randomize_u_v()
-
-        elif self.initialization == 1:
-            logging.debug('w is initialized using the input file: %s', self.files)
-            logging.debug('u and v are initialized randomly.')
-            self._initialize_w()
-            self._randomize_u_v()
-
-        elif self.initialization == 2:
-            logging.debug('u and v are initialized using the input file: %s', self.files)
-            logging.debug('w is initialized randomly.')
-            self._initialize_u(nodes)
-            self._initialize_v(nodes)
-            self._randomize_w()
-
-        elif self.initialization == 3:
-            logging.debug('u, v and w are initialized using the input file: %s', self.files)
-            self._initialize_u(nodes)
-            self._initialize_v(nodes)
-            self._initialize_w()
-
-    def _randomize_eta(self) -> None:
-        """
-        Generate a random number in (1., 50.).
-        """
-
-        self.eta = self.rng.uniform(1.01, 49.99)
-
-    def _randomize_w(self) -> None:
-        """
-        Assign a random number in (0, 1.) to each entry of the affinity tensor w.
-        """
-
-        for i in range(self.L):
-            for k in range(self.K):
-                if self.assortative:
-                    self.w[i, k] = self.rng.random_sample(1)
-                else:
-                    for q in range(k, self.K):
-                        if q == k:
-                            self.w[i, k, q] = self.rng.random_sample(1)
-                        else:
-                            self.w[i, k, q] = self.w[i, q, k] = self.err * self.rng.random_sample(1)
-
-    def _randomize_u_v(self) -> None:
-        """
-        Assign a random number in (0, 1.) to each entry of the membership matrices u and v,
-        and normalize each row.
-        """
-
-        self.u = self.rng.random_sample(self.u.shape)
-        # row_sums = self.u.sum(axis=1)
-        # self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
-
-        if not self.undirected:
-            self.v = self.rng.random_sample(self.v.shape)
-            # row_sums = self.v.sum(axis=1)
-            # self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
-        else:
-            self.v = self.u
-
-    def _initialize_u(self, nodes: List[Any]) -> None:
-        """
-        Initialize out-going membership matrix u from file.
-
-        Parameters
-        ----------
-        nodes : list
-                List of nodes IDs.
-        """
-
-        self.u = self.theta['u']
-        assert np.array_equal(nodes, self.theta['nodes'])
-
-        max_entry = np.max(self.u)
-        self.u += max_entry * self.err * self.rng.random_sample(self.u.shape)
-
-    def _initialize_v(self, nodes: List[Any]) -> None:
-        """
-        Initialize in-coming membership matrix v from file.
-
-        Parameters
-        ----------
-        nodes : list
-                List of nodes IDs.
-        """
-
-        if self.undirected:
-            self.v = self.u
-        else:
-            self.v = self.theta['v']
-            assert np.array_equal(nodes, self.theta['nodes'])
-
-            max_entry = np.max(self.v)
-            self.v += max_entry * self.err * self.rng.random_sample(self.v.shape)
-
-    def _initialize_w(self) -> None:
-        """
-        Initialize affinity tensor w from file.
-        """
-
-        if self.assortative:
-            self.w = self.theta['w']
-            assert self.w.shape == (self.L, self.K)
-        else:
-            self.w = self.theta['w']
-
-        max_entry = np.max(self.w)
-        self.w += max_entry * self.err * self.rng.random_sample(self.w.shape)
-
-    def _update_old_variables(self) -> None:
-        """
-        Update values of the parameters in the previous iteration.
-        """
-
-        self.u_old = np.copy(self.u)
-        self.v_old = np.copy(self.v)
-        self.w_old = np.copy(self.w)
-        self.eta_old = np.copy(self.eta)  # type: ignore
-
-    def _update_cache(self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple) -> None:
+    def _update_cache(
+            self,
+            data: Union[skt.dtensor, skt.sptensor],
+            subs_nz: tuple) -> None:
         """
         Update the cache used in the em_update.
 
@@ -534,7 +369,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         self.lambda_aij = self._lambda_full()  # full matrix lambda
 
-        self.lambda_nz = self._lambda_nz(subs_nz)  # matrix lambda for non-zero entries
+        self.lambda_nz = super()._lambda_nz(subs_nz)  # matrix lambda for non-zero entries
         lambda_zeros = self.lambda_nz == 0
         self.lambda_nz[lambda_zeros] = 1  # still good because with np.log(1)=0
         if isinstance(data, skt.dtensor):
@@ -570,28 +405,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         return M
 
-    def _lambda_nz(self, subs_nz: tuple) -> np.ndarray:
-        """
-        Compute the mean lambda_ij for only non-zero entries.
 
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        nz_recon_I : ndarray
-                     Mean lambda_ij for only non-zero entries.
-        """
-
-        if not self.assortative:
-            nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :], self.w[subs_nz[0], :, :])
-        else:
-            nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :], self.w[subs_nz[0], :])
-        nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, self.v[subs_nz[2], :])
-
-        return nz_recon_I
 
     def _calculate_Z(self) -> np.ndarray:
         """
@@ -609,7 +423,10 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         return Z
 
-    def _update_em(self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple) -> tuple:
+    def _update_em(
+            self,
+            data: Union[skt.dtensor, skt.sptensor],
+            subs_nz: tuple) -> tuple:
         """
         Update parameters via EM procedure.
 
@@ -916,7 +733,7 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         return dist_w
 
-    def _update_W(self, subs_nz: tuple) -> float:
+    def _update_W(self, subs_nz: Tuple[np.ndarray]) -> float:
         """
         Update affinity tensor.
 
@@ -1082,105 +899,6 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         return uttkrp_DK
 
-    def _check_for_convergence(self,
-                               data: Union[skt.dtensor,
-                                           skt.sptensor],
-                               it: int,
-                               loglik: float,
-                               coincide: int,
-                               convergence: bool) -> tuple:
-        """
-        Check for convergence by using the log-likelihood values.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        it : int
-             Number of iteration.
-        loglik : float
-                 Pseudo log-likelihood value.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
-
-        Returns
-        -------
-        it : int
-             Number of iteration.
-        loglik : float
-                 Log-likelihood value.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
-        """
-
-        if it % 10 == 0:
-            old_L = loglik
-            loglik = self._Likelihood(data)
-            if abs(loglik - old_L) < self.convergence_tol:
-                coincide += 1
-            else:
-                coincide = 0
-        if coincide > self.decision:
-            convergence = True
-        it += 1
-
-        return it, loglik, coincide, convergence
-
-    def _check_for_convergence_delta(
-            self,
-            it: int,
-            coincide: int,
-            du: float,
-            dv: float,
-            dw: float,
-            de: float,
-            convergence: bool) -> tuple:
-        """
-        Check for convergence by using the maximum distances between the old and the new parameters
-        values.
-
-        Parameters
-        ----------
-        it : int
-             Number of iteration.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        du : float
-             Maximum distance between the old and the new membership matrix U.
-        dv : float
-             Maximum distance between the old and the new membership matrix V.
-        dw : float
-             Maximum distance between the old and the new affinity tensor W.
-        de : float
-             Maximum distance between the old and the new eta parameter.
-        convergence : bool
-                      Flag for convergence.
-
-        Returns
-        -------
-        it : int
-             Number of iteration.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
-        """
-
-        if (du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol
-                and de < self.convergence_tol):
-            coincide += 1
-        else:
-            coincide = 0
-        if coincide > self.decision:
-            convergence = True
-        it += 1
-
-        return it, coincide, convergence
-
     def _Likelihood(self, data: Union[skt.dtensor, skt.sptensor]) -> float:
         """
         Compute the log-likelihood of the data.
@@ -1215,41 +933,5 @@ class JointCRep:  # pylint: disable=too-many-instance-attributes
 
         return l
 
-    def _update_optimal_parameters(self) -> None:
-        """
-        Update values of the parameters after convergence.
-        """
-
-        self.u_f = np.copy(self.u)
-        self.v_f = np.copy(self.v)
-        self.w_f = np.copy(self.w)
-        self.eta_f = np.copy(self.eta)  # type: ignore
-
-    def _output_results(self, maxL: float, nodes: List[Any], final_it: int) -> None:
-        """
-        Output results.
-
-        Parameters
-        ----------
-        maxL : float
-               Maximum log-likelihood.
-        nodes : list
-                List of nodes IDs.
-        final_it : int
-                   Total number of iterations.
-        """
-        # Check if the output folder exists, otherwise create it
-        Path(self.out_folder).mkdir(parents=True, exist_ok=True)
-
-        # Save the inferred parameters
-        outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
-        np.savez_compressed(outfile,
-                            u=self.u_f,
-                            v=self.v_f,
-                            w=self.w_f,
-                            eta=self.eta_f,
-                            max_it=final_it,
-                            maxL=maxL,
-                            nodes=nodes)
-        logging.info('Inferred parameters saved in: %s', outfile.resolve())
-        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
+    def get_max_label(self):
+        return "maxL"
