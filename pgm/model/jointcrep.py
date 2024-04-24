@@ -66,15 +66,28 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                    'the affinity matrix w will be uploaded from file; 2 implies the '
                    'membership matrices u and v will be uploaded from file and 3 all u, '
                    'v and w will be initialized through an input file.')
+        available_extra_params = [
+            'fix_eta',
+            'fix_w',
+            'fix_communities',
+            'files',
+            'out_inference',
+            'out_folder',
+            'end_file',
+            'use_approximation'
+        ]
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
             initialization,
-            eta0,
             undirected,
             assortative,
             data,
             K,
-            message,
+            available_extra_params,
+            data_X=None,
+            gamma=None,
+            eta0=eta0,
+            message=message,
             **extra_params)
 
         # Parameters for the initialization of the model
@@ -102,9 +115,9 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             self.use_approximation = extra_params["use_approximation"]
         else:
             self.use_approximation = False
-        # TODO: check if this can be removed
-        if self.fix_eta:  # TODO: Check with Martina what the type of this should be
-            self.eta = self.eta_old = self.eta_f = self.eta0  # type: ignore
+
+        if self.fix_eta:
+            self.eta = self.eta_old = self.eta_f = self.eta0
 
     def fit(self,
             data: Union[skt.dtensor, skt.sptensor],
@@ -186,6 +199,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
+        self.nodes = nodes
 
         if data_T is None:
             data_T = np.einsum('aij->aji', data)
@@ -208,7 +222,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
             logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
-            super()._initialize(nodes=nodes)
+            super()._initialize()
             super()._update_old_variables()
             self._update_cache(data, subs_nz)
 
@@ -308,49 +322,9 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.maxL = maxL
 
         if self.out_inference:
-            super()._output_results(self.maxL, nodes)
+            super()._output_results()
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
-
-    # def _initialize(self, nodes: List[Any]) -> None:
-    #     """
-    #     Random initialization of the parameters u, v, w, eta.
-    #
-    #     Parameters
-    #     ----------
-    #     nodes : list
-    #             List of nodes IDs.
-    #     """
-    #
-    #     if self.eta0 is not None:
-    #         self.eta = self.eta0
-    #     else:
-    #         logging.debug('eta is initialized randomly.')
-    #         super()._randomize_eta(use_unit_uniform=False)
-    #
-    #     if self.initialization == 0:
-    #         logging.debug('u, v and w are initialized randomly.')
-    #         super()._randomize_w()
-    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
-    #
-    #     elif self.initialization == 1:
-    #         logging.debug('w is initialized using the input file: %s', self.files)
-    #         logging.debug('u and v are initialized randomly.')
-    #         self._initialize_w()
-    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
-    #
-    #     elif self.initialization == 2:
-    #         logging.debug('u and v are initialized using the input file: %s', self.files)
-    #         logging.debug('w is initialized randomly.')
-    #         super()._initialize_u(nodes)
-    #         super()._initialize_v(nodes)
-    #         super()._randomize_w()
-    #
-    #     elif self.initialization == 3:
-    #         logging.debug('u, v and w are initialized using the input file: %s', self.files)
-    #         super()._initialize_u(nodes)
-    #         super()._initialize_v(nodes)
-    #         super()._initialize_w()
 
     def _update_cache(
             self,
@@ -367,7 +341,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                   Indices of elements of data that are non-zero.
         """
 
-        self.lambda_aij = self._lambda_full()  # full matrix lambda
+        self.lambda_aij = super()._lambda_full()  # full matrix lambda
 
         self.lambda_nz = super()._lambda_nz(subs_nz)  # matrix lambda for non-zero entries
         lambda_zeros = self.lambda_nz == 0
@@ -385,27 +359,6 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                 self.lambda_aij,
                 self.lambda_aij)  # to use in Z and eta
             self.Z = self._calculate_Z()
-
-    def _lambda_full(self):
-        """
-        Compute the mean lambda for all entries.
-
-        Returns
-        -------
-        M : ndarray
-            Mean lambda for all entries.
-        """
-
-        if self.w.ndim == 2:
-            M = np.einsum('ik,jk->ijk', self.u, self.v)
-            M = np.einsum('ijk,ak->aij', M, self.w)
-        else:
-            M = np.einsum('ik,jq->ijkq', self.u, self.v)
-            M = np.einsum('ijkq,akq->aij', M, self.w)
-
-        return M
-
-
 
     def _calculate_Z(self) -> np.ndarray:
         """
@@ -933,5 +886,5 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         return l
 
-    def get_max_label(self):
-        return "maxL"
+    # def get_max_label(self):
+    #    return "maxL"

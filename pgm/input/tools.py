@@ -340,6 +340,7 @@ def write_adjacency(G: List[nx.MultiDiGraph],
     df.to_csv(path_or_buf=folder + fname, index=False)
     logging.info('Adjacency tensor saved in: %s', folder + fname)
 
+
 def write_design_Matrix(
         metadata: Dict[str, str],
         perc: float,
@@ -370,7 +371,9 @@ def write_design_Matrix(
     X[nodeID] = X.index
     X = X.loc[:, [nodeID, attr_name]]
     X.to_csv(path_or_buf=folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv', index=False)
-    logging.debug('Design matrix saved in: %s%s%s_%s.csv', folder, fname, str(perc)[0], str(perc)[2])
+    logging.debug('Design matrix saved in: %s%s%s_%s.csv',
+                  folder, fname, str(perc)[0], str(perc)[2])
+
 
 def transpose_tensor(M: np.ndarray) -> np.ndarray:
     """

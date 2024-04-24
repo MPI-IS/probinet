@@ -3,24 +3,22 @@ Class definition of MTCov, the generative algorithm that incorporates both the t
 attributes to extract overlapping communities in directed and undirected multilayer networks.
 """
 import logging
-from pathlib import Path
 import sys
 import time
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
-from numpy.random import RandomState
 import scipy.sparse
 import sktensor as skt
 from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative
-from ..model.crep import FitParams
 from ..output.plot import plot_L
+from .base import FitParams, ModelClass
 
 
-class MTCov:
+class MTCov(ModelClass):
     """
     Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
@@ -38,42 +36,54 @@ class MTCov:
                  flag_conv: str = 'log'  # flag to choose the convergence criterion
                  ) -> None:
 
-        self.inf = inf  # initial value of the pseudo log-likelihood
-        self.err_max = err_max  # minimum value for the parameters
-        self.err = err  # noise for the initialization
-        self.num_realizations = num_realizations  # number of iterations with different random initialization
-        self.convergence_tol = convergence_tol  # convergence_tol parameter for convergence
-        self.decision = decision  # convergence parameter
-        self.max_iter = max_iter  # maximum number of EM steps before aborting
-        self.plot_loglik = plot_loglik  # flag to plot the log-likelihood
-        self.flag_conv = flag_conv
+        super().__init__(
+            inf,
+            err_max,
+            err,
+            num_realizations,
+            convergence_tol,
+            decision,
+            max_iter,
+            plot_loglik,
+            flag_conv)
 
-    def __check_fit_parameters(self,
-                               initialization: int,
-                               gamma: float,
-                               undirected: bool,
-                               assortative: bool,
-                               data: Union[skt.dtensor, skt.sptensor, np.ndarray],
-                               data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
-                               K: int,
-                               **extra_params: Unpack[FitParams]
-                               ) -> None:
+    def check_fit_params(self,
+                         initialization: int,
+                         gamma: float,
+                         undirected: bool,
+                         assortative: bool,
+                         data: Union[skt.dtensor, skt.sptensor, np.ndarray],
+                         data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
+                         K: int,
+                         **extra_params: Unpack[FitParams]
+                         ) -> None:
 
-        if "files" in extra_params:
-            self.files = extra_params["files"]
-        else:
-            message = 'The input file is missing.'
-            error_type = ValueError
-            log_and_raise_error(logging, error_type, message)
+        message = (
+            'The initialization parameter can be either 0 or 1. It is used as an indicator to '
+            'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
+            'will be generated randomly, otherwise they will upload from file.')
+        available_extra_params = [
+            'files',
+            'out_inference',
+            'out_folder',
+            'end_file',
+        ]
 
-        if initialization not in {0, 1}:  # indicator for choosing how to initialize u, v and w
-            message = (
-                'The initialization parameter can be either 0 or 1. It is used as an indicator to '
-                'initialize the membership matrices u and v and the affinity matrix w. If it is 0, they '
-                'will be generated randomly, otherwise they will upload from file.')
-            log_and_raise_error(ValueError, message)
+        super()._check_fit_params(
+            initialization,
+            undirected,
+            assortative,
+            data,
+            K,
+            available_extra_params,
+            data_X,
+            eta0=None,
+            gamma=gamma,
+            message=message,
+            **extra_params)
 
-        self.initialization = initialization
+        # Parameters for the initialization of the model
+        self.normalize_rows = False
 
         if self.initialization == 1:
             self.theta = np.load(self.files, allow_pickle=True)
@@ -85,57 +95,6 @@ class MTCov:
             dfB = self.theta['beta']
             self.Z = dfB.shape[1]
             assert self.K == dfU.shape[1] == dfB.shape[0]
-
-        self.gamma = gamma  # scaling parameter
-        self.undirected = undirected  # flag for undirected networks
-        self.assortative = assortative
-
-        self.N = data.shape[1]
-        self.L = data.shape[0]
-        self.K = K  # number of communities
-        self.Z = data_X.shape[1]  # number of categories of the categorical attribute
-
-        available_extra_params = [
-            'files',
-            'out_inference',
-            'out_folder',
-            'end_file',
-        ]
-
-        for extra_param in extra_params:
-            if extra_param not in available_extra_params:
-                msg = f'Ignoring extra parameter {extra_param}.'
-                logging.warning(msg)  # Add the warning
-
-        if "files" in extra_params:
-            self.files = extra_params["files"]
-
-        if "out_inference" in extra_params:
-            self.out_inference = extra_params["out_inference"]
-        else:
-            self.out_inference = True
-        if "out_folder" in extra_params:
-            self.out_folder = extra_params["out_folder"]
-        else:
-            self.out_folder = Path('outputs')
-
-        if "end_file" in extra_params:
-            self.end_file = extra_params["end_file"]
-        else:
-            self.end_file = ''
-
-        # values of the parameters used during the update
-        self.beta = np.zeros((self.K, self.Z), dtype=float)
-
-        # values of the affinity tensor
-        if self.assortative:  # purely diagonal matrix
-            self.w = np.zeros((self.L, self.K), dtype=float)
-            self.w_old = np.zeros((self.L, self.K), dtype=float)
-            self.w_f = np.zeros((self.L, self.K), dtype=float)
-        else:
-            self.w = np.zeros((self.L, self.K, self.K), dtype=float)
-            self.w_old = np.zeros((self.L, self.K, self.K), dtype=float)
-            self.w_f = np.zeros((self.L, self.K, self.K), dtype=float)
 
     def fit(self,
             data: Union[skt.dtensor, skt.sptensor],
@@ -149,7 +108,7 @@ class MTCov:
             initialization: int = 0,
             undirected: bool = False,
             assortative: bool = True,
-            **extra_params: Unpack[FitParams]  # TODO: could this be done in another way? mypy keeps
+            **extra_params: Unpack[FitParams]
             # complaining about the types of the values
             ) -> tuple[np.ndarray[Any,
                                   np.dtype[np.float64]],
@@ -193,20 +152,20 @@ class MTCov:
         maxL : float
                Maximum log-likelihood value.
         """
-        self.__check_fit_parameters(data=data,
-                                    data_X=data_X,
-                                    K=K,
-                                    initialization=initialization,
-                                    gamma=gamma,
-                                    undirected=undirected,
-                                    assortative=assortative,
-                                    **extra_params
-                                    )
+        self.check_fit_params(data=data,
+                              data_X=data_X,
+                              K=K,
+                              initialization=initialization,
+                              gamma=gamma,
+                              undirected=undirected,
+                              assortative=assortative,
+                              **extra_params
+                              )
 
-        self.rseed = rseed
-        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
+        self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
+        self.nodes = nodes
 
         # pre-processing of the data to handle the sparsity
         if not isinstance(data, skt.sptensor):
@@ -242,9 +201,9 @@ class MTCov:
 
         for r in range(self.num_realizations):
 
-            self._initialize(rng=np.random.RandomState(self.rseed), nodes=nodes)
+            super()._initialize()
 
-            self._update_old_variables()
+            super()._update_old_variables()
             self._update_cache(data, subs_nz, data_X, subs_X_nz)  # type: ignore
 
             # convergence local variables
@@ -276,18 +235,15 @@ class MTCov:
                     )
                     loglik_values.append(loglik)
                 elif flag_conv == 'deltas':
-                    it, coincide, convergence = self._check_for_convergence_delta(it, coincide,
-                                                                                  delta_u, delta_v,
-                                                                                  delta_w,
-                                                                                  delta_beta,
-                                                                                  convergence)
+                    it, coincide, convergence = super()._check_for_convergence_delta(
+                        it, coincide, delta_u, delta_v, delta_w, delta_beta, convergence)
                 else:
                     log_and_raise_error(ValueError, 'Error! flag_conv can be either "log" or '
                                                     '"deltas"')
 
             if flag_conv == 'log':
                 if maxL < loglik:
-                    self._update_optimal_parameters()
+                    super()._update_optimal_parameters()
                     best_loglik = list(loglik_values)
                     maxL = loglik
                     final_it = it
@@ -300,7 +256,7 @@ class MTCov:
                     loglik = self.__Likelihood_batch(
                         data, data_X, subset_N, Subs, SubsX)  # type: ignore
                 if maxL < loglik:
-                    self._update_optimal_parameters()
+                    super()._update_optimal_parameters()
                     maxL = loglik
                     final_it = it
                     conv = convergence
@@ -309,7 +265,6 @@ class MTCov:
                           '%s seconds', r, loglik, it,
                           np.round(time.time() - time_start, 2))
 
-            self.rseed += self.rng.randint(10000)
             # end cycle over realizations
 
         if np.logical_and(final_it == self.max_iter, not conv):
@@ -318,182 +273,14 @@ class MTCov:
 
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
+            
+        self.final_it = final_it
+        self.maxL = maxL
 
         if self.out_inference:
-            self.output_results(maxL, nodes, final_it)
+            super()._output_results()
 
         return self.u_f, self.v_f, self.w_f, self.beta_f, maxL
-
-    def _initialize(self, rng: RandomState, nodes: List[int]) -> None:
-        """
-            Random initialization of the parameters U, V, W, beta.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-            nodes : list
-                    List of nodes IDs.
-        """
-
-        if self.initialization == 0:
-            logging.debug('U, V, W and beta are initialized randomly.')
-            self._randomize_u_v(rng)
-            if self.gamma != 0:
-                self._randomize_beta(rng)
-            if self.gamma != 1:
-                self._randomize_w(rng)
-
-        elif self.initialization == 1:
-            logging.debug('U, V, W and beta are initialized using the input file: %s', self.files)
-            self._initialize_u(rng, nodes)
-            self._initialize_v(rng, nodes)
-            self._initialize_beta(rng)
-            self._initialize_w(rng)
-
-    def _randomize_u_v(self, rng: RandomState) -> None:
-        """
-            Assign a random number in (0, 1.) to each entry of the membership matrices U and V, and normalize each row.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-        """
-
-        if rng is None:
-            rng = np.random.RandomState(self.rseed)
-        self.u = rng.random_sample((self.N, self.K))
-        row_sums = self.u.sum(axis=1)
-        self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
-        if not self.undirected:
-            self.v = rng.random_sample((self.N, self.K))
-            row_sums = self.v.sum(axis=1)
-            self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
-        else:
-            self.v = self.u
-
-    def _randomize_beta(self, rng):
-        """
-            Assign a random number in (0, 1.) to each entry of the beta matrix, and normalize each row.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-        """
-
-        if rng is None:
-            rng = np.random.RandomState(self.rseed)
-        self.beta = rng.random_sample((self.K, self.Z))
-        self.beta = (self.beta.T / np.sum(self.beta, axis=1)).T
-
-    def _randomize_w(self, rng):
-        """
-            Assign a random number in (0, 1.) to each entry of the affinity tensor W.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-        """
-
-        if rng is None:
-            rng = np.random.RandomState(self.rseed)
-        for i in range(self.L):
-            for k in range(self.K):
-                if self.assortative:
-                    self.w[i, k] = rng.random_sample(1)
-                else:
-                    for q in range(k, self.K):
-                        if q == k:
-                            self.w[i, k, q] = rng.random_sample(1)
-                        else:
-                            self.w[i, k, q] = self.w[i, q, k] = self.err * rng.random_sample(1)
-
-    def _initialize_u(self, rng, nodes):
-        """
-            Initialize out-going membership matrix u from file.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-            nodes : list
-                    List of nodes IDs.
-        """
-
-        self.u = self.theta['u']
-        assert np.array_equal(nodes, self.theta['nodes'])
-
-        max_entry = np.max(self.u)
-        self.u += max_entry * self.err * rng.random_sample(self.u.shape)
-
-    def _initialize_v(self, rng: RandomState, nodes: List[int]) -> None:
-        """
-            Initialize in-coming membership matrix v from file.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-            nodes : list
-                    List of nodes IDs.
-        """
-
-        if self.undirected:
-            self.v = self.u
-        else:
-            self.v = self.theta['v']
-            assert np.array_equal(nodes, self.theta['nodes'])
-
-            max_entry = np.max(self.v)
-            self.v += max_entry * self.err * rng.random_sample(self.v.shape)
-
-    def _initialize_beta(self, rng: RandomState) -> None:
-        """
-            Initialize beta matrix beta from file.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-        """
-
-        self.beta = self.theta['beta']
-
-        max_entry = np.max(self.beta)
-        self.beta += max_entry * self.err * rng.random_sample(self.beta.shape)
-
-    def _initialize_w(self, rng: RandomState) -> None:
-        """
-            Initialize affinity tensor w from file.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
-        """
-
-        if self.assortative:
-            self.w = np.zeros((self.L, self.K))
-            for l in range(self.L):
-                self.w[l] = np.diag(self.w[l])[np.newaxis, :].copy()
-        else:
-            self.w = self.theta['w']
-
-        max_entry = np.max(self.w)
-        self.w += max_entry * self.err * rng.random_sample(self.w.shape)
-
-    def _update_old_variables(self) -> None:
-        """
-            Update values of the parameters in the previous iteration.
-        """
-
-        self.u_old = np.copy(self.u)
-        self.v_old = np.copy(self.v)
-        self.w_old = np.copy(self.w)
-        self.beta_old = np.copy(self.beta)
 
     def _update_cache(self,
                       data: Union[skt.dtensor, skt.sptensor],
@@ -516,7 +303,7 @@ class MTCov:
         """
 
         # A
-        self.lambda0_nz = self._lambda0_nz(subs_nz, self.u, self.v, self.w)
+        self.lambda0_nz = super()._lambda_nz(subs_nz)
         self.lambda0_nz[self.lambda0_nz == 0] = 1
         if isinstance(data, skt.dtensor):
             self.data_M_nz = data[subs_nz] / self.lambda0_nz
@@ -530,35 +317,6 @@ class MTCov:
             self.data_pi_nz = data_X[subs_X_nz[0]] / self.pi0_nz
         else:
             self.data_pi_nz = data_X.data / self.pi0_nz
-
-    def _lambda0_nz(self, subs_nz, u, v, w):
-        """
-            Compute the mean lambda0 (M_ij^alpha) for only non-zero entries (denominator of pijkl).
-
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            u : ndarray
-                Out-going membership matrix.
-            v : ndarray
-                In-coming membership matrix.
-            w : ndarray
-                Affinity tensor.
-
-            Returns
-            -------
-            nz_recon_I : ndarray
-                         Mean lambda0 (M_ij^alpha) for only non-zero entries.
-        """
-
-        if not self.assortative:
-            nz_recon_IQ = np.einsum('Ik,Ikq->Iq', u[subs_nz[1], :], w[subs_nz[0], :, :])
-        else:
-            nz_recon_IQ = np.einsum('Ik,Ik->Ik', u[subs_nz[1], :], w[subs_nz[0], :])
-        nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ, v[subs_nz[2], :])
-
-        return nz_recon_I
 
     def _pi0_nz(self,
                 subs_X_nz: Tuple[np.ndarray],
@@ -586,8 +344,7 @@ class MTCov:
 
         if self.undirected:
             return np.einsum('Ik,kz->Iz', u[subs_X_nz[0], :], beta)
-        else:
-            return np.einsum('Ik,kz->Iz', u[subs_X_nz[0], :] + v[subs_X_nz[0], :], beta)
+        return np.einsum('Ik,kz->Iz', u[subs_X_nz[0], :] + v[subs_X_nz[0], :], beta)
 
     def _update_em(self,
                    data: Union[skt.dtensor, skt.sptensor],
@@ -967,7 +724,7 @@ class MTCov:
             Log-likelihood value.
         """
 
-        self.lambda0_ija = self._lambda0_full(self.u, self.v, self.w)
+        self.lambda0_ija = super()._lambda_full()
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
         if isinstance(data, skt.dtensor):
@@ -1023,7 +780,7 @@ class MTCov:
         """
 
         size = len(subset_N)
-        self.lambda0_ija = self._lambda0_full(self.u[subset_N], self.v[subset_N], self.w)
+        self.lambda0_ija = super()._lambda_full()
         assert self.lambda0_ija.shape == (self.L, size, size)
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
@@ -1050,37 +807,6 @@ class MTCov:
             sys.exit(1)
         else:
             return l
-
-    def _lambda0_full(self,
-                      u: np.ndarray,
-                      v: np.ndarray,
-                      w: np.ndarray) -> np.ndarray:
-        """
-        Compute the mean M_ij^alpha for all entries.
-
-        Parameters
-        ----------
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
-
-        Returns
-        -------
-        M : ndarray
-            Mean M_ij^alpha for all entries.
-        """
-
-        if w.ndim == 2:
-            M = np.einsum('ik,jk->ijk', u, v)
-            M = np.einsum('ijk,ak->aij', M, w)
-        else:
-            M = np.einsum('ik,jq->ijkq', u, v)
-            M = np.einsum('ijkq,akq->aij', M, w)
-
-        return M
 
     def _check_for_convergence_delta(self, it, coincide, du, dv, dw, db, convergence):
         """
@@ -1123,44 +849,3 @@ class MTCov:
         it += 1
 
         return it, coincide, convergence
-
-    def _update_optimal_parameters(self):
-        """
-            Update values of the parameters after convergence.
-        """
-
-        self.u_f = np.copy(self.u)
-        self.v_f = np.copy(self.v)
-        self.w_f = np.copy(self.w)
-        self.beta_f = np.copy(self.beta)
-
-    def output_results(self,
-                       maxL: float,
-                       nodes: List[int],
-                       final_it: int) -> None:
-        """
-            Output results.
-
-            Parameters
-            ----------
-            maxL : float
-                   Maximum log-likelihood.
-            nodes : list
-                    List of nodes IDs.
-            final_it : int
-                       Total number of iterations.
-        """
-        # Check if the output folder exists, otherwise create it
-        Path(self.out_folder).mkdir(parents=True, exist_ok=True)
-
-        outfile = (Path(self.out_folder) / str('theta' + self.end_file)
-                   ).with_suffix('.npz')
-        np.savez_compressed(outfile,
-                            u=self.u_f,
-                            v=self.v_f,
-                            w=self.w_f,
-                            beta=self.beta_f,
-                            max_it=final_it,
-                            nodes=nodes, maxL=maxL)
-        logging.info('Inferred parameters saved in: %s', outfile.resolve())
-        logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')

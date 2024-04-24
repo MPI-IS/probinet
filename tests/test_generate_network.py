@@ -149,7 +149,6 @@ class TestGMReciprocity(unittest.TestCase):
         expected_message = 'The structure of the affinity matrix w can be either assortative or disassortative!'
         self.check_invalid_parameters(params, expected_message)
 
-
     def test_affinity_matrix_assortative(self):
         expected_result = np.array([[0.02, 0.002], [0.002, 0.02]])
         actual_result = affinity_matrix(structure='assortative', N=100, K=2, a=0.1, b=0.3)
@@ -159,6 +158,7 @@ class TestGMReciprocity(unittest.TestCase):
         expected_result = np.array([[0.002, 0.02], [0.02, 0.002]])
         actual_result = affinity_matrix(structure='disassortative', N=100, K=2, a=0.1, b=0.3)
         np.testing.assert_allclose(actual_result, expected_result, rtol=rtol)
+
 
 class TestBaseSyntheticNetwork(unittest.TestCase):
     def setUp(self):

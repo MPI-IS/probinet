@@ -23,60 +23,67 @@ def parse_args():
     Parse the command-line arguments.
     """
     parser = argparse.ArgumentParser(description="Script to run the CRep, JointCRep, and MTCov "
-                                            "algorithms.",
-                                formatter_class=argparse.ArgumentDefaultsHelpFormatter
-                                )
+                                     "algorithms.",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter
+                                     )
     # Add the command line arguments
 
     # Algorithm related arguments
     parser.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'JointCRep', 'MTCov'],
-                   default='CRep', help='Choose the algorithm to run: CRep, JointCRep, MTCov.')
+                        default='CRep', help='Choose the algorithm to run: CRep, JointCRep, MTCov.')
     parser.add_argument('-K', '--K', type=int, default=None, help='Number of communities')
-    parser.add_argument('-g', '--gamma', type=float, default=0.5, help='Scaling hyper parameter in MTCov')
+    parser.add_argument('-g', '--gamma', type=float, default=0.5,
+                        help='Scaling hyper parameter in MTCov')
     parser.add_argument('--rseed', type=int, default=None, help='Random seed')
     parser.add_argument('--num_realizations', type=int, default=None, help='Number of realizations')
 
     # Input/Output related arguments
-    parser.add_argument('-A', '--adj_name', type=str, default='syn111.dat', help='Name of the network')
+    parser.add_argument(
+        '-A',
+        '--adj_name',
+        type=str,
+        default='syn111.dat',
+        help='Name of the network')
     parser.add_argument('-C', '--cov_name', type=str, default='X.csv',
-                   help='Name of the design matrix used in MTCov')
+                        help='Name of the design matrix used in MTCov')
     parser.add_argument('-f', '--in_folder', type=str, default='', help='Path of the input folder')
     parser.add_argument('-o', '-O', '--out_folder', type=str, default='',
-                   help='Path of the output folder')
+                        help='Path of the output folder')
 
     # Network related arguments
-    parser.add_argument('-e', '--ego', type=str, default='source', help='Name of the source of the edge')
+    parser.add_argument('-e', '--ego', type=str, default='source',
+                        help='Name of the source of the edge')
     parser.add_argument('-t', '--alter', type=str, default='target',
-                   help='Name of the target of the edge')
+                        help='Name of the target of the edge')
     parser.add_argument('-x', '--egoX', type=str, default='Name',
-                   help='Name of the column with node labels')
+                        help='Name of the column with node labels')
     parser.add_argument('-an', '--attr_name', type=str, default='Metadata',
-                   help='Name of the attribute to consider in MTCov')
+                        help='Name of the attribute to consider in MTCov')
     parser.add_argument('-u', '--undirected', type=bool, default=False,
-                   help='Flag to treat the network as undirected')
+                        help='Flag to treat the network as undirected')
     parser.add_argument('--noselfloop', type=bool, default=True, help='Flag to remove self-loops')
     parser.add_argument('--binary', type=bool, default=True, help='Flag to make the network binary')
 
     # Data transformation related arguments
     parser.add_argument('-fd', '--force_dense', type=bool, default=False,
-                   help='Flag to force a dense transformation in input')
+                        help='Flag to force a dense transformation in input')
     parser.add_argument('-F', '--flag_conv', type=str, choices=['log', 'deltas'], default='log',
-                   help='Flag for convergence')
+                        help='Flag for convergence')
     parser.add_argument('--plot_loglikelihood', type=bool, default=False,
-                   help='Flag to plot the log-likelihood')
+                        help='Flag to plot the log-likelihood')
     parser.add_argument('-b', '--batch_size', type=int, default=None,
-                   help='Size of the batch to use to compute the likelihood')
+                        help='Size of the batch to use to compute the likelihood')
 
     # Other arguments
-    #parser.add_argument('-l', '--log_level', type=str, choices=['D', 'I', 'W', 'E', 'C'],
+    # parser.add_argument('-l', '--log_level', type=str, choices=['D', 'I', 'W', 'E', 'C'],
     #               default='I', help='Set the logging level')
-    #parser.add_argument('--log_file', type=str, default=None, help='Log file to write to')
+    # parser.add_argument('--log_file', type=str, default=None, help='Log file to write to')
 
     parser.add_argument(
         '--debug', '-d',
         dest='debug', action="store_true", default=False,
         help='enable debug mode')
-    
+
     # Parse the command line arguments
     args = parser.parse_args()
 
@@ -102,7 +109,7 @@ def parse_args():
             args.num_realizations = 5
 
     if args.K is None:
-        if args.algorithm == 'MTCov' or args.algorithm == 'JointCRep':
+        if args.algorithm in ('MTCov', 'JointCRep'):
             args.K = 2
         else:
             args.K = 3
@@ -260,4 +267,3 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
 
     # Print the time elapsed
     logging.info('Time elapsed: %s seconds.', np.round(time.time() - time_start, 2))
-

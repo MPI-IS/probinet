@@ -34,46 +34,57 @@ class CRep(ModelClass):
                  max_iter: int = 1000,  # maximum number of EM steps before aborting
                  flag_conv: str = 'log',  # flag to choose the convergence criterion
                  ) -> None:
-        super().__init__(inf,
-                         err_max,
-                         err,
-                         num_realizations,
-                         convergence_tol,
-                         decision,
-                         max_iter,
-                         flag_conv)
+        super().__init__(
+            inf,
+            err_max,
+            err,
+            num_realizations,
+            convergence_tol,
+            decision,
+            max_iter,
+            flag_conv)
 
     def check_fit_params(self,
-                           initialization: int,
-                           eta0: Union[float, None],
-                           undirected: bool,
-                           assortative: bool,
-                           data: Union[skt.dtensor, skt.sptensor],
-                           K: int,
-                           constrained: bool,
-                           **extra_params: Unpack[FitParams]) -> None:
+                         initialization: int,
+                         eta0: Union[float, None],
+                         undirected: bool,
+                         assortative: bool,
+                         data: Union[skt.dtensor, skt.sptensor],
+                         K: int,
+                         constrained: bool,
+                         **extra_params: Unpack[FitParams]) -> None:
 
         message = 'The initialization parameter can be either 0, 1, 2 or 3.'
-
+        available_extra_params = [
+            'fix_eta',
+            'fix_w',
+            'fix_communities',
+            'files',
+            'out_inference',
+            'out_folder',
+            'end_file'
+        ]
         super()._check_fit_params(
             initialization,
-            eta0,
             undirected,
             assortative,
             data,
             K,
+            available_extra_params,
+            data_X=None,
+            gamma=None,
+            eta0=eta0,
             message=message,
             **extra_params)
 
         self.constrained = constrained
-        
+
         # Parameters for the initialization of the model
         self.use_unit_uniform = True
         self.normalize_rows = True
-        
+
         if self.initialization > 0:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
-
 
     def fit(self,
             data: Union[skt.dtensor,
@@ -135,17 +146,18 @@ class CRep(ModelClass):
                Maximum pseudo log-likelihood.
         """
         self.check_fit_params(data=data,
-                                K=K,
-                                initialization=initialization,
-                                eta0=eta0,
-                                undirected=undirected,
-                                assortative=assortative,
-                                constrained=constrained,
-                                **extra_params)
+                              K=K,
+                              initialization=initialization,
+                              eta0=eta0,
+                              undirected=undirected,
+                              assortative=assortative,
+                              constrained=constrained,
+                              **extra_params)
         logging.debug('Fixing random seed to: %s', rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
+        self.nodes = nodes
 
         if data_T is None:
             E = np.sum(
@@ -172,7 +184,7 @@ class CRep(ModelClass):
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
             logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
-            self._initialize(nodes=nodes)
+            self._initialize()
             super()._update_old_variables()
             self._update_cache(data, data_T_vals, subs_nz)
 
@@ -210,23 +222,23 @@ class CRep(ModelClass):
 
                     if not it % 100:
                         logging.debug(
-                            f'Nreal = {r} - Pseudo Log-likelihood = {loglik} '
-                            f'- iterations = {it} - '
-                            f'time = {np.round(time.time() - time_start, 2)} seconds')
+                            'Nreal = {} - Pseudo Log-likelihood = {} - iterations = {} - time = {:.2f} seconds'.format(
+                                r, loglik, it, time.time() - time_start))
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = super()._check_for_convergence_delta(
                         it,
                         coincide,
                         delta_u,
                         delta_v,
-                        delta_w, 
+                        delta_w,
                         delta_eta,
                         convergence)
 
                     if not it % 100:
                         logging.debug(
-                            f'Nreal = {r} - iterations = {it} - '
-                            f'time = {np.round(time.time() - time_start, 2)} seconds'
+                            'Nreal = {} - iterations = {} - time = {:.2f} seconds'.format(
+                                r, it, time.time() - time_start
+                            )
                         )
                 else:
                     log_and_raise_error(ValueError, 'flag_conv can be either log or deltas!')
@@ -260,64 +272,12 @@ class CRep(ModelClass):
             # convergence not reached
             logging.error('Solution failed to converge in %s EM steps!', self.max_iter)
         if self.out_inference:
-            super()._output_results(self.maxPSL, nodes)
+            super()._output_results()
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
-    # def _initialize(self, nodes: List[Any]) -> None:
-    #     """
-    #     Random initialization of the parameters u, v, w, eta.
-    #
-    #     Parameters
-    #     ----------
-    #     rng : RandomState
-    #           Container for the Mersenne Twister pseudo-random number generator.
-    #     nodes : list
-    #             List of nodes IDs.
-    #     """
-    #
-    #     if self.eta0 is not None:
-    #         self.eta = self.eta0
-    #     else:
-    #
-    #         logging.debug('eta is initialized randomly.')
-    #         super()._randomize_eta(use_unit_uniform=self.use_unit_uniform)
-    #
-    #     if self.initialization == 0:
-    #
-    #         logging.debug('%s', 'u, v and w are initialized randomly.')
-    #         super()._randomize_w()
-    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
-    #
-    #     elif self.initialization == 1:
-    #
-    #         logging.debug('%s is initialized using the input file: %s', 'w', self.files)
-    #         logging.debug('%s', 'u and v are initialized randomly.')
-    #         super()._initialize_w()
-    #         super()._randomize_u_v(normalize_rows=self.normalize_rows)
-    #
-    #     elif self.initialization == 2:
-    #
-    #         logging.debug(
-    #             'u and v are initialized using the input file: %s', self.files
-    #         )
-    #         logging.debug('%s', 'w is initialized randomly.')
-    #         super()._initialize_u(nodes)
-    #         super()._initialize_v(nodes)
-    #         super()._randomize_w()
-    #
-    #     elif self.initialization == 3:
-    #
-    #         logging.debug(
-    #             'u, v and w are initialized using the input file: %s', self.files
-    #         )
-    #         super()._initialize_u(nodes)
-    #         super()._initialize_v(nodes)
-    #         super()._initialize_w()
-
-
     def _update_cache(
-            self, 
+            self,
             data: Union[skt.dtensor, skt.sptensor],
             data_T_vals: np.ndarray,
             subs_nz: Tuple[np.ndarray]) -> None:
@@ -343,14 +303,11 @@ class CRep(ModelClass):
             self.data_M_nz = data.vals / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
-
-
-
     def _update_em(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray],
-        denominator: float) -> Tuple[float, float, float, float]:
+            self,
+            data: Union[skt.dtensor, skt.sptensor],
+            data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray],
+            denominator: float) -> Tuple[float, float, float, float]:
         """
         Update parameters via EM procedure.
 
@@ -647,7 +604,6 @@ class CRep(ModelClass):
                                               self.u, self.v, self.w)
 
         return uttkrp_DK
-
 
     def _PSLikelihood(self, data: Union[skt.dtensor, skt.sptensor],
                       data_T: skt.sptensor,

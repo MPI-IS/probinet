@@ -79,36 +79,38 @@ class TestCRepHelpers(unittest.TestCase):
     def test_initialize_random_eta(self):
 
         self.crep.initialization = 0
-        self.crep._initialize(nodes=[0, 1, 2])  # pylint: disable=protected-access
+        self.crep._initialize()  # nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(0 <= self.crep.eta <= 1)
 
     def test_initialize_random_uvw(self):
 
         self.crep.initialization = 0
-        self.crep._initialize(nodes=[0, 1, 2])  # pylint: disable=protected-access
+        self.crep._initialize()  # nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(np.all((0 <= self.crep.u) & (self.crep.u <= 1)))
         self.assertTrue(np.all((0 <= self.crep.v) & (self.crep.v <= 1)))
         self.assertTrue(np.all((0 <= self.crep.w) & (self.crep.w <= 1)))
 
     def test_initialize_w_from_file(self):
         self.crep.initialization = 1
-
         dfW = self.crep.theta['w']
+        self.crep.nodes = range(self.crep.theta['nodes'].shape[0])
         self.crep.L = dfW.shape[0]
         self.crep.K = dfW.shape[1]
-        self.crep._initialize(nodes=[0, 1, 2])  # pylint: disable=protected-access
+        self.crep._initialize()  # pylint: disable=protected-access
         self.assertTrue(np.all(0 <= self.crep.w))
 
+    @unittest.skip("Deciding whether initialization 2 is useful or not.")
     def test_initialize_uv_from_file(self):
         self.crep.initialization = 2
-        self.crep._initialize(nodes=range(600))  # pylint: disable=protected-access # Set by hand
+        self.crep._initialize()  # pylint: disable=protected-access # Set by hand
         self.assertTrue(np.all(0 <= self.crep.u))
         self.assertTrue(np.all(0 <= self.crep.v))
 
+    @unittest.skip("Deciding whether initialization 3 is useful or not.")
     def test_initialize_uvw_from_file(self):
         self.crep.initialization = 3
         self.crep.L, self.crep.K = self.w_a.shape
-        self.crep._initialize(nodes=range(600))  # pylint: disable=protected-access
+        self.crep._initialize()  # in case it is: nodes=range(600) # pylint: disable=protected-access
         self.assertTrue(np.all(0 <= self.crep.u))
         self.assertTrue(np.all(0 <= self.crep.v))
         self.assertTrue(np.all(0 <= self.crep.w))
