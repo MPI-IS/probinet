@@ -47,5 +47,5 @@ class TestNotebooks(unittest.TestCase):
     def test_JointCRep_notebook_execution(self):
         self.run_notebook("JointCRep")
 
-    def test_MTCov_notebook_execution(self):
-        self.run_notebook("MTCov")
+    def test_MTCOV_notebook_execution(self):
+        self.run_notebook("MTCOV")

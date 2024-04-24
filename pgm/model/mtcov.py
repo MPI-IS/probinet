@@ -1,5 +1,5 @@
 """
-Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and node
+Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and node
 attributes to extract overlapping communities in directed and undirected multilayer networks.
 """
 import logging
@@ -18,9 +18,9 @@ from ..output.plot import plot_L
 from .base import FitParams, ModelClass
 
 
-class MTCov(ModelClass):
+class MTCOV(ModelClass):
     """
-    Class definition of MTCov, the generative algorithm that incorporates both the topology of interactions and
+    Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
     """
 

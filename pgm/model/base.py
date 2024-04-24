@@ -156,7 +156,7 @@ class ModelClass(DataBase):
         """
         Initialization of the parameters u, v, w, eta.
         """
-        if 'MTCov' not in type(self).__name__:
+        if 'MTCOV' not in type(self).__name__:
 
             if self.eta0 is not None:
                 self.eta = self.eta0
@@ -167,7 +167,7 @@ class ModelClass(DataBase):
         if self.initialization == 0:
 
             logging.debug('%s', 'u, v and w are initialized randomly.')
-            if 'MTCov' not in type(self).__name__:
+            if 'MTCOV' not in type(self).__name__:
                 self._randomize_w()
                 self._randomize_u_v(normalize_rows=self.normalize_rows)
             else:
@@ -185,7 +185,7 @@ class ModelClass(DataBase):
             self._initialize_u()
             self._initialize_v()
             self._initialize_w()
-            if 'MTCov' in type(self).__name__:
+            if 'MTCOV' in type(self).__name__:
                 self._initialize_beta()
 
     def _initialize_u(self) -> None:
@@ -317,7 +317,7 @@ class ModelClass(DataBase):
         self.u_old = np.copy(self.u)
         self.v_old = np.copy(self.v)
         self.w_old = np.copy(self.w)
-        if 'MTCov' in type(self).__name__:
+        if 'MTCOV' in type(self).__name__:
             self.beta_old = np.copy(self.beta)
         else:
             self.eta_old = float(self.eta)
@@ -330,7 +330,7 @@ class ModelClass(DataBase):
         self.u_f = np.copy(self.u)
         self.v_f = np.copy(self.v)
         self.w_f = np.copy(self.w)
-        if 'MTCov' in type(self).__name__:
+        if 'MTCOV' in type(self).__name__:
             self.beta_f = np.copy(self.beta)
         else:
             self.eta_f = float(self.eta)

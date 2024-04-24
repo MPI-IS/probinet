@@ -6,20 +6,20 @@ from tests.fixtures import BaseTest
 import yaml
 
 from pgm.input.loader import import_data_mtcov
-from pgm.model.mtcov import MTCov
+from pgm.model.mtcov import MTCOV
 
 current_file_path = Path(__file__)
 PATH_FOR_INIT = current_file_path.parent / 'inputs/'
 INIT_STR = '_for_initialization'
 
 
-class MTCovTestCase(BaseTest):
+class MTCOVTestCase(BaseTest):
 
     def setUp(self):
         """
         Set up the test case.
         """
-        self.algorithm = 'MTCov'
+        self.algorithm = 'MTCOV'
         self.gamma = 0.5
         self.out_folder = 'outputs/'
         self.end_file = '_test'
@@ -57,7 +57,7 @@ class MTCovTestCase(BaseTest):
 
         self.conf['end_file'] = '_OUT_' + self.algorithm  # Adding a suffix to the output files
 
-        self.model = MTCov()
+        self.model = MTCOV()
 
     def test_import_data(self):
         # Check if the force_dense flag is set to True
@@ -84,7 +84,7 @@ class MTCovTestCase(BaseTest):
             '.npz'))
 
         # This reads the synthetic data Ground Truth output
-        thetaGT_path = Path(__file__).parent / 'outputs' / 'theta_GT_MTCov'
+        thetaGT_path = Path(__file__).parent / 'outputs' / 'theta_GT_MTCOV'
         thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
         #
         # Asserting the model information
@@ -126,7 +126,7 @@ class MTCovTestCase(BaseTest):
 
     def test_running_algorithm_initialized_from_file(self):
 
-        with (PATH_FOR_INIT.joinpath('setting_MTCov' + INIT_STR + '.yaml').open('rb')
+        with (PATH_FOR_INIT.joinpath('setting_MTCOV' + INIT_STR + '.yaml').open('rb')
               as fp):
             self.conf = yaml.safe_load(fp)
 
@@ -137,7 +137,7 @@ class MTCovTestCase(BaseTest):
 
         self.conf['initialization'] = 1
 
-        self.model = MTCov()
+        self.model = MTCOV()
 
         _ = self.model.fit(data=self.B,
                            data_X=self.Xs,
@@ -151,7 +151,7 @@ class MTCovTestCase(BaseTest):
             '.npz'))
 
         # This reads the synthetic data Ground Truth output
-        thetaGT_path = Path(__file__).parent / 'outputs' / ('theta_GT_MTCov' + INIT_STR)
+        thetaGT_path = Path(__file__).parent / 'outputs' / ('theta_GT_MTCOV' + INIT_STR)
         thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
 
         # Asserting the model information

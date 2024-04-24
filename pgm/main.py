@@ -15,25 +15,25 @@ from .input.loader import import_data, import_data_mtcov
 from .input.tools import log_and_raise_error
 from .model.crep import CRep
 from .model.jointcrep import JointCRep
-from .model.mtcov import MTCov
+from .model.mtcov import MTCOV
 
 
 def parse_args():
     """
     Parse the command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Script to run the CRep, JointCRep, and MTCov "
+    parser = argparse.ArgumentParser(description="Script to run the CRep, JointCRep, and MTCOV "
                                      "algorithms.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter
                                      )
     # Add the command line arguments
 
     # Algorithm related arguments
-    parser.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'JointCRep', 'MTCov'],
-                        default='CRep', help='Choose the algorithm to run: CRep, JointCRep, MTCov.')
+    parser.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'JointCRep', 'MTCOV'],
+                        default='CRep', help='Choose the algorithm to run: CRep, JointCRep, MTCOV.')
     parser.add_argument('-K', '--K', type=int, default=None, help='Number of communities')
     parser.add_argument('-g', '--gamma', type=float, default=0.5,
-                        help='Scaling hyper parameter in MTCov')
+                        help='Scaling hyper parameter in MTCOV')
     parser.add_argument('--rseed', type=int, default=None, help='Random seed')
     parser.add_argument('--num_realizations', type=int, default=None, help='Number of realizations')
 
@@ -45,7 +45,7 @@ def parse_args():
         default='syn111.dat',
         help='Name of the network')
     parser.add_argument('-C', '--cov_name', type=str, default='X.csv',
-                        help='Name of the design matrix used in MTCov')
+                        help='Name of the design matrix used in MTCOV')
     parser.add_argument('-f', '--in_folder', type=str, default='', help='Path of the input folder')
     parser.add_argument('-o', '-O', '--out_folder', type=str, default='',
                         help='Path of the output folder')
@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument('-x', '--egoX', type=str, default='Name',
                         help='Name of the column with node labels')
     parser.add_argument('-an', '--attr_name', type=str, default='Metadata',
-                        help='Name of the attribute to consider in MTCov')
+                        help='Name of the attribute to consider in MTCOV')
     parser.add_argument('-u', '--undirected', type=bool, default=False,
                         help='Flag to treat the network as undirected')
     parser.add_argument('--noselfloop', type=bool, default=True, help='Flag to remove self-loops')
@@ -95,7 +95,7 @@ def parse_args():
     default_adj_names = {
         'CRep': 'syn111.dat',
         'JointCRep': 'synthetic_data.dat',
-        'MTCov': 'adj.csv'
+        'MTCOV': 'adj.csv'
     }
 
     # Correcting default values based on the chosen algorithm
@@ -109,7 +109,7 @@ def parse_args():
             args.num_realizations = 5
 
     if args.K is None:
-        if args.algorithm in ('MTCov', 'JointCRep'):
+        if args.algorithm in ('MTCOV', 'JointCRep'):
             args.K = 2
         else:
             args.K = 3
@@ -119,7 +119,7 @@ def parse_args():
 
 def main():  # pylint: disable=too-many-branches, too-many-statements
     """
-    Main function for CRep/JointCRep/MTCov.
+    Main function for CRep/JointCRep/MTCOV.
     """
     # Step 1: Parse the command-line arguments
     args = parse_args()
@@ -148,7 +148,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     else:
         in_folder = args.in_folder
     in_folder = str(in_folder)
-    if args.algorithm != 'MTCov':
+    if args.algorithm != 'MTCOV':
         network = in_folder + '/' + args.adj_name
         A, B, B_T, data_T_vals = import_data(
             network,
@@ -203,7 +203,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
 
         # Algorithm specific settings
         algorithm_settings = {
-            'MTCov': {
+            'MTCOV': {
                 'gamma': args.gamma
             }
         }
@@ -235,7 +235,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         """
         Fit the model to the data.
         """
-        if algorithm != 'MTCov':
+        if algorithm != 'MTCOV':
             model.fit(data=B, data_T=B_T, data_T_vals=data_T_vals, nodes=nodes, **conf)
         else:
             model.fit(data=B, data_X=Xs, flag_conv=args.flag_conv, nodes=nodes,
@@ -244,12 +244,12 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     # Step 5: Run the algorithm
 
     logging.info('Setting: K = %s', conf["K"])
-    if args.algorithm == 'MTCov':
+    if args.algorithm == 'MTCOV':
         logging.info('gamma = %s', conf["gamma"])
     logging.info('### Running %s ###', args.algorithm)
 
     # Map algorithm names to their classes
-    algorithm_classes = {'CRep': CRep, 'JointCRep': JointCRep, 'MTCov': MTCov}
+    algorithm_classes = {'CRep': CRep, 'JointCRep': JointCRep, 'MTCOV': MTCOV}
 
     # Create the model
     if args.algorithm in algorithm_classes:
