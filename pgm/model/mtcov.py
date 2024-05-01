@@ -241,26 +241,21 @@ class MTCOV(ModelClass):
                     log_and_raise_error(ValueError, 'Error! flag_conv can be either "log" or '
                                                     '"deltas"')
 
-            if flag_conv == 'log':
-                if maxL < loglik:
-                    super()._update_optimal_parameters()
-                    best_loglik = list(loglik_values)
-                    maxL = loglik
-                    final_it = it
-                    conv = convergence
-                    # best_r = r
-            elif flag_conv == 'deltas':
+            if flag_conv == 'deltas':
                 if not batch_size:
                     loglik = self.__Likelihood(data, data_X)
                 else:
-                    loglik = self.__Likelihood_batch(
-                        data, data_X, subset_N, Subs, SubsX)  # type: ignore
-                if maxL < loglik:
-                    super()._update_optimal_parameters()
-                    maxL = loglik
-                    final_it = it
-                    conv = convergence
-                    # best_r = r
+                    loglik = self.__Likelihood_batch(data, data_X, subset_N, Subs, SubsX)
+
+            if maxL < loglik:
+                super()._update_optimal_parameters()
+                maxL = loglik
+                final_it = it
+                conv = convergence
+                # best_r = r
+                if flag_conv == 'log':
+                    best_loglik = list(loglik_values)
+
             logging.debug('Nreal = %s - Loglikelihood = %s - iterations = %s - time = '
                           '%s seconds', r, loglik, it,
                           np.round(time.time() - time_start, 2))

@@ -258,14 +258,9 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                     loglik_values.append(loglik)
                     if not it % 100:
                         logging.debug(
-                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds',
-                            r,
-                            loglik,
-                            it,
-                            np.round(
-                                time.time() -
-                                time_start,
-                                2))
+                        'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  '
+                        'seconds', r, loglik, it, np.round(time.time() - time_start,2)
+                        )
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = super()._check_for_convergence_delta(
                         it,
@@ -287,22 +282,18 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum
             # so far. If it is, it updates the optimal parameters (
             # self._update_optimal_parameters()) and sets maxL to the current pseudo log-likelihood.
-            if self.flag_conv == 'log':
-                if maxL < loglik:
-                    super()._update_optimal_parameters()
-                    best_loglik = list(loglik_values)
-                    maxL = loglik
-                    self.final_it = it
-                    conv = convergence
-                    best_r = r
-            elif self.flag_conv == 'deltas':
+            if self.flag_conv == 'deltas':
                 loglik = self._Likelihood(data)
-                if maxL < loglik:
-                    super()._update_optimal_parameters()
-                    maxL = loglik
-                    self.final_it = it
-                    conv = convergence
-                    best_r = r
+
+            if maxL < loglik:
+                super()._update_optimal_parameters()
+                maxL = loglik
+                self.final_it = it
+                conv = convergence
+                best_r = r
+
+                if self.flag_conv == 'log':
+                    best_loglik = list(loglik_values)
             logging.debug('Nreal = %s - Log-likelihood = %s - iterations = %s - '
                           'time = %s seconds', r, loglik, it,
                           np.round(time.time() - time_start, 2))
@@ -885,6 +876,3 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             log_and_raise_error(ValueError, 'log-likelihood is NaN!')
 
         return l
-
-    # def get_max_label(self):
-    #    return "maxL"

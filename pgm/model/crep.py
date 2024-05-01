@@ -221,9 +221,8 @@ class CRep(ModelClass):
                         mask=mask)
 
                     if not it % 100:
-                        logging.debug(
-                            'Nreal = {} - Pseudo Log-likelihood = {} - iterations = {} - time = {:.2f} seconds'.format(
-                                r, loglik, it, time.time() - time_start))
+                        logging.debug('Nreal = %s - iterations = %s - time = %.2f seconds', r,
+                                      it, time.time() - time_start)
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = super()._check_for_convergence_delta(
                         it,
@@ -235,29 +234,21 @@ class CRep(ModelClass):
                         convergence)
 
                     if not it % 100:
-                        logging.debug(
-                            'Nreal = {} - iterations = {} - time = {:.2f} seconds'.format(
-                                r, it, time.time() - time_start
-                            )
-                        )
+                        logging.debug('Nreal = %s - iterations = %s - time = %.2f seconds', r,
+                                      it, time.time() - time_start)
                 else:
                     log_and_raise_error(ValueError, 'flag_conv can be either log or deltas!')
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
             # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
             # pseudo log-likelihood.
-            if self.flag_conv == 'log':
-                if maxL < loglik:
-                    super()._update_optimal_parameters()
-                    maxL = loglik
-                    self.final_it = it
-                    conv = convergence
-            elif self.flag_conv == 'deltas':
+            if self.flag_conv == 'deltas':
                 loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
-                if maxL < loglik:
-                    super()._update_optimal_parameters()
-                    maxL = loglik
-                    self.final_it = it
-                    conv = convergence
+
+            if maxL < loglik:
+                super()._update_optimal_parameters()
+                maxL = loglik
+                self.final_it = it
+                conv = convergence
 
             logging.debug(
                 'Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds',
@@ -651,11 +642,5 @@ class CRep(ModelClass):
         l += Alog.sum()
 
         if np.isnan(l):
-            message = "PSLikelihood is NaN!!!!"
-            error_type = ValueError
-            log_and_raise_error(error_type, message)
-
+            log_and_raise_error(ValueError, "PSLikelihood is NaN!!!!")
         return l
-
-    def get_max_label(self):
-        return "maxPSL"

@@ -366,13 +366,23 @@ def write_design_Matrix(
     attr_name : str
                 Name of the column to consider as attribute.
     """
-
+    # Create a DataFrame from the metadata dictionary
     X = pd.DataFrame.from_dict(metadata, orient='index', columns=[attr_name])
+
+    # Create a new column with the node labels
     X[nodeID] = X.index
+
+    # Select the columns in the order specified by nodeID and attr_name
     X = X.loc[:, [nodeID, attr_name]]
-    X.to_csv(path_or_buf=folder + fname + str(perc)[0] + '_' + str(perc)[2] + '.csv', index=False)
-    logging.debug('Design matrix saved in: %s%s%s_%s.csv',
-                  folder, fname, str(perc)[0], str(perc)[2])
+
+    # Construct the file path using f-string formatting and Path
+    file_path = Path(folder) / f"{fname}{str(perc)[0]}_{str(perc)[2]}.csv"
+
+    # Save the DataFrame to a CSV file
+    X.to_csv(path_or_buf=file_path, index=False)
+
+    # Log the location where the design matrix is saved
+    logging.debug(f'Design matrix saved in: {file_path}')
 
 
 def transpose_tensor(M: np.ndarray) -> np.ndarray:

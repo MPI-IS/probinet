@@ -57,6 +57,16 @@ class ModelClass(DataBase):
             plot_loglik,
             flag_conv)
 
+        self.attributes_to_save_names = [
+            'u_f',
+            'v_f',
+            'w_f',
+            'eta_f',
+            'final_it',
+            'maxL',
+            'maxPSL',
+            'beta_f',
+            'nodes']
     def _check_fit_params(self,
                           initialization: int,
                           undirected: bool,
@@ -67,7 +77,7 @@ class ModelClass(DataBase):
                           data_X: Union[skt.dtensor, skt.sptensor, np.ndarray, None],
                           eta0: Union[float, None],
                           gamma: Union[float, None],
-                          message: str = None,
+                          message: str = "Invalid initialization parameter.",
                           **extra_params: Unpack[FitParams]
                           ) -> None:
         """
@@ -191,7 +201,6 @@ class ModelClass(DataBase):
     def _initialize_u(self) -> None:
         """
         Initialize out-going membership matrix u from file.
-
         """
 
         self.u = self.theta['u']
@@ -217,11 +226,6 @@ class ModelClass(DataBase):
     def _initialize_w(self) -> None:
         """
         Initialize affinity tensor w from file.
-
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
         """
 
         if self.assortative:
@@ -235,12 +239,7 @@ class ModelClass(DataBase):
 
     def _initialize_beta(self) -> None:
         """
-            Initialize beta matrix beta from file.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
+        Initialize beta matrix beta from file.
         """
 
         self.beta = self.theta['beta']
@@ -298,12 +297,7 @@ class ModelClass(DataBase):
 
     def _randomize_beta(self):
         """
-            Assign a random number in (0, 1.) to each entry of the beta matrix, and normalize each row.
-
-            Parameters
-            ----------
-            rng : RandomState
-                  Container for the Mersenne Twister pseudo-random number generator.
+        Assign a random number in (0, 1.) to each entry of the beta matrix, and normalize each row.
         """
 
         self.beta = self.rng.random_sample((self.K, self.Z))
@@ -424,7 +418,7 @@ class ModelClass(DataBase):
         convergence : bool
                       Flag for convergence.
         """
-
+        # Check for convergence
         if it % 10 == 0:
             old_L = loglik
             if use_pseudo_likelihood:
@@ -435,8 +429,9 @@ class ModelClass(DataBase):
                 coincide += 1
             else:
                 coincide = 0
-        if coincide > self.decision:
-            convergence = True
+        # Define the convergence criterion
+        convergence = coincide > self.decision or convergence
+        # Update the number of iterations
         it += 1
 
         return it, loglik, coincide, convergence
@@ -482,7 +477,9 @@ class ModelClass(DataBase):
                       Flag for convergence.
         """
 
-        if (du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol
+        if (du < self.convergence_tol
+                and dv < self.convergence_tol
+                and dw < self.convergence_tol
                 and de < self.convergence_tol):
             coincide += 1
         else:
@@ -506,23 +503,10 @@ class ModelClass(DataBase):
         """
         # Check if the output folder exists, otherwise create it
         output_path = Path(self.out_folder)
-        if not output_path.exists():
-            output_path.mkdir(parents=True, exist_ok=True)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # Define the output file
         outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
-
-        # Define the list of attribute names to save
-        attributes_to_save_names = [
-            'u_f',
-            'v_f',
-            'w_f',
-            'eta_f',
-            'final_it',
-            'maxL',
-            'maxPSL',
-            'beta_f',
-            'nodes']
 
         # Create a dictionary to hold the attributes to be saved
         attributes_to_save = {}
@@ -530,12 +514,9 @@ class ModelClass(DataBase):
         # Iterate over the instance's attributes
         for attr_name, attr_value in self.__dict__.items():
             # Check if the attribute is a numpy array and its name is in the list
-            if attr_name in attributes_to_save_names:
-                # Initialize the cleaned attribute name
-                attr_name_clean = attr_name
-                if '_f' in attr_name:
-                    # Remove the '_f' suffix from the attribute name if it exists
-                    attr_name_clean = attr_name.replace('_f', '')
+            if attr_name in self.attributes_to_save_names:
+                # Remove the '_f' suffix from the attribute name if it exists
+                attr_name_clean = attr_name.removesuffix('_f')
                 # Add the attribute to the dictionary with the cleaned name
                 attributes_to_save[attr_name_clean] = attr_value
 

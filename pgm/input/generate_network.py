@@ -248,8 +248,10 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         np.fill_diagonal(M, 0)
 
         # Compute the expected reciprocity in the network
-        Exp_r = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() /
-                            MM.sum())  # expected reciprocity
+        Exp_r = (
+            self.eta +
+            ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())
+        )
 
         # Generate the network G and the adjacency matrix A using the latent variables
         G = nx.MultiDiGraph()
@@ -496,12 +498,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                      np.round(triu(A, k=1).sum(), 2))
         logging.info(
             'Sum of weights in the lower triangular matrix: %s',
-            np.round(
-                tril(
-                    A,
-                    k=-
-                    1).sum(),
-                2))
+            np.round(tril(A,k=-1).sum(),2))
         logging.info('Removed %s nodes, because not part of the largest connected component',
                      len(nodes_to_remove))
         logging.info('Number of nodes: %s',
