@@ -85,11 +85,11 @@ class BaseTestCase(BaseTest):
                            nodes=self.nodes,
                            **self.conf)
         theta = np.load((Path(self.model.out_folder) / str('theta' +
-                                                         self.model.end_file)).with_suffix(
+                                                           self.model.end_file)).with_suffix(
             '.npz'))
 
         # This reads the synthetic data Ground Truth output
-        thetaGT_path = Path(__file__).parent /'outputs' / 'theta_GT_CRep'
+        thetaGT_path = Path(__file__).parent / 'outputs' / 'theta_GT_CRep'
         thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
 
         # Asserting the model information
@@ -103,21 +103,30 @@ class BaseTestCase(BaseTest):
         # Assert that the model's w_f attribute is close to the 'w' value in the theta dictionary
         self.assertTrue(np.allclose(self.model.w_f, theta['w']))
 
-        # Assert that the model's eta_f attribute is close to the 'eta' value in the theta dictionary
+        # Assert that the model's eta_f attribute is close to the 'eta' value in
+        # the theta dictionary
         self.assertTrue(np.allclose(self.model.eta_f, theta['eta']))
+
+        # Assert the dictionary keys
+        assert all(key in theta for key in ['u', 'v', 'w', 'eta', 'final_it', 'maxPSL',
+                                            'nodes']), "Some keys are missing in the theta dictionary"
 
         # Asserting GT information
 
-        # Assert that the 'u' value in the thetaGT dictionary is close to the 'u' value in the theta dictionary
+        # Assert that the 'u' value in the thetaGT dictionary is close to the 'u'
+        # value in the theta dictionary
         self.assertTrue(np.allclose(thetaGT['u'], theta['u']))
 
-        # Assert that the 'v' value in the thetaGT dictionary is close to the 'v' value in the theta dictionary
+        # Assert that the 'v' value in the thetaGT dictionary is close to the 'v'
+        # value in the theta dictionary
         self.assertTrue(np.allclose(thetaGT['v'], theta['v']))
 
-        # Assert that the 'w' value in the thetaGT dictionary is close to the 'w' value in the theta dictionary
+        # Assert that the 'w' value in the thetaGT dictionary is close to the 'w'
+        # value in the theta dictionary
         self.assertTrue(np.allclose(thetaGT['w'], theta['w']))
 
-        # Assert that the 'eta' value in the thetaGT dictionary is close to the 'eta' value in the theta dictionary
+        # Assert that the 'eta' value in the thetaGT dictionary is close to the
+        # 'eta' value in the theta dictionary
         self.assertTrue(np.allclose(thetaGT['eta'], theta['eta']))
 
     def test_calculate_opt_func(self):
@@ -196,4 +205,3 @@ class BaseTestCase(BaseTest):
 
         # Check if psloglikelihood_result is a number
         self.assertIsInstance(psloglikelihood_result, float)
-

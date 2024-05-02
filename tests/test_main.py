@@ -147,7 +147,7 @@ class TestMainJointCRep(TestMain):
             'JointCRep', mock_import_data, mock_fit, single_main)
 
 
-class TestMainMTCov(TestMain):
+class TestMainMTCOV(TestMain):
     def setUp(self):
         super().setUp()
         self.expected_config = {
@@ -157,7 +157,7 @@ class TestMainMTCov(TestMain):
             "initialization": 0,
             "out_inference": True,
             "out_folder": str(self.folder),
-            "end_file": "_MTCov",
+            "end_file": "_MTCOV",
             "assortative": False,
             "files": "../data/input/theta.npz",
         }
@@ -181,12 +181,12 @@ class TestMainMTCov(TestMain):
         ]
         self.K_values = 5
 
-    @mock.patch('pgm.model.mtcov.MTCov.fit')
-    def test_MTCov_with_no_parameters(self, mock_fit):
-        return self.main_with_no_parameters('MTCov', mock_fit, single_main)
+    @mock.patch('pgm.model.mtcov.MTCOV.fit')
+    def test_MTCOV_with_no_parameters(self, mock_fit):
+        return self.main_with_no_parameters('MTCOV', mock_fit, single_main)
 
-    @mock.patch('pgm.model.mtcov.MTCov.fit')
+    @mock.patch('pgm.model.mtcov.MTCOV.fit')
     @mock.patch('pgm.main.import_data_mtcov',
                 return_value=([nx.Graph()], np.empty(0), mock.ANY, []))
     def test_MTCOV_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters('MTCov', mock_import_data, mock_fit, single_main)
+        return self.main_with_custom_parameters('MTCOV', mock_import_data, mock_fit, single_main)

@@ -248,7 +248,10 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         np.fill_diagonal(M, 0)
 
         # Compute the expected reciprocity in the network
-        Exp_r = self.eta + ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())  # expected reciprocity
+        Exp_r = (
+            self.eta +
+            ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())
+        )
 
         # Generate the network G and the adjacency matrix A using the latent variables
         G = nx.MultiDiGraph()
@@ -311,7 +314,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         # Compute the weighted reciprocity
         rw = np.multiply(A, A.T).sum() / A.sum()
 
-        logging.info('Number of links in the upper triangular matrix: %s', 
+        logging.info('Number of links in the upper triangular matrix: %s',
                      triu(A, k=1).nnz)
         logging.info('Number of links in the lower triangular matrix: %s',
                      tril(A, k=-1).nnz)
@@ -493,7 +496,9 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         logging.info('Number of links in the lower triangular matrix: %s', tril(A, k=-1).nnz)
         logging.info('Sum of weights in the upper triangular matrix: %s',
                      np.round(triu(A, k=1).sum(), 2))
-        logging.info('Sum of weights in the lower triangular matrix: %s', np.round(tril(A, k=-1).sum(), 2))
+        logging.info(
+            'Sum of weights in the lower triangular matrix: %s',
+            np.round(tril(A,k=-1).sum(),2))
         logging.info('Removed %s nodes, because not part of the largest connected component',
                      len(nodes_to_remove))
         logging.info('Number of nodes: %s',
@@ -675,7 +680,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         # Save the DataFrame to a CSV file
         df.to_csv(self.out_folder + outfile, index=False, sep=' ')
 
-        logging.info('Adjacency matrix saved in: %s',self.out_folder + outfile)
+        logging.info('Adjacency matrix saved in: %s', self.out_folder + outfile)
 
 
 def affinity_matrix(structure: str = 'assortative',
@@ -856,7 +861,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
             if "correlation_u_v" in kwargs:
                 correlation_u_v = kwargs["correlation_u_v"]
                 if (correlation_u_v < 0) or (correlation_u_v > 1):
-                    log_and_raise_error(ValueError, "The correlation between u and v has to be in [0, 1]!")
+                    log_and_raise_error(ValueError,
+                                        "The correlation between u and v has to be in [0, 1]!")
             else:
                 message = (f"correlation_u_v parameter for overlapping communities was not set. "
                            f"Defaulting to corr={DEFAULT_CORRELATION_U_V}")
@@ -873,7 +879,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
                 alpha = [DEFAULT_ALPHA] * self.K
             if isinstance(alpha, float):
                 if alpha <= 0:
-                    log_and_raise_error(ValueError, "Each entry of the Dirichlet parameter has to be positive!")
+                    log_and_raise_error(ValueError,
+                                        "Each entry of the Dirichlet parameter has to be positive!")
 
                 alpha = [alpha] * self.K
             elif len(alpha) != self.K:

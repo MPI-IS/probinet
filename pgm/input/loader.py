@@ -57,7 +57,10 @@ def import_data(dataset: str,
 
     # read adjacency file
     df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
-    logging.debug('Read adjacency file from %s. The shape of the data is %s.', dataset, df_adj.shape)
+    logging.debug(
+        'Read adjacency file from %s. The shape of the data is %s.',
+        dataset,
+        df_adj.shape)
     A = read_graph(
         df_adj=df_adj,
         ego=ego,

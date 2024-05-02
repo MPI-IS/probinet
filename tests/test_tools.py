@@ -100,7 +100,6 @@ class TestTensors(unittest.TestCase):
         np.testing.assert_allclose(result, expected_result, rtol=rtol)
 
 
-
 class TestWriteDesignMatrix(BaseTest):
     def setUp(self):
         self.metadata = {"node1": "metadata1", "node2": "metadata2"}
