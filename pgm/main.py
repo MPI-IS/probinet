@@ -14,6 +14,7 @@ import yaml
 from .input.loader import import_data, import_data_mtcov
 from .input.tools import log_and_raise_error
 from .model.crep import CRep
+from .model.dyncrep import DynCRep
 from .model.jointcrep import JointCRep
 from .model.mtcov import MTCOV
 
@@ -22,20 +23,30 @@ def parse_args():
     """
     Parse the command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Script to run the CRep, JointCRep, and MTCOV "
+    parser = argparse.ArgumentParser(description="Script to run the CRep, JointCRep,DynCRep and "
+                                                 "MTCOV "
                                      "algorithms.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter
                                      )
     # Add the command line arguments
 
     # Algorithm related arguments
-    parser.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'JointCRep', 'MTCOV'],
+    parser.add_argument('-a', '--algorithm', type=str, choices=['CRep', 'JointCRep', 'MTCOV',
+                                                                'DynCRep'],
                         default='CRep', help='Choose the algorithm to run: CRep, JointCRep, MTCOV.')
     parser.add_argument('-K', '--K', type=int, default=None, help='Number of communities')
     parser.add_argument('-g', '--gamma', type=float, default=0.5,
                         help='Scaling hyper parameter in MTCOV')
     parser.add_argument('--rseed', type=int, default=None, help='Random seed')
-    parser.add_argument('--num_realizations', type=int, default=None, help='Number of realizations')
+    parser.add_argument('-nr','--num_realizations', type=int, default=None, help=('Number of '
+                                                                             'realizations'))
+    parser.add_argument('-T', '--T', type=int, default=None, help='Number of time snapshots')
+    parser.add_argument('-fdT','--flag_data_T', type=str, default=0, help='Flag to use data_T') #
+    # TODO: Improve these model specific arguments
+    parser.add_argument('-ag', type=float, default=1.0, help='Parameter ag')
+    parser.add_argument('-bg', type=float, default=0.5, help='Parameter bg')
+    parser.add_argument('-temp','--temporal', type=bool, default=False, help='Flag to use temporal '
+                                                                      'version of DynCRep')
 
     # Input/Output related arguments
     parser.add_argument(
@@ -74,11 +85,6 @@ def parse_args():
     parser.add_argument('-b', '--batch_size', type=int, default=None,
                         help='Size of the batch to use to compute the likelihood')
 
-    # Other arguments
-    # parser.add_argument('-l', '--log_level', type=str, choices=['D', 'I', 'W', 'E', 'C'],
-    #               default='I', help='Set the logging level')
-    # parser.add_argument('--log_file', type=str, default=None, help='Log file to write to')
-
     parser.add_argument(
         '--debug', '-d',
         dest='debug', action="store_true", default=False,
@@ -95,7 +101,8 @@ def parse_args():
     default_adj_names = {
         'CRep': 'syn111.dat',
         'JointCRep': 'synthetic_data.dat',
-        'MTCOV': 'adj.csv'
+        'MTCOV': 'adj.csv',
+        'DynCRep': 'synthetic_data_for_DynCRep.dat'
     }
 
     # Correcting default values based on the chosen algorithm
@@ -109,7 +116,7 @@ def parse_args():
             args.num_realizations = 5
 
     if args.K is None:
-        if args.algorithm in ('MTCOV', 'JointCRep'):
+        if args.algorithm in ('MTCOV', 'JointCRep', 'DynCRep'):
             args.K = 2
         else:
             args.K = 3
@@ -149,6 +156,10 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         in_folder = args.in_folder
     in_folder = str(in_folder)
     if args.algorithm != 'MTCOV':
+        if args.algorithm == 'DynCRep':
+            binary = True # exactly this in source
+            args.force_dense = True # exactly this in source
+
         network = in_folder + '/' + args.adj_name
         A, B, B_T, data_T_vals = import_data(
             network,
@@ -160,8 +171,15 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
             binary=binary,
             header=0
         )
+        logging.debug('Data loaded successfully from %s', network)
         nodes = A[0].nodes()
         Xs = None
+
+        if args.algorithm == 'DynCRep':
+            if args.T is None:
+                args.T = B.shape[0] - 1
+            logging.debug('T = %s', args.T)
+
     else:
         A, B, X, nodes = import_data_mtcov(
             in_folder,
@@ -181,9 +199,9 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
 
         valid_types = [np.ndarray, skt.dtensor, skt.sptensor]
         assert any(isinstance(B, vt) for vt in valid_types)
-
+        logging.debug('Data loaded successfully from %s', in_folder)
     # Step 3: Load the configuration settings
-
+    logging.debug('Loading the configuration file: setting_%s.yaml', args.algorithm)
     config_path = 'setting_' + args.algorithm + '.yaml'
     with files('pgm.data.model').joinpath(config_path).open('rb') as fp:
         conf = yaml.safe_load(fp)
@@ -218,7 +236,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     conf = set_config(args, conf)
 
     # Print the configuration file
-    logging.debug('%s', yaml.dump(conf))
+    logging.debug('The configuration file is: %s', yaml.dump(conf))
 
     # Step 4: Create the output directory
 
@@ -231,12 +249,28 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     with open(output_config_path, 'w', encoding='utf-8') as f:
         yaml.dump(conf, f)
 
-    def fit_model(model, algorithm, B, B_T, data_T_vals, Xs, nodes, conf):  # pylint: disable=too-many-arguments
+    def fit_model(
+            model,
+            algorithm,
+            conf):  #
+        # pylint:
+        # disable=too-many-arguments
         """
         Fit the model to the data.
         """
-        if algorithm != 'MTCOV':
+        if algorithm in {'CRep','JointCRep'}:
             model.fit(data=B, data_T=B_T, data_T_vals=data_T_vals, nodes=nodes, **conf)
+        elif algorithm == 'DynCRep':
+            model.fit(
+                data=B,
+                T=args.T,
+                nodes=nodes,
+                flag_data_T=args.flag_data_T,
+                ag=args.ag,
+                bg=args.bg,
+                temporal=args.temporal,
+                **conf
+            )
         else:
             model.fit(data=B, data_X=Xs, flag_conv=args.flag_conv, nodes=nodes,
                       batch_size=args.batch_size, **conf)
@@ -249,12 +283,13 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     logging.info('### Running %s ###', args.algorithm)
 
     # Map algorithm names to their classes
-    algorithm_classes = {'CRep': CRep, 'JointCRep': JointCRep, 'MTCOV': MTCOV}
+    algorithm_classes = {'CRep': CRep, 'JointCRep': JointCRep, 'MTCOV': MTCOV, 'DynCRep': DynCRep}
 
     # Create the model
     if args.algorithm in algorithm_classes:
         model = algorithm_classes[args.algorithm](
-            flag_conv=args.flag_conv)
+            flag_conv=args.flag_conv,
+            num_realizations=args.num_realizations)
 
     else:
         log_and_raise_error(ValueError, 'Algorithm not implemented.')
@@ -263,7 +298,10 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     time_start = time.time()
 
     # Fit the model to the data
-    fit_model(model, args.algorithm, B, B_T, data_T_vals, Xs, nodes, conf)
+    fit_model(
+        model,
+        args.algorithm,
+        conf)
 
     # Print the time elapsed
     logging.info('Time elapsed: %s seconds.', np.round(time.time() - time_start, 2))

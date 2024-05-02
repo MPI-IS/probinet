@@ -1,7 +1,8 @@
 import dataclasses
+from functools import singledispatchmethod
 import logging
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, TypedDict, Union
+from typing import List, Tuple, TypedDict, Union
 
 import numpy as np
 import sktensor as skt
@@ -57,16 +58,6 @@ class ModelClass(DataBase):
             plot_loglik,
             flag_conv)
 
-        self.attributes_to_save_names = [
-            'u_f',
-            'v_f',
-            'w_f',
-            'eta_f',
-            'final_it',
-            'maxL',
-            'maxPSL',
-            'beta_f',
-            'nodes']
     def _check_fit_params(self,
                           initialization: int,
                           undirected: bool,
@@ -76,8 +67,9 @@ class ModelClass(DataBase):
                           available_extra_params: List[str],
                           data_X: Union[skt.dtensor, skt.sptensor, np.ndarray, None],
                           eta0: Union[float, None],
+                          beta0: Union[float, None],
                           gamma: Union[float, None],
-                          message: str = "Invalid initialization parameter.",
+                          message: str = None,
                           **extra_params: Unpack[FitParams]
                           ) -> None:
         """
@@ -98,6 +90,7 @@ class ModelClass(DataBase):
         self.assortative = assortative
 
         self.N = data.shape[1]
+        #assert self.N == self.u.shape[0]
         self.L = data.shape[0]
         self.K = K
         if data_X is not None:
@@ -117,6 +110,18 @@ class ModelClass(DataBase):
                     log_and_raise_error(ValueError, 'If fix_eta=True, provide a value for eta0.')
         else:
             self.fix_eta = False
+
+        if "fix_beta" in extra_params:
+            self.fix_beta = extra_params["fix_beta"]
+
+            if self.fix_beta:
+                if beta0 is None:
+                    log_and_raise_error(ValueError, 'If fix_beta=True, provide a value for beta0.')
+                else:
+                    self.beta0 = beta0
+            # else:
+            #     if beta0 is not None:
+            #         log_and_raise_error(ValueError, 'If fix_beta=False, beta0 must be None.')
 
         if "fix_w" in extra_params:
             self.fix_w = extra_params["fix_w"]
@@ -166,86 +171,196 @@ class ModelClass(DataBase):
         """
         Initialization of the parameters u, v, w, eta.
         """
-        if 'MTCOV' not in type(self).__name__:
+        # Call the method to initialize eta
+        self._initialize_eta()
 
-            if self.eta0 is not None:
-                self.eta = self.eta0
-            else:
-                logging.debug('eta is initialized randomly.')
-                self._randomize_eta(use_unit_uniform=self.use_unit_uniform)
+        # Call the method to initialize beta
+        self._initialize_beta()
 
+        # Check the initialization type and call the corresponding method
         if self.initialization == 0:
-
-            logging.debug('%s', 'u, v and w are initialized randomly.')
-            if 'MTCOV' not in type(self).__name__:
-                self._randomize_w()
-                self._randomize_u_v(normalize_rows=self.normalize_rows)
-            else:
-                self._randomize_u_v(normalize_rows=self.normalize_rows)
-                if self.gamma != 0:
-                    self._randomize_beta()
-                if self.gamma != 1:
-                    self._randomize_w()
-
+            # If initialization type is 0, call the method for random initialization
+            self._random_initialization()
         elif self.initialization == 1:
+            # If initialization type is 1, call the method for file-based initialization
+            self._file_initialization()
 
-            logging.debug(
-                'u, v and w are initialized using the input file: %s', self.files
-            )
-            self._initialize_u()
-            self._initialize_v()
-            self._initialize_w()
-            if 'MTCOV' in type(self).__name__:
-                self._initialize_beta()
+    def _initialize_eta(self) -> None:
+
+        # If eta0 is not None, assign its value to eta
+        if self.eta0 is not None:
+            self.eta = self.eta0
+        else:
+            # If eta0 is None, log a message and call the method to randomize eta
+            logging.debug('eta is initialized randomly.')
+            self._randomize_eta(use_unit_uniform=self.use_unit_uniform)
+
+    def _initialize_beta(self) -> None:
+        """
+        Placeholder function for initializing beta.
+        Intentionally left empty for subclasses to override if necessary.
+        """
+        pass
+
+    def _initialize_beta_from_file(self) -> None:
+        # Assign the beta matrix from the input file to the beta attribute
+        self.beta = self.theta['beta']
+
+        # Add random noise to the beta matrix
+        self.beta = self._add_random_noise(self.beta)
+
+    def _random_initialization(self) -> None:
+        # Log a message indicating that u, v and w are being initialized randomly
+        logging.debug('%s', 'u, v and w are initialized randomly.')
+
+        # Randomize w and u, v
+        self._randomize_w()
+        self._randomize_u_v(normalize_rows=self.normalize_rows)
+
+
+    def _file_initialization(self) -> None:
+        # Log a message indicating that u, v and w are being initialized using the input file
+        logging.debug('u, v and w are initialized using the input file: %s', self.files)
+        # Initialize u and v
+        self._initialize_u()
+        self._initialize_v()
+        self._initialize_w()
+        # # If the class name includes 'DynCRep'
+        # if 'DynCRep' in type(self).__name__:
+        #     # If temporal is True, initialize w dynamically
+        #     if self.temporal:
+        #         self._initialize_w_dyn()
+        #     else:
+        #         # If temporal is False, initialize w statically
+        #         self._initialize_w_stat()
+        # else:
+        #     # If the class name does not include 'DynCRep', initialize w
+        #     self._initialize_w()
+        # # If the class name includes 'MTCOV', initialize beta
+        # if 'MTCOV' in type(self).__name__:
+        #     self._initialize_beta_from_file()
+
+    def _initialize_membership_matrix(self, matrix_name: str, matrix_value: np.ndarray) -> None:
+
+        # Assign the input matrix value to the local variable 'matrix'
+        matrix = matrix_value
+
+        # Assert that the nodes in the current object and the nodes in the theta dictionary are the same
+        # If they are not the same, raise an AssertionError with the message 'Nodes do not match.'
+        assert np.array_equal(self.nodes, self.theta['nodes']), 'Nodes do not match.'
+
+        # Find the maximum value in the 'matrix'
+        max_entry = np.max(matrix)
+
+        # Add random noise to the 'matrix'. The noise is a random number between 0 and 1,
+        # multiplied by the maximum entry in the 'matrix' and the error rate 'self.err'
+        matrix += max_entry * self.err * self.rng.random_sample(matrix.shape)
+
+        # Set the attribute of the current object with the name 'matrix_name' to the value of 'matrix'
+        setattr(self, matrix_name, matrix)
 
     def _initialize_u(self) -> None:
         """
         Initialize out-going membership matrix u from file.
         """
-
-        self.u = self.theta['u']
-        assert np.array_equal(self.nodes, self.theta['nodes']), 'Nodes do not match.'
-
-        max_entry = np.max(self.u)
-        self.u += max_entry * self.err * self.rng.random_sample(self.u.shape)
+        self._initialize_membership_matrix('u', self.theta['u'])
 
     def _initialize_v(self) -> None:
         """
         Initialize in-coming membership matrix v from file.
         """
-
         if self.undirected:
             self.v = self.u
         else:
-            self.v = self.theta['v']
-            assert np.array_equal(self.nodes, self.theta['nodes'])
+            self._initialize_membership_matrix('v', self.theta['v'])
 
-            max_entry = np.max(self.v)
-            self.v += max_entry * self.err * self.rng.random_sample(self.v.shape)
+    def _add_random_noise(self, matrix: np.ndarray) -> np.ndarray:
+        """
+        Add random noise to a matrix.
+
+        Parameters
+        ----------
+        matrix : np.ndarray
+            The matrix to which random noise will be added.
+
+        Returns
+        -------
+        matrix : np.ndarray
+            The matrix after random noise has been added.
+        """
+        max_entry = np.max(matrix)
+        matrix += max_entry * self.err * self.rng.random_sample(matrix.shape)
+        return matrix
 
     def _initialize_w(self) -> None:
         """
         Initialize affinity tensor w from file.
-        """
 
+        Parameters
+        ----------
+        rng : RandomState
+              Container for the Mersenne Twister pseudo-random number generator.
+        """
+        self.w = self.theta['w']
         if self.assortative:
-            self.w = self.theta['w']
             assert self.w.shape == (self.L, self.K)
+
+        self.w = self._add_random_noise(self.w)
+
+    def _initialize_w_dyn(self):
+
+        # Initialize the affinity tensor w from the input file
+        w0 = self.theta['w']
+        # Initialize the affinity tensor w with zeros
+        self.w = np.zeros((self.L, self.K, self.K), dtype=float)
+        if self.assortative:
+            if w0.ndim == 2:
+                self.w = w0[np.newaxis, :].copy()
+            else:
+                self.w = np.diag(w0)[np.newaxis, :].copy()
         else:
-            self.w = self.theta['w']
+            self.w[:] = w0.copy()
+        # Add random noise to the affinity tensor w if fix_w is False
+        if not self.fix_w:
+            self.w = self._add_random_noise(self.w)
 
-        max_entry = np.max(self.w)
-        self.w += max_entry * self.err * self.rng.random_sample(self.w.shape)
+    def _initialize_w_stat(self):
+        # Initialize the affinity tensor w from the input file
+        w0 = self.theta['w']
+        # Initialize the affinity tensor w with zeros
+        if self.assortative:
+            self.w = np.zeros((1, self.K), dtype=float)
+            self.w[:] = (np.diag(w0)).copy()
+        else:
+            self.w = np.zeros((1, self.K, self.K), dtype=float)
+            self.w[:] = w0.copy()
+        # Add random noise to the affinity tensor w if fix_w is False
+        if not self.fix_w:
+            self.w = self._add_random_noise(self.w)
 
-    def _initialize_beta(self) -> None:
+
+    @singledispatchmethod
+    def _randomize_beta(self, shape):
         """
-        Initialize beta matrix beta from file.
+        Generate a random number in (0, 1.).
+        Parameters
+        ----------
+        shape : int
+                The shape of the beta matrix.
         """
+        self.beta = self.rng.random_sample(shape)
 
-        self.beta = self.theta['beta']
-
-        max_entry = np.max(self.beta)
-        self.beta += max_entry * self.err * self.rng.random_sample(self.beta.shape)
+    @_randomize_beta.register
+    def _(self, shape: tuple):
+        """
+        Assign a random number in (0, 1.) to each entry of the beta matrix, and normalize each row.
+        Parameters
+        ----------
+        shape : tuple
+                The shape of the beta matrix.
+        """
+        self.beta = self.rng.random_sample(shape)
+        self.beta = (self.beta.T / np.sum(self.beta, axis=1)).T
 
     def _randomize_u_v(self, normalize_rows: bool = True) -> None:
         """
@@ -258,17 +373,23 @@ class ModelClass(DataBase):
                          If True, normalize each row of the membership matrices u and v.
         """
         self.u = self.rng.random_sample((self.N, self.K))
-
+        # Normalize each row of the membership matrix u
         if normalize_rows:
+            # Compute the sum of each row of the membership matrix u
             row_sums = self.u.sum(axis=1)
+            # Normalize each row of the membership matrix u if the sum of the row is greater than 0
             self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
         if not self.undirected:
+            # Set the membership matrix v to be a random sample of shape (self.N, self.K)
             self.v = self.rng.random_sample((self.N, self.K))
+            # Normalize each row of the membership matrix v
             if normalize_rows:
                 row_sums = self.v.sum(axis=1)
                 self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
         else:
+            # If the graph is undirected, set the membership matrix v to be equal to the
+            # membership matrix u
             self.v = self.u
 
     def _randomize_w(self) -> None:
@@ -295,41 +416,46 @@ class ModelClass(DataBase):
         else:
             self.eta = self.rng.uniform(1.01, 49.99)
 
-    def _randomize_beta(self):
+    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
         """
-        Assign a random number in (0, 1.) to each entry of the beta matrix, and normalize each row.
-        """
+        Copy variables from source to target.
 
-        self.beta = self.rng.random_sample((self.K, self.Z))
-        self.beta = (self.beta.T / np.sum(self.beta, axis=1)).T
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        for var in ['u', 'v', 'w']:
+            source_var = getattr(self, f"{var}{source_suffix}")
+            setattr(self, f"{var}{target_suffix}", np.copy(source_var))
+
+        if 'MTCOV' in type(self).__name__:
+            source_var = getattr(self, f"beta{source_suffix}")
+            setattr(self, f"beta{target_suffix}", np.copy(source_var))
+        else:
+            source_var = getattr(self, f"eta{source_suffix}")
+            setattr(self, f"eta{target_suffix}", float(source_var))
+            if 'DynCRep' in type(self).__name__:
+                source_var = getattr(self, f"beta{source_suffix}")
+                setattr(self, f"beta{target_suffix}", np.copy(source_var))
 
     def _update_old_variables(self) -> None:
         """
         Update values of the parameters in the previous iteration.
         """
-
-        self.u_old = np.copy(self.u)
-        self.v_old = np.copy(self.v)
-        self.w_old = np.copy(self.w)
-        if 'MTCOV' in type(self).__name__:
-            self.beta_old = np.copy(self.beta)
-        else:
-            self.eta_old = float(self.eta)
+        self._copy_variables(source_suffix='', target_suffix='_old')
 
     def _update_optimal_parameters(self) -> None:
         """
         Update values of the parameters after convergence.
         """
+        self._copy_variables(source_suffix='', target_suffix='_f')
+        if 'DynCRep' in type(self).__name__ and not self.fix_beta:
+            self.beta_f = np.copy(self.beta_hat[-1])
 
-        self.u_f = np.copy(self.u)
-        self.v_f = np.copy(self.v)
-        self.w_f = np.copy(self.w)
-        if 'MTCOV' in type(self).__name__:
-            self.beta_f = np.copy(self.beta)
-        else:
-            self.eta_f = float(self.eta)
-
-    def _lambda_nz(self, subs_nz: tuple) -> np.ndarray:
+    def _lambda_nz(self, subs_nz: tuple, temporal: bool = True) -> np.ndarray:
         """
         Compute the mean lambda_ij for only non-zero entries.
 
@@ -343,49 +469,42 @@ class ModelClass(DataBase):
         nz_recon_I : ndarray
                      Mean lambda_ij for only non-zero entries.
         """
+        if temporal:
+            if not self.assortative:
+                nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
+                                        self.w[subs_nz[0], :, :])
+            else:
+                nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
+                                        self.w[subs_nz[0], :])
 
-        if not self.assortative:
-            nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
-                                    self.w[subs_nz[0], :, :])
         else:
-            nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
-                                    self.w[subs_nz[0], :])
+            if not self.assortative:
+                nz_recon_IQ = np.einsum('Ik,kq->Iq', self.u[subs_nz[1], :], self.w[0, :, :])
+            else:
+                nz_recon_IQ = np.einsum('Ik,k->Ik', self.u[subs_nz[1], :], self.w[0, :])
+
         nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ,
                                self.v[subs_nz[2], :])
 
         return nz_recon_I
 
-    def _lambda_full(self):
-        """
-        Compute the mean lambda for all entries.
 
-        Returns
-        -------
-        M : ndarray
-            Mean lambda for all entries.
-        """
-
-        if self.w.ndim == 2:
-            M = np.einsum('ik,jk->ijk', self.u, self.v)
-            M = np.einsum('ijk,ak->aij', M, self.w)
-        else:
-            M = np.einsum('ik,jq->ijkq', self.u, self.v)
-            M = np.einsum('ijkq,akq->aij', M, self.w)
-
-        return M
 
     def _check_for_convergence(self,
-                               data: Union[skt.dtensor, skt.sptensor],
+                               data,
                                it: int,
                                loglik: float,
                                coincide: int,
                                convergence: bool,
                                use_pseudo_likelihood: bool = False,
-                               data_T: Optional[skt.sptensor] = None,
-                               mask: Optional[np.ndarray] = None) -> Tuple[
-            int, float, int, bool]:
+                               data_T_vals=None,
+                               subs_nz=None,
+                               T=None,
+                               r=None,
+                               data_T=None,
+                               mask=None):
         """
-        Check for convergence by using the log-likelihood values.
+        Check for convergence by using the log-likelihood values or the pseudo log-likelihood values.
 
         Parameters
         ----------
@@ -394,47 +513,56 @@ class ModelClass(DataBase):
         it : int
              Number of iteration.
         loglik : float
-                 Log-likelihood value.
+                 Log-likelihood value or Pseudo log-likelihood value.
         coincide : int
                    Number of time the update of the log-likelihood respects the convergence_tol.
         convergence : bool
                       Flag for convergence.
         use_pseudo_likelihood : bool
                                 Flag to determine which log-likelihood function to use.
+        data_T_vals : ndarray, optional
+                      Values of the transpose of the adjacency tensor.
+        subs_nz : tuple, optional
+                  Indices of elements of data that are non-zero.
+        T : int, optional
+            Number of time steps.
+        r : int, optional
+            Number of realizations.
         data_T : sptensor/dtensor, optional
                  Graph adjacency tensor (transpose).
         mask : ndarray, optional
-               Mask for selecting the held out set in the adjacency tensor in case of
-               cross-validation.
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
 
         Returns
         -------
         it : int
              Number of iteration.
         loglik : float
-                 Log-likelihood value.
+                 Log-likelihood value or Pseudo log-likelihood value.
         coincide : int
                    Number of time the update of the log-likelihood respects the convergence_tol.
         convergence : bool
                       Flag for convergence.
         """
-        # Check for convergence
         if it % 10 == 0:
             old_L = loglik
             if use_pseudo_likelihood:
-                loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
+                    loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
             else:
-                loglik = self._Likelihood(data)
+                if data_T_vals is not None and subs_nz is not None and T is not None:
+                    loglik = self._Likelihood(data, data_T, data_T_vals, subs_nz, T, mask=mask)
+                else:
+                    loglik = self._Likelihood(data)
             if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
             else:
                 coincide = 0
-        # Define the convergence criterion
-        convergence = coincide > self.decision or convergence
-        # Update the number of iterations
+        if coincide > self.decision:
+            convergence = True
         it += 1
 
         return it, loglik, coincide, convergence
+
 
     def _check_for_convergence_delta(self,
                                      it: int,
@@ -477,9 +605,7 @@ class ModelClass(DataBase):
                       Flag for convergence.
         """
 
-        if (du < self.convergence_tol
-                and dv < self.convergence_tol
-                and dw < self.convergence_tol
+        if (du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol
                 and de < self.convergence_tol):
             coincide += 1
         else:
@@ -503,10 +629,23 @@ class ModelClass(DataBase):
         """
         # Check if the output folder exists, otherwise create it
         output_path = Path(self.out_folder)
-        output_path.mkdir(parents=True, exist_ok=True)
+        if not output_path.exists():
+            output_path.mkdir(parents=True, exist_ok=True)
 
         # Define the output file
         outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
+
+        # Define the list of attribute names to save
+        attributes_to_save_names = [
+            'u_f',
+            'v_f',
+            'w_f',
+            'eta_f',
+            'final_it',
+            'maxL',
+            'maxPSL',
+            'beta_f',
+            'nodes']
 
         # Create a dictionary to hold the attributes to be saved
         attributes_to_save = {}
@@ -514,9 +653,12 @@ class ModelClass(DataBase):
         # Iterate over the instance's attributes
         for attr_name, attr_value in self.__dict__.items():
             # Check if the attribute is a numpy array and its name is in the list
-            if attr_name in self.attributes_to_save_names:
-                # Remove the '_f' suffix from the attribute name if it exists
-                attr_name_clean = attr_name.removesuffix('_f')
+            if attr_name in attributes_to_save_names:
+                # Initialize the cleaned attribute name
+                attr_name_clean = attr_name
+                if '_f' in attr_name:
+                    # Remove the '_f' suffix from the attribute name if it exists
+                    attr_name_clean = attr_name.replace('_f', '')
                 # Add the attribute to the dictionary with the cleaned name
                 attributes_to_save[attr_name_clean] = attr_value
 

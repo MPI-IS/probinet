@@ -12,7 +12,7 @@ from pgm.input.loader import import_data
 from pgm.model.crep import CRep
 from pgm.output.evaluate import calculate_opt_func, PSloglikelihood
 
-from .fixtures import BaseTest, decimal
+from .fixtures import BaseTest, DECIMAL
 
 # pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 
@@ -163,7 +163,7 @@ class BaseTestCase(BaseTest):
 
         # Check if the result is what expected
         opt_func_expected = -20916.774960752904
-        np.testing.assert_almost_equal(opt_func_result, opt_func_expected, decimal=decimal)
+        np.testing.assert_almost_equal(opt_func_result, opt_func_expected, decimal=DECIMAL)
 
     def test_PSloglikelihood(self):
         # Test PSloglikelihood function
@@ -201,7 +201,7 @@ class BaseTestCase(BaseTest):
         np.testing.assert_almost_equal(
             psloglikelihood_result,
             psloglikelihood_expected,
-            decimal=decimal)
+            decimal=DECIMAL)
 
         # Check if psloglikelihood_result is a number
         self.assertIsInstance(psloglikelihood_result, float)

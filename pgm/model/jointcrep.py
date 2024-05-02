@@ -18,6 +18,7 @@ from ..input.preprocessing import preprocess
 from ..input.tools import (
     check_symmetric, get_item_array_from_subs, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
+from ..output.evaluate import lambda_full
 from ..output.plot import plot_L
 from .base import FitParams, ModelClass
 
@@ -87,6 +88,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             data_X=None,
             gamma=None,
             eta0=eta0,
+            beta0=None,
             message=message,
             **extra_params)
 
@@ -258,9 +260,15 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                     loglik_values.append(loglik)
                     if not it % 100:
                         logging.debug(
-                        'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  '
-                        'seconds', r, loglik, it, np.round(time.time() - time_start,2)
-                        )
+                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s '
+                        'seconds',
+                            r,
+                            loglik,
+                            it,
+                            np.round(
+                                time.time() -
+                                time_start,
+                                2))
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = super()._check_for_convergence_delta(
                         it,
@@ -303,17 +311,19 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL,
                       self.final_it)
 
+        self.maxL = maxL
+
         if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence is not reached
             logging.warning('Solution failed to converge in %s EM steps!', self.max_iter)
+            logging.warning('Parameters won\'t be saved!')
+
+        else:
+            if self.out_inference:
+                super()._output_results()
 
         if np.logical_and(self.plot_loglik, self.flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
-
-        self.maxL = maxL
-
-        if self.out_inference:
-            super()._output_results()
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
@@ -332,7 +342,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                   Indices of elements of data that are non-zero.
         """
 
-        self.lambda_aij = super()._lambda_full()  # full matrix lambda
+        self.lambda_aij = lambda_full(self.u, self.v, self.w)  # full matrix lambda
 
         self.lambda_nz = super()._lambda_nz(subs_nz)  # matrix lambda for non-zero entries
         lambda_zeros = self.lambda_nz == 0

@@ -16,7 +16,7 @@ from pgm.input.tools import (
     normalize_nonzero_membership, output_adjacency, sptensor_from_dense_array, transpose_ij2,
     transpose_ij3, write_adjacency, write_design_Matrix)
 
-from .fixtures import BaseTest, decimal, rtol
+from .fixtures import BaseTest, DECIMAL, RTOL
 
 
 class TestTensors(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestTensors(unittest.TestCase):
         input_matrix = np.array([[1, 2], [3, 4]])
         normalized_matrix = normalize_nonzero_membership(input_matrix)
         expected_result = np.array([[0.33333, 0.66666], [0.428571, 0.571429]])
-        np.testing.assert_array_almost_equal(normalized_matrix, expected_result, decimal=decimal)
+        np.testing.assert_array_almost_equal(normalized_matrix, expected_result, decimal=DECIMAL)
 
     def test_is_sparse_sparse_tensor(self):
         # Test case where the tensor is considered sparse
@@ -97,8 +97,7 @@ class TestTensors(unittest.TestCase):
         w = np.array([[1.0, 2.0], [3.0, 4.0]])
         expected_result = np.array([[0.95, 1.29], [2.07, 2.81]])
         result = Exp_ija_matrix(u, v, w)
-        np.testing.assert_allclose(result, expected_result, rtol=rtol)
-
+        np.testing.assert_allclose(result, expected_result, rtol=RTOL)
 
 class TestWriteDesignMatrix(BaseTest):
     def setUp(self):

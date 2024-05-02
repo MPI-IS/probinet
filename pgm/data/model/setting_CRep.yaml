@@ -9,4 +9,4 @@ assortative: True
 eta0: null
 fix_eta: False
 constrained: True
-files: 'config/data/input/theta_gt111.npz'
+files: "config/data/input/theta_gt111.npz"

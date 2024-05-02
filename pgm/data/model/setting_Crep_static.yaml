@@ -1,0 +1,12 @@
+plot_loglik: False
+verbose: 0 
+N_real: 5
+undirected: False
+flag_data_T: 1
+bg: 10.
+max_iter: 500
+eta0: 0.5
+beta0: 0.2
+constrained: False
+assortative: False
+

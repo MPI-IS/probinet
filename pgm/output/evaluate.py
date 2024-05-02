@@ -2,12 +2,13 @@
 It provides essential functions for model assessment like AUC for link prediction, conditional
 and marginal expectations and the pseudo log-likelihood of the data.
 """
+import sys
 from typing import Optional
 
 import numpy as np
 from sklearn import metrics
 
-from ..input.tools import check_symmetric, transpose_ij3
+from ..input.tools import check_symmetric, transpose_ij2, transpose_ij3
 
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
 # too-many-statements
@@ -79,11 +80,40 @@ def calculate_conditional_expectation(B: np.ndarray,
     """
 
     if mean is None:
-        return _lambda0_full(u, v, w) + eta * transpose_ij3(
+        return lambda_full(u, v, w) + eta * transpose_ij3(
             B)  # conditional expectation (knowing A_ji)
 
-    return _lambda0_full(u, v, w) + eta * transpose_ij3(mean)
+    return lambda_full(u, v, w) + eta * transpose_ij3(mean)
 
+
+def calculate_conditional_expectation_dyncrep(B, B_to_T, u, v, w, eta=0.0, beta=1.):
+    """
+        Compute the conditional expectations, e.g. the parameters of the conditional distribution lambda_{ij}.
+
+        Parameters
+        ----------
+        B : ndarray
+            Graph adjacency tensor.
+        u : ndarray
+            Out-going membership matrix.
+        v : ndarray
+            In-coming membership matrix.
+        w : ndarray
+            Affinity tensor.
+        eta : float
+              Reciprocity coefficient.
+        beta : float
+              rate of edge removal.
+        mean : ndarray
+               Matrix with mean entries.
+
+        Returns
+        -------
+        Matrix whose elements are lambda_{ij}.
+    """
+    M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
+                1. + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)))
+    return M
 
 def calculate_expectation(u: np.ndarray, v: np.ndarray, w: np.ndarray,
                           eta: float) -> np.ndarray:
@@ -107,7 +137,7 @@ def calculate_expectation(u: np.ndarray, v: np.ndarray, w: np.ndarray,
         Matrix whose elements are m_{ij}.
     """
 
-    lambda0 = _lambda0_full(u, v, w)
+    lambda0 = lambda_full(u, v, w)
     lambda0T = transpose_ij3(lambda0)
     M = (lambda0 + eta * lambda0T) / (1. - eta * eta)
 
@@ -117,7 +147,7 @@ def calculate_expectation(u: np.ndarray, v: np.ndarray, w: np.ndarray,
 # same as Exp_ija_matrix(u, v, w)
 
 
-def _lambda0_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
+def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
     Compute the mean lambda0 for all entries.
 
@@ -176,13 +206,13 @@ def PSloglikelihood(B: np.ndarray,
     """
 
     if mask is None:
-        M = _lambda0_full(u, v, w)
+        M = lambda_full(u, v, w)
         M += (eta * B[0, :, :].T)[np.newaxis, :, :]
         logM = np.zeros(M.shape)
         logM[M > 0] = np.log(M[M > 0])
         return (B * logM).sum() - M.sum()
 
-    M = _lambda0_full(u, v, w)[mask > 0]
+    M = lambda_full(u, v, w)[mask > 0]
     M += (eta * B[0, :, :].T)[np.newaxis, :, :][mask > 0]
     logM = np.zeros(M.shape)
     logM[M > 0] = np.log(M[M > 0])
@@ -283,7 +313,7 @@ def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray,
                            edge in one direction and both edges for every pair of edges.
     """
 
-    lambda0_aij = _lambda0_full(U, V, W)
+    lambda0_aij = lambda_full(U, V, W)
 
     Z = calculate_Z(lambda0_aij, eta)
 
@@ -321,7 +351,7 @@ def expected_computation(B: np.ndarray, U: np.ndarray, V: np.ndarray,
                     Conditional expected values.
     """
 
-    lambda0_aij = _lambda0_full(U, V, W)
+    lambda0_aij = lambda_full(U, V, W)
     L = lambda0_aij.shape[0]
 
     Z = calculate_Z(lambda0_aij, eta)
@@ -335,3 +365,135 @@ def expected_computation(B: np.ndarray, U: np.ndarray, V: np.ndarray,
         np.fill_diagonal(M_conditional[l], 0.)
 
     return M_marginal, M_conditional
+
+def func_lagrange_multiplier(lambda_i: float, num: float, den: float) -> float:
+    """
+    Function to calculate the value of the Lagrange multiplier.
+
+    Parameters
+    ----------
+    lambda_i : float
+        The current value of the Lagrange multiplier.
+    num : float
+        The numerator of the function.
+    den : float
+        The denominator of the function.
+
+    Returns
+    -------
+    float
+        The calculated value of the function.
+    """
+    f = num / (lambda_i + den)
+    return np.sum(f) - 1
+
+def u_with_lagrange_multiplier(u: np.ndarray, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """
+    Function to update the membership matrix 'u' using the Lagrange multiplier.
+
+    Parameters
+    ----------
+    u : ndarray
+        The current membership matrix 'u'.
+    x : ndarray
+        The first operand in the calculation.
+    y : ndarray
+        The second operand in the calculation.
+
+    Returns
+    -------
+    ndarray
+        The updated membership matrix 'u'.
+    """
+    denominator = x.sum() - (y * u).sum()
+    f_ui = x / (y + denominator)
+    if (u < 0).sum() > 0:
+        return 100. * np.ones(u.shape)
+    return (f_ui - u)
+
+
+def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
+    """
+        Compute the log-likelihood of the data conditioned in the previous time step
+
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T : sptensor/dtensor
+                 Graph adjacency tensor (transpose).
+        mask : ndarray
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+
+        Returns
+        -------
+        l : float
+             log-likelihood value.
+    """
+    l = - M.sum()
+    sub_nz_and = np.logical_and(data > 0, (1 - data_tm1) > 0)
+    Alog = data[sub_nz_and] * (1 - data_tm1)[sub_nz_and] * np.log(M[sub_nz_and] + EPS)
+    l += Alog.sum()
+    sub_nz_and = np.logical_and(data > 0, data_tm1 > 0)
+    l += np.log(1 - beta + EPS) * (data[sub_nz_and] * data_tm1[sub_nz_and]).sum()
+    sub_nz_and = np.logical_and(data_tm1 > 0, (1 - data) > 0)
+    l += np.log(beta + EPS) * ((1 - data)[sub_nz_and] * data_tm1[sub_nz_and]).sum()
+    if np.isnan(l):
+        print("Likelihood is NaN!!!!")
+        sys.exit(1)
+    else:
+        return l
+
+
+def CalculatePermutation(U_infer, U0):
+    """
+    Permuting the overlap matrix so that the groups from the two partitions correspond
+    U0 has dimension NxK, reference memebership
+    """
+    N, RANK = U0.shape
+    M = np.dot(np.transpose(U_infer), U0) / float(N)  # dim=RANKxRANK
+    rows = np.zeros(RANK)
+    columns = np.zeros(RANK)
+    P = np.zeros((RANK, RANK))  # Permutation matrix
+    for t in range(RANK):
+        # Find the max element in the remaining submatrix,
+        # the one with rows and columns removed from previous iterations
+        max_entry = 0.
+        c_index = 1
+        r_index = 1
+        for i in range(RANK):
+            if columns[i] == 0:
+                for j in range(RANK):
+                    if rows[j] == 0:
+                        if M[j, i] > max_entry:
+                            max_entry = M[j, i]
+                            c_index = i
+                            r_index = j
+
+        P[r_index, c_index] = 1
+        columns[c_index] = 1
+        rows[r_index] = 1
+
+    return P
+
+
+def cosine_similarity(U_infer, U0):
+    """
+    It is assumed that matrices are row-normalized
+    """
+    P = CalculatePermutation(U_infer, U0)
+    U_infer = np.dot(U_infer, P);  # Permute infered matrix
+    N, K = U0.shape
+    U_infer0 = U_infer.copy()
+    U0tmp = U0.copy()
+    cosine_sim = 0.
+    norm_inf = np.linalg.norm(U_infer, axis=1)
+    norm0 = np.linalg.norm(U0, axis=1)
+    for i in range(N):
+        if (norm_inf[i] > 0.): U_infer[i, :] = U_infer[i, :] / norm_inf[i]
+        if (norm0[i] > 0.): U0[i, :] = U0[i, :] / norm0[i]
+
+    for k in range(K):
+        cosine_sim += np.dot(np.transpose(U_infer[:, k]), U0[:, k])
+    U0 = U0tmp.copy()
+    return U_infer0, cosine_sim / float(N)

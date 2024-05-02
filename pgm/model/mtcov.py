@@ -14,6 +14,7 @@ from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative
+from ..output.evaluate import lambda_full
 from ..output.plot import plot_L
 from .base import FitParams, ModelClass
 
@@ -78,6 +79,7 @@ class MTCOV(ModelClass):
             available_extra_params,
             data_X,
             eta0=None,
+            beta0=None,
             gamma=gamma,
             message=message,
             **extra_params)
@@ -201,8 +203,10 @@ class MTCOV(ModelClass):
 
         for r in range(self.num_realizations):
 
+            # For each realization (r), it initializes the parameters, updates the old variables
+            # and updates the cache.
+            logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
             super()._initialize()
-
             super()._update_old_variables()
             self._update_cache(data, subs_nz, data_X, subs_X_nz)  # type: ignore
 
@@ -215,7 +219,8 @@ class MTCOV(ModelClass):
             logging.debug('Updating realization %s ...', r)
             loglik_values = []
             time_start = time.time()
-            # --- single step iteration update ---
+            # It enters a while loop that continues until either convergence is achieved or the maximum number of
+            # iterations (self.max_iter) is reached.
             while np.logical_and(not convergence, it < self.max_iter):
                 # main EM update: updates memberships and calculates max difference new vs old
                 delta_u, delta_v, delta_w, delta_beta = self._update_em(data, data_X, subs_nz,
@@ -234,9 +239,24 @@ class MTCOV(ModelClass):
                         SubsX  # type: ignore
                     )
                     loglik_values.append(loglik)
+                    if not it % 100:
+                        logging.debug(
+                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds',
+                            r,
+                            loglik,
+                            it,
+                            np.round(
+                                time.time() -
+                                time_start,
+                                2))
                 elif flag_conv == 'deltas':
                     it, coincide, convergence = super()._check_for_convergence_delta(
                         it, coincide, delta_u, delta_v, delta_w, delta_beta, convergence)
+                    if not it % 100:
+                        logging.debug(
+                            'Nreal = %s - iterations = %s - time = %s seconds',
+                            r, it, np.round(time.time() - time_start, 2)
+                        )
                 else:
                     log_and_raise_error(ValueError, 'Error! flag_conv can be either "log" or '
                                                     '"deltas"')
@@ -250,32 +270,65 @@ class MTCOV(ModelClass):
             if maxL < loglik:
                 super()._update_optimal_parameters()
                 maxL = loglik
-                final_it = it
+                self.final_it = it
                 conv = convergence
                 # best_r = r
                 if flag_conv == 'log':
                     best_loglik = list(loglik_values)
-
             logging.debug('Nreal = %s - Loglikelihood = %s - iterations = %s - time = '
-                          '%s seconds', r, loglik, it,
+                          '%s seconds', r, loglik, self.final_it,
                           np.round(time.time() - time_start, 2))
 
             # end cycle over realizations
 
-        if np.logical_and(final_it == self.max_iter, not conv):
+        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL,
+                      self.final_it)
+
+        self.maxL = maxL
+
+        if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence is not reached
             logging.warning('Solution failed to converge in %s EM steps!', self.max_iter)
+            logging.warning('Parameters won\'t be saved!')
+
+        else:
+            if self.out_inference:
+                super()._output_results()
 
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
-            
+
         self.final_it = final_it
         self.maxL = maxL
 
-        if self.out_inference:
-            super()._output_results()
-
         return self.u_f, self.v_f, self.w_f, self.beta_f, maxL
+
+    def _initialize_eta(self) -> None:
+        """
+        Override the _initialize_eta method in MTCOV class to do nothing.
+        """
+        pass
+
+    def _file_initialization(self) -> None:
+        # Call the _file_initialization method of the parent class
+        super()._file_initialization()
+        # Initialiue beta from file
+        self._initialize_beta_from_file()
+
+    def _random_initialization(self) -> None:
+        # Log a message indicating that u, v and w are being initialized randomly
+        logging.debug('%s', 'u, v and w are initialized randomly.')
+
+        # Randomize u, v
+        self._randomize_u_v(normalize_rows=self.normalize_rows)
+        # If gamma is not 0, randomize beta matrix
+        if self.gamma != 0:
+            self._randomize_beta((self.K, self.Z))  # Generates a matrix of random numbers
+        # If gamma is not 1, randomize w
+        if self.gamma != 1:
+            self._randomize_w()
+
+
 
     def _update_cache(self,
                       data: Union[skt.dtensor, skt.sptensor],
@@ -719,7 +772,7 @@ class MTCOV(ModelClass):
             Log-likelihood value.
         """
 
-        self.lambda0_ija = super()._lambda_full()
+        self.lambda0_ija = lambda_full(self.u, self.v, self.w)
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
         if isinstance(data, skt.dtensor):
@@ -775,7 +828,7 @@ class MTCOV(ModelClass):
         """
 
         size = len(subset_N)
-        self.lambda0_ija = super()._lambda_full()
+        self.lambda0_ija = lambda_full(self.u, self.v, self.w)
         assert self.lambda0_ija.shape == (self.L, size, size)
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
