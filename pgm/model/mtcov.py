@@ -48,6 +48,11 @@ class MTCOV(ModelClass):
             plot_loglik,
             flag_conv)
 
+        # Initialize the attributes
+        self.u_f: np.ndarray = np.array([])
+        self.v_f: np.ndarray = np.array([])
+        self.w_f: np.ndarray = np.array([])
+
     def check_fit_params(self,
                          initialization: int,
                          gamma: float,
@@ -228,15 +233,15 @@ class MTCOV(ModelClass):
                 if flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data,
-                        data_X,
                         it,
                         loglik,
                         coincide,
                         convergence,
-                        batch_size,
-                        subset_N,  # type: ignore
-                        Subs,  # type: ignore
-                        SubsX  # type: ignore
+                        data_X=data_X,
+                        batch_size=batch_size,
+                        subset_N=subset_N,  # type: ignore
+                        Subs=Subs,  # type: ignore
+                        SubsX=SubsX  # type: ignore
                     )
                     loglik_values.append(loglik)
                     if not it % 100:
@@ -301,7 +306,6 @@ class MTCOV(ModelClass):
         """
         Override the _initialize_eta method in MTCOV class to do nothing.
         """
-        pass
 
     def _file_initialization(self) -> None:
         # Call the _file_initialization method of the parent class
@@ -679,71 +683,52 @@ class MTCOV(ModelClass):
 
         return out
 
-    def _check_for_convergence(self,
-                               data: Union[skt.dtensor, skt.sptensor],
-                               data_X: np.ndarray,
-                               it: int,
-                               loglik: float,
-                               coincide: int,
-                               convergence: bool,
-                               batch_size: Union[int, None],
-                               subset_N: List[int],
-                               Subs: List[Tuple[int, int, int]],
-                               SubsX: List[Tuple[int, int]]) -> Tuple[
-            int, float, int, bool]:
+    def _compute_loglik(self,
+                        data: Union[skt.dtensor, skt.sptensor],
+                        use_pseudo_likelihood: bool,
+                        data_T: Union[skt.dtensor, skt.sptensor],
+                        mask: Optional[np.ndarray],
+                        data_T_vals: Optional[np.ndarray],
+                        subs_nz: Tuple[np.ndarray],
+                        T: int,
+                        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]]) -> float:
         """
-        Check for convergence by using the log-likelihood values.
+        Compute the log-likelihood of the data.
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[skt.dtensor, skt.sptensor]
                Graph adjacency tensor.
-        data_X : ndarray
-                 Object representing the one-hot encoding version of the design matrix.
-        it : int
-             Number of iteration.
-        loglik : float
-                 Log-likelihood value.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
-        batch_size : int/None
-                     Size of the subset of nodes to compute the likelihood with.
-        subset_N : list/None
-                   List with a subset of nodes.
-        Subs : list/None
-               List with elements (a, i, j) of the non zero entries of data.
-        SubsX : list
-                List with elements (i, z) of the non zero entries of data_X.
+        use_pseudo_likelihood : bool
+                                Flag to indicate whether to use pseudo likelihood.
+        data_T : Union[skt.dtensor, skt.sptensor]
+                 Graph adjacency tensor (transpose).
+        mask : Optional[np.ndarray]
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        data_T_vals : Optional[np.ndarray]
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : Tuple[np.ndarray]
+                  Indices of elements of data that are non-zero.
+        T : int
+            Number of time steps.
+        kwargs : Union[np.ndarray, int, List[int], Tuple[np.ndarray]]
+                 Additional parameters that might be needed for the computation.
 
         Returns
         -------
-        it : int
-             Number of iteration.
         loglik : float
-                 Log-likelihood value.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
+                 Computed log-likelihood value.
         """
 
-        if it % 10 == 0:
-            old_L = loglik
-            if not batch_size:
-                loglik = self.__Likelihood(data, data_X)
-            else:
-                loglik = self.__Likelihood_batch(data, data_X, subset_N, Subs, SubsX)
-            if abs(loglik - old_L) < self.convergence_tol:
-                coincide += 1
-            else:
-                coincide = 0
-        if coincide > self.decision:
-            convergence = True
-        it += 1
+        data_X = kwargs.get('data_X')
+        batch_size = kwargs.get('batch_size')
+        subset_N = kwargs.get('subset_N')
+        Subs = kwargs.get('Subs')
+        SubsX = kwargs.get('SubsX')
+        if not batch_size:
+            return self.__Likelihood(data, data_X)
 
-        return it, loglik, coincide, convergence
+        return self.__Likelihood_batch(data, data_X, subset_N, Subs, SubsX)
 
     def __Likelihood(self,
                      data: Union[skt.dtensor, skt.sptensor],
@@ -848,7 +833,7 @@ class MTCOV(ModelClass):
         else:
             return l
 
-    def _check_for_convergence_delta(self, it, coincide, du, dv, dw, db, convergence):
+    def _check_for_convergence_delta(self, it, coincide, du, dv, dw, db, convergence):  # pylint: disable=arguments-renamed
         """
             Check for convergence by using the maximum distances between the old and the new parameters values.
 

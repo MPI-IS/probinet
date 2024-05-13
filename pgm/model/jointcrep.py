@@ -8,7 +8,7 @@ from __future__ import print_function
 import logging
 from pathlib import Path
 import time
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import sktensor as skt
@@ -96,22 +96,11 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.normalize_rows = False
         self.use_unit_uniform = False
 
-        if self.initialization > 0:
+        if self.initialization == 1:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
-            if self.initialization == 1:
-                dfW = self.theta['w']
-                self.L = dfW.shape[0]
-                self.K = dfW.shape[1]
-            elif self.initialization == 2:
-                dfU = self.theta['u']
-                self.N, self.K = dfU.shape
-            else:
-                dfW = self.theta['w']
-                dfU = self.theta['u']
-                self.L = dfW.shape[0]
-                self.K = dfW.shape[1]
-                self.N = dfU.shape[0]
-                assert self.K == dfU.shape[1]
+            dfW = self.theta['w']
+            self.L = dfW.shape[0]
+            self.K = dfW.shape[1]
 
         if "use_approximation" in extra_params:
             self.use_approximation = extra_params["use_approximation"]
@@ -847,7 +836,12 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         return uttkrp_DK
 
-    def _Likelihood(self, data: Union[skt.dtensor, skt.sptensor]) -> float:
+    def _Likelihood(self, data: Union[skt.dtensor, skt.sptensor],
+                    data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
+                    data_T_vals: np.ndarray = None,
+                    subs_nz: tuple[np.ndarray] = None,
+                    T: int = None,
+                    mask: np.ndarray = None) -> float:
         """
         Compute the log-likelihood of the data.
 

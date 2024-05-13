@@ -5,7 +5,7 @@ tensors, and converting between dense and sparse representations.
 """
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Type, Union
 
 import networkx as nx
 import numpy as np
@@ -128,12 +128,22 @@ def sptensor_from_dense_array(X: np.ndarray) -> skt.sptensor:
 
 def get_item_array_from_subs(A: np.ndarray, ref_subs: Tuple[np.ndarray]) -> np.ndarray:
     """
-    Get values of ref_subs entries of a dense tensor.
-    Output is a 1-d array with dimension = number of non zero entries.
-    """
+    Retrieves the values of specific entries in a dense tensor.
 
-    # return np.array([A[a, i, j] for a, i, j in zip(*ref_subs)]) (Older
-    # version) #TODO: Check with Martina
+    Parameters
+    ----------
+    A : np.ndarray
+        The input tensor from which values are to be retrieved.
+
+    ref_subs : Tuple[np.ndarray]
+        A tuple containing arrays of indices. Each array in the tuple corresponds to indices along
+        one dimension of the tensor.
+
+    Returns
+    -------
+    np.ndarray
+        A 1-dimensional array containing the values of the tensor at the specified indices.
+    """
     return np.array([A[tuple(sub)] for sub in zip(*ref_subs)])
 
 
@@ -382,7 +392,7 @@ def write_design_Matrix(
     X.to_csv(path_or_buf=file_path, index=False)
 
     # Log the location where the design matrix is saved
-    logging.debug(f'Design matrix saved in: {file_path}')
+    logging.debug('Design matrix saved in: %s', file_path)
 
 
 def transpose_tensor(M: np.ndarray) -> np.ndarray:
@@ -413,8 +423,7 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
            Values of the non-zero entries.
     subs : tuple
            Indices of elements that are non-zero. It is a n-tuple of array-likes and the length
-           of tuple n must be
-           equal to the dimension of tensor.
+           of tuple n must be equal to the dimension of tensor.
     m : int
         Mode in which the Khatri-Rao product of the membership matrix is multiplied with the
         tensor: if 1 it
@@ -438,39 +447,49 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
     if len(subs) < 3:
         log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
+    D, K = 0, None
+    out: np.ndarray = np.array([])
+
     if m == 1:
         D, K = u.shape
         out = np.zeros_like(u)
     elif m == 2:
         D, K = v.shape
         out = np.zeros_like(v)
+    else:
+        log_and_raise_error(ValueError, "m should be 1 or 2.")
 
-    for k in range(K):
-        tmp = vals.copy()
-        if temporal:
-            if m == 1:  # we are updating u
-                tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
-                        v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
-            elif m == 2:  # we are updating v
-                tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
-                        u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
-        else:
-            if m == 1:  # we are updating u
-                w_I = w[0, k, :]
-                tmp *= (w_I[np.newaxis, :].astype(tmp.dtype) * v[subs[2], :].astype(tmp.dtype)).sum(
-                    axis=1)
-            elif m == 2:  # we are updating v
-                w_I = w[0, :, k]
-                tmp *= (w_I[np.newaxis, :].astype(tmp.dtype) * u[subs[1], :].astype(tmp.dtype)).sum(
-                    axis=1)
-        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
+    if K is not None:
+        for k in range(K):
+            tmp = vals.copy()
+            if temporal:
+                if m == 1:  # we are updating u
+                    tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
+                            v[subs[2], :].astype(tmp.dtype)).sum(axis=1)  # type: ignore
+                elif m == 2:  # we are updating v
+                    tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
+                            u[subs[1], :].astype(tmp.dtype)).sum(axis=1)  # type: ignore
+            else:
+                if m == 1:  # we are updating u
+                    w_I = w[0, k, :]
+                    tmp *= (w_I[np.newaxis, :].astype(tmp.dtype) * v[subs[2], :].astype(  # type: ignore
+                        tmp.dtype)).sum(axis=1)
+                elif m == 2:  # we are updating v
+                    w_I = w[0, :, k]
+                    tmp *= (w_I[np.newaxis, :].astype(tmp.dtype) * u[subs[1], :].astype(  # type: ignore
+                        tmp.dtype)).sum(axis=1)
+            out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out
 
 
-def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
-                          u: np.ndarray, v: np.ndarray,
-                          w: np.ndarray, temporal: bool = False) -> np.ndarray:
+def sp_uttkrp_assortative(vals: np.ndarray,
+                          subs: Tuple[np.ndarray],
+                          m: int,
+                          u: np.ndarray,
+                          v: np.ndarray,
+                          w: np.ndarray,
+                          temporal: bool = False) -> np.ndarray:
     """
     Compute the Khatri-Rao product (sparse version) with the assumption of assortativity.
 
@@ -513,21 +532,40 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
         tmp = vals.copy()
         if m == 1:  # we are updating u
             if temporal:
-                tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(tmp.dtype)
+                tmp *= w[subs[0],
+                         k].astype(tmp.dtype) * v[subs[2],
+                                                  k].astype(tmp.dtype)  # type: ignore
             else:
-                tmp *= w[0, k].astype(tmp.dtype) * v[subs[2], k].astype(tmp.dtype)
+                tmp *= w[0, k].astype(tmp.dtype) * v[subs[2], k].astype(tmp.dtype)  # type: ignore
 
         elif m == 2:  # we are updating v
             if temporal:
-                tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(tmp.dtype)
+                tmp *= w[subs[0],
+                         k].astype(tmp.dtype) * u[subs[1],
+                                                  k].astype(tmp.dtype)  # type: ignore
             else:
-                tmp *= w[0, k].astype(tmp.dtype) * u[subs[1], k].astype(tmp.dtype)
+                tmp *= w[0, k].astype(tmp.dtype) * u[subs[1], k].astype(tmp.dtype)  # type: ignore
         out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out
 
 
-def log_and_raise_error(error_type, message):
+def log_and_raise_error(error_type: Type[BaseException], message: str) -> None:
+    """
+    Logs an error message and raises an exception of the specified type.
+
+    Parameters
+    ----------
+    error_type : Type[BaseException]
+        The type of the exception to be raised.
+    message : str
+        The error message to be logged and included in the exception.
+
+    Raises
+    ------
+    BaseException
+        An exception of the specified type with the given message.
+    """
 
     # Log the error message
     logging.error(message)

@@ -34,7 +34,7 @@ class TestMain(BaseTest):
     def main_with_custom_parameters(self, algorithm, mock_import_data, mock_fit, main_function):
         K = self.K_values
         sys.argv = ['main_' + algorithm, '-a', algorithm, '-o', str(self.folder),
-                    '-K', str(K), '-F', 'deltas', '-A', 'custom_network.dat']
+                    '-K', str(K), '-F', 'deltas', '-A', 'custom_network.dat', '--rseed', '0']
         main_function()
         mock_import_data.assert_called_once()
         called_args = mock_fit.call_args
@@ -190,3 +190,68 @@ class TestMainMTCOV(TestMain):
                 return_value=([nx.Graph()], np.empty(0), mock.ANY, []))
     def test_MTCOV_with_custom_parameters(self, mock_import_data, mock_fit):
         return self.main_with_custom_parameters('MTCOV', mock_import_data, mock_fit, single_main)
+
+
+class TestMainDynCRep(TestMain):
+    def setUp(self):
+        super().setUp()
+        self.expected_config = {
+            "K": 2,
+            "assortative": False,
+            "beta0": 0.25,
+            "constrained": False,
+            "constraintU": False,
+            "end_file": "_DynCRep",
+            "eta0": None,
+            "files": "tests/inputs/theta_GT_DynCRep_for_initialization.npz",
+            "fix_beta": False,
+            "fix_communities": False,
+            "fix_eta": False,
+            "fix_w": False,
+            "initialization": 0,
+            "out_folder": str(self.folder),
+            "out_inference": True,
+            "rseed": 0,
+            "undirected": False
+        }
+
+        self.kwargs_to_check = ['data', 'T', 'nodes', 'flag_data_T', 'ag', 'bg', 'temporal']
+
+        self.input_names = [
+            'K',
+            'T',
+            'ag',
+            'assortative',
+            'beta0',
+            'bg',
+            'constrained',
+            'constraintU',
+            'data',
+            'end_file',
+            'eta0',
+            'files',
+            'fix_beta',
+            'fix_communities',
+            'fix_eta',
+            'fix_w',
+            'flag_data_T',
+            'initialization',
+            'nodes',
+            'out_folder',
+            'out_inference',
+            'rseed',
+            'temporal',
+            'undirected'
+        ]
+        self.K_values = 2
+
+    @mock.patch('pgm.model.dyncrep.DynCRep.fit')
+    def test_DynCRep_with_no_parameters(self, mock_fit):
+        return self.main_with_no_parameters('DynCRep', mock_fit, single_main)
+
+    @mock.patch('pgm.model.dyncrep.DynCRep.fit')
+    @ mock.patch('pgm.main.import_data',
+                 return_value=([nx.Graph()], np.empty(0), mock.ANY, []))
+    def test_JointCRep_with_custom_parameters(self, mock_import_data, mock_fit):
+        return self.main_with_custom_parameters(
+            'DynCRep', mock_import_data, mock_fit, single_main)

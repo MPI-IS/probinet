@@ -14,11 +14,10 @@ import warnings
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from numpy.random import RandomState
 import pandas as pd
-from scipy.optimize import brentq, root
+from scipy.optimize import brentq
 from scipy.sparse import tril, triu
-import scipy.sparse as sparse
-from scipy.stats import poisson
 
 from . import tools as tl
 from ..output.evaluate import lambda_full
@@ -1354,10 +1353,8 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
     # pylint: enable=W0631
 
 
-EPS = 1e-12
 
-
-class CRepDyn(object):
+class CRepDyn:
 
     def __init__(self, N, K, T=1, eta=0., L=1, avg_degree=5., ExpM=None, prng=0, verbose=0,
                  beta=0.2, ag=0.1, bg=0.1, eta_dir=0.5, L1=True, corr=1., over=0., label=None,
@@ -1391,7 +1388,7 @@ class CRepDyn(object):
             self.ExpM = float(ExpM)
 
         # Set verbosity flag
-        if verbose > 2 and not isinstance(verbose, int):
+        if verbose > 2:
             raise ValueError('The verbosity parameter can only assume values in {0,1,2}!')
         self.verbose = verbose
 
@@ -1510,14 +1507,14 @@ class CRepDyn(object):
         # Network post-processing
         nodes = list(G[0].nodes())
         assert len(nodes) == self.N
-        A = [nx.to_scipy_sparse_matrix(G[t], nodelist=nodes, weight='weight') for t in
+        A = [nx.to_scipy_sparse_array(G[t], nodelist=nodes, weight='weight') for t in
              range(len(G))]
 
         # Keep largest connected component
         A_sum = A[0].copy()
         for t in range(1, len(A)):
             A_sum += A[t]
-        G_sum = nx.from_scipy_sparse_matrix(A_sum, create_using=nx.DiGraph)
+        G_sum = nx.from_scipy_sparse_array(A_sum, create_using=nx.DiGraph)
         Gc = max(nx.weakly_connected_components(G_sum), key=len)
         nodes_to_remove = set(G_sum.nodes()).difference(Gc)
         G_sum.remove_nodes_from(list(nodes_to_remove))
@@ -1651,17 +1648,17 @@ class CRepDyn(object):
 
     def _plot_A(self, A, cmap='PuBuGn'):
         """
-            Plot the adjacency matrix produced by the generative algorithm.
-            INPUT
-            ----------
-            A : Scipy array
-                Sparse version of the NxN adjacency matrix associated to the graph.
-            cmap : Matplotlib object
-                   Colormap used for the plot.
+        Plot the adjacency matrix produced by the generative algorithm.
+        INPUT
+        ----------
+        A : Scipy array
+            Sparse version of the NxN adjacency matrix associated to the graph.
+        cmap : Matplotlib object
+               Colormap used for the plot.
         """
         for i in range(len(A)):
             Ad = A[i].todense()
-            fig, ax = plt.subplots(figsize=(7, 7))
+            _, ax = plt.subplots(figsize=(7, 7))
             ax.matshow(Ad, cmap=plt.get_cmap(cmap))
             ax.set_title('Adjacency matrix', fontsize=15)
             for PCM in ax.get_children():
@@ -1672,18 +1669,18 @@ class CRepDyn(object):
 
     def _plot_M(self, M, cmap='PuBuGn'):
         """
-            Plot the M matrix produced by the generative algorithm. Each entry is the
-            poisson mean associated to each couple of nodes of the graph.
-            INPUT
-            ----------
-            M : Numpy array
-                NxN M matrix associated to the graph. Contains all the means used
-                for generating edges.
-            cmap : Matplotlib object
-                   Colormap used for the plot.
+        Plot the M matrix produced by the generative algorithm. Each entry is the
+        poisson mean associated to each couple of nodes of the graph.
+        INPUT
+        ----------
+        M : Numpy array
+            NxN M matrix associated to the graph. Contains all the means used
+            for generating edges.
+        cmap : Matplotlib object
+               Colormap used for the plot.
         """
 
-        fig, ax = plt.subplots(figsize=(7, 7))
+        _, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(M, cmap=plt.get_cmap(cmap))
         ax.set_title('MT means matrix', fontsize=15)
         for PCM in ax.get_children():
@@ -1692,7 +1689,7 @@ class CRepDyn(object):
         plt.colorbar(PCM, ax=ax)
         plt.show()
 
-    def check_reciprocity_tm1(self, A, A_sum):
+    def check_reciprocity_tm1(self, A):
         for t in range(1, len(A)):
             ref_subs = A[t].nonzero()
             M_t_T = A[t].transpose()[ref_subs]
@@ -1701,41 +1698,48 @@ class CRepDyn(object):
             print(nnz, M_t_T.nonzero()[0].shape[0] / nnz, M_tm1_T.nonzero()[0].shape[0] / nnz)
 
 
-def membership_vectors(prng=10, L1=False, eta_dir=0.5, alpha=0.6, beta=1, K=2, N=100, corr=0.,
-                       over=0.):
+def membership_vectors(prng: RandomState = RandomState(10),
+                       L1: bool = False,
+                       eta_dir: float = 0.5,
+                       alpha: float = 0.6,
+                       beta: float = 1,
+                       K: int = 2,
+                       N: int = 100,
+                       corr: float = 0.,
+                       over: float = 0.) -> Tuple[np.ndarray, np.ndarray]:
     """
-        Compute the NxK membership vectors u, v using a Dirichlet or a Gamma distribution.
-        INPUT
-        ----------
-        prng: Numpy Random object
-              Random number generator container.
-        L1 : bool
-             Flag for parameter generation method. True for Dirichlet, False for Gamma.
-        eta : float
-              Parameter for Dirichlet.
-        alpha : float
-            Parameter (alpha) for Gamma.
-        beta : float
-            Parameter (beta) for Gamma.
-        N : int
-            Number of nodes.
-        K : int
-            Number of communities.
-        corr : float
-               Correlation between u and v synthetically generated.
-        over : float
-               Fraction of nodes with mixed membership.
-        OUTPUT
-        -------
-        u : Numpy array
-            Matrix NxK of out-going membership vectors, positive element-wise.
-            Possibly None if in pure SpringRank or pure Multitensor.
-            With unitary L1 norm computed row-wise.
+    Compute the NxK membership vectors u, v using a Dirichlet or a Gamma distribution.
+    INPUT
+    ----------
+    prng: Numpy Random object
+          Random number generator container.
+    L1 : bool
+         Flag for parameter generation method. True for Dirichlet, False for Gamma.
+    eta : float
+          Parameter for Dirichlet.
+    alpha : float
+        Parameter (alpha) for Gamma.
+    beta : float
+        Parameter (beta) for Gamma.
+    N : int
+        Number of nodes.
+    K : int
+        Number of communities.
+    corr : float
+           Correlation between u and v synthetically generated.
+    over : float
+           Fraction of nodes with mixed membership.
+    OUTPUT
+    -------
+    u : Numpy array
+        Matrix NxK of out-going membership vectors, positive element-wise.
+        Possibly None if in pure SpringRank or pure Multitensor.
+        With unitary L1 norm computed row-wise.
 
-        v : Numpy array
-            Matrix NxK of in-coming membership vectors, positive element-wise.
-            Possibly None if in pure SpringRank or pure Multitensor.
-            With unitary L1 norm computed row-wise.
+    v : Numpy array
+        Matrix NxK of in-coming membership vectors, positive element-wise.
+        Possibly None if in pure SpringRank or pure Multitensor.
+        With unitary L1 norm computed row-wise.
     """
     # Generate equal-size unmixed group membership
     size = int(N / K)
@@ -1755,8 +1759,9 @@ def membership_vectors(prng=10, L1=False, eta_dir=0.5, alpha=0.6, beta=1, K=2, N
         overlapping = int(N * over)  # number of nodes belonging to more communities
         ind_over = np.random.randint(len(u), size=overlapping)
         if L1:
-            u[ind_over] = prng.dirichlet(eta_dir * np.ones(K), overlapping)
-            v[ind_over] = corr * u[ind_over] + (1. - corr) * prng.dirichlet(eta * np.ones(K),
+            u[ind_over] = prng.dirichlet(eta_dir * np.ones(K), overlapping)  # TODO: Ask Hadiseh
+            # why eta is not defined
+            v[ind_over] = corr * u[ind_over] + (1. - corr) * prng.dirichlet(eta * np.ones(K),  # pylint: disable=undefined-variable
                                                                             overlapping)
             if corr == 1.:
                 assert np.allclose(u, v)
@@ -1771,29 +1776,35 @@ def membership_vectors(prng=10, L1=False, eta_dir=0.5, alpha=0.6, beta=1, K=2, N
     return u, v
 
 
-def affinity_matrix_dyncrep(structure='assortative',
-                            N=100,
-                            K=2,
-                            avg_degree=4.,
-                            a=0.1,
-                            b=0.3):
+def affinity_matrix_dyncrep(structure: str = 'assortative',
+                            N: int = 100,
+                            K: int = 2,
+                            avg_degree: float = 4.,
+                            a: float = 0.1,
+                            b: float = 0.3) -> np.ndarray:
     """
-        Compute the KxK affinity matrix w with probabilities between and within groups.
-        INPUT
-        ----------
-        structure : string
-                    Structure of the network.
-        N : int
-            Number of nodes.
-        K : int
-            Number of communities.
-        a : float
-            Parameter for secondary probabilities.
-        OUTPUT
-        -------
-        p : Numpy array
-            Array with probabilities between and within groups. Element (k,h)
-            gives the density of edges going from the nodes of group k to nodes of group h.
+    Compute the KxK affinity matrix w with probabilities between and within groups.
+
+    Parameters
+    ----------
+    structure : str
+                Structure of the network. Default is 'assortative'.
+    N : int
+        Number of nodes. Default is 100.
+    K : int
+        Number of communities. Default is 2.
+    avg_degree : float
+        Average degree. Default is 4.0.
+    a : float
+        Parameter for secondary probabilities. Default is 0.1.
+    b : float
+        Parameter for secondary probabilities. Default is 0.3.
+
+    Returns
+    -------
+    p : np.ndarray
+        Array with probabilities between and within groups. Element (k,h)
+        gives the density of edges going from the nodes of group k to nodes of group h.
     """
 
     b *= a
@@ -1820,5 +1831,28 @@ def affinity_matrix_dyncrep(structure='assortative',
     return p
 
 
-def eq_c(c, M, N, E, rho_a, mu):
+def eq_c(c: float, M: np.ndarray, N: int, E: int, rho_a: float, mu: float) -> float:
+    """
+    Compute the value of a function used to find the value of the sparsity parameter 'c'.
+
+    Parameters
+    ----------
+    c : float
+        The sparsity parameter.
+    M : np.ndarray
+        The matrix representing the expected number of edges between each pair of nodes.
+    N : int
+        The number of nodes in the network.
+    E : int
+        The expected total number of edges in the network.
+    rho_a : float
+        The expected proportion of reciprocal edges in the network.
+    mu : float
+        The proportion of reciprocal edges in the Erdos-Renyi network.
+
+    Returns
+    -------
+    float
+        The value of the function for the given parameters.
+    """
     return np.sum(np.exp(-c * M)) - (N ** 2 - N) + E * (1 - rho_a) / (1 - mu)

@@ -2,11 +2,11 @@
 It provides essential functions for model assessment like AUC for link prediction, conditional
 and marginal expectations and the pseudo log-likelihood of the data.
 """
-import sys
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from sklearn import metrics
+from sktensor import dtensor, sptensor
 
 from ..input.tools import check_symmetric, transpose_ij2, transpose_ij3
 from ..model.constants import EPS_
@@ -14,8 +14,6 @@ from ..model.constants import EPS_
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
 # too-many-statements
 # pylint: disable=fixme
-
-# TODO: make it model agnostic
 
 
 def calculate_AUC(pred: np.ndarray, data0: np.ndarray, mask: Optional[np.ndarray] = None) -> float:
@@ -85,8 +83,6 @@ def calculate_conditional_expectation(B: np.ndarray,
             B)  # conditional expectation (knowing A_ji)
 
     return lambda_full(u, v, w) + eta * transpose_ij3(mean)
-
-
 def calculate_conditional_expectation_dyncrep(B, B_to_T, u, v, w, eta=0.0, beta=1.):
     """
         Compute the conditional expectations, e.g. the parameters of the conditional distribution lambda_{ij}.
@@ -111,6 +107,41 @@ def calculate_conditional_expectation_dyncrep(B, B_to_T, u, v, w, eta=0.0, beta=
         Returns
         -------
         Matrix whose elements are lambda_{ij}.
+    """
+    M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
+        1. + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)))
+    return M
+
+def calculate_conditional_expectation_dyncrep(B_to_T: Union[dtensor, sptensor],
+                                              u: np.ndarray,
+                                              v: np.ndarray,
+                                              w: np.ndarray,
+                                              eta: float = 0.0,
+                                              beta: float = 1.0) -> np.ndarray:
+    """
+    Compute the conditional expectations, e.g. the parameters of the conditional  distribution
+    lambda_{ij}.
+
+    Parameters
+    ----------
+    B : ndarray
+        Graph adjacency tensor.
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity tensor.
+    eta : float
+          Reciprocity coefficient.
+    beta : float
+          rate of edge removal.
+    mean : ndarray
+           Matrix with mean entries.
+
+    Returns
+    -------
+    Matrix whose elements are lambda_{ij}.
     """
     M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
         1. + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)))
@@ -144,7 +175,6 @@ def calculate_expectation(u: np.ndarray, v: np.ndarray, w: np.ndarray,
     M = (lambda0 + eta * lambda0T) / (1. - eta * eta)
 
     return M
-
 
 # same as Exp_ija_matrix(u, v, w)
 
@@ -416,18 +446,23 @@ def u_with_lagrange_multiplier(u: np.ndarray, x: np.ndarray, y: np.ndarray) -> n
     return (f_ui - u)
 
 
+
 def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
     """
-        Compute the log-likelihood of the data conditioned in the previous time step
+    Return the marginal and conditional expected value.
 
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T : sptensor/dtensor
-                 Graph adjacency tensor (transpose).
-        mask : ndarray
-               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+    Parameters
+    ----------
+    B : ndarray
+        Graph adjacency tensor.
+    U : ndarray
+        Out-going membership matrix.
+    V : ndarray
+        In-coming membership matrix.
+    W : ndarray
+        Affinity tensor.
+    eta : float
+          Pair interaction coefficient.
 
         Returns
         -------
@@ -454,32 +489,9 @@ def CalculatePermutation(U_infer, U0):
     Permuting the overlap matrix so that the groups from the two partitions correspond
     U0 has dimension NxK, reference membership
     """
-    N, RANK = U0.shape
-    M = np.dot(np.transpose(U_infer), U0) / float(N)  # dim=RANKxRANK
-    rows = np.zeros(RANK)
-    columns = np.zeros(RANK)
-    P = np.zeros((RANK, RANK))  # Permutation matrix
-    for t in range(RANK):
-        # Find the max element in the remaining submatrix,
-        # the one with rows and columns removed from previous iterations
-        max_entry = 0.
-        c_index = 1
-        r_index = 1
-        for i in range(RANK):
-            if columns[i] == 0:
-                for j in range(RANK):
-                    if rows[j] == 0:
-                        if M[j, i] > max_entry:
-                            max_entry = M[j, i]
-                            c_index = i
-                            r_index = j
 
-        P[r_index, c_index] = 1
-        columns[c_index] = 1
-        rows[r_index] = 1
-
-    return P
-
+    lambda0_aij = lambda_full(U, V, W)
+    L = lambda0_aij.shape[0]
 
 def cosine_similarity(U_infer, U0):
     """
@@ -499,7 +511,9 @@ def cosine_similarity(U_infer, U0):
         if (norm0[i] > 0.):
             U0[i, :] = U0[i, :] / norm0[i]
 
-    for k in range(K):
-        cosine_sim += np.dot(np.transpose(U_infer[:, k]), U0[:, k])
-    U0 = U0tmp.copy()
-    return U_infer0, cosine_sim / float(N)
+    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / \
+                    (eta ** transpose_ij3(B) * lambda0_aij + 1)
+    for l in np.arange(L):
+        np.fill_diagonal(M_conditional[l], 0.)
+
+    return M_marginal, M_conditional

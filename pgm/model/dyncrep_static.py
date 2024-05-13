@@ -1,8 +1,8 @@
 """
 The original static version of the code. I started integrating this one into the package too
-until I realized I could actually do this with the dyncrep.py and temporal attribute set to 
-False. I decided to keep it for a while until I know that I am not missing any of its features 
-with the new implementation.   
+until I realized I could actually do this with the dyncrep.py and temporal attribute set to
+False. I decided to keep it for a while until I know that I am not missing any of its features
+with the new implementation.
 """
 
 from __future__ import print_function
@@ -17,6 +17,7 @@ import sktensor as skt
 
 from ..input.preprocessing import preprocess
 from ..input.tools import get_item_array_from_subs, sp_uttkrp, sp_uttkrp_assortative
+from ..output.evaluate import u_with_lagrange_multiplier
 from ..output.plot import plot_L
 from .constants import EPS_
 from .dyncrep import u_with_lagrange_multiplier
@@ -759,7 +760,7 @@ class CRepDyn:
             dist_w : float
                      Maximum distance between the old and the new affinity tensor w.
         """
-        # TODO
+
         sub_w_nz = self.w.nonzero()
         uttkrp_DKQ = np.zeros_like(self.w)
 

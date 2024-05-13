@@ -13,8 +13,8 @@ import sktensor as skt
 
 from pgm.input.tools import (
     build_edgelist, can_cast, Exp_ija_matrix, get_item_array_from_subs, is_sparse,
-    normalize_nonzero_membership, output_adjacency, sptensor_from_dense_array, transpose_ij2,
-    transpose_ij3, write_adjacency, write_design_Matrix)
+    normalize_nonzero_membership, output_adjacency, sp_uttkrp, sp_uttkrp_assortative,
+    sptensor_from_dense_array, transpose_ij2, transpose_ij3, write_adjacency, write_design_Matrix)
 
 from .fixtures import BaseTest, DECIMAL, RTOL
 
@@ -23,6 +23,25 @@ class TestTensors(unittest.TestCase):
     """
     Test cases for the tools module.
     """
+
+    def setUp(self):
+        # Parameters for the non assortative case
+        self.vals_ = np.array([1.0, 2.0, 3.0])
+        self.subs_ = (np.array([0, 0, 1]), np.array([0, 1, 2]), np.array([0, 1, 2]))
+        self.u_ = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]])
+        self.v_ = np.array([[0.7, 0.8], [0.9, 1.0], [1.1, 1.2]])
+        self.w_ = np.array([[[0.1, 0.2], [0.3, 0.4]],
+                            [[0.5, 0.6], [0.7, 0.8]],
+                            [[0.9, 1.0], [1.1, 1.2]]])
+        # Parameters for the assortative case
+        self.vals_a = np.array(
+            [1.0, 2.0,
+             3.0])  # of size n, number of nodes; these are the non zero values of the tensor
+        self.subs_a = (np.array([0, 0, 0]), np.array([0, 1, 2]),
+                       np.array([0, 1, 2]))  # list of arrays of indices, each one of size n, lxixj
+        self.u_a = np.array([[0.1, 0.2], [0.4, 0], [0.5, 0.6]])  # of size nxk,
+        self.v_a = np.array([[0.7, 0], [0.9, 0], [1.1, 0]])  # of size n
+        self.w_a = np.array([[0.1, 0.2, 0]])  # lxk #in the other case, this is lxkxk
 
     def test_can_cast(self):
         self.assertTrue(can_cast("123"))
@@ -98,6 +117,32 @@ class TestTensors(unittest.TestCase):
         expected_result = np.array([[0.95, 1.29], [2.07, 2.81]])
         result = Exp_ija_matrix(u, v, w)
         np.testing.assert_allclose(result, expected_result, rtol=RTOL)
+
+    def test_sp_uttkrp_mode_1(self):
+        mode = 1
+        result = sp_uttkrp(self.vals_, self.subs_, mode, self.u_, self.v_, self.w_)
+        expected_result = np.array([[0.23, 0.53], [0.58, 1.34], [3.81, 5.19]])
+        self.assertTrue(np.allclose(result, expected_result))
+
+    def test_sp_uttkrp_mode_2(self):
+        mode = 2
+        result = sp_uttkrp(self.vals_, self.subs_, mode, self.u_, self.v_, self.w_)
+        expected_result = np.array([[0.07, 0.1], [0.3, 0.44], [2.01, 2.34]])
+        self.assertTrue(np.allclose(result, expected_result))
+
+    def test_sp_uttkrp_assortative_mode_1(self):
+        mode = 1
+        result = sp_uttkrp_assortative(self.vals_a, self.subs_a, mode, self.u_a, self.v_a,
+                                       self.w_a)  # this is nxk
+        expected_result = np.array([[0.07, 0.], [0.18, 0], [0.33, 0]])
+        self.assertTrue(np.allclose(result, expected_result))
+
+    def test_sp_uttkrp_assortative_mode_2(self):
+        mode = 2
+        result = sp_uttkrp_assortative(self.vals_a, self.subs_a, mode, self.u_a, self.v_a,
+                                       self.w_a)  # this is nxk
+        expected_result = np.array([[0.01, 0.04], [0.08, 0], [0.15, 0.36]])
+        self.assertTrue(np.allclose(result, expected_result))
 
 
 class TestWriteDesignMatrix(BaseTest):

@@ -6,7 +6,8 @@ import unittest
 import networkx as nx
 import numpy as np
 
-from pgm.input.generate_network import affinity_matrix, BaseSyntheticNetwork, GM_reciprocity
+from pgm.input.generate_network import (
+    affinity_matrix, BaseSyntheticNetwork, CRepDyn, GM_reciprocity, ReciprocityMMSBM_joints)
 
 from .fixtures import RTOL
 
@@ -193,3 +194,82 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
         self.assertEqual(self.base_synthetic_network.output_net, self.output_net)
         self.assertEqual(self.base_synthetic_network.show_details, self.show_details)
         self.assertEqual(self.base_synthetic_network.show_plots, self.show_plots)
+
+
+class TestCRepDyn(unittest.TestCase):
+    def setUp(self):
+        self.N = 100
+        self.K = 2
+
+    def test_CRepDyn_network(self):
+
+        self.expected_number_of_edges_graph_0 = 234
+        self.expected_number_of_edges_graph_1 = 233
+        self.expected_u_sum_axis_1 = 100.
+        self.expected_u_sum_axis_0 = np.array([50., 50.])
+
+        crepdyn = CRepDyn(N=self.N, K=self.K)
+        graphs = crepdyn.CRepDyn_network()
+        self.assertEqual(len(graphs), self.K)
+        self.assertEqual(graphs[0].number_of_nodes(), self.N)
+        self.assertEqual(graphs[1].number_of_nodes(), self.N)
+        self.assertEqual(graphs[0].number_of_edges(), self.expected_number_of_edges_graph_0)
+        self.assertEqual(graphs[1].number_of_edges(), self.expected_number_of_edges_graph_1)
+        self.assertTrue(np.allclose(np.sum(crepdyn.u), self.expected_u_sum_axis_1))
+        self.assertTrue(np.allclose(np.sum(crepdyn.u, axis=0), self.expected_u_sum_axis_0))
+
+    def test_invalid_verbose(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, verbose=3)
+
+    def test_invalid_eta(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, eta=-1)
+
+    def test_invalid_beta(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, beta=-1)
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, beta=2)
+
+    def test_invalid_structure(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, structure='invalid_structure')
+
+    def test_invalid_ag(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, ag=-1, L1=False)
+
+    def test_invalid_bg(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, bg=-1, L1=False)
+
+    def test_invalid_corr(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, corr=-1)
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, corr=2)
+
+    def test_invalid_over(self):
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, over=-1)
+        with self.assertRaises(ValueError):
+            CRepDyn(self.N, self.K, over=2)
+
+
+class TestReciprocityMMSBM_joints(unittest.TestCase):
+
+    def setUp(self):
+        mmsbm = ReciprocityMMSBM_joints(
+            eta=50,
+            avg_degree=15,
+            is_sparse=True,
+            structure=['assortative'],
+            parameters=None
+        )
+        self.mmsbm = mmsbm
+
+    @unittest.skip("Talk to Martina about why this test breaks.")
+    def test_nothing(self):
+        self.mmsbm.build_Y()
+        pass

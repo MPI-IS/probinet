@@ -32,6 +32,7 @@ class CRep(ModelClass):
                  convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
                  decision: int = 10,  # convergence parameter
                  max_iter: int = 1000,  # maximum number of EM steps before aborting
+                 plot_loglik: bool = False,  # flag to plot the log-likelihood
                  flag_conv: str = 'log',  # flag to choose the convergence criterion
                  ) -> None:
         super().__init__(
@@ -42,7 +43,14 @@ class CRep(ModelClass):
             convergence_tol,
             decision,
             max_iter,
+            plot_loglik,
             flag_conv)
+
+        # Initialize the attributes
+        self.u_f: np.ndarray = np.array([])
+        self.v_f: np.ndarray = np.array([])
+        self.w_f: np.ndarray = np.array([])
+        self.eta_f = 0.
 
     def check_fit_params(self,
                          initialization: int,
@@ -84,7 +92,7 @@ class CRep(ModelClass):
         self.use_unit_uniform = True
         self.normalize_rows = True
 
-        if self.initialization > 0:
+        if self.initialization == 1:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
     def fit(self,
@@ -397,7 +405,7 @@ class CRep(ModelClass):
 
         self.eta *= (self.data_M_nz * data_T_vals).sum() / Deta
 
-        dist_eta = abs(self.eta - self.eta_old)
+        dist_eta = abs(self.eta - self.eta_old)  # type: ignore
         self.eta_old = float(self.eta)
 
         return dist_eta
@@ -417,7 +425,7 @@ class CRep(ModelClass):
                  Maximum distance between the old and the new membership matrix u.
         """
 
-        self.u = self.u_old * self._update_membership(subs_nz, 1)
+        self.u = self.u_old * self._update_membership(subs_nz, 1)  # type: ignore
 
         if not self.constrained:
             Du = np.einsum('iq->q', self.v)
@@ -437,7 +445,7 @@ class CRep(ModelClass):
         low_values_indices = self.u < self.err_max  # values are too low
         self.u[low_values_indices] = 0.  # and set to 0.
 
-        dist_u = np.amax(abs(self.u - self.u_old))
+        dist_u = np.amax(abs(self.u - self.u_old))  # type: ignore
         self.u_old = np.copy(self.u)
 
         return dist_u

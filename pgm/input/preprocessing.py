@@ -4,7 +4,7 @@ The script facilitates the creation of both dense and sparse adjacency tensors, 
 weights, and ensures proper formatting of input data tensors.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
 from numpy import ndarray
@@ -16,7 +16,8 @@ import sktensor as skt
 from . import tools
 
 
-def build_B_from_A(A: List[nx.MultiDiGraph], nodes: Optional[List] = None,
+def build_B_from_A(A: List[nx.MultiDiGraph],
+                   nodes: Optional[List] = None,
                    calculate_reciprocity: bool = True) -> Union[ndarray, Tuple[ndarray, List[Any]]]:
     """
     Create the numpy adjacency tensor of a networkX graph.
@@ -187,18 +188,18 @@ def preprocess(A: np.ndarray) -> sptensor:
 
 def preprocess_X(X):
     """
-        Pre-process input data matrix.
-        If the input is sparse, returns a scipy sparse matrix. Otherwise, returns a numpy array.
+    Pre-process input data matrix.
+    If the input is sparse, returns a scipy sparse matrix. Otherwise, returns a numpy array.
 
-        Parameters
-        ----------
-        X : ndarray
-            Input data (matrix).
+    Parameters
+    ----------
+    X : ndarray
+        Input data (matrix).
 
-        Returns
-        -------
-        X : scipy sparse matrix/ndarray
-            Pre-processed data. If the input is sparse, returns a scipy sparse matrix. Otherwise, returns a numpy array.
+    Returns
+    -------
+    X : scipy sparse matrix/ndarray
+        Pre-processed data. If the input is sparse, returns a scipy sparse matrix. Otherwise, returns a numpy array.
     """
 
     if not X.dtype == np.dtype(int).type:

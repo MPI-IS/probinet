@@ -2,7 +2,7 @@ from importlib.resources import files
 from pathlib import Path
 
 import numpy as np
-from tests.fixtures import BaseTest
+from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
 
 from pgm.input.loader import import_data_mtcov
@@ -13,13 +13,14 @@ PATH_FOR_INIT = current_file_path.parent / 'inputs/'
 INIT_STR = '_for_initialization'
 
 
-class MTCOVTestCase(BaseTest):
+class MTCOVTestCase(BaseTest, ModelTestMixin):
 
     def setUp(self):
         """
         Set up the test case.
         """
         self.algorithm = 'MTCOV'
+        self.keys_in_thetaGT = ['u', 'v', 'w', 'beta', 'final_it', 'maxL', 'nodes']
         self.gamma = 0.5
         self.out_folder = 'outputs/'
         self.end_file = '_test'
@@ -70,123 +71,10 @@ class MTCOVTestCase(BaseTest):
             # matrix B is greater than 0
             self.assertTrue(self.B.vals.sum() > 0)
 
-    def test_running_algorithm(self):
-
+    def _fit_model_to_data(self, conf):
         _ = self.model.fit(data=self.B,
                            data_X=self.Xs,
                            flag_conv=self.flag_conv,
                            nodes=self.nodes,
                            batch_size=self.batch_size,
-                           **self.conf)
-
-        theta = np.load((Path(self.model.out_folder) / str('theta' +
-                                                           self.model.end_file)).with_suffix(
-            '.npz'))
-
-        # This reads the synthetic data Ground Truth output
-        thetaGT_path = Path(__file__).parent / 'outputs' / 'theta_GT_MTCOV'
-        thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
-        #
-        # Asserting the model information
-
-        # Assert that the model's u_f attribute is close to the 'u' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.u_f, theta['u']))
-
-        # Assert that the model's v_f attribute is close to the 'v' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.v_f, theta['v']))
-
-        # Assert that the model's w_f attribute is close to the 'w' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.w_f, theta['w']))
-
-        # Assert that the model's beta_f attribute is close to the 'beta' value in
-        # the theta dictionary
-        self.assertTrue(np.allclose(self.model.beta_f, theta['beta']))
-
-        # Assert the dictionary keys
-        assert all(key in theta for key in ['u', 'v', 'w', 'beta', 'final_it', 'maxL',
-                                            'nodes']), "Some keys are missing in the theta dictionary"
-
-        # Asserting GT information
-
-        # Assert that the 'u' value in the thetaGT dictionary is close to the 'u'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['u'], theta['u']))
-
-        # Assert that the 'v' value in the thetaGT dictionary is close to the 'v'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['v'], theta['v']))
-
-        # Assert that the 'w' value in the thetaGT dictionary is close to the 'w'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['w'], theta['w']))
-
-        # Assert that the 'beta' value in the thetaGT dictionary is close to the
-        # 'beta' value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['beta'], theta['beta']))
-
-    def test_running_algorithm_initialized_from_file(self):
-
-        with (PATH_FOR_INIT.joinpath('setting_MTCOV' + INIT_STR + '.yaml').open('rb')
-              as fp):
-            self.conf = yaml.safe_load(fp)
-
-        # Saving the outputs of the tests inside the tests dir
-        self.conf['out_folder'] = self.folder
-
-        self.conf['end_file'] = '_OUT_' + self.algorithm  # Adding a suffix to the output files
-
-        self.conf['initialization'] = 1
-
-        self.model = MTCOV()
-
-        _ = self.model.fit(data=self.B,
-                           data_X=self.Xs,
-                           flag_conv=self.flag_conv,
-                           nodes=self.nodes,
-                           batch_size=self.batch_size,
-                           **self.conf)
-
-        theta = np.load((Path(self.model.out_folder) / str('theta' +
-                                                           self.model.end_file)).with_suffix(
-            '.npz'))
-
-        # This reads the synthetic data Ground Truth output
-        thetaGT_path = Path(__file__).parent / 'outputs' / ('theta_GT_MTCOV' + INIT_STR)
-        thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
-
-        # Asserting the model information
-
-        # Assert that the model's u_f attribute is close to the 'u' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.u_f, theta['u']))
-
-        # Assert that the model's v_f attribute is close to the 'v' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.v_f, theta['v']))
-
-        # Assert that the model's w_f attribute is close to the 'w' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.w_f, theta['w']))
-
-        # Assert that the model's beta_f attribute is close to the 'beta' value in
-        # the theta dictionary
-        self.assertTrue(np.allclose(self.model.beta_f, theta['beta']))
-
-        # Assert the dictionary keys
-        assert all(key in theta for key in ['u', 'v', 'w', 'beta', 'final_it', 'maxL',
-                                            'nodes']), "Some keys are missing in the theta dictionary"
-
-        # Asserting GT information
-
-        # Assert that the 'u' value in the thetaGT dictionary is close to the 'u'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['u'], theta['u']))
-
-        # Assert that the 'v' value in the thetaGT dictionary is close to the 'v'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['v'], theta['v']))
-
-        # Assert that the 'w' value in the thetaGT dictionary is close to the 'w'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['w'], theta['w']))
-
-        # Assert that the 'beta' value in the thetaGT dictionary is close to the
-        # 'beta' value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['beta'], theta['beta']))
+                           **conf)

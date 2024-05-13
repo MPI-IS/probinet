@@ -13,7 +13,7 @@ import pandas as pd
 from sktensor import sptensor
 
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
-from .stats import print_graph_stat, print_graph_stat_MTCov
+from .stats import print_graph_stat, print_graph_stat_MTCOV
 
 
 def import_data(dataset: str,
@@ -176,7 +176,7 @@ def import_data_mtcov(
 
     # Check if the current level is INFO or lower
     if current_level <= logging.DEBUG:
-        print_graph_stat_MTCov(A)
+        print_graph_stat_MTCOV(A)
 
     # save the multilayer network in a tensor with all layers
     if force_dense:
@@ -272,23 +272,23 @@ def read_design_matrix(df_X: pd.DataFrame,
                        attribute: Union[str, None] = None,
                        ego: str = 'Name'):
     """
-        Create the design matrix with the one-hot encoding of the given attribute.
+    Create the design matrix with the one-hot encoding of the given attribute.
 
-        Parameters
-        ----------
-        df_X : DataFrame
-               Pandas DataFrame object containing the covariates of the nodes.
-        nodes : list
-                List of nodes IDs.
-        attribute : str
-                    Name of the attribute to consider in the analysis.
-        ego : str
-              Name of the column to consider as node IDs in the design matrix.
+    Parameters
+    ----------
+    df_X : DataFrame
+           Pandas DataFrame object containing the covariates of the nodes.
+    nodes : list
+            List of nodes IDs.
+    attribute : str
+                Name of the attribute to consider in the analysis.
+    ego : str
+          Name of the column to consider as node IDs in the design matrix.
 
-        Returns
-        -------
-        X_attr : DataFrame
-                 Pandas DataFrame that represents the one-hot encoding version of the design matrix.
+    Returns
+    -------
+    X_attr : DataFrame
+             Pandas DataFrame that represents the one-hot encoding version of the design matrix.
     """
     logging.debug("Reading the design matrix...")
 

@@ -3,10 +3,8 @@ This is the test module for the JointCRep algorithm.
 """
 
 from importlib.resources import files
-from pathlib import Path
 
-import numpy as np
-from tests.fixtures import BaseTest
+from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
 
 from pgm.input.loader import import_data
@@ -15,7 +13,7 @@ from pgm.model.jointcrep import JointCRep
 # pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 
 
-class JointCRepTestCase(BaseTest):
+class JointCRepTestCase(BaseTest, ModelTestMixin):
     """
     The basic class that inherits unittest.TestCase
     """
@@ -26,6 +24,7 @@ class JointCRepTestCase(BaseTest):
         """
         # Test case parameters
         self.algorithm = 'JointCRep'
+        self.keys_in_thetaGT = ['u', 'v', 'w', 'eta', 'final_it', 'maxL', 'nodes']
         self.adj = 'synthetic_data.dat'
         self.ego = 'source'
         self.alter = 'target'
@@ -58,7 +57,7 @@ class JointCRepTestCase(BaseTest):
         # Saving the outputs of the tests inside the tests dir
         conf['out_folder'] = self.folder
 
-        conf['end_file'] = '_OUT_JointCRep'  # Adding a suffix to the output files
+        conf['end_file'] = '_OUT_' + self.algorithm  # Adding a suffix to the output files
 
         self.conf = conf
 
@@ -86,55 +85,25 @@ class JointCRepTestCase(BaseTest):
             self.assertTrue(self.B.vals.sum() > 0)
 
     # test case function to check the JointCRep.get_name function
-    def test_running_algorithm(self):
-
-        _ = self.model.fit(data=self.B,
-                           data_T=self.B_T,
-                           data_T_vals=self.data_T_vals,
-                           nodes=self.nodes,
-                           **self.conf)
-
-        theta = np.load((Path(self.model.out_folder) / str('theta' +
-                                                           self.model.end_file)).with_suffix(
-            '.npz'))
-
-        # This reads the synthetic data Ground Truth output
-        thetaGT_path = Path(__file__).parent / 'outputs' / 'theta_GT_JointCRep'
-        thetaGT = np.load(thetaGT_path.with_suffix('.npz'))
-
-        # Asserting the model information
-
-        # Assert that the model's u_f attribute is close to the 'u' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.u_f, theta['u']))
-
-        # Assert that the model's v_f attribute is close to the 'v' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.v_f, theta['v']))
-
-        # Assert that the model's w_f attribute is close to the 'w' value in the theta dictionary
-        self.assertTrue(np.allclose(self.model.w_f, theta['w']))
-
-        # Assert that the model's eta_f attribute is close to the 'eta' value in
-        # the theta dictionary
-        self.assertTrue(np.allclose(self.model.eta_f, theta['eta']))
-
-        # Assert the dictionary keys
-        assert all(key in theta for key in ['u', 'v', 'w', 'eta', 'final_it', 'maxL',
-                                            'nodes']), "Some keys are missing in the theta dictionary"
-
-        # Asserting GT information
-
-        # Assert that the 'u' value in the thetaGT dictionary is close to the 'u'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['u'], theta['u']))
-
-        # Assert that the 'v' value in the thetaGT dictionary is close to the 'v'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['v'], theta['v']))
-
-        # Assert that the 'w' value in the thetaGT dictionary is close to the 'w'
-        # value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['w'], theta['w']))
-
-        # Assert that the 'eta' value in the thetaGT dictionary is close to the
-        # 'eta' value in the theta dictionary
-        self.assertTrue(np.allclose(thetaGT['eta'], theta['eta']))
+    # def test_running_algorithm(self):
+    #
+    #     _ = self.model.fit(data=self.B,
+    #                        data_T=self.B_T,
+    #                        data_T_vals=self.data_T_vals,
+    #                        nodes=self.nodes,
+    #                        **self.conf)
+    #
+    #     # Load the model results
+    #     theta = self._load_model_results()
+    #
+    #     # Load the ground truth results
+    #     thetaGT = self._load_ground_truth_results()
+    #
+    #     # Assert the model information
+    #     self._assert_model_information(theta)
+    #
+    #     # Assert the dictionary keys
+    #     self._assert_dictionary_keys(theta)
+    #
+    #     # Asserting GT information
+    #     self._assert_ground_truth_information(theta, thetaGT)

@@ -56,14 +56,14 @@ def print_graph_stat(G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None)
                          np.round(rw[l], 3))
 
 
-def print_graph_stat_MTCov(A: List[nx.MultiDiGraph]) -> None:
+def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
     """
-        Print the statistics of the graph A.
+    Print the statistics of the graph A.
 
-        Parameters
-        ----------
-        A : list
-            List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    Parameters
+    ----------
+    A : list
+        List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
     """
 
     L = len(A)
@@ -130,57 +130,3 @@ def reciprocal_edges(G: nx.MultiDiGraph) -> float:
     reciprocity = float(n_overlap_edge) / float(n_undirected)
 
     return reciprocity
-
-
-def probabilities(
-        structure: str,
-        sizes: List[int],
-        N: int = 100,
-        K: int = 2,
-        avg_degree: float = 4.,
-        alpha: float = 0.1,
-        beta: Optional[float] = None) -> np.ndarray:
-    """
-    Return the CxC array with probabilities between and within groups.
-
-    Parameters
-    ----------
-    structure : str
-                Structure of the layer, e.g. assortative, disassortative, core-periphery or directed-biased.
-    sizes : List[int]
-            List with the sizes of blocks.
-    N : int
-        Number of nodes.
-    K : int
-        Number of communities.
-    avg_degree : float
-                 Average degree over the nodes.
-    alpha : float
-            Alpha value. Default is 0.1.
-    beta : float
-           Beta value. Default is 0.3 * alpha.
-
-    Returns
-    -------
-    p : np.ndarray
-        Ar
-    """
-    if beta is None:
-        beta = alpha * 0.3
-    p1 = avg_degree * K / N
-    if structure == 'assortative':
-        p = p1 * alpha * np.ones((len(sizes), len(sizes)))  # secondary-probabilities
-        np.fill_diagonal(p, p1)  # primary-probabilities
-    elif structure == 'disassortative':
-        p = p1 * np.ones((len(sizes), len(sizes)))
-        np.fill_diagonal(p, alpha * p1)
-    elif structure == 'core-periphery':
-        p = p1 * np.ones((len(sizes), len(sizes)))
-        np.fill_diagonal(np.fliplr(p), alpha * p1)
-        p[1, 1] = beta * p1
-    elif structure == 'directed-biased':
-        p = alpha * p1 * np.ones((len(sizes), len(sizes)))
-        p[0, 1] = p1
-        p[1, 0] = beta * p1
-
-    return p

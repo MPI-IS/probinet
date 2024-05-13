@@ -9,6 +9,7 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from scipy.optimize import brentq, root
+from sktensor import dtensor, sptensor
 import sktensor as skt
 from typing_extensions import Unpack
 
@@ -49,6 +50,11 @@ class DynCRep(ModelClass):
             max_iter,
             plot_loglik,
             flag_conv)
+
+        # Initialize the attributes
+        self.u_f = None
+        self.v_f = None
+        self.w_f = None
 
     def check_fit_params(self,
                          K: int,
@@ -98,15 +104,17 @@ class DynCRep(ModelClass):
         self.assortative = assortative  # if True, the network is assortative
         self.constrained = constrained  # if True, use the configuration with constraints on the updates
         self.constraintU = constraintU  # if True, use constraint on U
+        self.ag = ag  # shape of gamma prior
+        self.bg = bg  # rate of gamma prior
 
-        if "ag" in extra_params:
-            self.ag = extra_params["ag"]  # shape of gamma prior
-        else:
-            self.ag = ag
-        if "bg" in extra_params:
-            self.bg = extra_params["bg"]  # rate of gamma prior
-        else:
-            self.bg = bg
+        # if "ag" in extra_params:
+        #     self.ag = extra_params["ag"]  # shape of gamma prior
+        # else:
+        #     self.ag = ag
+        # if "bg" in extra_params:
+        #     self.bg = extra_params["bg"]  # rate of gamma prior
+        # else:
+        #     self.bg = bg
 
         self.beta0 = beta0
         if flag_data_T not in [0, 1]:
@@ -122,11 +130,13 @@ class DynCRep(ModelClass):
             if self.eta0 is None:
                 self.eta0 = 0.0
 
-        if self.fix_eta:
-            self.eta = self.eta_old = self.eta_f = self.eta0
+        if self.fix_eta:  # TODO: would it make sense to define this case only if self.eta0 is not
+            # None? Otherwise, mypy raises an error, giving that it leads to self.eta_old = None,
+            # but somewhere there's a difference between self.eta and self.eta_old (float - None).
+            self.eta = self.eta_old = self.eta_f = self.eta0  # type: ignore
 
         if self.fix_beta:
-            self.beta = self.beta_old = self.beta_f = self.beta0
+            self.beta = self.beta_old = self.beta_f = self.beta0  # type: ignore
 
         # Parameters for the initialization of the model
         self.use_unit_uniform = True
@@ -146,7 +156,8 @@ class DynCRep(ModelClass):
             bg: float = 0.5,
             flag_data_T: int = 0,
             temporal: bool = True,
-            **extra_params) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, int]:
+            **extra_params: Unpack[FitParams]) \
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, int]:
         """
         Model directed networks by using a probabilistic generative model that assumes community parameters and
         reciprocity coefficient. The inference is performed via the EM algorithm.
@@ -189,12 +200,13 @@ class DynCRep(ModelClass):
         final_it : int
                    Total number of iterations.
         """
-        self.check_fit_params(K,
+        self.check_fit_params(K,  # type: ignore
                               data,
                               ag=ag,
                               bg=bg,
                               flag_data_T=flag_data_T,
-                              **extra_params)
+                              **extra_params)  # TODO: fix missing positional arguments after
+        # change in extra_params
 
         logging.debug('Fixing random seed to: %s', rseed)
         self.rng = np.random.RandomState(rseed)
@@ -265,12 +277,12 @@ class DynCRep(ModelClass):
         self.sum_data_hat = data_AtAtm1[1:].sum()  # needed in the update of beta
 
         # to calculate denominator containing Aji(t)
-        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())
+        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())  # type: ignore
 
         data_AtAtm1 = preprocess(
             data_AtAtm1)  # to calculate numerator containing Aij(t)*(1-Aij(t-1))
         data = preprocess(data)
-        data_T = preprocess(data_Tm1)
+        # data_T = preprocess(data_Tm1)
 
         # save the indexes of the nonzero entries of Aij(t)*(1-Aij(t-1))
         if isinstance(data_AtAtm1, skt.dtensor):
@@ -279,10 +291,11 @@ class DynCRep(ModelClass):
             subs_nzp = data_AtAtm1.subs
 
         # save the indexes of the nonzero entries of  Aij(t)
-        if isinstance(data, skt.dtensor):
-            subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
+        # TODO: Check with Hadiseh what this code is for
+        # if isinstance(data, skt.dtensor):
+        #     subs_nz = data.nonzero()
+        # elif isinstance(data, skt.sptensor):
+        #     subs_nz = data.subs
 
         self.beta_hat = np.ones(T + 1)
         if T > 0:
@@ -291,13 +304,13 @@ class DynCRep(ModelClass):
         # INFERENCE
 
         maxL = -self.inf  # initialization of the maximum log-likelihood
-        # rng = np.random.RandomState(self.rseed)
 
         for r in range(self.num_realizations):
 
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
-            logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
+            logging.debug('Random number generator seed: %s',
+                          self.rng.get_state()[1][0])  # type: ignore
             super()._initialize()
             super()._update_old_variables()
 
@@ -316,8 +329,7 @@ class DynCRep(ModelClass):
             while np.logical_and(not convergence, it < self.max_iter):
                 _, _, _, _, _ = self._update_em(data_AtAtm1,
                                                 data_T_vals,
-                                                subs_nzp,
-                                                denominator=None)
+                                                subs_nzp)
                 if self.flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data_AtAtm1,
@@ -374,7 +386,9 @@ class DynCRep(ModelClass):
         if self.plot_loglik:
             plot_L(best_loglik_values, int_ticks=True)
 
-        return self.u_f, self.v_f, self.w_f, self.eta_f, self.beta_f, self.maxL
+        return self.u_f, self.v_f, self.w_f, self.eta_f, self.beta_f, self.maxL  # type: ignore
+    # TODO: fix the problem with the None output once the self.fix_eta and self.fix_beta are
+    #  understood
 
     def _initialize_beta(self) -> None:
 
@@ -402,7 +416,10 @@ class DynCRep(ModelClass):
         # Randomize beta
         self._randomize_beta(1)  # Generates a single random number
 
-    def _update_cache(self, data, data_T_vals, subs_nz):
+    def _update_cache(self,
+                      data: Union[dtensor, sptensor],
+                      data_T_vals: np.ndarray,
+                      subs_nz: Tuple[np.ndarray]) -> None:
         """
         Update the cache used in the em_update.
         Parameters
@@ -425,7 +442,10 @@ class DynCRep(ModelClass):
             self.data_M_nz = data.vals / self.M_nz
             self.data_rho2 = ((data.vals * self.eta * data_T_vals) / self.M_nz).sum()
 
-    def _update_em(self, data_AtAtm1, data_T_vals, subs_nzp, denominator=None):
+    def _update_em(self,
+                   data_AtAtm1: Union[dtensor, sptensor],
+                   data_T_vals: np.ndarray,
+                   subs_nzp: Tuple[np.ndarray]) -> Tuple[float, float, float, float, float]:
         """
         Update parameters via EM procedure.
         Parameters
@@ -498,21 +518,21 @@ class DynCRep(ModelClass):
 
         return d_u, d_v, d_w, d_eta, d_beta
 
-    def _update_eta(self, denominator):
+    def _update_eta(self, denominator: float) -> float:
         """
-            Update reciprocity coefficient eta.
-            Parameters
-            ----------
-            data : sptensor/dtensor
-                   Graph adjacency tensor.
-            data_T_vals : ndarray
-                          Array with values of entries A[j, i] given non-zero entry (i, j).
-            denominator : float
-                          Denominator used in the update of the eta parameter.
-            Returns
-            -------
-            dist_eta : float
-                       Maximum distance between the old and the new reciprocity coefficient eta.
+        Update reciprocity coefficient eta.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T_vals : ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        denominator : float
+                      Denominator used in the update of the eta parameter.
+        Returns
+        -------
+        dist_eta : float
+                   Maximum distance between the old and the new reciprocity coefficient eta.
         """
         if denominator > 0:
             self.eta = self.data_rho2 / denominator
@@ -524,13 +544,22 @@ class DynCRep(ModelClass):
             message = f"Eta has to be a positive number! Current value is {self.eta}"
             log_and_raise_error(ValueError, message)
 
-        dist_eta = abs(self.eta - self.eta_old)
-        self.eta_old = np.copy(self.eta)
+            message = f"Eta has to be a positive number! Current value is {self.eta}"
+            log_and_raise_error(ValueError, message)
+
+        dist_eta = abs(self.eta - self.eta_old)  # type: ignore
+        self.eta_old = float(self.eta)
 
         return dist_eta
 
     def _update_beta(self):
-
+        """
+        Update beta.
+        Returns
+        -------
+        dist_beta : float
+                    Maximum distance between the old and the new beta.
+        """
         self.beta = brentq(self.func_beta_static, a=0.001, b=0.999)
         self.beta_hat[1:] = self.beta
 
@@ -541,15 +570,15 @@ class DynCRep(ModelClass):
 
     def _update_U(self, subs_nz):
         """
-            Update out-going membership matrix.
-            Parameters
-            ----------
-            subs_nz : tuple
-                      Indices of elements of data that are non-zero.
-            Returns
-            -------
-            dist_u : float
-                     Maximum distance between the old and the new membership matrix u.
+        Update out-going membership matrix.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        Returns
+        -------
+        dist_u : float
+                 Maximum distance between the old and the new membership matrix u.
         """
 
         if self.constraintU:
@@ -598,7 +627,6 @@ class DynCRep(ModelClass):
                         self.u[i] = u_root.x
 
         dist_u = np.amax(abs(self.u - self.u_old))
-
         self.u_old = np.copy(self.u)
 
         return dist_u
@@ -784,7 +812,7 @@ class DynCRep(ModelClass):
         UV = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
 
-        for a, k in zip(*sub_w_nz):
+        for _, k in zip(*sub_w_nz):
             uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=1)[0]
 
         # for k in range(self.K):
@@ -836,17 +864,34 @@ class DynCRep(ModelClass):
                 self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal)
         return uttkrp_DK
 
-    def _Likelihood(self, data, data_T, data_T_vals, subs_nz, T, mask=None, EPS=EPS_):
+    def _Likelihood(self,
+                    data: Union[dtensor, sptensor],
+                    data_T: Union[dtensor, sptensor],
+                    data_T_vals: np.ndarray,
+                    subs_nz: Tuple[np.ndarray],
+                    T: int,
+                    mask: Optional[np.ndarray] = None,
+                    EPS: float = EPS_) -> float:
         """
         Compute the pseudo log-likelihood of the data.
+
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[dtensor, sptensor]
                Graph adjacency tensor.
-        data_T : sptensor/dtensor
+        data_T : Union[dtensor, sptensor]
                  Graph adjacency tensor (transpose).
-        mask : ndarray
+        data_T_vals : np.ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : Tuple[np.ndarray]
+                  Indices of elements of data that are non-zero.
+        T : int
+            Number of time steps.
+        mask : Optional[np.ndarray]
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        EPS : float, default 1e-12
+              Small constant to prevent division by zero.
+
         Returns
         -------
         l : float
@@ -903,14 +948,42 @@ class DynCRep(ModelClass):
 
         return l
 
-    def enforce_constraintU(self, num, den):
+    def enforce_constraintU(self, num: float, den: float) -> float:
+        """
+        Enforce a constraint on the U matrix during the model fitting process.
+        It uses the root finding algorithm to find the value of lambda that satisfies the constraint.
 
+        Parameters
+        ----------
+        num : float
+            The numerator part of the constraint equation.
+        den : float
+            The denominator part of the constraint equation.
+
+        Returns
+        -------
+        lambda_i : float
+            The value of lambda that satisfies the constraint.
+        """
         lambda_i_test = root(func_lagrange_multiplier, 0.1, args=(num, den))
         lambda_i = lambda_i_test.x
 
         return lambda_i
 
-    def func_beta_static(self, beta_t):
+    def func_beta_static(self, beta_t: float) -> float:
+        """
+        Calculate the value of beta at time t for the static model.
+
+        Parameters
+        ----------
+        beta_t : float
+            The value of beta at time t.
+
+        Returns
+        -------
+        bt : float
+            The calculated value of beta at time t for the static model.
+        """
         # assert type(obj) is CRepDyn_w_temp
         if self.assortative:
             lambda0_ija = np.einsum('k,k->k', self.u.sum(axis=0), self.w[1:].sum(axis=0))

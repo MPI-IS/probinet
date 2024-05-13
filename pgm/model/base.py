@@ -2,9 +2,10 @@ import dataclasses
 from functools import singledispatchmethod
 import logging
 from pathlib import Path
-from typing import List, Tuple, TypedDict, Union
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 import numpy as np
+from sktensor import dtensor, sptensor
 import sktensor as skt
 from typing_extensions import Unpack
 
@@ -12,6 +13,9 @@ from pgm.input.tools import log_and_raise_error
 
 
 class FitParams(TypedDict):
+    """
+    Type hint for the fit method parameters.
+    """
     out_inference: bool
     out_folder: str
     end_file: str
@@ -19,11 +23,15 @@ class FitParams(TypedDict):
     fix_eta: bool
     fix_communities: bool
     fix_w: bool
+    fix_beta: bool
     use_approximation: bool
 
 
 @dataclasses.dataclass
 class DataBase:
+    """
+    Base class for the model classes.
+    """
     inf: float = 1e10  # initial value of the log-likelihood
     err_max: float = 1e-12  # minimum value for the parameters
     err: float = 0.1  # noise for the initialization
@@ -36,6 +44,12 @@ class DataBase:
 
 
 class ModelClass(DataBase):
+    """
+    Base class for the model classes that inherit from the DataBase class. It contains the
+    methods to check the parameters of the fit method, initialize the parameters, and check for
+    convergence.
+     """
+
     def __init__(
             self,
             inf: float = 1e10,
@@ -68,6 +82,14 @@ class ModelClass(DataBase):
             'maxPSL',
             'beta_f',
             'nodes']
+
+        # Define attributes
+        self.use_unit_uniform = False
+        self.theta: Dict[str, Any] = {}
+        self.normalize_rows = False
+        self.nodes: List[Any] = []
+        self.rng = np.random.RandomState()
+        self.beta_hat: np.ndarray = np.array([])
 
     def _check_fit_params(self,
                           initialization: int,
@@ -296,7 +318,8 @@ class ModelClass(DataBase):
         """
         self.w = self.theta['w']
         if self.assortative:
-            assert self.w.shape == (self.L, self.K)
+            assert self.w.shape == (
+                self.L, self.K), "The shape of the affinity tensor w is incorrect."
 
         self.w = self._add_random_noise(self.w)
 
@@ -332,7 +355,7 @@ class ModelClass(DataBase):
             self.w = self._add_random_noise(self.w)
 
     @singledispatchmethod
-    def _randomize_beta(self, shape):
+    def _randomize_beta(self, shape: int) -> None:
         """
         Generate a random number in (0, 1.).
         Parameters
@@ -480,70 +503,137 @@ class ModelClass(DataBase):
 
         return nz_recon_I
 
+    def _PSLikelihood(self, data: Union[dtensor, sptensor],
+                      data_T: skt.sptensor,
+                      mask: Optional[np.ndarray] = None):
+        """
+        Compute the pseudo-log-likelihood.
+        """
+
+    def _Likelihood(self,
+                    data: Union[dtensor, sptensor],
+                    data_T: Optional[Union[dtensor, sptensor]],
+                    data_T_vals: Optional[np.ndarray],
+                    subs_nz: Optional[Tuple[np.ndarray]],
+                    T: Optional[int],
+                    mask: Optional[np.ndarray] = None,
+                    EPS: Optional[float] = 1e-12):
+        """
+        Compute the log-likelihood.
+        """
+
+    def _compute_loglik(self,
+                        data: Union[skt.dtensor, skt.sptensor],
+                        use_pseudo_likelihood: bool,
+                        data_T: Union[skt.dtensor, skt.sptensor],
+                        mask: Optional[np.ndarray],
+                        data_T_vals: Optional[np.ndarray],
+                        subs_nz: Tuple[np.ndarray],
+                        T: int,
+                        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]]) -> float:
+        """
+        Compute the log-likelihood of the data.
+
+        Parameters
+        ----------
+        data : Union[skt.dtensor, skt.sptensor]
+               Graph adjacency tensor.
+        use_pseudo_likelihood : bool
+                                Flag to indicate whether to use pseudo likelihood.
+        data_T : Union[skt.dtensor, skt.sptensor]
+                 Graph adjacency tensor (transpose).
+        mask : Optional[np.ndarray]
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        data_T_vals : Optional[np.ndarray]
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : Tuple[np.ndarray]
+                  Indices of elements of data that are non-zero.
+        T : int
+            Number of time steps.
+        kwargs : Union[np.ndarray, int, List[int], Tuple[np.ndarray]]
+                 Additional parameters that might be needed for the computation.
+
+        Returns
+        -------
+        loglik : float
+                 Computed log-likelihood value.
+        """
+        if use_pseudo_likelihood:
+            return self._PSLikelihood(data, data_T=data_T, mask=mask)
+        else:
+            if data_T_vals is not None and subs_nz is not None and T is not None:
+                return self._Likelihood(data, data_T, data_T_vals, subs_nz, T, mask=mask)
+            else:
+                return self._Likelihood(data)
+
     def _check_for_convergence(self,
-                               data,
+                               data: Union[skt.dtensor, skt.sptensor],
                                it: int,
                                loglik: float,
                                coincide: int,
                                convergence: bool,
                                use_pseudo_likelihood: bool = False,
-                               data_T_vals=None,
-                               subs_nz=None,
-                               T=None,
-                               r=None,
-                               data_T=None,
-                               mask=None):
+                               data_T_vals: Optional[np.ndarray] = None,
+                               subs_nz: Optional[Tuple[np.ndarray]] = None,
+                               T: Optional[int] = None,
+                               data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
+                               mask: Optional[np.ndarray] = None,
+                               **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]]) -> \
+            Tuple[int, float, int, bool]:
         """
-        Check for convergence by using the log-likelihood values or the pseudo log-likelihood values.
+        Check for convergence of the model.
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[skt.dtensor, skt.sptensor]
                Graph adjacency tensor.
         it : int
-             Number of iteration.
+             Current iteration number.
         loglik : float
-                 Log-likelihood value or Pseudo log-likelihood value.
+                 Current log-likelihood value.
         coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
+                   Number of times the update of the log-likelihood respects the convergence_tol.
         convergence : bool
                       Flag for convergence.
-        use_pseudo_likelihood : bool
-                                Flag to determine which log-likelihood function to use.
-        data_T_vals : ndarray, optional
-                      Values of the transpose of the adjacency tensor.
-        subs_nz : tuple, optional
+        use_pseudo_likelihood : bool, default False
+                                Flag to indicate whether to use pseudo likelihood.
+        data_T_vals : Optional[np.ndarray]
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : Optional[Tuple[np.ndarray]]
                   Indices of elements of data that are non-zero.
-        T : int, optional
+        T : Optional[int]
             Number of time steps.
-        r : int, optional
-            Number of realizations.
-        data_T : sptensor/dtensor, optional
+        data_T : Optional[Union[skt.dtensor, skt.sptensor]]
                  Graph adjacency tensor (transpose).
-        mask : ndarray, optional
+        mask : Optional[np.ndarray]
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        kwargs : Union[np.ndarray, int, List[int], Tuple[np.ndarray]]
+                 Additional parameters that might be needed for the computation.
 
         Returns
         -------
         it : int
-             Number of iteration.
+             Updated iteration number.
         loglik : float
-                 Log-likelihood value or Pseudo log-likelihood value.
+                 Updated log-likelihood value.
         coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
+                   Updated number of times the update of the log-likelihood respects the convergence_tol.
         convergence : bool
-                      Flag for convergence.
+                      Updated flag for convergence.
         """
         # Check for convergence
         if it % 10 == 0:
             old_L = loglik
-            if use_pseudo_likelihood:
-                loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
-            else:
-                if data_T_vals is not None and subs_nz is not None and T is not None:
-                    loglik = self._Likelihood(data, data_T, data_T_vals, subs_nz, T, mask=mask)
-                else:
-                    loglik = self._Likelihood(data)
+            loglik = self._compute_loglik(
+                data,
+                use_pseudo_likelihood,
+                data_T,
+                mask,
+                data_T_vals,
+                subs_nz,
+                T,
+                **kwargs
+            )
             if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
             else:

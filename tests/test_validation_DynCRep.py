@@ -15,6 +15,7 @@ from pgm.output.evaluate import calculate_AUC
 
 class DynCRepTestCase(BaseTest):
     def setUp(self):
+        # Test case parameters
         self.algorithm = 'DynCRep'
         self.label = 'GT_DynCRep_for_initialization.npz'  # Formerly called using these params
         # '100_2_5.0_4_0.2_0.2_0'
@@ -28,42 +29,40 @@ class DynCRepTestCase(BaseTest):
                 network.name,
                 header=0)
 
-        # self.model = CRepDyn_w_temp()
+        # Define the nodes, positions, number of nodes, and number of layers
         self.nodes = self.A[0].nodes()
         self.pos = nx.spring_layout(self.A[0])
         self.N = len(self.nodes)
         self.T = self.B.shape[0] - 1
 
-    def test_temporal_version(self):
+    def test_running_temporal_version(self):
 
         # Setting to run the algorithm
         with (files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb')
               as fp):
             conf = yaml.safe_load(fp)
 
+        # Update the configuration with the specific parameters for this test
         conf['K'] = self.K
-
         conf['initialization'] = 1
         # Saving the outputs of the tests into the temp folder created in the BaseTest
         conf['out_folder'] = self.folder
-
         conf['end_file'] = '_OUT_DynCRep'  # Adding a suffix to the output files
-
         conf['files'] = self.data_path / ('theta_' + self.label)
-
         conf['constrained'] = False
         conf['undirected'] = False
         conf['eta0'] = 0.2
         conf['beta0'] = self.theta['beta']
-        # conf['fix_beta'] = True
         self.conf = conf
 
+        # Create an instance of the DynCRep model
         model = DynCRep(
             max_iter=800,
             num_realizations=1,
             plot_loglik=True,
         )
 
+        # Fit the model to the data
         u, v, w, eta, beta, Loglikelihood = model.fit(
             data=self.B,
             T=self.T,
@@ -96,14 +95,17 @@ class DynCRepTestCase(BaseTest):
         # Assertions for AUC
         expected_aucs = [0.811, 0.829, 0.841, 0.842, 0.843]
 
+        # Calculate the lambda_inf and M_inf
         lambda_inf = expected_Aija(u, v, w[0])
         M_inf = lambda_inf + eta * transpose_tensor(self.B)
 
+        # Calculate the AUC for each layer
         for l in range(model.T + 1):
             auc = flt(calculate_AUC(M_inf[l], self.B[l].astype('int')))
             self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
 
-    def test_static_version(self):
+    def test_running_static_version(self):
+        # Create an instance of the CRepDyn model
         model = CRepDyn(
             plot_loglik=True,
             verbose=1,
@@ -122,6 +124,7 @@ class DynCRepTestCase(BaseTest):
             bg=0.5,
             fix_eta=False)
 
+        # Fit the model to the data
         u, v, w, eta, beta, Loglikelihood = model.fit(
             data=self.B, T=self.T, nodes=self.nodes, K=self.K)
 
@@ -147,9 +150,11 @@ class DynCRepTestCase(BaseTest):
         # Assertions for AUC
         expected_aucs = [0.785, 0.806, 0.812, 0.816, 0.817]
 
+        # Calculate the lambda_inf and M_inf
         lambda_inf = expected_Aija(u, v, w[0])
         M_inf = lambda_inf + eta * transpose_tensor(self.B)
 
+        # Calculate the AUC for each layer
         for l in range(model.T + 1):
             auc = flt(calculate_AUC(M_inf[l], self.B[l].astype('int')))
             self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
@@ -199,6 +204,7 @@ class DynCRepTestCase(BaseTest):
         conf['eta0'] = 0.2
         conf['beta0'] = 0.25
         conf['assortative'] = True
+
         self.conf = conf
 
         # Create an instance of the CRepDyn_w_temp model
