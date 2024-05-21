@@ -1,6 +1,7 @@
 """
 Unit tests for the JointCRep notebook.
 """
+
 import os
 from pathlib import Path
 import unittest
@@ -19,7 +20,9 @@ class TestNotebooks(unittest.TestCase):
     def run_notebook(self, notebook_name):
         # Get the absolute path of the notebook dynamically
         root_path = Path(__file__).parent.parent
-        notebook_path = root_path / "doc" / "source" / "tutorials" / f"{notebook_name}.ipynb"
+        notebook_path = (
+            root_path / "doc" / "source" / "tutorials" / f"{notebook_name}.ipynb"
+        )
 
         # Store the current directory
         original_dir = Path.cwd()
@@ -33,10 +36,10 @@ class TestNotebooks(unittest.TestCase):
             notebook_content = nbformat.read(notebook_file, as_version=4)
 
         # Initialize the ExecutePreprocessor
-        ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+        ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
 
         # Execute the notebook
-        ep.preprocess(notebook_content, {'metadata': {'path': '.'}})
+        ep.preprocess(notebook_content, {"metadata": {"path": "."}})
 
         # Return to the original directory
         os.chdir(original_dir)

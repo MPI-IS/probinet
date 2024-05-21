@@ -1,6 +1,7 @@
 """
 Test cases for the evaluate module.
 """
+
 import unittest
 
 import numpy as np
@@ -62,8 +63,9 @@ class TestEvaluateFunctions(unittest.TestCase):
         w = np.array([[1.0, 2.0], [3.0, 4.0]])
 
         # Updated expected output for the given inputs
-        expected_result = np.array([[[0.29, 0.39], [0.63, 0.85]],
-                                    [[0.63, 0.85], [1.41, 1.91]]])
+        expected_result = np.array(
+            [[[0.29, 0.39], [0.63, 0.85]], [[0.63, 0.85], [1.41, 1.91]]]
+        )
 
         # Call the _lambda0_full function
         result = lambda_full(u, v, w)
@@ -75,8 +77,9 @@ class TestEvaluateFunctions(unittest.TestCase):
         # Test calculate_conditional_expectation function
 
         # Calculate conditional expectation
-        cond_expectation = calculate_conditional_expectation(self.B, self.u, self.v, self.w,
-                                                             eta=self.eta)
+        cond_expectation = calculate_conditional_expectation(
+            self.B, self.u, self.v, self.w, eta=self.eta
+        )
 
         # Check the shape of the result
         self.assertEqual(cond_expectation.shape, (self.L, self.N, self.N))
