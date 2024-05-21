@@ -6,6 +6,8 @@ from importlib.resources import files
 
 from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
+import numpy as np
+from pathlib import Path
 
 from pgm.input.loader import import_data
 from pgm.model.jointcrep import JointCRep

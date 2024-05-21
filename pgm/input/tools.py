@@ -500,8 +500,9 @@ def sp_uttkrp(
                     w_I = w[0, :, k]
                     tmp *= (
                         w_I[np.newaxis, :].astype(tmp.dtype)
-                        * u[subs[1], :].astype(tmp.dtype)  # type: ignore
-                    ).sum(axis=1)
+                            * u[subs[1], :].astype(tmp.dtype)
+                    ) # type: ignore
+
             out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out

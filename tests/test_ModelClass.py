@@ -10,6 +10,7 @@ import numpy as np
 from pgm.model.base import ModelClass
 
 
+
 class TestModelClass(unittest.TestCase):
     """
     Test cases for the ModelClass class.

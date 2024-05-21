@@ -20,10 +20,12 @@ from ..input.tools import (
     sp_uttkrp_assortative, transpose_tensor)
 from ..output.evaluate import lambda_full
 from ..output.plot import plot_L
-from .base import FitParams, ModelClass
+from .base import FitParams, ModelClass, UpdateMixin
 
 
-class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
+class JointCRep(
+    ModelClass, UpdateMixin
+):  # pylint: disable=too-many-instance-attributes
     """
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
@@ -185,6 +187,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         maxL : float
                Maximum log-likelihood.
         """
+        # Check the parameters for fitting the model
         self.check_fit_params(
             data=data,
             K=K,
@@ -194,146 +197,159 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             assortative=assortative,
             **extra_params,
         )
+
+        # Fix the random seed
         logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
+
+        # Initialize the fit parameters
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
         self.nodes = nodes
 
-        if data_T is None:
-            data_T = np.einsum("aij->aji", data)
-            data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
-            # pre-processing of the data to handle the sparsity
-            data = preprocess(data)
+        # Preprocess the data for fitting the model
+        data, data_T_vals, subs_nz = self._preprocess_data_for_fit(
+            data, data_T, data_T_vals
+        )
 
-        # save the indexes of the nonzero entries
-        if isinstance(data, skt.dtensor):
-            subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
-
+        # Calculate the sum of the product of non-zero values in data and data_T
         self.AAtSum = (data.vals * data_T_vals).sum()
 
-        # The following part of the code is responsible for running the Expectation-Maximization (EM) algorithm for a
-        # specified number of realizations (self.num_realizations):
+        # Store the preprocessed data and the indices of its non-zero elements
+        self.data = data
+        self.subs_nz = subs_nz
+
+        # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
         for r in range(self.num_realizations):
 
-            # For each realization (r), it initializes the parameters, updates the old variables
-            # and updates the cache.
-            logging.debug(
-                "Random number generator seed: %s", self.rng.get_state()[1][0]
+            # Initialize the parameters for the current realization
+            coincide, convergence, it, loglik, loglik_values = (
+                self._initialize_realization(data, subs_nz)
             )
-            super()._initialize()
-            super()._update_old_variables()
-            self._update_cache(data, subs_nz)
 
-            # It sets up local variables for convergence checking. coincide and it are counters, convergence is a
-            # boolean flag, and loglik is the initial pseudo log-likelihood.
-            coincide, it = 0, 0
-            convergence = False
-            loglik = self.inf
+            # Update the parameters for the current realization
+            it, loglik, coincide, convergence, loglik_values = self._update_realization(
+                r, it, loglik, coincide, convergence, loglik_values
+            )
 
-            logging.debug("Updating realization %s", r)
-            loglik_values = []
-            time_start = time.time()
-            # It enters a while loop that continues until either convergence is achieved or the maximum number of
-            # iterations (self.max_iter) is reached.
-            while np.logical_and(not convergence, it < self.max_iter):
-                #  it performs the main EM update (self._update_em(data, data_T_vals, subs_nz, denominator=E))
-                # which updates the memberships and calculates the maximum difference
-                # between new and old parameters.
-                delta_u, delta_v, delta_w, delta_eta = self._update_em(data, subs_nz)
-
-                # Depending on the convergence flag (self.flag_conv), it checks for convergence using either the
-                # pseudo log-likelihood values (self._check_for_convergence(data, it, loglik, coincide, convergence,
-                # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
-                # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
-                if self.flag_conv == "log":
-                    it, loglik, coincide, convergence = super()._check_for_convergence(
-                        data,
-                        it,
-                        loglik,
-                        coincide,
-                        convergence,
-                        use_pseudo_likelihood=False,
-                    )
-                    loglik_values.append(loglik)
-                    if not it % 100:
-                        logging.debug(
-                            "Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  "
-                            "seconds",
-                            r,
-                            loglik,
-                            it,
-                            np.round(time.time() - time_start, 2),
-                        )
-                elif self.flag_conv == "deltas":
-                    it, coincide, convergence = super()._check_for_convergence_delta(
-                        it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence
-                    )
-
-                    if not it % 100:
-                        logging.debug(
-                            "Nreal = %s - iterations = %s - time = %s seconds",
-                            r,
-                            it,
-                            np.round(time.time() - time_start, 2),
-                        )
-                else:
-                    log_and_raise_error(
-                        ValueError, "flag_conv can be either log or deltas!"
-                    )
-
-            # After the while loop, it checks if the current pseudo log-likelihood is the maximum
-            # so far. If it is, it updates the optimal parameters (
-            # self._update_optimal_parameters()) and sets maxL to the current pseudo log-likelihood.
-            if self.flag_conv == "deltas":
-                loglik = self._Likelihood(data)
-
+            # If the current log-likelihood is greater than the maximum log-likelihood so far,
+            # update the optimal parameters and the maximum log-likelihood
             if maxL < loglik:
                 super()._update_optimal_parameters()
                 maxL = loglik
                 self.final_it = it
                 conv = convergence
-                best_r = r
+                self.best_r = r
 
+                # If the convergence criterion is 'log', store the log-likelihood values
                 if self.flag_conv == "log":
-                    best_loglik = list(loglik_values)
+                    best_loglik_values = list(loglik_values)
+
+            # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             logging.debug(
                 "Nreal = %s - Log-likelihood = %s - iterations = %s - "
                 "time = %s seconds",
                 r,
                 loglik,
                 it,
-                np.round(time.time() - time_start, 2),
+                np.round(time.time() - self.time_start, 2),
             )
 
-            # end cycle over realizations
-
-        logging.debug(
-            "Best real = %s - maxL = %s - best iterations = %s",
-            best_r,
-            maxL,
-            self.final_it,
-        )
-
+        # Store the maximum log-likelihood
         self.maxL = maxL
 
-        if np.logical_and(self.final_it == self.max_iter, not conv):
-            # convergence is not reached
-            logging.warning(
-                "Solution failed to converge in %s EM steps!", self.max_iter
-            )
-            logging.warning("Parameters won't be saved!")
+        # Evaluate the results of the fitting process
+        self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
 
-        else:
-            if self.out_inference:
-                super()._output_results()
-
-        if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
-            plot_L(best_loglik, int_ticks=True)
-
+        # Return the final parameters and the maximum log-likelihood
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
+
+    def _initialize_realization(self, data, subs_nz):
+        """
+        This method initializes the parameters for each realization of the EM algorithm.
+        It also sets up local variables for convergence checking.
+        """
+        # Log the current state of the random number generator
+        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+
+        # Call the _initialize method from the parent class to initialize the parameters for the current realization
+        super()._initialize()
+
+        # Call the _update_old_variables method from the parent class to update the old variables for the current realization
+        super()._update_old_variables()
+
+        # Update the cache used in the EM update
+        self._update_cache(data, subs_nz)
+
+        # Set up local variables for convergence checking
+        # coincide and it are counters, convergence is a boolean flag
+        # loglik is the initial pseudo log-likelihood
+        coincide, it = 0, 0
+        convergence = False
+        loglik = self.inf
+        loglik_values = []
+
+        # Record the start time of the realization
+        self.time_start = time.time()
+
+        # Return the initial state of the realization
+        return coincide, convergence, it, loglik, loglik_values
+
+    def _preprocess_data_for_fit(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T: Union[skt.dtensor, skt.sptensor, None],
+        data_T_vals: Union[np.ndarray, None],
+    ) -> Tuple[Union[skt.dtensor, skt.sptensor], np.ndarray, tuple]:
+        """
+        Preprocess the data for fitting the model.
+
+        Parameters
+        ----------
+        data : skt.dtensor or skt.sptensor
+            The input data tensor.
+        data_T : skt.dtensor, skt.sptensor or None
+            The transposed input data tensor. If None, it will be calculated from the input data tensor.
+        data_T_vals : np.ndarray or None
+            The values of the non-zero entries in the transposed input data tensor. If None, it will be calculated from data_T.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the preprocessed data tensor, the values of the non-zero entries in the transposed data tensor,
+            and the indices of the non-zero entries in the data tensor.
+        """
+
+        # If data_T is not provided, calculate it from the input data tensor
+        if data_T is None:
+            data_T = np.einsum("aij->aji", data)
+            data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
+            # Pre-process the data to handle the sparsity
+            data = preprocess(data)
+
+        # Save the indices of the non-zero entries
+        if isinstance(data, skt.dtensor):
+            subs_nz = data.nonzero()
+        elif isinstance(data, skt.sptensor):
+            subs_nz = data.subs
+
+        return data, data_T_vals, subs_nz
+
+    def compute_likelihood(self) -> float:
+        """
+        Compute the log-likelihood of the data.
+
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+
+        Returns
+        -------
+        l : float
+            Log-likelihood value.
+        """
+        return self._Likelihood(self.data)
 
     def _update_cache(
         self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple
@@ -390,9 +406,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         return Z
 
-    def _update_em(
-        self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple
-    ) -> tuple:
+    def _update_em(self) -> tuple:
         """
         Update parameters via EM procedure.
 
@@ -417,10 +431,10 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         if not self.fix_communities:
             if self.use_approximation:
-                d_u = self._update_U_approx(subs_nz)
+                d_u = self._update_U_approx(self.subs_nz)
             else:
-                d_u = self._update_U(subs_nz)
-            self._update_cache(data, subs_nz)
+                d_u = self._update_U(self.subs_nz)
+            self._update_cache(self.data, self.subs_nz)
         else:
             d_u = 0.0
 
@@ -428,29 +442,29 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             self.v = self.u
             self.v_old = self.v
             d_v = d_u
-            self._update_cache(data, subs_nz)
+            self._update_cache(self.data, self.subs_nz)
         else:
             if not self.fix_communities:
                 if self.use_approximation:
-                    d_v = self._update_V_approx(subs_nz)
+                    d_v = self._update_V_approx(self.subs_nz)
                 else:
-                    d_v = self._update_V(subs_nz)
-                self._update_cache(data, subs_nz)
+                    d_v = self._update_V(self.subs_nz)
+                self._update_cache(self.data, self.subs_nz)
             else:
                 d_v = 0.0
 
         if not self.fix_w:
             if not self.assortative:
                 if self.use_approximation:
-                    d_w = self._update_W_approx(subs_nz)
+                    d_w = self._update_W_approx(self.subs_nz)
                 else:
-                    d_w = self._update_W(subs_nz)
+                    d_w = self._update_W(self.subs_nz)
             else:
                 if self.use_approximation:
-                    d_w = self._update_W_assortative_approx(subs_nz)
+                    d_w = self._update_W_assortative_approx(self.subs_nz)
                 else:
-                    d_w = self._update_W_assortative(subs_nz)
-            self._update_cache(data, subs_nz)
+                    d_w = self._update_W_assortative(self.subs_nz)
+            self._update_cache(self.data, self.subs_nz)
         else:
             d_w = 0.0
 
@@ -462,7 +476,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                 d_eta = self._update_eta_approx()
             else:
                 d_eta = self._update_eta()
-            self._update_cache(data, subs_nz)
+            self._update_cache(self.data, self.subs_nz)
         else:
             d_eta = 0.0
 
@@ -503,20 +517,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         return dist_u
 
-    def _update_U(self, subs_nz: tuple) -> float:
-        """
-        Update out-going membership matrix.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_u : float
-                 Maximum distance between the old and the new membership matrix u.
-        """
+    def _specific_update_U(self, subs_nz: tuple, subs_X_nz: tuple = None):
 
         self.u *= self._update_membership(subs_nz, 1)
 
@@ -530,14 +531,6 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         non_zeros = den > 0.0
         self.u[den == 0] = 0.0
         self.u[non_zeros] /= den[non_zeros]
-
-        low_values_indices = self.u < self.err_max  # values are too low
-        self.u[low_values_indices] = 0.0  # and set to 0.
-
-        dist_u = np.amax(abs(self.u - self.u_old))
-        self.u_old = np.copy(self.u)
-
-        return dist_u
 
     def _update_V_approx(self, subs_nz: tuple) -> float:
         """
@@ -578,25 +571,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         return dist_v
 
-    def _update_V(self, subs_nz: tuple) -> float:
-        """
-        Update in-coming membership matrix.
-        Same as _update_U but with:
-        data <-> data_T
-        w <-> w_T
-        u <-> v
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_v : float
-                 Maximum distance between the old and the new membership matrix v.
-        """
-
+    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None):
         self.v *= self._update_membership(subs_nz, 2)
 
         if not self.assortative:
@@ -610,13 +585,72 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.v[den == 0] = 0.0
         self.v[non_zeros] /= den[non_zeros]
 
-        low_values_indices = self.v < self.err_max  # values are too low
-        self.v[low_values_indices] = 0.0  # and set to 0.
+    def _specific_update_W(self, subs_nz: tuple):
 
-        dist_v = np.amax(abs(self.v - self.v_old))
-        self.v_old = np.copy(self.v)
+        uttkrp_DKQ = np.zeros_like(self.w)
 
-        return dist_v
+        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
+        for k in range(self.K):
+            for q in range(self.K):
+                uttkrp_DKQ[:, k, q] += np.bincount(
+                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                )
+
+        self.w = self.w_old * uttkrp_DKQ
+
+        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
+        num = np.einsum("jq,aijk->aijkq", self.v, UL)
+        den = np.einsum("aijkq,aij->akq", num, 1.0 / self.Z)
+
+        non_zeros = den > 0.0
+        self.w[den == 0] = 0.0
+        self.w[non_zeros] /= den[non_zeros]
+
+    def _specific_update_W_assortative(self, subs_nz: tuple):
+        uttkrp_DKQ = np.zeros_like(self.w)
+
+        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
+        for k in range(self.K):
+            uttkrp_DKQ[:, k] += np.bincount(
+                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+            )
+
+        self.w = self.w_old * uttkrp_DKQ
+
+        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
+        num = np.einsum("jk,aijk->aijk", self.v, UL)
+        den = np.einsum("aijk,aij->ak", num, 1.0 / self.Z)
+
+        non_zeros = den > 0.0
+        self.w[den == 0] = 0.0
+        self.w[non_zeros] /= den[non_zeros]
+
+    # def _update_W_assortative(self, subs_nz: tuple) -> float:
+    #     """
+    #     Update affinity tensor (assuming assortativity).
+    #
+    #     Parameters
+    #     ----------
+    #     subs_nz : tuple
+    #               Indices of elements of data that are non-zero.
+    #
+    #     Returns
+    #     -------
+    #     dist_w : float
+    #              Maximum distance between the old and the new affinity tensor w.
+    #     """
+    #
+    #
+    #
+    #     low_values_indices = self.w < self.err_max  # values are too low
+    #     self.w[low_values_indices] = 0.  # and set to 0.
+    #
+    #     dist_w = np.amax(abs(self.w - self.w_old))
+    #     self.w_old = np.copy(self.w)
+    #
+    #     return dist_w
 
     def _update_W_approx(self, subs_nz: tuple) -> float:
         """
@@ -688,91 +722,6 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
         den = np.einsum("jk,aijk->ak", self.v, UL)
-
-        non_zeros = den > 0.0
-        self.w[den == 0] = 0.0
-        self.w[non_zeros] /= den[non_zeros]
-
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
-
-    def _update_W(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update affinity tensor.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
-        """
-
-        uttkrp_DKQ = np.zeros_like(self.w)
-
-        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
-        uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
-        for k in range(self.K):
-            for q in range(self.K):
-                uttkrp_DKQ[:, k, q] += np.bincount(
-                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
-                )
-
-        self.w = self.w_old * uttkrp_DKQ
-
-        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
-        num = np.einsum("jq,aijk->aijkq", self.v, UL)
-        den = np.einsum("aijkq,aij->akq", num, 1.0 / self.Z)
-
-        non_zeros = den > 0.0
-        self.w[den == 0] = 0.0
-        self.w[non_zeros] /= den[non_zeros]
-
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
-
-    def _update_W_assortative(self, subs_nz: tuple) -> float:
-        """
-        Update affinity tensor (assuming assortativity).
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
-        """
-
-        uttkrp_DKQ = np.zeros_like(self.w)
-
-        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
-        uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
-        for k in range(self.K):
-            uttkrp_DKQ[:, k] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
-            )
-
-        self.w = self.w_old * uttkrp_DKQ
-
-        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
-        num = np.einsum("jk,aijk->aijk", self.v, UL)
-        den = np.einsum("aijk,aij->ak", num, 1.0 / self.Z)
 
         non_zeros = den > 0.0
         self.w[den == 0] = 0.0

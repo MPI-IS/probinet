@@ -66,7 +66,9 @@ class BaseTest(unittest.TestCase):
     def _assert_dictionary_keys(self, theta):
         assert (
             all(key in theta for key in self.keys_in_thetaGT),
-            "Some keys are missing in the theta dictionary",
+
+            "Some keys are missing in the theta dictionary"
+        ,
         )
 
     def _assert_ground_truth_information(self, theta, thetaGT):

@@ -232,7 +232,9 @@ class TestCRepDyn(unittest.TestCase):
         # Check the number of nodes and edges in each graph
         for i, graph in enumerate(graphs):
             self.assertEqual(graph.number_of_nodes(), self.N)
-            self.assertEqual(graph.number_of_edges(), expected_number_of_edges[i])
+        self.assertEqual(
+            graph.number_of_edges(), expected_number_of_edges[i]
+        )
         # Check the sum of the membership matrix u
         self.assertTrue(np.allclose(np.sum(crepdyn.u), self.expected_u_sum_axis_1))
         # Check the sum of the membership matrix u along axis 0
