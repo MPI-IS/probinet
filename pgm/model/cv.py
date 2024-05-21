@@ -1,6 +1,7 @@
 """
 It provides functions for cross-validation.
 """
+
 import sys
 from typing import List, Optional
 
@@ -10,8 +11,9 @@ from pgm.input.tools import transpose_ij3
 from pgm.output.evaluate import calculate_Z, lambda_full
 
 
-def extract_mask_kfold(indices: List[np.ndarray], N: int, fold: int = 0,
-                       NFold: int = 5) -> np.ndarray:
+def extract_mask_kfold(
+    indices: List[np.ndarray], N: int, fold: int = 0, NFold: int = 5
+) -> np.ndarray:
     """
     Extract a non-symmetric mask using KFold cross-validation. It contains pairs (i,j) but
     possibly not (j,i).
@@ -46,7 +48,9 @@ def extract_mask_kfold(indices: List[np.ndarray], N: int, fold: int = 0,
         n_samples = len(indices[l])
 
         # Determine the test set indices for the current fold
-        test = indices[l][fold * (n_samples // NFold):(fold + 1) * (n_samples // NFold)]
+        test = indices[l][
+            fold * (n_samples // NFold) : (fold + 1) * (n_samples // NFold)
+        ]
 
         # Create a boolean mask for the test set
         mask0 = np.zeros(n_samples, dtype=bool)
@@ -94,6 +98,7 @@ def shuffle_indices_all_matrix(N: int, L: int, rseed: int = 10) -> List[np.ndarr
     # Return the shuffled indices
     return indices
 
+
 # The functions below are not used in the current implementation. They are taken from DynCRep,
 # not sure if it would be needed at some point; if so, then probably in cv functions
 
@@ -107,13 +112,13 @@ def cosine_similarity(U_infer, U0):
     N, K = U0.shape
     U_infer0 = U_infer.copy()
     U0tmp = U0.copy()
-    cosine_sim = 0.
+    cosine_sim = 0.0
     norm_inf = np.linalg.norm(U_infer, axis=1)
     norm0 = np.linalg.norm(U0, axis=1)
     for i in range(N):
-        if (norm_inf[i] > 0.):
+        if norm_inf[i] > 0.0:
             U_infer[i, :] = U_infer[i, :] / norm_inf[i]
-        if (norm0[i] > 0.):
+        if norm0[i] > 0.0:
             U0[i, :] = U0[i, :] / norm0[i]
 
     for k in range(K):
@@ -135,7 +140,7 @@ def CalculatePermutation(U_infer, U0):
     for t in range(RANK):
         # Find the max element in the remaining submatrix,
         # the one with rows and columns removed from previous iterations
-        max_entry = 0.
+        max_entry = 0.0
         c_index = 1
         r_index = 1
         for i in range(RANK):
@@ -156,23 +161,23 @@ def CalculatePermutation(U_infer, U0):
 
 def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
     """
-        Compute the log-likelihood of the data conditioned in the previous time step
+    Compute the log-likelihood of the data conditioned in the previous time step
 
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T : sptensor/dtensor
-                 Graph adjacency tensor (transpose).
-        mask : ndarray
-               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+    Parameters
+    ----------
+    data : sptensor/dtensor
+           Graph adjacency tensor.
+    data_T : sptensor/dtensor
+             Graph adjacency tensor (transpose).
+    mask : ndarray
+           Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
 
-        Returns
-        -------
-        l : float
-             log-likelihood value.
+    Returns
+    -------
+    l : float
+         log-likelihood value.
     """
-    l = - M.sum()
+    l = -M.sum()
     sub_nz_and = np.logical_and(data > 0, (1 - data_tm1) > 0)
     Alog = data[sub_nz_and] * (1 - data_tm1)[sub_nz_and] * np.log(M[sub_nz_and] + EPS)
     l += Alog.sum()
@@ -188,13 +193,14 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
 
 
 def probabilities(
-        structure: str,
-        sizes: List[int],
-        N: int = 100,
-        K: int = 2,
-        avg_degree: float = 4.,
-        alpha: float = 0.1,
-        beta: Optional[float] = None) -> np.ndarray:
+    structure: str,
+    sizes: List[int],
+    N: int = 100,
+    K: int = 2,
+    avg_degree: float = 4.0,
+    alpha: float = 0.1,
+    beta: Optional[float] = None,
+) -> np.ndarray:
     """
     Return the CxC array with probabilities between and within groups.
 
@@ -223,17 +229,17 @@ def probabilities(
     if beta is None:
         beta = alpha * 0.3
     p1 = avg_degree * K / N
-    if structure == 'assortative':
+    if structure == "assortative":
         p = p1 * alpha * np.ones((len(sizes), len(sizes)))  # secondary-probabilities
         np.fill_diagonal(p, p1)  # primary-probabilities
-    elif structure == 'disassortative':
+    elif structure == "disassortative":
         p = p1 * np.ones((len(sizes), len(sizes)))
         np.fill_diagonal(p, alpha * p1)
-    elif structure == 'core-periphery':
+    elif structure == "core-periphery":
         p = p1 * np.ones((len(sizes), len(sizes)))
         np.fill_diagonal(np.fliplr(p), alpha * p1)
         p[1, 1] = beta * p1
-    elif structure == 'directed-biased':
+    elif structure == "directed-biased":
         p = alpha * p1 * np.ones((len(sizes), len(sizes)))
         p[0, 1] = p1
         p[1, 0] = beta * p1

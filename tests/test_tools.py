@@ -1,6 +1,7 @@
 """
 Test cases for the tools module.
 """
+
 from pathlib import Path
 import unittest
 
@@ -30,15 +31,22 @@ class TestTensors(unittest.TestCase):
         self.subs_ = (np.array([0, 0, 1]), np.array([0, 1, 2]), np.array([0, 1, 2]))
         self.u_ = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]])
         self.v_ = np.array([[0.7, 0.8], [0.9, 1.0], [1.1, 1.2]])
-        self.w_ = np.array([[[0.1, 0.2], [0.3, 0.4]],
-                            [[0.5, 0.6], [0.7, 0.8]],
-                            [[0.9, 1.0], [1.1, 1.2]]])
+        self.w_ = np.array(
+            [
+                [[0.1, 0.2], [0.3, 0.4]],
+                [[0.5, 0.6], [0.7, 0.8]],
+                [[0.9, 1.0], [1.1, 1.2]],
+            ]
+        )
         # Parameters for the assortative case
         self.vals_a = np.array(
-            [1.0, 2.0,
-             3.0])  # of size n, number of nodes; these are the non zero values of the tensor
-        self.subs_a = (np.array([0, 0, 0]), np.array([0, 1, 2]),
-                       np.array([0, 1, 2]))  # list of arrays of indices, each one of size n, lxixj
+            [1.0, 2.0, 3.0]
+        )  # of size n, number of nodes; these are the non zero values of the tensor
+        self.subs_a = (
+            np.array([0, 0, 0]),
+            np.array([0, 1, 2]),
+            np.array([0, 1, 2]),
+        )  # list of arrays of indices, each one of size n, lxixj
         self.u_a = np.array([[0.1, 0.2], [0.4, 0], [0.5, 0.6]])  # of size nxk,
         self.v_a = np.array([[0.7, 0], [0.9, 0], [1.1, 0]])  # of size n
         self.w_a = np.array([[0.1, 0.2, 0]])  # lxk #in the other case, this is lxkxk
@@ -54,7 +62,9 @@ class TestTensors(unittest.TestCase):
         input_matrix = np.array([[1, 2], [3, 4]])
         normalized_matrix = normalize_nonzero_membership(input_matrix)
         expected_result = np.array([[0.33333, 0.66666], [0.428571, 0.571429]])
-        np.testing.assert_array_almost_equal(normalized_matrix, expected_result, decimal=DECIMAL)
+        np.testing.assert_array_almost_equal(
+            normalized_matrix, expected_result, decimal=DECIMAL
+        )
 
     def test_is_sparse_sparse_tensor(self):
         # Test case where the tensor is considered sparse
@@ -132,15 +142,17 @@ class TestTensors(unittest.TestCase):
 
     def test_sp_uttkrp_assortative_mode_1(self):
         mode = 1
-        result = sp_uttkrp_assortative(self.vals_a, self.subs_a, mode, self.u_a, self.v_a,
-                                       self.w_a)  # this is nxk
-        expected_result = np.array([[0.07, 0.], [0.18, 0], [0.33, 0]])
+        result = sp_uttkrp_assortative(
+            self.vals_a, self.subs_a, mode, self.u_a, self.v_a, self.w_a
+        )  # this is nxk
+        expected_result = np.array([[0.07, 0.0], [0.18, 0], [0.33, 0]])
         self.assertTrue(np.allclose(result, expected_result))
 
     def test_sp_uttkrp_assortative_mode_2(self):
         mode = 2
-        result = sp_uttkrp_assortative(self.vals_a, self.subs_a, mode, self.u_a, self.v_a,
-                                       self.w_a)  # this is nxk
+        result = sp_uttkrp_assortative(
+            self.vals_a, self.subs_a, mode, self.u_a, self.v_a, self.w_a
+        )  # this is nxk
         expected_result = np.array([[0.01, 0.04], [0.08, 0], [0.15, 0.36]])
         self.assertTrue(np.allclose(result, expected_result))
 
@@ -152,7 +164,9 @@ class TestWriteDesignMatrix(BaseTest):
         self.fname = "test_X_"
         self.nodeID = "Node"
         self.attr_name = "Metadata"
-        df = pd.DataFrame.from_dict(self.metadata, orient='index', columns=[self.attr_name])
+        df = pd.DataFrame.from_dict(
+            self.metadata, orient="index", columns=[self.attr_name]
+        )
         df.reset_index(inplace=True)
         df.columns = [self.nodeID, self.attr_name]
         self.expected_output = df
@@ -164,9 +178,16 @@ class TestWriteDesignMatrix(BaseTest):
             self.folder,
             self.fname,
             self.nodeID,
-            self.attr_name)
-        output_file = self.folder + self.fname + \
-            str(self.perc)[0] + '_' + str(self.perc)[2] + '.csv'
+            self.attr_name,
+        )
+        output_file = (
+            self.folder
+            + self.fname
+            + str(self.perc)[0]
+            + "_"
+            + str(self.perc)[2]
+            + ".csv"
+        )
         output_df = pd.read_csv(output_file)
         pd.testing.assert_frame_equal(output_df, self.expected_output)
 
@@ -197,11 +218,10 @@ class TestAdjacencyFunctions(BaseTest):
         result = build_edgelist(A, 1)
 
         # Create the expected result
-        expected_result = pd.DataFrame({
-            'source': [0, 3, 1, 0],
-            'target': [0, 3, 1, 2],
-            'L1': [4, 5, 7, 9]
-        }, dtype=np.int32)
+        expected_result = pd.DataFrame(
+            {"source": [0, 3, 1, 0], "target": [0, 3, 1, 2], "L1": [4, 5, 7, 9]},
+            dtype=np.int32,
+        )
 
         # Assert that the result is as expected
         pd.testing.assert_frame_equal(result, expected_result)
@@ -210,26 +230,29 @@ class TestAdjacencyFunctions(BaseTest):
 class TestOutputAdjacency(BaseTest):
     def setUp(self):
         # Create a list of sparse matrices
-        self.A = [coo_matrix(([1, 2, 3], ([0, 1, 2], [0, 1, 2])), shape=(3, 3))
-                  for _ in range(3)]
-        self.label = 'test_output_adjacency'
+        self.A = [
+            coo_matrix(([1, 2, 3], ([0, 1, 2], [0, 1, 2])), shape=(3, 3))
+            for _ in range(3)
+        ]
+        self.label = "test_output_adjacency"
 
     def test_output_adjacency(self):
         # Call the function with the test inputs
         output_adjacency(self.A, self.folder, self.label)
 
         # Check if the output file exists
-        self.assertTrue(Path(self.folder + self.label + '.dat').is_file())
+        self.assertTrue(Path(self.folder + self.label + ".dat").is_file())
 
         # Load the output file into a DataFrame
-        df = pd.read_csv(self.folder + self.label + '.dat', sep=' ')
+        df = pd.read_csv(self.folder + self.label + ".dat", sep=" ")
 
         # Create the expected DataFrame
-        df_list = [pd.DataFrame({
-            'source': [0, 1, 2],
-            'target': [0, 1, 2],
-            'L' + str(layer): [1, 2, 3]
-        }) for layer in range(len(self.A))]
+        df_list = [
+            pd.DataFrame(
+                {"source": [0, 1, 2], "target": [0, 1, 2], "L" + str(layer): [1, 2, 3]}
+            )
+            for layer in range(len(self.A))
+        ]
 
         expected_df = pd.concat(df_list).reset_index(drop=True)
 

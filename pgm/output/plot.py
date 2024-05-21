@@ -1,6 +1,7 @@
 """
 It provides a set of plotting functions for visualizing the results of the generative model.
 """
+
 from typing import Dict, List, Optional, Tuple
 
 from matplotlib import colormaps, gridspec
@@ -12,12 +13,13 @@ import seaborn as sns
 
 
 def plot_hard_membership(
-        graph: nx.DiGraph,
-        communities: Dict,
-        pos: Dict,
-        node_size: np.ndarray,
-        colors: Dict,
-        edge_color: str) -> plt.Figure:
+    graph: nx.DiGraph,
+    communities: Dict,
+    pos: Dict,
+    node_size: np.ndarray,
+    colors: Dict,
+    edge_color: str,
+) -> plt.Figure:
     """
     Plot a graph with nodes colored by their hard memberships.
 
@@ -49,23 +51,24 @@ def plot_hard_membership(
             graph,
             pos,
             node_size=node_size,
-            node_color=[
-                colors[node] for node in communities[k]],
+            node_color=[colors[node] for node in communities[k]],
             with_labels=False,
             width=0.5,
             edge_color=edge_color,
             arrows=True,
             arrowsize=5,
-            connectionstyle="arc3,rad=0.2")
+            connectionstyle="arc3,rad=0.2",
+        )
         plt.title(k, fontsize=17)
-        plt.axis('off')
+        plt.axis("off")
     plt.tight_layout()
 
     return fig
 
 
-def extract_bridge_properties(i: int, color: dict, U: np.ndarray,
-                              threshold: float = 0.2) -> Tuple[np.ndarray, list]:
+def extract_bridge_properties(
+    i: int, color: dict, U: np.ndarray, threshold: float = 0.2
+) -> Tuple[np.ndarray, list]:
     """
     Extract the properties of the bridges of a node i.
     Parameters
@@ -92,12 +95,13 @@ def extract_bridge_properties(i: int, color: dict, U: np.ndarray,
 
 
 def plot_soft_membership(
-        graph: nx.DiGraph,
-        thetas: Dict,
-        pos: Dict,
-        node_size: np.ndarray,
-        colors: Dict,
-        edge_color: str) -> plt.Figure:
+    graph: nx.DiGraph,
+    thetas: Dict,
+    pos: Dict,
+    node_size: np.ndarray,
+    colors: Dict,
+    edge_color: str,
+) -> plt.Figure:
     """
     Plot a graph with nodes colored by their mixed (soft) memberships.
     Parameters
@@ -125,8 +129,17 @@ def plot_soft_membership(
     for j, k in enumerate(thetas):
         plt.subplot(1, 2, j + 1)
         ax = plt.gca()
-        nx.draw_networkx_edges(graph, pos, width=0.5, edge_color=edge_color, arrows=True,
-                               arrowsize=5, connectionstyle="arc3,rad=0.2", node_size=150, ax=ax)
+        nx.draw_networkx_edges(
+            graph,
+            pos,
+            width=0.5,
+            edge_color=edge_color,
+            arrows=True,
+            arrowsize=5,
+            connectionstyle="arc3,rad=0.2",
+            node_size=150,
+            ax=ax,
+        )
         for i, n in enumerate(graph.nodes()):
             wedge_sizes, wedge_colors = extract_bridge_properties(i, colors, thetas[k])
             if len(wedge_sizes) > 0:
@@ -134,23 +147,23 @@ def plot_soft_membership(
                     wedge_sizes,
                     center=pos[n],
                     colors=wedge_colors,
-                    radius=(
-                        node_size[i]) *
-                    0.0005)
+                    radius=(node_size[i]) * 0.0005,
+                )
                 ax.axis("equal")
         plt.title(k, fontsize=17)
-        plt.axis('off')
+        plt.axis("off")
     plt.tight_layout()
 
     return fig
 
 
 def plot_adjacency(
-        Bd: np.ndarray,
-        M_marginal: np.ndarray,
-        M_conditional: np.ndarray,
-        nodes: List,
-        cm='Blues') -> plt.Figure:
+    Bd: np.ndarray,
+    M_marginal: np.ndarray,
+    M_conditional: np.ndarray,
+    nodes: List,
+    cm="Blues",
+) -> plt.Figure:
     """
     Plot the adjacency matrix and its reconstruction given by the marginal and the conditional
     expected values.
@@ -172,7 +185,7 @@ def plot_adjacency(
     fig : plt.Figure
         The matplotlib figure object.
     """
-    sns.set_style('ticks')
+    sns.set_style("ticks")
 
     fig = plt.figure(figsize=(15, 5))
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05])
@@ -181,19 +194,19 @@ def plot_adjacency(
     im = plt.imshow(Bd[0], vmin=0, vmax=1, cmap=cm)
     plt.xticks(ticks=np.arange(len(nodes)), labels=nodes, fontsize=9)
     plt.yticks(ticks=np.arange(len(nodes)), labels=nodes, fontsize=9)
-    plt.title('Data', fontsize=17)
+    plt.title("Data", fontsize=17)
 
     plt.subplot(gs[0, 1])
     plt.imshow(M_marginal[0], vmin=0, vmax=1, cmap=cm)
     plt.xticks(ticks=np.arange(len(nodes)), labels=nodes, fontsize=9)
     plt.yticks(ticks=np.arange(len(nodes)), labels=nodes, fontsize=9)
-    plt.title(r'$\mathbb{E}_{P(A_{ij} | \Theta)}[A_{ij}]$', fontsize=17)
+    plt.title(r"$\mathbb{E}_{P(A_{ij} | \Theta)}[A_{ij}]$", fontsize=17)
 
     plt.subplot(gs[0, 2])
     plt.imshow(M_conditional[0], vmin=0, vmax=1, cmap=cm)
     plt.xticks(ticks=np.arange(len(nodes)), labels=nodes, fontsize=9)
     plt.yticks(ticks=np.arange(len(nodes)), labels=nodes, fontsize=9)
-    plt.title(r'$\mathbb{E}_{P(A_{ij} | A_{ij}, \Theta)}[A_{ij}]$', fontsize=17)
+    plt.title(r"$\mathbb{E}_{P(A_{ij} | A_{ij}, \Theta)}[A_{ij}]$", fontsize=17)
 
     axes = plt.subplot(gs[0, 3])
     cbar = plt.colorbar(im, cax=axes)
@@ -230,14 +243,15 @@ def mapping(G: nx.DiGraph, A: nx.DiGraph) -> nx.DiGraph:
 
 
 def plot_graph(
-        graph: nx.DiGraph,
-        M_marginal: np.ndarray,
-        M_conditional: np.ndarray,
-        pos: Dict,
-        node_size: int,
-        node_color: str,
-        edge_color: str,
-        threshold: float = 0.2) -> plt.Figure:
+    graph: nx.DiGraph,
+    M_marginal: np.ndarray,
+    M_conditional: np.ndarray,
+    pos: Dict,
+    node_size: int,
+    node_color: str,
+    edge_color: str,
+    threshold: float = 0.2,
+) -> plt.Figure:
     """
     Plot a graph and its reconstruction given by the marginal and the conditional expected values.
     Parameters
@@ -269,7 +283,7 @@ def plot_graph(
     gs = gridspec.GridSpec(1, 3)
 
     plt.subplot(gs[0, 0])
-    edgewidth = [d['weight'] for (u, v, d) in graph.edges(data=True)]
+    edgewidth = [d["weight"] for (u, v, d) in graph.edges(data=True)]
     nx.draw_networkx(
         graph,
         pos,
@@ -282,16 +296,17 @@ def plot_graph(
         arrows=True,
         arrowsize=5,
         font_size=15,
-        font_color="black")
-    plt.axis('off')
-    plt.title('Data', fontsize=17)
+        font_color="black",
+    )
+    plt.axis("off")
+    plt.title("Data", fontsize=17)
 
     mask = M_marginal[0] < threshold
     M = M_marginal[0].copy()
-    M[mask] = 0.
+    M[mask] = 0.0
     G = nx.from_numpy_array(M, create_using=nx.DiGraph)
     G = mapping(G, graph)
-    edgewidth = [d['weight'] for (u, v, d) in G.edges(data=True)]
+    edgewidth = [d["weight"] for (u, v, d) in G.edges(data=True)]
     plt.subplot(gs[0, 1])
     nx.draw_networkx(
         G,
@@ -302,20 +317,21 @@ def plot_graph(
         with_labels=False,
         width=edgewidth,
         edge_color=edgewidth,
-        edge_cmap=colormaps['Greys'],
+        edge_cmap=colormaps["Greys"],
         edge_vmin=0,
         edge_vmax=1,
         arrows=True,
-        arrowsize=5)
-    plt.axis('off')
-    plt.title(r'$\mathbb{E}_{P(A_{ij} | \Theta)}[A_{ij}]$', fontsize=17)
+        arrowsize=5,
+    )
+    plt.axis("off")
+    plt.title(r"$\mathbb{E}_{P(A_{ij} | \Theta)}[A_{ij}]$", fontsize=17)
 
     mask = M_conditional[0] < threshold
     M = M_conditional[0].copy()
-    M[mask] = 0.
+    M[mask] = 0.0
     G = nx.from_numpy_array(M, create_using=nx.DiGraph)
     G = mapping(G, graph)
-    edgewidth = [d['weight'] for (u, v, d) in G.edges(data=True)]
+    edgewidth = [d["weight"] for (u, v, d) in G.edges(data=True)]
 
     plt.subplot(gs[0, 2])
     nx.draw_networkx(
@@ -327,21 +343,21 @@ def plot_graph(
         with_labels=False,
         width=edgewidth,
         edge_color=edgewidth,
-        edge_cmap=colormaps['Greys'],
+        edge_cmap=colormaps["Greys"],
         edge_vmin=0,
         edge_vmax=1,
         arrows=True,
-        arrowsize=5)
-    plt.axis('off')
-    plt.title(r'$\mathbb{E}_{P(A_{ij} | A_{ij}, \Theta)}[A_{ij}]$', fontsize=17)
+        arrowsize=5,
+    )
+    plt.axis("off")
+    plt.title(r"$\mathbb{E}_{P(A_{ij} | A_{ij}, \Theta)}[A_{ij}]$", fontsize=17)
 
     plt.tight_layout()
 
     return fig
 
 
-def plot_precision_recall(conf_matrix: np.ndarray,
-                          cm: str = 'Blues') -> plt.Figure:
+def plot_precision_recall(conf_matrix: np.ndarray, cm: str = "Blues") -> plt.Figure:
     """
     Plot precision and recall of a given confusion matrix.
 
@@ -364,36 +380,44 @@ def plot_precision_recall(conf_matrix: np.ndarray,
     gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05])
     plt.subplot(gs[0, 0])
     im = plt.imshow(
-        conf_matrix /
-        np.sum(
-            conf_matrix,
-            axis=1)[
-            :,
-            np.newaxis],
+        conf_matrix / np.sum(conf_matrix, axis=1)[:, np.newaxis],
         cmap=cm,
         vmin=0,
-        vmax=1)
-    plt.xticks([0, 1, 2, 3], labels=['(0, 0)', '(0, 1)', '(1, 0)', '(1, 1)'], fontsize=13)
-    plt.yticks([0, 1, 2, 3], labels=['(0, 0)', '(0, 1)', '(1, 0)', '(1, 1)'], fontsize=13)
-    plt.ylabel('True', fontsize=15)
-    plt.xlabel('Predicted', fontsize=15)
-    plt.title('Precision', fontsize=17)
+        vmax=1,
+    )
+    plt.xticks(
+        [0, 1, 2, 3], labels=["(0, 0)", "(0, 1)", "(1, 0)", "(1, 1)"], fontsize=13
+    )
+    plt.yticks(
+        [0, 1, 2, 3], labels=["(0, 0)", "(0, 1)", "(1, 0)", "(1, 1)"], fontsize=13
+    )
+    plt.ylabel("True", fontsize=15)
+    plt.xlabel("Predicted", fontsize=15)
+    plt.title("Precision", fontsize=17)
 
     # normalized by column
     plt.subplot(gs[0, 1])
-    plt.imshow(conf_matrix / np.sum(conf_matrix, axis=0)[np.newaxis, :], cmap=cm, vmin=0, vmax=1)
-    plt.xticks([0, 1, 2, 3], labels=['(0, 0)', '(0, 1)', '(1, 0)', '(1, 1)'], fontsize=13)
+    plt.imshow(
+        conf_matrix / np.sum(conf_matrix, axis=0)[np.newaxis, :],
+        cmap=cm,
+        vmin=0,
+        vmax=1,
+    )
+    plt.xticks(
+        [0, 1, 2, 3], labels=["(0, 0)", "(0, 1)", "(1, 0)", "(1, 1)"], fontsize=13
+    )
     plt.tick_params(
-        axis='y',
-        which='both',
+        axis="y",
+        which="both",
         bottom=False,
         top=False,
         labelbottom=False,
         right=False,
         left=False,
-        labelleft=False)
-    plt.xlabel('Predicted', fontsize=15)
-    plt.title('Recall', fontsize=17)
+        labelleft=False,
+    )
+    plt.xlabel("Predicted", fontsize=15)
+    plt.title("Recall", fontsize=17)
 
     axes = plt.subplot(gs[0, 2])
     plt.colorbar(im, cax=axes)
@@ -403,7 +427,7 @@ def plot_precision_recall(conf_matrix: np.ndarray,
     return fig
 
 
-def plot_adjacency_samples(Bdata: List, Bsampled: List, cm='Blues') -> plt.Figure:
+def plot_adjacency_samples(Bdata: List, Bsampled: List, cm="Blues") -> plt.Figure:
     """
     Plot the adjacency matrix and five sampled networks.
 
@@ -427,36 +451,38 @@ def plot_adjacency_samples(Bdata: List, Bsampled: List, cm='Blues') -> plt.Figur
     plt.subplot(gs[0, 0])
     plt.imshow(Bdata[0], vmin=0, vmax=1, cmap=cm)
     plt.tick_params(
-        axis='both',
-        which='both',
+        axis="both",
+        which="both",
         bottom=False,
         top=False,
         labelbottom=False,
         right=False,
         left=False,
-        labelleft=False)
-    plt.title('Data', fontsize=25)
+        labelleft=False,
+    )
+    plt.title("Data", fontsize=25)
 
     for i in range(5):
         plt.subplot(gs[0, i + 1])
         plt.imshow(Bsampled[i], vmin=0, vmax=1, cmap=cm)
         plt.tick_params(
-            axis='both',
-            which='both',
+            axis="both",
+            which="both",
             bottom=False,
             top=False,
             labelbottom=False,
             right=False,
             left=False,
-            labelleft=False)
-        plt.title(f'Sample {i + 1}', fontsize=25)
+            labelleft=False,
+        )
+        plt.title(f"Sample {i + 1}", fontsize=25)
 
     plt.tight_layout()
 
     return fig
 
 
-def plot_A(A: List, cmap='Blues') -> List[plt.Figure]:
+def plot_A(A: List, cmap="Blues") -> List[plt.Figure]:
     """
     Plot the adjacency tensor produced by the generative algorithm.
 
@@ -478,7 +504,7 @@ def plot_A(A: List, cmap='Blues') -> List[plt.Figure]:
         Ad = A[l].todense()
         fig, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(Ad, cmap=plt.get_cmap(cmap))
-        ax.set_title(f'Adjacency matrix layer {l}', fontsize=15)
+        ax.set_title(f"Adjacency matrix layer {l}", fontsize=15)
         for PCM in ax.get_children():
             if isinstance(PCM, plt.cm.ScalarMappable):
                 break
@@ -489,12 +515,13 @@ def plot_A(A: List, cmap='Blues') -> List[plt.Figure]:
 
 
 def plot_L(
-        values: List,
-        indices: Optional[List] = None,
-        k_i: int = 0,
-        xlab: str = 'Iterations',
-        figsize: tuple = (10, 5),
-        int_ticks: bool = False) -> plt.Figure:
+    values: List,
+    indices: Optional[List] = None,
+    k_i: int = 0,
+    xlab: str = "Iterations",
+    figsize: tuple = (10, 5),
+    int_ticks: bool = False,
+) -> plt.Figure:
     """
     Plot the log-likelihood.
     Parameters
@@ -524,7 +551,7 @@ def plot_L(
     else:
         ax.plot(indices[k_i:], values[k_i:])
     ax.set_xlabel(xlab)
-    ax.set_ylabel('Log-likelihood values')
+    ax.set_ylabel("Log-likelihood values")
     if int_ticks:
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.grid()

@@ -2,6 +2,7 @@
 It provides essential functions for model assessment like AUC for link prediction, conditional
 and marginal expectations and the pseudo log-likelihood of the data.
 """
+
 from typing import Optional, Union
 
 import numpy as np
@@ -16,7 +17,9 @@ from ..model.constants import EPS_
 # pylint: disable=fixme
 
 
-def calculate_AUC(pred: np.ndarray, data0: np.ndarray, mask: Optional[np.ndarray] = None) -> float:
+def calculate_AUC(
+    pred: np.ndarray, data0: np.ndarray, mask: Optional[np.ndarray] = None
+) -> float:
     """
     Return the AUC of the link prediction. It represents the probability that a randomly chosen
     missing connection (true positive) is given a higher score by our method than a randomly chosen
@@ -36,24 +39,24 @@ def calculate_AUC(pred: np.ndarray, data0: np.ndarray, mask: Optional[np.ndarray
     AUC value.
     """
     # The following line is needed to avoid a bug in sklearn
-    data = (data0 > 0).astype('int')
+    data = (data0 > 0).astype("int")
 
     if mask is None:
-        fpr, tpr, _ = metrics.roc_curve(data.flatten(),
-                                        pred.flatten())
+        fpr, tpr, _ = metrics.roc_curve(data.flatten(), pred.flatten())
     else:
-        fpr, tpr, _ = metrics.roc_curve(data[mask > 0],
-                                        pred[mask > 0])
+        fpr, tpr, _ = metrics.roc_curve(data[mask > 0], pred[mask > 0])
 
     return metrics.auc(fpr, tpr)
 
 
-def calculate_conditional_expectation(B: np.ndarray,
-                                      u: np.ndarray,
-                                      v: np.ndarray,
-                                      w: np.ndarray,
-                                      eta: float,
-                                      mean: Optional[np.ndarray] = None) -> np.ndarray:
+def calculate_conditional_expectation(
+    B: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    eta: float,
+    mean: Optional[np.ndarray] = None,
+) -> np.ndarray:
     """
     Compute the conditional expectations, e.g. the parameters of the conditional distribution
     lambda_{ij}.
@@ -80,44 +83,51 @@ def calculate_conditional_expectation(B: np.ndarray,
 
     if mean is None:
         return lambda_full(u, v, w) + eta * transpose_ij3(
-            B)  # conditional expectation (knowing A_ji)
+            B
+        )  # conditional expectation (knowing A_ji)
 
     return lambda_full(u, v, w) + eta * transpose_ij3(mean)
-def calculate_conditional_expectation_dyncrep(B, B_to_T, u, v, w, eta=0.0, beta=1.):
+
+
+def calculate_conditional_expectation_dyncrep(B, B_to_T, u, v, w, eta=0.0, beta=1.0):
     """
-        Compute the conditional expectations, e.g. the parameters of the conditional distribution lambda_{ij}.
+    Compute the conditional expectations, e.g. the parameters of the conditional distribution lambda_{ij}.
 
-        Parameters
-        ----------
-        B : ndarray
-            Graph adjacency tensor.
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
-        eta : float
-              Reciprocity coefficient.
-        beta : float
-              rate of edge removal.
-        mean : ndarray
-               Matrix with mean entries.
+    Parameters
+    ----------
+    B : ndarray
+        Graph adjacency tensor.
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity tensor.
+    eta : float
+          Reciprocity coefficient.
+    beta : float
+          rate of edge removal.
+    mean : ndarray
+           Matrix with mean entries.
 
-        Returns
-        -------
-        Matrix whose elements are lambda_{ij}.
+    Returns
+    -------
+    Matrix whose elements are lambda_{ij}.
     """
     M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
-        1. + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)))
+        1.0 + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))
+    )
     return M
 
-def calculate_conditional_expectation_dyncrep(B_to_T: Union[dtensor, sptensor],
-                                              u: np.ndarray,
-                                              v: np.ndarray,
-                                              w: np.ndarray,
-                                              eta: float = 0.0,
-                                              beta: float = 1.0) -> np.ndarray:
+
+def calculate_conditional_expectation_dyncrep(
+    B_to_T: Union[dtensor, sptensor],
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    eta: float = 0.0,
+    beta: float = 1.0,
+) -> np.ndarray:
     """
     Compute the conditional expectations, e.g. the parameters of the conditional  distribution
     lambda_{ij}.
@@ -143,13 +153,14 @@ def calculate_conditional_expectation_dyncrep(B_to_T: Union[dtensor, sptensor],
     -------
     Matrix whose elements are lambda_{ij}.
     """
-    M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
-        1. + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)))
+    conditional_expectation = lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)
+    M = (beta * conditional_expectation) / (1.0 + beta * conditional_expectation)
     return M
 
 
-def calculate_expectation(u: np.ndarray, v: np.ndarray, w: np.ndarray,
-                          eta: float) -> np.ndarray:
+def calculate_expectation(
+    u: np.ndarray, v: np.ndarray, w: np.ndarray, eta: float
+) -> np.ndarray:
     """
     Compute the expectations, e.g. the parameters of the marginal distribution m_{ij}.
 
@@ -172,9 +183,10 @@ def calculate_expectation(u: np.ndarray, v: np.ndarray, w: np.ndarray,
 
     lambda0 = lambda_full(u, v, w)
     lambda0T = transpose_ij3(lambda0)
-    M = (lambda0 + eta * lambda0T) / (1. - eta * eta)
+    M = (lambda0 + eta * lambda0T) / (1.0 - eta * eta)
 
     return M
+
 
 # same as Exp_ija_matrix(u, v, w)
 
@@ -199,21 +211,23 @@ def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
 
     if w.ndim == 2:
-        M = np.einsum('ik,jk->ijk', u, v)
-        M = np.einsum('ijk,ak->aij', M, w)
+        M = np.einsum("ik,jk->ijk", u, v)
+        M = np.einsum("ijk,ak->aij", M, w)
     else:
-        M = np.einsum('ik,jq->ijkq', u, v)
-        M = np.einsum('ijkq,akq->aij', M, w)
+        M = np.einsum("ik,jq->ijkq", u, v)
+        M = np.einsum("ijkq,akq->aij", M, w)
 
     return M
 
 
-def PSloglikelihood(B: np.ndarray,
-                    u: np.ndarray,
-                    v: np.ndarray,
-                    w: np.ndarray,
-                    eta: float,
-                    mask: Optional[np.ndarray] = None) -> float:
+def PSloglikelihood(
+    B: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    eta: float,
+    mask: Optional[np.ndarray] = None,
+) -> float:
     """
     Compute the pseudo log-likelihood of the data.
 
@@ -254,10 +268,12 @@ def PSloglikelihood(B: np.ndarray,
 # TODO: make it model agnostic
 
 
-def calculate_opt_func(B: np.ndarray,
-                       algo_obj,
-                       mask: Optional[np.ndarray] = None,
-                       assortative: bool = False) -> float:
+def calculate_opt_func(
+    B: np.ndarray,
+    algo_obj,
+    mask: Optional[np.ndarray] = None,
+    assortative: bool = False,
+) -> float:
     """
     Compute the optimal value for the pseudo log-likelihood with the inferred parameters.
 
@@ -279,15 +295,12 @@ def calculate_opt_func(B: np.ndarray,
 
     B_test = B.copy()
     if mask is not None:
-        B_test[np.logical_not(mask)] = 0.
+        B_test[np.logical_not(mask)] = 0.0
 
     if not assortative:
-        return PSloglikelihood(B,
-                               algo_obj.u_f,
-                               algo_obj.v_f,
-                               algo_obj.w_f,
-                               algo_obj.eta_f,
-                               mask=mask)
+        return PSloglikelihood(
+            B, algo_obj.u_f, algo_obj.v_f, algo_obj.w_f, algo_obj.eta_f, mask=mask
+        )
 
     L = B.shape[0]
     K = algo_obj.w_f.shape[-1]
@@ -296,12 +309,7 @@ def calculate_opt_func(B: np.ndarray,
         w1 = np.zeros((K, K))
         np.fill_diagonal(w1, algo_obj.w_f[l])
         w[l, :, :] = w1.copy()
-    return PSloglikelihood(B,
-                           algo_obj.u_f,
-                           algo_obj.v_f,
-                           w,
-                           algo_obj.eta_f,
-                           mask=mask)
+    return PSloglikelihood(B, algo_obj.u_f, algo_obj.v_f, w, algo_obj.eta_f, mask=mask)
 
 
 def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
@@ -314,16 +322,19 @@ def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
         Normalization constant Z of the Bivariate Bernoulli distribution.
     """
 
-    Z = lambda0_aij + transpose_ij3(lambda0_aij) + eta * \
-        np.einsum('aij,aji->aij', lambda0_aij, lambda0_aij) + 1
+    Z = (
+        lambda0_aij
+        + transpose_ij3(lambda0_aij)
+        + eta * np.einsum("aij,aji->aij", lambda0_aij, lambda0_aij)
+        + 1
+    )
     for _, z in enumerate(Z):
         assert check_symmetric(z)
 
     return Z
 
 
-def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray,
-                    eta: float) -> list:
+def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> list:
     """
     Return the vectors of joint probabilities of every pair of edges.
 
@@ -357,8 +368,9 @@ def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray,
     return [p00, p01, p10, p11]
 
 
-def expected_computation(B: np.ndarray, U: np.ndarray, V: np.ndarray,
-                         W: np.ndarray, eta: float) -> tuple:
+def expected_computation(
+    B: np.ndarray, U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float
+) -> tuple:
     """
     Return the marginal and conditional expected value.
 
@@ -389,12 +401,13 @@ def expected_computation(B: np.ndarray, U: np.ndarray, V: np.ndarray,
     Z = calculate_Z(lambda0_aij, eta)
     M_marginal = (lambda0_aij + eta * lambda0_aij * transpose_ij3(lambda0_aij)) / Z
     for l in np.arange(L):
-        np.fill_diagonal(M_marginal[l], 0.)
+        np.fill_diagonal(M_marginal[l], 0.0)
 
-    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / \
-                    (eta ** transpose_ij3(B) * lambda0_aij + 1)
+    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / (
+        eta ** transpose_ij3(B) * lambda0_aij + 1
+    )
     for l in np.arange(L):
-        np.fill_diagonal(M_conditional[l], 0.)
+        np.fill_diagonal(M_conditional[l], 0.0)
 
     return M_marginal, M_conditional
 
@@ -421,7 +434,9 @@ def func_lagrange_multiplier(lambda_i: float, num: float, den: float) -> float:
     return np.sum(f) - 1
 
 
-def u_with_lagrange_multiplier(u: np.ndarray, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+def u_with_lagrange_multiplier(
+    u: np.ndarray, x: np.ndarray, y: np.ndarray
+) -> np.ndarray:
     """
     Function to update the membership matrix 'u' using the Lagrange multiplier.
 
@@ -442,9 +457,8 @@ def u_with_lagrange_multiplier(u: np.ndarray, x: np.ndarray, y: np.ndarray) -> n
     denominator = x.sum() - (y * u).sum()
     f_ui = x / (y + denominator)
     if (u < 0).sum() > 0:
-        return 100. * np.ones(u.shape)
-    return (f_ui - u)
-
+        return 100.0 * np.ones(u.shape)
+    return f_ui - u
 
 
 def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
@@ -469,7 +483,7 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
         l : float
              log-likelihood value.
     """
-    l = - M.sum()
+    l = -M.sum()
     sub_nz_and = np.logical_and(data > 0, (1 - data_tm1) > 0)
     Alog = data[sub_nz_and] * (1 - data_tm1)[sub_nz_and] * np.log(M[sub_nz_and] + EPS)
     l += Alog.sum()
@@ -493,6 +507,7 @@ def CalculatePermutation(U_infer, U0):
     lambda0_aij = lambda_full(U, V, W)
     L = lambda0_aij.shape[0]
 
+
 def cosine_similarity(U_infer, U0):
     """
     It is assumed that matrices are row-normalized
@@ -502,18 +517,19 @@ def cosine_similarity(U_infer, U0):
     N, K = U0.shape
     U_infer0 = U_infer.copy()
     U0tmp = U0.copy()
-    cosine_sim = 0.
+    cosine_sim = 0.0
     norm_inf = np.linalg.norm(U_infer, axis=1)
     norm0 = np.linalg.norm(U0, axis=1)
     for i in range(N):
-        if (norm_inf[i] > 0.):
+        if norm_inf[i] > 0.0:
             U_infer[i, :] = U_infer[i, :] / norm_inf[i]
-        if (norm0[i] > 0.):
+        if norm0[i] > 0.0:
             U0[i, :] = U0[i, :] / norm0[i]
 
-    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / \
-                    (eta ** transpose_ij3(B) * lambda0_aij + 1)
+    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / (
+        eta ** transpose_ij3(B) * lambda0_aij + 1
+    )
     for l in np.arange(L):
-        np.fill_diagonal(M_conditional[l], 0.)
+        np.fill_diagonal(M_conditional[l], 0.0)
 
     return M_marginal, M_conditional

@@ -7,4 +7,3 @@ out_folder: "outputs/"
 end_file: "_MTCOV"
 assortative: False
 files: "../data/input/theta.npz"
-

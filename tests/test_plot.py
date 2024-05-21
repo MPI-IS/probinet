@@ -1,6 +1,7 @@
 """
 Unit tests for the plot module.
 """
+
 import unittest
 
 import matplotlib.pyplot as plt
@@ -20,11 +21,11 @@ class TestPlotHardMembership(unittest.TestCase):
         self.graph.add_edges_from([(1, 2), (2, 3), (3, 4), (4, 1), (1, 3)])
 
         # Sample hard memberships and positions
-        self.communities = {'Community1': [1, 2, 3, 4]}
+        self.communities = {"Community1": [1, 2, 3, 4]}
         self.pos = nx.circular_layout(self.graph)
         self.node_size = 200
-        self.colors = {1: 'red', 2: 'blue', 3: 'green', 4: 'yellow'}
-        self.edge_color = 'gray'
+        self.colors = {1: "red", 2: "blue", 3: "green", 4: "yellow"}
+        self.edge_color = "gray"
 
     # Skip this test for now
     def test_plot_hard_membership(self):
@@ -39,7 +40,8 @@ class TestPlotHardMembership(unittest.TestCase):
                 self.pos,
                 self.node_size,
                 self.colors,
-                self.edge_color)
+                self.edge_color,
+            )
             plt.close()
 
     def test_mapping(self):

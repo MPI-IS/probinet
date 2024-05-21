@@ -16,18 +16,22 @@ from pgm.output.evaluate import calculate_AUC
 class DynCRepTestCase(BaseTest):
     def setUp(self):
         # Test case parameters
-        self.algorithm = 'DynCRep'
-        self.label = 'GT_DynCRep_for_initialization.npz'  # Formerly called using these params
+        self.algorithm = "DynCRep"
+        self.label = (
+            "GT_DynCRep_for_initialization.npz"  # Formerly called using these params
+        )
         # '100_2_5.0_4_0.2_0.2_0'
-        self.data_path = Path(__file__).parent / 'inputs'
-        self.theta = np.load((self.data_path / str('theta_' + self.label)).with_suffix('.npz'),
-                             allow_pickle=True)
-        self.adj = 'synthetic_data_for_DynCRep.dat'
-        self.K = self.theta['u'].shape[1]
-        with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):
+        self.data_path = Path(__file__).parent / "inputs"
+        self.theta = np.load(
+            (self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
+            allow_pickle=True,
+        )
+        self.adj = "synthetic_data_for_DynCRep.dat"
+        self.K = self.theta["u"].shape[1]
+        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
             self.A, self.B, self.B_T, self.data_T_vals = import_data(
-                network.name,
-                header=0)
+                network.name, header=0
+            )
 
         # Define the nodes, positions, number of nodes, and number of layers
         self.nodes = self.A[0].nodes()
@@ -38,21 +42,24 @@ class DynCRepTestCase(BaseTest):
     def test_running_temporal_version(self):
 
         # Setting to run the algorithm
-        with (files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb')
-              as fp):
+        with (
+            files("pgm.data.model")
+            .joinpath("setting_" + self.algorithm + ".yaml")
+            .open("rb") as fp
+        ):
             conf = yaml.safe_load(fp)
 
         # Update the configuration with the specific parameters for this test
-        conf['K'] = self.K
-        conf['initialization'] = 1
+        conf["K"] = self.K
+        conf["initialization"] = 1
         # Saving the outputs of the tests into the temp folder created in the BaseTest
-        conf['out_folder'] = self.folder
-        conf['end_file'] = '_OUT_DynCRep'  # Adding a suffix to the output files
-        conf['files'] = self.data_path / ('theta_' + self.label)
-        conf['constrained'] = False
-        conf['undirected'] = False
-        conf['eta0'] = 0.2
-        conf['beta0'] = self.theta['beta']
+        conf["out_folder"] = self.folder
+        conf["end_file"] = "_OUT_DynCRep"  # Adding a suffix to the output files
+        conf["files"] = self.data_path / ("theta_" + self.label)
+        conf["constrained"] = False
+        conf["undirected"] = False
+        conf["eta0"] = 0.2
+        conf["beta0"] = self.theta["beta"]
         self.conf = conf
 
         # Create an instance of the DynCRep model
@@ -70,7 +77,7 @@ class DynCRepTestCase(BaseTest):
             flag_data_T=0,
             ag=1.1,
             bg=0.5,
-            **self.conf
+            **self.conf,
         )
 
         # Add your assertions here
@@ -101,7 +108,7 @@ class DynCRepTestCase(BaseTest):
 
         # Calculate the AUC for each layer
         for l in range(model.T + 1):
-            auc = flt(calculate_AUC(M_inf[l], self.B[l].astype('int')))
+            auc = flt(calculate_AUC(M_inf[l], self.B[l].astype("int")))
             self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
 
     def test_running_static_version(self):
@@ -115,18 +122,20 @@ class DynCRepTestCase(BaseTest):
             flag_data_T=1,
             fix_beta=False,
             initialization=1,
-            in_parameters=self.data_path / ('theta_' + self.label),
+            in_parameters=self.data_path / ("theta_" + self.label),
             max_iter=800,
             end_file=self.label,
             eta0=0.2,
             constrained=True,
             ag=1.1,
             bg=0.5,
-            fix_eta=False)
+            fix_eta=False,
+        )
 
         # Fit the model to the data
         u, v, w, eta, beta, Loglikelihood = model.fit(
-            data=self.B, T=self.T, nodes=self.nodes, K=self.K)
+            data=self.B, T=self.T, nodes=self.nodes, K=self.K
+        )
 
         # Add your assertions here
         self.assertEqual(u.shape, (100, 2))
@@ -156,7 +165,7 @@ class DynCRepTestCase(BaseTest):
 
         # Calculate the AUC for each layer
         for l in range(model.T + 1):
-            auc = flt(calculate_AUC(M_inf[l], self.B[l].astype('int')))
+            auc = flt(calculate_AUC(M_inf[l], self.B[l].astype("int")))
             self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
 
     def test_static_is_dynamical_with_extra_flag(self):
@@ -170,40 +179,40 @@ class DynCRepTestCase(BaseTest):
             flag_data_T=1,
             fix_beta=False,
             initialization=1,
-            in_parameters=self.data_path / ('theta_' + self.label),
+            in_parameters=self.data_path / ("theta_" + self.label),
             max_iter=800,
             end_file=self.label,
             eta0=0.2,
             constrained=True,
             ag=1.1,
             bg=0.5,
-            fix_eta=False)
+            fix_eta=False,
+        )
         # Fit the model to the data
         u_static, v_static, w_static, eta_static, beta_static, Loglikelihood_static = (
-            model_static.fit(
-                data=self.B,
-                T=self.T,
-                nodes=self.nodes,
-                K=self.K)
+            model_static.fit(data=self.B, T=self.T, nodes=self.nodes, K=self.K)
         )
 
         # Setting to run the dynamic algorithm with the extra flag
-        with (files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb')
-              as fp):
+        with (
+            files("pgm.data.model")
+            .joinpath("setting_" + self.algorithm + ".yaml")
+            .open("rb") as fp
+        ):
             conf = yaml.safe_load(fp)
 
         # Update the configuration with the specific parameters for this test
-        conf['K'] = self.K
-        conf['initialization'] = 1
+        conf["K"] = self.K
+        conf["initialization"] = 1
         # Saving the outputs of the tests into the temp folder created in the BaseTest
-        conf['out_folder'] = self.folder
-        conf['end_file'] = '_OUT_DynCRep'  # Adding a suffix to the output files
-        conf['files'] = self.data_path / ('theta_' + self.label)
-        conf['constrained'] = True
-        conf['undirected'] = False
-        conf['eta0'] = 0.2
-        conf['beta0'] = 0.25
-        conf['assortative'] = True
+        conf["out_folder"] = self.folder
+        conf["end_file"] = "_OUT_DynCRep"  # Adding a suffix to the output files
+        conf["files"] = self.data_path / ("theta_" + self.label)
+        conf["constrained"] = True
+        conf["undirected"] = False
+        conf["eta0"] = 0.2
+        conf["beta0"] = 0.25
+        conf["assortative"] = True
 
         self.conf = conf
 
@@ -214,7 +223,14 @@ class DynCRepTestCase(BaseTest):
             plot_loglik=True,
         )
         # Fit the model to the data
-        u_stat_dyn, v_stat_dyn, w_stat_dyn, eta_stat_dyn, beta_stat_dyn, Loglikelihood_stat_dyn = model_static_from_dynamic.fit(
+        (
+            u_stat_dyn,
+            v_stat_dyn,
+            w_stat_dyn,
+            eta_stat_dyn,
+            beta_stat_dyn,
+            Loglikelihood_stat_dyn,
+        ) = model_static_from_dynamic.fit(
             data=self.B,
             T=self.T,
             nodes=self.nodes,
@@ -222,43 +238,84 @@ class DynCRepTestCase(BaseTest):
             ag=1.1,
             bg=0.5,
             temporal=False,
-            **self.conf
+            **self.conf,
         )
 
         # Assert that the output variables from the fit are the same
-        self.assertTrue(np.allclose(u_static, u_stat_dyn),
-                        "The u's from static and dynamic models are different.")
-        self.assertTrue(np.allclose(v_static, v_stat_dyn),
-                        "The v's from static and dynamic models are different.")
-        self.assertTrue(np.allclose(w_static, w_stat_dyn),
-                        "The w's from static and dynamic models are different.")
-        self.assertTrue(np.allclose(eta_static, eta_stat_dyn),
-                        "The eta's from static and dynamic models are different.")
-        self.assertTrue(np.allclose(beta_static, beta_stat_dyn),
-                        "The beta's from static and dynamic models are different.")
-        self.assertTrue(np.allclose(Loglikelihood_static, Loglikelihood_stat_dyn),
-                        "The Loglikelihoods from static and dynamic models are different.")
+        self.assertTrue(
+            np.allclose(u_static, u_stat_dyn),
+            "The u's from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.allclose(v_static, v_stat_dyn),
+            "The v's from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.allclose(w_static, w_stat_dyn),
+            "The w's from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.allclose(eta_static, eta_stat_dyn),
+            "The eta's from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.allclose(beta_static, beta_stat_dyn),
+            "The beta's from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.allclose(Loglikelihood_static, Loglikelihood_stat_dyn),
+            "The Loglikelihoods from static and dynamic models are different.",
+        )
 
         # Assert that the many of the attributes of both models are the same
-        self.assertTrue(np.isclose(model_static.maxL, model_static_from_dynamic.maxL),
-                        "The maxL attributes from static and dynamic models are different.")
-        self.assertEqual(model_static.max_iter, model_static_from_dynamic.max_iter,
-                         "The max_iter attributes from static and dynamic models are different.")
-        self.assertEqual(model_static.constrained, model_static_from_dynamic.constrained,
-                         "The constrained attributes from static and dynamic models are different.")
-        self.assertEqual(model_static.assortative, model_static_from_dynamic.assortative,
-                         "The assortative attributes from static and dynamic models are different.")
-        self.assertTrue(np.isclose(model_static.beta, model_static_from_dynamic.beta),
-                        "The beta attributes from static and dynamic models are different.")
-        self.assertTrue(np.isclose(model_static.eta, model_static_from_dynamic.eta),
-                        "The eta attributes from static and dynamic models are different.")
-        self.assertEqual(model_static.fix_beta, model_static_from_dynamic.fix_beta,
-                         "The fix_beta attributes from static and dynamic models are different.")
-        self.assertEqual(model_static.fix_eta, model_static_from_dynamic.fix_eta,
-                         "The fix_eta attributes from static and dynamic models are different.")
-        self.assertEqual(model_static.fix_w, model_static_from_dynamic.fix_w,
-                         "The fix_w attributes from static and dynamic models are different.")
-        self.assertEqual(model_static.flag_data_T, model_static_from_dynamic.flag_data_T,
-                         "The flag_data_T attributes from static and dynamic models are different.")
-        self.assertTrue(np.isclose(model_static.data_rho2, model_static_from_dynamic.data_rho2),
-                        "The data_rho2 attributes from static and dynamic models are different.")
+        self.assertTrue(
+            np.isclose(model_static.maxL, model_static_from_dynamic.maxL),
+            "The maxL attributes from static and dynamic models are different.",
+        )
+        self.assertEqual(
+            model_static.max_iter,
+            model_static_from_dynamic.max_iter,
+            "The max_iter attributes from static and dynamic models are different.",
+        )
+        self.assertEqual(
+            model_static.constrained,
+            model_static_from_dynamic.constrained,
+            "The constrained attributes from static and dynamic models are different.",
+        )
+        self.assertEqual(
+            model_static.assortative,
+            model_static_from_dynamic.assortative,
+            "The assortative attributes from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.isclose(model_static.beta, model_static_from_dynamic.beta),
+            "The beta attributes from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.isclose(model_static.eta, model_static_from_dynamic.eta),
+            "The eta attributes from static and dynamic models are different.",
+        )
+        self.assertEqual(
+            model_static.fix_beta,
+            model_static_from_dynamic.fix_beta,
+            "The fix_beta attributes from static and dynamic models are different.",
+        )
+        self.assertEqual(
+            model_static.fix_eta,
+            model_static_from_dynamic.fix_eta,
+            "The fix_eta attributes from static and dynamic models are different.",
+        )
+        self.assertEqual(
+            model_static.fix_w,
+            model_static_from_dynamic.fix_w,
+            "The fix_w attributes from static and dynamic models are different.",
+        )
+        self.assertEqual(
+            model_static.flag_data_T,
+            model_static_from_dynamic.flag_data_T,
+            "The flag_data_T attributes from static and dynamic models are different.",
+        )
+        self.assertTrue(
+            np.isclose(model_static.data_rho2, model_static_from_dynamic.data_rho2),
+            "The data_rho2 attributes from static and dynamic models are different.",
+        )

@@ -2,6 +2,7 @@
 Class definition of CRep, the algorithm to perform inference in networks with reciprocity.
 The latent variables are related to community memberships and reciprocity value.
 """
+
 import logging
 from pathlib import Path
 import time
@@ -24,17 +25,18 @@ class CRep(ModelClass):
     Class to perform inference in networks with reciprocity.
     """
 
-    def __init__(self,
-                 inf: float = 1e10,  # initial value of the pseudo log-likelihood, aka, infinity
-                 err_max: float = 1e-12,  # minimum value for the parameters
-                 err: float = 0.1,  # noise for the initialization
-                 num_realizations: int = 5,  # number of iterations with different random init
-                 convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
-                 decision: int = 10,  # convergence parameter
-                 max_iter: int = 1000,  # maximum number of EM steps before aborting
-                 plot_loglik: bool = False,  # flag to plot the log-likelihood
-                 flag_conv: str = 'log',  # flag to choose the convergence criterion
-                 ) -> None:
+    def __init__(
+        self,
+        inf: float = 1e10,  # initial value of the pseudo log-likelihood, aka, infinity
+        err_max: float = 1e-12,  # minimum value for the parameters
+        err: float = 0.1,  # noise for the initialization
+        num_realizations: int = 5,  # number of iterations with different random init
+        convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
+        decision: int = 10,  # convergence parameter
+        max_iter: int = 1000,  # maximum number of EM steps before aborting
+        plot_loglik: bool = False,  # flag to plot the log-likelihood
+        flag_conv: str = "log",  # flag to choose the convergence criterion
+    ) -> None:
         super().__init__(
             inf,
             err_max,
@@ -44,33 +46,36 @@ class CRep(ModelClass):
             decision,
             max_iter,
             plot_loglik,
-            flag_conv)
+            flag_conv,
+        )
 
         # Initialize the attributes
         self.u_f: np.ndarray = np.array([])
         self.v_f: np.ndarray = np.array([])
         self.w_f: np.ndarray = np.array([])
-        self.eta_f = 0.
+        self.eta_f = 0.0
 
-    def check_fit_params(self,
-                         initialization: int,
-                         eta0: Union[float, None],
-                         undirected: bool,
-                         assortative: bool,
-                         data: Union[skt.dtensor, skt.sptensor],
-                         K: int,
-                         constrained: bool,
-                         **extra_params: Unpack[FitParams]) -> None:
+    def check_fit_params(
+        self,
+        initialization: int,
+        eta0: Union[float, None],
+        undirected: bool,
+        assortative: bool,
+        data: Union[skt.dtensor, skt.sptensor],
+        K: int,
+        constrained: bool,
+        **extra_params: Unpack[FitParams],
+    ) -> None:
 
-        message = 'The initialization parameter can be either 0, 1, 2 or 3.'
+        message = "The initialization parameter can be either 0, 1, 2 or 3."
         available_extra_params = [
-            'fix_eta',
-            'fix_w',
-            'fix_communities',
-            'files',
-            'out_inference',
-            'out_folder',
-            'end_file'
+            "fix_eta",
+            "fix_w",
+            "fix_communities",
+            "files",
+            "out_inference",
+            "out_folder",
+            "end_file",
         ]
         super()._check_fit_params(
             initialization,
@@ -84,7 +89,8 @@ class CRep(ModelClass):
             eta0=eta0,
             beta0=None,
             message=message,
-            **extra_params)
+            **extra_params,
+        )
 
         self.constrained = constrained
 
@@ -95,29 +101,28 @@ class CRep(ModelClass):
         if self.initialization == 1:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
-    def fit(self,
-            data: Union[skt.dtensor,
-                        skt.sptensor],
-            data_T: skt.sptensor,
-            data_T_vals: np.ndarray,
-            nodes: List[Any],
-            rseed: int = 0,
-            K: int = 3,
-            mask: Optional[np.ndarray] = None,
-            initialization: int = 0,
-            eta0: Union[float,
-                        None] = None,
-            undirected: bool = False,
-            assortative: bool = True,
-            constrained: bool = True,
-            **extra_params: Unpack[FitParams]) -> tuple[ndarray[Any,
-                                                                dtype[np.float64]],
-                                                        ndarray[Any,
-                                                                dtype[np.float64]],
-                                                        ndarray[Any,
-                                                                dtype[np.float64]],
-                                                        float,
-                                                        float]:
+    def fit(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T: skt.sptensor,
+        data_T_vals: np.ndarray,
+        nodes: List[Any],
+        rseed: int = 0,
+        K: int = 3,
+        mask: Optional[np.ndarray] = None,
+        initialization: int = 0,
+        eta0: Union[float, None] = None,
+        undirected: bool = False,
+        assortative: bool = True,
+        constrained: bool = True,
+        **extra_params: Unpack[FitParams],
+    ) -> tuple[
+        ndarray[Any, dtype[np.float64]],
+        ndarray[Any, dtype[np.float64]],
+        ndarray[Any, dtype[np.float64]],
+        float,
+        float,
+    ]:
         """
         Model directed networks by using a probabilistic generative model that assume community
         parameters and reciprocity coefficient. The inference is performed via EM algorithm.
@@ -154,25 +159,25 @@ class CRep(ModelClass):
         maxL : float
                Maximum pseudo log-likelihood.
         """
-        self.check_fit_params(data=data,
-                              K=K,
-                              initialization=initialization,
-                              eta0=eta0,
-                              undirected=undirected,
-                              assortative=assortative,
-                              constrained=constrained,
-                              **extra_params)
-        logging.debug('Fixing random seed to: %s', rseed)
+        self.check_fit_params(
+            data=data,
+            K=K,
+            initialization=initialization,
+            eta0=eta0,
+            undirected=undirected,
+            assortative=assortative,
+            constrained=constrained,
+            **extra_params,
+        )
+        logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
         self.nodes = nodes
 
         if data_T is None:
-            E = np.sum(
-                data
-            )  # weighted sum of edges (needed in the denominator of eta)
-            data_T = np.einsum('aij->aji', data)
+            E = np.sum(data)  # weighted sum of edges (needed in the denominator of eta)
+            data_T = np.einsum("aij->aji", data)
             data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
             # pre-processing of the data to handle the sparsity
             data = preprocess(data)
@@ -192,7 +197,9 @@ class CRep(ModelClass):
 
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
-            logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
+            logging.debug(
+                "Random number generator seed: %s", self.rng.get_state()[1][0]
+            )
             super()._initialize()
             super()._update_old_variables()
             self._update_cache(data, data_T_vals, subs_nz)
@@ -203,7 +210,7 @@ class CRep(ModelClass):
             convergence = False
             loglik = self.inf
 
-            logging.debug('Updating realization %s ...', r)
+            logging.debug("Updating realization %s ...", r)
             time_start = time.time()
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
             # iterations (self.max_iter) is reached.
@@ -212,13 +219,14 @@ class CRep(ModelClass):
                 # which updates the memberships and calculates the maximum difference
                 # between new and old parameters.
                 delta_u, delta_v, delta_w, delta_eta = self._update_em(
-                    data, data_T_vals, subs_nz, denominator=E)
+                    data, data_T_vals, subs_nz, denominator=E
+                )
 
                 # Depending on the convergence flag (self.flag_conv), it checks for convergence using either the
                 # pseudo log-likelihood values (self._check_for_convergence(data, it, loglik, coincide, convergence,
                 # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
                 # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
-                if self.flag_conv == 'log':
+                if self.flag_conv == "log":
                     it, loglik, coincide, convergence = super()._check_for_convergence(
                         data,
                         it,
@@ -227,30 +235,36 @@ class CRep(ModelClass):
                         convergence,
                         use_pseudo_likelihood=True,
                         data_T=data_T,
-                        mask=mask)
+                        mask=mask,
+                    )
 
                     if not it % 100:
-                        logging.debug('Nreal = %s - iterations = %s - time = %.2f seconds', r,
-                                      it, time.time() - time_start)
-                elif self.flag_conv == 'deltas':
+                        logging.debug(
+                            "Nreal = %s - iterations = %s - time = %.2f seconds",
+                            r,
+                            it,
+                            time.time() - time_start,
+                        )
+                elif self.flag_conv == "deltas":
                     it, coincide, convergence = super()._check_for_convergence_delta(
-                        it,
-                        coincide,
-                        delta_u,
-                        delta_v,
-                        delta_w,
-                        delta_eta,
-                        convergence)
+                        it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence
+                    )
 
                     if not it % 100:
-                        logging.debug('Nreal = %s - iterations = %s - time = %.2f seconds', r,
-                                      it, time.time() - time_start)
+                        logging.debug(
+                            "Nreal = %s - iterations = %s - time = %.2f seconds",
+                            r,
+                            it,
+                            time.time() - time_start,
+                        )
                 else:
-                    log_and_raise_error(ValueError, 'flag_conv can be either log or deltas!')
+                    log_and_raise_error(
+                        ValueError, "flag_conv can be either log or deltas!"
+                    )
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
             # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
             # pseudo log-likelihood.
-            if self.flag_conv == 'deltas':
+            if self.flag_conv == "deltas":
                 loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
 
             if maxL < loglik:
@@ -261,21 +275,28 @@ class CRep(ModelClass):
                 best_r = r
 
             logging.debug(
-                'Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds',
-                r, loglik, it, time.time() - time_start
+                "Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds",
+                r,
+                loglik,
+                it,
+                time.time() - time_start,
             )
 
             # end cycle over realizations
 
-        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL,
-                      self.final_it)
+        logging.debug(
+            "Best real = %s - maxL = %s - best iterations = %s",
+            best_r,
+            maxL,
+            self.final_it,
+        )
 
         self.maxPSL = maxL
 
         if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence not reached
-            logging.error('Solution failed to converge in %s EM steps!', self.max_iter)
-            logging.warning('Parameters won\'t be saved!')
+            logging.error("Solution failed to converge in %s EM steps!", self.max_iter)
+            logging.warning("Parameters won't be saved!")
         else:
             if self.out_inference:
                 super()._output_results()
@@ -283,10 +304,11 @@ class CRep(ModelClass):
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
     def _update_cache(
-            self,
-            data: Union[skt.dtensor, skt.sptensor],
-            data_T_vals: np.ndarray,
-            subs_nz: Tuple[np.ndarray]) -> None:
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T_vals: np.ndarray,
+        subs_nz: Tuple[np.ndarray],
+    ) -> None:
         """
         Update the cache used in the em_update.
 
@@ -310,10 +332,12 @@ class CRep(ModelClass):
         self.data_M_nz[self.M_nz == 0] = 0
 
     def _update_em(
-            self,
-            data: Union[skt.dtensor, skt.sptensor],
-            data_T_vals: np.ndarray, subs_nz: Tuple[np.ndarray],
-            denominator: float) -> Tuple[float, float, float, float]:
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T_vals: np.ndarray,
+        subs_nz: Tuple[np.ndarray],
+        denominator: float,
+    ) -> Tuple[float, float, float, float]:
         """
         Update parameters via EM procedure.
 
@@ -341,18 +365,16 @@ class CRep(ModelClass):
         """
 
         if not self.fix_eta:
-            d_eta = self._update_eta(data,
-                                     data_T_vals,
-                                     denominator=denominator)
+            d_eta = self._update_eta(data, data_T_vals, denominator=denominator)
         else:
-            d_eta = 0.
+            d_eta = 0.0
         self._update_cache(data, data_T_vals, subs_nz)
 
         if not self.fix_communities:
             d_u = self._update_U(subs_nz)
             self._update_cache(data, data_T_vals, subs_nz)
         else:
-            d_u = 0.
+            d_u = 0.0
 
         if self.undirected:
             self.v = self.u
@@ -364,7 +386,7 @@ class CRep(ModelClass):
                 d_v = self._update_V(subs_nz)
                 self._update_cache(data, data_T_vals, subs_nz)
             else:
-                d_v = 0.
+                d_v = 0.0
 
         if not self.fix_w:
             if not self.assortative:
@@ -377,9 +399,12 @@ class CRep(ModelClass):
 
         return d_u, d_v, d_w, d_eta
 
-    def _update_eta(self, data: Union[skt.dtensor, skt.sptensor],
-                    data_T_vals: np.ndarray,
-                    denominator: Optional[float] = None) -> float:
+    def _update_eta(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T_vals: np.ndarray,
+        denominator: Optional[float] = None,
+    ) -> float:
         """
         Update reciprocity coefficient eta.
 
@@ -428,22 +453,22 @@ class CRep(ModelClass):
         self.u = self.u_old * self._update_membership(subs_nz, 1)  # type: ignore
 
         if not self.constrained:
-            Du = np.einsum('iq->q', self.v)
+            Du = np.einsum("iq->q", self.v)
             if not self.assortative:
-                w_k = np.einsum('akq->kq', self.w)
-                Z_uk = np.einsum('q,kq->k', Du, w_k)
+                w_k = np.einsum("akq->kq", self.w)
+                Z_uk = np.einsum("q,kq->k", Du, w_k)
             else:
-                w_k = np.einsum('ak->k', self.w)
-                Z_uk = np.einsum('k,k->k', Du, w_k)
-            non_zeros = Z_uk > 0.
-            self.u[:, Z_uk == 0] = 0.
+                w_k = np.einsum("ak->k", self.w)
+                Z_uk = np.einsum("k,k->k", Du, w_k)
+            non_zeros = Z_uk > 0.0
+            self.u[:, Z_uk == 0] = 0.0
             self.u[:, non_zeros] /= Z_uk[np.newaxis, non_zeros]
         else:
             row_sums = self.u.sum(axis=1)
             self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
         low_values_indices = self.u < self.err_max  # values are too low
-        self.u[low_values_indices] = 0.  # and set to 0.
+        self.u[low_values_indices] = 0.0  # and set to 0.
 
         dist_u = np.amax(abs(self.u - self.u_old))  # type: ignore
         self.u_old = np.copy(self.u)
@@ -472,22 +497,22 @@ class CRep(ModelClass):
         self.v *= self._update_membership(subs_nz, 2)
 
         if not self.constrained:
-            Dv = np.einsum('iq->q', self.u)
+            Dv = np.einsum("iq->q", self.u)
             if not self.assortative:
-                w_k = np.einsum('aqk->qk', self.w)
-                Z_vk = np.einsum('q,qk->k', Dv, w_k)
+                w_k = np.einsum("aqk->qk", self.w)
+                Z_vk = np.einsum("q,qk->k", Dv, w_k)
             else:
-                w_k = np.einsum('ak->k', self.w)
-                Z_vk = np.einsum('k,k->k', Dv, w_k)
+                w_k = np.einsum("ak->k", self.w)
+                Z_vk = np.einsum("k,k->k", Dv, w_k)
             non_zeros = Z_vk > 0
-            self.v[:, Z_vk == 0] = 0.
+            self.v[:, Z_vk == 0] = 0.0
             self.v[:, non_zeros] /= Z_vk[np.newaxis, non_zeros]
         else:
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
         low_values_indices = self.v < self.err_max  # values are too low
-        self.v[low_values_indices] = 0.  # and set to 0.
+        self.v[low_values_indices] = 0.0  # and set to 0.
 
         dist_v = np.amax(abs(self.v - self.v_old))
         self.v_old = np.copy(self.v)
@@ -513,24 +538,24 @@ class CRep(ModelClass):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Iq->Ikq', self.u[subs_nz[1], :],
-                       self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
-                uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0],
-                                                   weights=uttkrp_I[:, k, q],
-                                                   minlength=self.L)
+                uttkrp_DKQ[:, k, q] += np.bincount(
+                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                )
 
         self.w *= uttkrp_DKQ
 
-        Z = np.einsum('k,q->kq', self.u.sum(axis=0),
-                      self.v.sum(axis=0))[np.newaxis, :, :]
+        Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))[
+            np.newaxis, :, :
+        ]
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
@@ -556,31 +581,28 @@ class CRep(ModelClass):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
-                       self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
         for k in range(self.K):
-            uttkrp_DKQ[:, k] += np.bincount(subs_nz[0],
-                                            weights=uttkrp_I[:, k],
-                                            minlength=self.L)
+            uttkrp_DKQ[:, k] += np.bincount(
+                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+            )
 
         self.w *= uttkrp_DKQ
 
-        Z = ((self.u_old.sum(axis=0)) *
-             (self.v_old.sum(axis=0)))[np.newaxis, :]
+        Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
 
         return dist_w
 
-    def _update_membership(self, subs_nz: Tuple[np.ndarray],
-                           m: int) -> np.ndarray:
+    def _update_membership(self, subs_nz: Tuple[np.ndarray], m: int) -> np.ndarray:
         """
         Return the Khatri-Rao product (sparse version) used in the update of the membership
         matrices.
@@ -603,17 +625,20 @@ class CRep(ModelClass):
         """
 
         if not self.assortative:
-            uttkrp_DK = sp_uttkrp(self.data_M_nz, subs_nz, m, self.u, self.v,
-                                  self.w)
+            uttkrp_DK = sp_uttkrp(self.data_M_nz, subs_nz, m, self.u, self.v, self.w)
         else:
-            uttkrp_DK = sp_uttkrp_assortative(self.data_M_nz, subs_nz, m,
-                                              self.u, self.v, self.w)
+            uttkrp_DK = sp_uttkrp_assortative(
+                self.data_M_nz, subs_nz, m, self.u, self.v, self.w
+            )
 
         return uttkrp_DK
 
-    def _PSLikelihood(self, data: Union[skt.dtensor, skt.sptensor],
-                      data_T: skt.sptensor,
-                      mask: Optional[np.ndarray] = None) -> float:
+    def _PSLikelihood(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T: skt.sptensor,
+        mask: Optional[np.ndarray] = None,
+    ) -> float:
         """
         Compute the pseudo log-likelihood of the data.
 
@@ -638,11 +663,15 @@ class CRep(ModelClass):
         if mask is not None:
             sub_mask_nz = mask.nonzero()
             if isinstance(data, skt.dtensor):
-                l = -self.lambda0_ija[sub_mask_nz].sum(
-                ) - self.eta * data_T[sub_mask_nz].sum()
+                l = (
+                    -self.lambda0_ija[sub_mask_nz].sum()
+                    - self.eta * data_T[sub_mask_nz].sum()
+                )
             elif isinstance(data, skt.sptensor):
-                l = -self.lambda0_ija[sub_mask_nz].sum(
-                ) - self.eta * data_T.toarray()[sub_mask_nz].sum()
+                l = (
+                    -self.lambda0_ija[sub_mask_nz].sum()
+                    - self.eta * data_T.toarray()[sub_mask_nz].sum()
+                )
         else:
             if isinstance(data, skt.dtensor):
                 l = -self.lambda0_ija.sum() - self.eta * data_T.sum()

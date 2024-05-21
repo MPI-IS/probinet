@@ -1,6 +1,7 @@
 """
 Tests for the preprocessing module.
 """
+
 import unittest
 
 import networkx as nx
@@ -19,14 +20,19 @@ class TestPreprocessing(unittest.TestCase):
     def test_build_B_from_A(self):
         # Test case for build_B_from_A
         G1 = nx.MultiDiGraph()
-        G1.add_edges_from([(0, 1, {'weight': 1}), (1, 2, {'weight': 2}), (2, 1, {'weight': 3})])
+        G1.add_edges_from(
+            [(0, 1, {"weight": 1}), (1, 2, {"weight": 2}), (2, 1, {"weight": 3})]
+        )
         G2 = nx.MultiDiGraph()
-        G2.add_edges_from([(0, 1, {'weight': 1}), (0, 2, {'weight': 2}), (2, 0, {'weight': 2})])
+        G2.add_edges_from(
+            [(0, 1, {"weight": 1}), (0, 2, {"weight": 2}), (2, 0, {"weight": 2})]
+        )
 
         A = [G1, G2]
         nodes = [0, 1, 2]
-        expected_B = np.array([[[0, 1, 0], [0, 0, 2], [0, 3, 0]],
-                               [[0, 1, 2], [0, 0, 0], [2, 0, 0]]])
+        expected_B = np.array(
+            [[[0, 1, 0], [0, 0, 2], [0, 3, 0]], [[0, 1, 2], [0, 0, 0], [2, 0, 0]]]
+        )
         expected_rw = [2, 1.6]
 
         # Now, the test should pass
@@ -37,9 +43,9 @@ class TestPreprocessing(unittest.TestCase):
     def test_build_B_from_A_mismatched_nodes(self):
         # Test case for build_B_from_A with mismatched nodes
         G1 = nx.MultiDiGraph()
-        G1.add_edges_from([(1, 2, {'weight': 1}), (2, 3, {'weight': 1})])
+        G1.add_edges_from([(1, 2, {"weight": 1}), (2, 3, {"weight": 1})])
         G2 = nx.MultiDiGraph()
-        G2.add_edges_from([(1, 3, {'weight': 1})])
+        G2.add_edges_from([(1, 3, {"weight": 1})])
 
         A = [G1, G2]
         nodes = [1, 2, 3]
@@ -51,7 +57,7 @@ class TestPreprocessing(unittest.TestCase):
     def test_build_B_from_A_non_int_weighed_nodes(self):
         # Test case for build_B_from_A with mismatched nodes
         G1 = nx.MultiDiGraph()
-        G1.add_edges_from([(1, 2, {'weight': 0.5}), (2, 3, {'weight': 0.8})])
+        G1.add_edges_from([(1, 2, {"weight": 0.5}), (2, 3, {"weight": 0.8})])
 
         A = [G1]
         nodes = [1, 2, 3]
@@ -63,25 +69,33 @@ class TestPreprocessing(unittest.TestCase):
     def test_build_sparse_B_from_A(self):
         # Test case for build_sparse_B_from_A
         G1 = nx.MultiDiGraph()
-        G1.add_edges_from([(0, 1, {'weight': 1}), (1, 2, {'weight': 3})])
+        G1.add_edges_from([(0, 1, {"weight": 1}), (1, 2, {"weight": 3})])
         G2 = nx.MultiDiGraph()
-        G2.add_edges_from([(0, 2, {'weight': 2}), (0, 2, {'weight': 2})])
+        G2.add_edges_from([(0, 2, {"weight": 2}), (0, 2, {"weight": 2})])
         A = [G1, G2]
 
         # Create expected sparse tensors using provided indices and values
         expected_data_indices = (
-            (np.array([0, 0, 1]), np.array([0, 1, 0]), np.array([1, 2, 1])))
+            np.array([0, 0, 1]),
+            np.array([0, 1, 0]),
+            np.array([1, 2, 1]),
+        )
         expected_data_values = np.array([1.0, 2.0, 3.0])
         expected_data_shape = (2, 3, 3)
-        expected_data = skt.sptensor(expected_data_indices, expected_data_values,
-                                     shape=expected_data_shape)
+        expected_data = skt.sptensor(
+            expected_data_indices, expected_data_values, shape=expected_data_shape
+        )
 
         expected_data_T_indices = (
-            (np.array([0, 0, 1]), np.array([1, 2, 1]), np.array([0, 1, 0])))
+            np.array([0, 0, 1]),
+            np.array([1, 2, 1]),
+            np.array([0, 1, 0]),
+        )
         expected_data_T_values = np.array([1.0, 2.0, 3.0])
         expected_data_T_shape = (2, 3, 3)
-        expected_data_T = skt.sptensor(expected_data_T_indices, expected_data_T_values,
-                                       shape=expected_data_T_shape)
+        expected_data_T = skt.sptensor(
+            expected_data_T_indices, expected_data_T_values, shape=expected_data_T_shape
+        )
 
         expected_v_T = np.array([0.0, 0.0, 0.0])
         expected_rw = [0.0, 0.0]

@@ -1,6 +1,7 @@
 """
 Functions for handling the data.
 """
+
 from importlib.resources import files
 import logging
 from pathlib import Path
@@ -16,15 +17,16 @@ from .preprocessing import build_B_from_A, build_sparse_B_from_A
 from .stats import print_graph_stat, print_graph_stat_MTCOV
 
 
-def import_data(dataset: str,
-                ego: str = 'source',
-                alter: str = 'target',
-                force_dense: bool = True,
-                undirected=False,
-                noselfloop=True,
-                binary=True,
-                header: Optional[int] = None) -> Tuple[
-        List, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
+def import_data(
+    dataset: str,
+    ego: str = "source",
+    alter: str = "target",
+    force_dense: bool = True,
+    undirected=False,
+    noselfloop=True,
+    binary=True,
+    header: Optional[int] = None,
+) -> Tuple[List, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
     """
     Import data, i.e. the adjacency matrix, from a given folder.
 
@@ -56,18 +58,20 @@ def import_data(dataset: str,
     """
 
     # read adjacency file
-    df_adj = pd.read_csv(dataset, sep='\\s+', header=header)
+    df_adj = pd.read_csv(dataset, sep="\\s+", header=header)
     logging.debug(
-        'Read adjacency file from %s. The shape of the data is %s.',
+        "Read adjacency file from %s. The shape of the data is %s.",
         dataset,
-        df_adj.shape)
+        df_adj.shape,
+    )
     A = read_graph(
         df_adj=df_adj,
         ego=ego,
         alter=alter,
         undirected=undirected,
         noselfloop=noselfloop,
-        binary=binary)
+        binary=binary,
+    )
     nodes = list(A[0].nodes())
 
     # Save the network in a tensor
@@ -88,16 +92,17 @@ def import_data(dataset: str,
 
 
 def import_data_mtcov(
-        in_folder: str,
-        adj_name: str = 'adj.csv',
-        cov_name: str = 'X.csv',
-        ego: str = 'source',
-        egoX: str = 'Name',
-        alter: str = 'target',
-        attr_name: str = 'Metadata',
-        undirected: bool = False,
-        force_dense: bool = True,
-        noselfloop: bool = True) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
+    in_folder: str,
+    adj_name: str = "adj.csv",
+    cov_name: str = "X.csv",
+    ego: str = "source",
+    egoX: str = "Name",
+    alter: str = "target",
+    attr_name: str = "Metadata",
+    undirected: bool = False,
+    force_dense: bool = True,
+    noselfloop: bool = True,
+) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
     """
     Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
 
@@ -139,9 +144,9 @@ def import_data_mtcov(
     """
 
     def get_data_path(in_folder):
-        '''
+        """
         Try to treat in_folder as a package data path, if that fails, treat in_folder as a file path
-        '''
+        """
         try:
             # Try to treat in_folder as a package data path
             return files(in_folder)
@@ -155,10 +160,12 @@ def import_data_mtcov(
     # Read the adjacency file
     logging.debug("Reading adjacency file...")
     df_adj = pd.read_csv(in_folder_path / adj_name)  # read adjacency file
-    logging.debug('Adjacency shape: %s', df_adj.shape)
+    logging.debug("Adjacency shape: %s", df_adj.shape)
 
-    df_X = pd.read_csv(in_folder_path / cov_name)  # read the csv file with the covariates
-    logging.debug('Indiv shape: %s', df_X.shape)
+    df_X = pd.read_csv(
+        in_folder_path / cov_name
+    )  # read the csv file with the covariates
+    logging.debug("Indiv shape: %s", df_X.shape)
 
     # create the graph adding nodes and edges
     A = read_graph(
@@ -167,7 +174,8 @@ def import_data_mtcov(
         alter=alter,
         undirected=undirected,
         noselfloop=noselfloop,
-        binary=False)
+        binary=False,
+    )
 
     nodes = list(A[0].nodes)
 
@@ -191,12 +199,13 @@ def import_data_mtcov(
 
 
 def read_graph(
-        df_adj: pd.DataFrame,
-        ego: str = 'source',
-        alter: str = 'target',
-        undirected: bool = False,
-        noselfloop: bool = True,
-        binary: bool = True) -> List:
+    df_adj: pd.DataFrame,
+    ego: str = "source",
+    alter: str = "target",
+    undirected: bool = False,
+    noselfloop: bool = True,
+    binary: bool = True,
+) -> List:
     """
     Create the graph by adding edges and nodes.
 
@@ -236,7 +245,7 @@ def read_graph(
     else:
         A = [nx.MultiDiGraph() for _ in range(L)]
 
-    logging.debug('Creating the network ...')
+    logging.debug("Creating the network ...")
     # set the same set of nodes and order over all layers
     for l in range(L):
         A[l].add_nodes_from(nodes)
@@ -248,29 +257,32 @@ def read_graph(
             if row[l + 2] > 0:
                 if binary:
                     if A[l].has_edge(v1, v2):
-                        A[l][v1][v2][0]['weight'] = 1
+                        A[l][v1][v2][0]["weight"] = 1
                     else:
                         A[l].add_edge(v1, v2, weight=1)
                 else:
                     if A[l].has_edge(v1, v2):
-                        A[l][v1][v2][0]['weight'] += int(
-                            row[l + 2])  # the edge already exists, no parallel edge created
+                        A[l][v1][v2][0]["weight"] += int(
+                            row[l + 2]
+                        )  # the edge already exists, no parallel edge created
                     else:
                         A[l].add_edge(v1, v2, weight=int(row[l + 2]))
 
     # remove self-loops
     if noselfloop:
-        logging.debug('Removing self loops')
+        logging.debug("Removing self loops")
         for l in range(L):
             A[l].remove_edges_from(list(nx.selfloop_edges(A[l])))
 
     return A
 
 
-def read_design_matrix(df_X: pd.DataFrame,
-                       nodes: List,
-                       attribute: Union[str, None] = None,
-                       ego: str = 'Name'):
+def read_design_matrix(
+    df_X: pd.DataFrame,
+    nodes: List,
+    attribute: Union[str, None] = None,
+    ego: str = "Name",
+):
     """
     Create the design matrix with the one-hot encoding of the given attribute.
 
@@ -300,8 +312,8 @@ def read_design_matrix(df_X: pd.DataFrame,
     else:  # use one attribute as it is
         X_attr = pd.get_dummies(X[attribute])
 
-    logging.debug('Design matrix shape: %s', X_attr.shape)
-    logging.debug('Distribution of attribute %s:', attribute)
-    logging.debug('%s', np.sum(X_attr, axis=0))
+    logging.debug("Design matrix shape: %s", X_attr.shape)
+    logging.debug("Distribution of attribute %s:", attribute)
+    logging.debug("%s", np.sum(X_attr, axis=0))
 
     return X_attr

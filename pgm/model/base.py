@@ -16,6 +16,7 @@ class FitParams(TypedDict):
     """
     Type hint for the fit method parameters.
     """
+
     out_inference: bool
     out_folder: str
     end_file: str
@@ -32,15 +33,18 @@ class DataBase:
     """
     Base class for the model classes.
     """
+
     inf: float = 1e10  # initial value of the log-likelihood
     err_max: float = 1e-12  # minimum value for the parameters
     err: float = 0.1  # noise for the initialization
-    num_realizations: int = 3  # number of iterations with different random initialization
+    num_realizations: int = (
+        3  # number of iterations with different random initialization
+    )
     convergence_tol: float = 0.0001  # convergence_tol parameter for convergence
     decision: int = 10  # convergence parameter
     max_iter: int = 500  # maximum number of EM steps before aborting
     plot_loglik: bool = False  # flag to plot the log-likelihood
-    flag_conv: str = 'log'  # flag to choose the convergence criterion
+    flag_conv: str = "log"  # flag to choose the convergence criterion
 
 
 class ModelClass(DataBase):
@@ -48,19 +52,20 @@ class ModelClass(DataBase):
     Base class for the model classes that inherit from the DataBase class. It contains the
     methods to check the parameters of the fit method, initialize the parameters, and check for
     convergence.
-     """
+    """
 
     def __init__(
-            self,
-            inf: float = 1e10,
-            err_max: float = 1e-12,
-            err: float = 0.1,
-            num_realizations: int = 3,
-            convergence_tol: float = 0.0001,
-            decision: int = 10,
-            max_iter: int = 500,
-            plot_loglik: bool = False,
-            flag_conv: str = 'log'):
+        self,
+        inf: float = 1e10,
+        err_max: float = 1e-12,
+        err: float = 0.1,
+        num_realizations: int = 3,
+        convergence_tol: float = 0.0001,
+        decision: int = 10,
+        max_iter: int = 500,
+        plot_loglik: bool = False,
+        flag_conv: str = "log",
+    ):
         super().__init__(
             inf,
             err_max,
@@ -70,18 +75,20 @@ class ModelClass(DataBase):
             decision,
             max_iter,
             plot_loglik,
-            flag_conv)
+            flag_conv,
+        )
 
         self.attributes_to_save_names = [
-            'u_f',
-            'v_f',
-            'w_f',
-            'eta_f',
-            'final_it',
-            'maxL',
-            'maxPSL',
-            'beta_f',
-            'nodes']
+            "u_f",
+            "v_f",
+            "w_f",
+            "eta_f",
+            "final_it",
+            "maxL",
+            "maxPSL",
+            "beta_f",
+            "nodes",
+        ]
 
         # Define attributes
         self.use_unit_uniform = False
@@ -91,20 +98,21 @@ class ModelClass(DataBase):
         self.rng = np.random.RandomState()
         self.beta_hat: np.ndarray = np.array([])
 
-    def _check_fit_params(self,
-                          initialization: int,
-                          undirected: bool,
-                          assortative: bool,
-                          data: Union[skt.dtensor, skt.sptensor],
-                          K: int,
-                          available_extra_params: List[str],
-                          data_X: Union[skt.dtensor, skt.sptensor, np.ndarray, None],
-                          eta0: Union[float, None],
-                          beta0: Union[float, None],
-                          gamma: Union[float, None],
-                          message: str = "Invalid initialization parameter.",
-                          **extra_params: Unpack[FitParams]
-                          ) -> None:
+    def _check_fit_params(
+        self,
+        initialization: int,
+        undirected: bool,
+        assortative: bool,
+        data: Union[skt.dtensor, skt.sptensor],
+        K: int,
+        available_extra_params: List[str],
+        data_X: Union[skt.dtensor, skt.sptensor, np.ndarray, None],
+        eta0: Union[float, None],
+        beta0: Union[float, None],
+        gamma: Union[float, None],
+        message: str = "Invalid initialization parameter.",
+        **extra_params: Unpack[FitParams],
+    ) -> None:
         """
         Check the parameters of the fit method.
         """
@@ -113,8 +121,8 @@ class ModelClass(DataBase):
 
         self.initialization = initialization
 
-        if (eta0 is not None) and (eta0 <= 0.):
-            message = 'If not None, the eta0 parameter has to be greater than 0.!'
+        if (eta0 is not None) and (eta0 <= 0.0):
+            message = "If not None, the eta0 parameter has to be greater than 0.!"
             log_and_raise_error(ValueError, message)
 
         if gamma is None:
@@ -127,11 +135,13 @@ class ModelClass(DataBase):
         self.K = K
         if data_X is not None:
             self.gamma = gamma
-            self.Z = data_X.shape[1]  # number of categories of the categorical attribute
+            self.Z = data_X.shape[
+                1
+            ]  # number of categories of the categorical attribute
 
         for extra_param in extra_params:
             if extra_param not in available_extra_params:
-                msg = f'Ignoring extra parameter {extra_param}.'
+                msg = f"Ignoring extra parameter {extra_param}."
                 logging.warning(msg)
 
         if "fix_eta" in extra_params:
@@ -139,7 +149,9 @@ class ModelClass(DataBase):
 
             if self.fix_eta:
                 if self.eta0 is None:
-                    log_and_raise_error(ValueError, 'If fix_eta=True, provide a value for eta0.')
+                    log_and_raise_error(
+                        ValueError, "If fix_eta=True, provide a value for eta0."
+                    )
         else:
             self.fix_eta = False
 
@@ -148,7 +160,9 @@ class ModelClass(DataBase):
 
             if self.fix_beta:
                 if beta0 is None:
-                    log_and_raise_error(ValueError, 'If fix_beta=True, provide a value for beta0.')
+                    log_and_raise_error(
+                        ValueError, "If fix_beta=True, provide a value for beta0."
+                    )
                 else:
                     self.beta0 = beta0
 
@@ -156,7 +170,9 @@ class ModelClass(DataBase):
             self.fix_w = extra_params["fix_w"]
             if self.fix_w:
                 if self.initialization not in {1, 3}:
-                    message = 'If fix_w=True, the initialization has to be either 1 or 3.'
+                    message = (
+                        "If fix_w=True, the initialization has to be either 1 or 3."
+                    )
                     log_and_raise_error(ValueError, message)
         else:
             self.fix_w = False
@@ -165,7 +181,7 @@ class ModelClass(DataBase):
             self.fix_communities = extra_params["fix_communities"]
             if self.fix_communities:
                 if self.initialization not in {2, 3}:
-                    message = 'If fix_communities=True, the initialization has to be either 2 or 3.'
+                    message = "If fix_communities=True, the initialization has to be either 2 or 3."
                     log_and_raise_error(ValueError, message)
         else:
             self.fix_communities = False
@@ -174,8 +190,10 @@ class ModelClass(DataBase):
             self.files = extra_params["files"]
 
         if self.undirected and not (self.fix_eta and self.eta0 == 1):
-            message = ('If undirected=True, the parameter eta has to be fixed equal to 1 '
-                       '(s.t. log(eta)=0).')
+            message = (
+                "If undirected=True, the parameter eta has to be fixed equal to 1 "
+                "(s.t. log(eta)=0)."
+            )
             log_and_raise_error(ValueError, message)
         if "out_inference" in extra_params:
             self.out_inference = extra_params["out_inference"]
@@ -184,16 +202,18 @@ class ModelClass(DataBase):
         if "out_folder" in extra_params:
             self.out_folder = extra_params["out_folder"]
         else:
-            self.out_folder = Path('outputs')
+            self.out_folder = Path("outputs")
 
         if "end_file" in extra_params:
             self.end_file = extra_params["end_file"]
         else:
-            self.end_file = ''
+            self.end_file = ""
 
         if self.undirected:
             if not (self.fix_eta and self.eta0 == 1):
-                message = ('If undirected=True, the parameter eta has to be fixed equal to 1.')
+                message = (
+                    "If undirected=True, the parameter eta has to be fixed equal to 1."
+                )
                 log_and_raise_error(ValueError, message)
 
     def _initialize(self) -> None:
@@ -221,7 +241,7 @@ class ModelClass(DataBase):
             self.eta = self.eta0
         else:
             # If eta0 is None, log a message and call the method to randomize eta
-            logging.debug('eta is initialized randomly.')
+            logging.debug("eta is initialized randomly.")
             self._randomize_eta(use_unit_uniform=self.use_unit_uniform)
 
     def _initialize_beta(self) -> None:
@@ -233,14 +253,14 @@ class ModelClass(DataBase):
 
     def _initialize_beta_from_file(self) -> None:
         # Assign the beta matrix from the input file to the beta attribute
-        self.beta = self.theta['beta']
+        self.beta = self.theta["beta"]
 
         # Add random noise to the beta matrix
         self.beta = self._add_random_noise(self.beta)
 
     def _random_initialization(self) -> None:
         # Log a message indicating that u, v and w are being initialized randomly
-        logging.debug('%s', 'u, v and w are initialized randomly.')
+        logging.debug("%s", "u, v and w are initialized randomly.")
 
         # Randomize w and u, v
         self._randomize_w()
@@ -248,20 +268,22 @@ class ModelClass(DataBase):
 
     def _file_initialization(self) -> None:
         # Log a message indicating that u, v and w are being initialized using the input file
-        logging.debug('u, v and w are initialized using the input file: %s', self.files)
+        logging.debug("u, v and w are initialized using the input file: %s", self.files)
         # Initialize u and v
         self._initialize_u()
         self._initialize_v()
         self._initialize_w()
 
-    def _initialize_membership_matrix(self, matrix_name: str, matrix_value: np.ndarray) -> None:
+    def _initialize_membership_matrix(
+        self, matrix_name: str, matrix_value: np.ndarray
+    ) -> None:
 
         # Assign the input matrix value to the local variable 'matrix'
         matrix = matrix_value
 
         # Assert that the nodes in the current object and the nodes in the theta dictionary are the same
         # If they are not the same, raise an AssertionError with the message 'Nodes do not match.'
-        assert np.array_equal(self.nodes, self.theta['nodes']), 'Nodes do not match.'
+        assert np.array_equal(self.nodes, self.theta["nodes"]), "Nodes do not match."
 
         # Find the maximum value in the 'matrix'
         max_entry = np.max(matrix)
@@ -278,7 +300,7 @@ class ModelClass(DataBase):
         """
         Initialize out-going membership matrix u from file.
         """
-        self._initialize_membership_matrix('u', self.theta['u'])
+        self._initialize_membership_matrix("u", self.theta["u"])
 
     def _initialize_v(self) -> None:
         """
@@ -287,7 +309,7 @@ class ModelClass(DataBase):
         if self.undirected:
             self.v = self.u
         else:
-            self._initialize_membership_matrix('v', self.theta['v'])
+            self._initialize_membership_matrix("v", self.theta["v"])
 
     def _add_random_noise(self, matrix: np.ndarray) -> np.ndarray:
         """
@@ -316,17 +338,19 @@ class ModelClass(DataBase):
         rng : RandomState
               Container for the Mersenne Twister pseudo-random number generator.
         """
-        self.w = self.theta['w']
+        self.w = self.theta["w"]
         if self.assortative:
             assert self.w.shape == (
-                self.L, self.K), "The shape of the affinity tensor w is incorrect."
+                self.L,
+                self.K,
+            ), "The shape of the affinity tensor w is incorrect."
 
         self.w = self._add_random_noise(self.w)
 
     def _initialize_w_dyn(self):
 
         # Initialize the affinity tensor w from the input file
-        w0 = self.theta['w']
+        w0 = self.theta["w"]
         # Initialize the affinity tensor w with zeros
         self.w = np.zeros((self.L, self.K, self.K), dtype=float)
         if self.assortative:
@@ -342,7 +366,7 @@ class ModelClass(DataBase):
 
     def _initialize_w_stat(self):
         # Initialize the affinity tensor w from the input file
-        w0 = self.theta['w']
+        w0 = self.theta["w"]
         # Initialize the affinity tensor w with zeros
         if self.assortative:
             self.w = np.zeros((1, self.K), dtype=float)
@@ -442,17 +466,17 @@ class ModelClass(DataBase):
         target_suffix : str
                         The suffix of the target variable names.
         """
-        for var in ['u', 'v', 'w']:
+        for var in ["u", "v", "w"]:
             source_var = getattr(self, f"{var}{source_suffix}")
             setattr(self, f"{var}{target_suffix}", np.copy(source_var))
 
-        if 'MTCOV' in type(self).__name__:
+        if "MTCOV" in type(self).__name__:
             source_var = getattr(self, f"beta{source_suffix}")
             setattr(self, f"beta{target_suffix}", np.copy(source_var))
         else:
             source_var = getattr(self, f"eta{source_suffix}")
             setattr(self, f"eta{target_suffix}", float(source_var))
-            if 'DynCRep' in type(self).__name__:
+            if "DynCRep" in type(self).__name__:
                 source_var = getattr(self, f"beta{source_suffix}")
                 setattr(self, f"beta{target_suffix}", np.copy(source_var))
 
@@ -460,14 +484,14 @@ class ModelClass(DataBase):
         """
         Update values of the parameters in the previous iteration.
         """
-        self._copy_variables(source_suffix='', target_suffix='_old')
+        self._copy_variables(source_suffix="", target_suffix="_old")
 
     def _update_optimal_parameters(self) -> None:
         """
         Update values of the parameters after convergence.
         """
-        self._copy_variables(source_suffix='', target_suffix='_f')
-        if 'DynCRep' in type(self).__name__ and not self.fix_beta:
+        self._copy_variables(source_suffix="", target_suffix="_f")
+        if "DynCRep" in type(self).__name__ and not self.fix_beta:
             self.beta_f = np.copy(self.beta_hat[-1])
 
     def _lambda_nz(self, subs_nz: tuple, temporal: bool = True) -> np.ndarray:
@@ -486,51 +510,61 @@ class ModelClass(DataBase):
         """
         if temporal:
             if not self.assortative:
-                nz_recon_IQ = np.einsum('Ik,Ikq->Iq', self.u[subs_nz[1], :],
-                                        self.w[subs_nz[0], :, :])
+                nz_recon_IQ = np.einsum(
+                    "Ik,Ikq->Iq", self.u[subs_nz[1], :], self.w[subs_nz[0], :, :]
+                )
             else:
-                nz_recon_IQ = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :],
-                                        self.w[subs_nz[0], :])
+                nz_recon_IQ = np.einsum(
+                    "Ik,Ik->Ik", self.u[subs_nz[1], :], self.w[subs_nz[0], :]
+                )
 
         else:
             if not self.assortative:
-                nz_recon_IQ = np.einsum('Ik,kq->Iq', self.u[subs_nz[1], :], self.w[0, :, :])
+                nz_recon_IQ = np.einsum(
+                    "Ik,kq->Iq", self.u[subs_nz[1], :], self.w[0, :, :]
+                )
             else:
-                nz_recon_IQ = np.einsum('Ik,k->Ik', self.u[subs_nz[1], :], self.w[0, :])
+                nz_recon_IQ = np.einsum("Ik,k->Ik", self.u[subs_nz[1], :], self.w[0, :])
 
-        nz_recon_I = np.einsum('Iq,Iq->I', nz_recon_IQ,
-                               self.v[subs_nz[2], :])
+        nz_recon_I = np.einsum("Iq,Iq->I", nz_recon_IQ, self.v[subs_nz[2], :])
 
         return nz_recon_I
 
-    def _PSLikelihood(self, data: Union[dtensor, sptensor],
-                      data_T: skt.sptensor,
-                      mask: Optional[np.ndarray] = None):
+    def _PSLikelihood(
+        self,
+        data: Union[dtensor, sptensor],
+        data_T: skt.sptensor,
+        mask: Optional[np.ndarray] = None,
+    ):
         """
         Compute the pseudo-log-likelihood.
         """
 
-    def _Likelihood(self,
-                    data: Union[dtensor, sptensor],
-                    data_T: Optional[Union[dtensor, sptensor]],
-                    data_T_vals: Optional[np.ndarray],
-                    subs_nz: Optional[Tuple[np.ndarray]],
-                    T: Optional[int],
-                    mask: Optional[np.ndarray] = None,
-                    EPS: Optional[float] = 1e-12):
+    def _Likelihood(
+        self,
+        data: Union[dtensor, sptensor],
+        data_T: Optional[Union[dtensor, sptensor]],
+        data_T_vals: Optional[np.ndarray],
+        subs_nz: Optional[Tuple[np.ndarray]],
+        T: Optional[int],
+        mask: Optional[np.ndarray] = None,
+        EPS: Optional[float] = 1e-12,
+    ):
         """
         Compute the log-likelihood.
         """
 
-    def _compute_loglik(self,
-                        data: Union[skt.dtensor, skt.sptensor],
-                        use_pseudo_likelihood: bool,
-                        data_T: Union[skt.dtensor, skt.sptensor],
-                        mask: Optional[np.ndarray],
-                        data_T_vals: Optional[np.ndarray],
-                        subs_nz: Tuple[np.ndarray],
-                        T: int,
-                        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]]) -> float:
+    def _compute_loglik(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        use_pseudo_likelihood: bool,
+        data_T: Union[skt.dtensor, skt.sptensor],
+        mask: Optional[np.ndarray],
+        data_T_vals: Optional[np.ndarray],
+        subs_nz: Tuple[np.ndarray],
+        T: int,
+        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]],
+    ) -> float:
         """
         Compute the log-likelihood of the data.
 
@@ -562,24 +596,27 @@ class ModelClass(DataBase):
             return self._PSLikelihood(data, data_T=data_T, mask=mask)
         else:
             if data_T_vals is not None and subs_nz is not None and T is not None:
-                return self._Likelihood(data, data_T, data_T_vals, subs_nz, T, mask=mask)
+                return self._Likelihood(
+                    data, data_T, data_T_vals, subs_nz, T, mask=mask
+                )
             else:
                 return self._Likelihood(data)
 
-    def _check_for_convergence(self,
-                               data: Union[skt.dtensor, skt.sptensor],
-                               it: int,
-                               loglik: float,
-                               coincide: int,
-                               convergence: bool,
-                               use_pseudo_likelihood: bool = False,
-                               data_T_vals: Optional[np.ndarray] = None,
-                               subs_nz: Optional[Tuple[np.ndarray]] = None,
-                               T: Optional[int] = None,
-                               data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
-                               mask: Optional[np.ndarray] = None,
-                               **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]]) -> \
-            Tuple[int, float, int, bool]:
+    def _check_for_convergence(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        it: int,
+        loglik: float,
+        coincide: int,
+        convergence: bool,
+        use_pseudo_likelihood: bool = False,
+        data_T_vals: Optional[np.ndarray] = None,
+        subs_nz: Optional[Tuple[np.ndarray]] = None,
+        T: Optional[int] = None,
+        data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
+        mask: Optional[np.ndarray] = None,
+        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]],
+    ) -> Tuple[int, float, int, bool]:
         """
         Check for convergence of the model.
 
@@ -632,7 +669,7 @@ class ModelClass(DataBase):
                 data_T_vals,
                 subs_nz,
                 T,
-                **kwargs
+                **kwargs,
             )
             if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
@@ -645,16 +682,16 @@ class ModelClass(DataBase):
 
         return it, loglik, coincide, convergence
 
-    def _check_for_convergence_delta(self,
-                                     it: int,
-                                     coincide: int,
-                                     du: float,
-                                     dv: float,
-                                     dw: float,
-                                     de: float,
-                                     convergence: bool) -> Tuple[int,
-                                                                 int,
-                                                                 bool]:
+    def _check_for_convergence_delta(
+        self,
+        it: int,
+        coincide: int,
+        du: float,
+        dv: float,
+        dw: float,
+        de: float,
+        convergence: bool,
+    ) -> Tuple[int, int, bool]:
         """
         Check for convergence by using the maximum distances between the old and the new
         parameters values.
@@ -686,10 +723,12 @@ class ModelClass(DataBase):
                       Flag for convergence.
         """
 
-        if (du < self.convergence_tol
-                and dv < self.convergence_tol
-                and dw < self.convergence_tol
-                and de < self.convergence_tol):
+        if (
+            du < self.convergence_tol
+            and dv < self.convergence_tol
+            and dw < self.convergence_tol
+            and de < self.convergence_tol
+        ):
             coincide += 1
         else:
             coincide = 0
@@ -715,7 +754,9 @@ class ModelClass(DataBase):
         output_path.mkdir(parents=True, exist_ok=True)
 
         # Define the output file
-        outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
+        outfile = (Path(self.out_folder) / str("theta" + self.end_file)).with_suffix(
+            ".npz"
+        )
 
         # Create a dictionary to hold the attributes to be saved
         attributes_to_save = {}
@@ -725,12 +766,12 @@ class ModelClass(DataBase):
             # Check if the attribute is a numpy array and its name is in the list
             if attr_name in self.attributes_to_save_names:
                 # Remove the '_f' suffix from the attribute name if it exists
-                attr_name_clean = attr_name.removesuffix('_f')
+                attr_name_clean = attr_name.removesuffix("_f")
                 # Add the attribute to the dictionary with the cleaned name
                 attributes_to_save[attr_name_clean] = attr_value
 
         # Save the attributes
         np.savez_compressed(outfile, **attributes_to_save)
 
-        logging.info('Inferred parameters saved in: %s', outfile.resolve())
+        logging.info("Inferred parameters saved in: %s", outfile.resolve())
         logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')

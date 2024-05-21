@@ -28,18 +28,19 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
 
-    def __init__(self,  # pylint: disable=too-many-arguments
-                 inf: float = 1e10,  # initial value of the log-likelihood
-                 err_max: float = 1e-12,  # minimum value for the parameters
-                 err: float = 0.1,  # noise for the initialization
-                 num_realizations: int = 3,
-                 # number of iterations with different random initialization
-                 convergence_tol: float = 0.0001,  # convergence_tol parameter for convergence
-                 decision: int = 10,  # convergence parameter
-                 max_iter: int = 500,  # maximum number of EM steps before aborting
-                 plot_loglik: bool = False,  # flag to plot the log-likelihood
-                 flag_conv: str = 'log'  # flag to choose the convergence criterion
-                 ):
+    def __init__(
+        self,  # pylint: disable=too-many-arguments
+        inf: float = 1e10,  # initial value of the log-likelihood
+        err_max: float = 1e-12,  # minimum value for the parameters
+        err: float = 0.1,  # noise for the initialization
+        num_realizations: int = 3,
+        # number of iterations with different random initialization
+        convergence_tol: float = 0.0001,  # convergence_tol parameter for convergence
+        decision: int = 10,  # convergence parameter
+        max_iter: int = 500,  # maximum number of EM steps before aborting
+        plot_loglik: bool = False,  # flag to plot the log-likelihood
+        flag_conv: str = "log",  # flag to choose the convergence criterion
+    ):
         super().__init__(
             inf,
             err_max,
@@ -49,33 +50,37 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             decision,
             max_iter,
             plot_loglik,
-            flag_conv)
+            flag_conv,
+        )
 
-    def check_fit_params(self,
-                         initialization: int,
-                         eta0: Union[float, None],
-                         undirected: bool,
-                         assortative: bool,
-                         data: Union[skt.dtensor, skt.sptensor],
-                         K: int,
-                         **extra_params: Unpack[FitParams]
-                         ) -> None:
+    def check_fit_params(
+        self,
+        initialization: int,
+        eta0: Union[float, None],
+        undirected: bool,
+        assortative: bool,
+        data: Union[skt.dtensor, skt.sptensor],
+        K: int,
+        **extra_params: Unpack[FitParams],
+    ) -> None:
 
-        message = ('The initialization parameter can be either 0, 1, 2 or 3. It is used as an '
-                   'indicator to initialize the membership matrices u and v and the affinity '
-                   'matrix w. If it is 0, they will be generated randomly; 1 means only '
-                   'the affinity matrix w will be uploaded from file; 2 implies the '
-                   'membership matrices u and v will be uploaded from file and 3 all u, '
-                   'v and w will be initialized through an input file.')
+        message = (
+            "The initialization parameter can be either 0, 1, 2 or 3. It is used as an "
+            "indicator to initialize the membership matrices u and v and the affinity "
+            "matrix w. If it is 0, they will be generated randomly; 1 means only "
+            "the affinity matrix w will be uploaded from file; 2 implies the "
+            "membership matrices u and v will be uploaded from file and 3 all u, "
+            "v and w will be initialized through an input file."
+        )
         available_extra_params = [
-            'fix_eta',
-            'fix_w',
-            'fix_communities',
-            'files',
-            'out_inference',
-            'out_folder',
-            'end_file',
-            'use_approximation'
+            "fix_eta",
+            "fix_w",
+            "fix_communities",
+            "files",
+            "out_inference",
+            "out_folder",
+            "end_file",
+            "use_approximation",
         ]
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
@@ -90,7 +95,8 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             eta0=eta0,
             beta0=None,
             message=message,
-            **extra_params)
+            **extra_params,
+        )
 
         # Parameters for the initialization of the model
         self.normalize_rows = False
@@ -98,7 +104,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         if self.initialization == 1:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
-            dfW = self.theta['w']
+            dfW = self.theta["w"]
             self.L = dfW.shape[0]
             self.K = dfW.shape[1]
 
@@ -110,26 +116,26 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         if self.fix_eta:
             self.eta = self.eta_old = self.eta_f = self.eta0
 
-    def fit(self,
-            data: Union[skt.dtensor, skt.sptensor],
-            data_T: skt.sptensor,
-            data_T_vals: np.ndarray,
-            nodes: List[Any],
-            rseed: int = 0,
-            K: int = 3,
-            initialization: int = 0,
-            eta0: Union[float, None] = None,
-            undirected: bool = False,
-            assortative: bool = True,
-            **extra_params: Unpack[FitParams]
-            ) -> tuple[np.ndarray[Any,
-                                  np.dtype[np.float64]],
-                       np.ndarray[Any,
-                                  np.dtype[np.float64]],
-                       np.ndarray[Any,
-                                  np.dtype[np.float64]],
-                       float,
-                       float]:
+    def fit(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T: skt.sptensor,
+        data_T_vals: np.ndarray,
+        nodes: List[Any],
+        rseed: int = 0,
+        K: int = 3,
+        initialization: int = 0,
+        eta0: Union[float, None] = None,
+        undirected: bool = False,
+        assortative: bool = True,
+        **extra_params: Unpack[FitParams],
+    ) -> tuple[
+        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray[Any, np.dtype[np.float64]],
+        float,
+        float,
+    ]:
         """
         Model directed networks by using a probabilistic generative model based on a Bivariate
         Bernoulli distribution that assumes community parameters and a pair interaction
@@ -179,21 +185,23 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         maxL : float
                Maximum log-likelihood.
         """
-        self.check_fit_params(data=data,
-                              K=K,
-                              initialization=initialization,
-                              eta0=eta0,
-                              undirected=undirected,
-                              assortative=assortative,
-                              **extra_params)
-        logging.debug('Fixing random seed to: %s', rseed)
+        self.check_fit_params(
+            data=data,
+            K=K,
+            initialization=initialization,
+            eta0=eta0,
+            undirected=undirected,
+            assortative=assortative,
+            **extra_params,
+        )
+        logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
         self.nodes = nodes
 
         if data_T is None:
-            data_T = np.einsum('aij->aji', data)
+            data_T = np.einsum("aij->aji", data)
             data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
             # pre-processing of the data to handle the sparsity
             data = preprocess(data)
@@ -212,7 +220,9 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
-            logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
+            logging.debug(
+                "Random number generator seed: %s", self.rng.get_state()[1][0]
+            )
             super()._initialize()
             super()._update_old_variables()
             self._update_cache(data, subs_nz)
@@ -223,7 +233,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             convergence = False
             loglik = self.inf
 
-            logging.debug('Updating realization %s', r)
+            logging.debug("Updating realization %s", r)
             loglik_values = []
             time_start = time.time()
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
@@ -238,42 +248,46 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                 # pseudo log-likelihood values (self._check_for_convergence(data, it, loglik, coincide, convergence,
                 # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
                 # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
-                if self.flag_conv == 'log':
+                if self.flag_conv == "log":
                     it, loglik, coincide, convergence = super()._check_for_convergence(
                         data,
                         it,
                         loglik,
                         coincide,
                         convergence,
-                        use_pseudo_likelihood=False)
+                        use_pseudo_likelihood=False,
+                    )
                     loglik_values.append(loglik)
                     if not it % 100:
                         logging.debug(
-                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  '
-                            'seconds', r, loglik, it, np.round(time.time() - time_start, 2)
+                            "Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  "
+                            "seconds",
+                            r,
+                            loglik,
+                            it,
+                            np.round(time.time() - time_start, 2),
                         )
-                elif self.flag_conv == 'deltas':
+                elif self.flag_conv == "deltas":
                     it, coincide, convergence = super()._check_for_convergence_delta(
-                        it,
-                        coincide,
-                        delta_u,
-                        delta_v,
-                        delta_w,
-                        delta_eta,
-                        convergence)
+                        it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence
+                    )
 
                     if not it % 100:
                         logging.debug(
-                            'Nreal = %s - iterations = %s - time = %s seconds',
-                            r, it, np.round(time.time() - time_start, 2)
+                            "Nreal = %s - iterations = %s - time = %s seconds",
+                            r,
+                            it,
+                            np.round(time.time() - time_start, 2),
                         )
                 else:
-                    log_and_raise_error(ValueError, 'flag_conv can be either log or deltas!')
+                    log_and_raise_error(
+                        ValueError, "flag_conv can be either log or deltas!"
+                    )
 
             # After the while loop, it checks if the current pseudo log-likelihood is the maximum
             # so far. If it is, it updates the optimal parameters (
             # self._update_optimal_parameters()) and sets maxL to the current pseudo log-likelihood.
-            if self.flag_conv == 'deltas':
+            if self.flag_conv == "deltas":
                 loglik = self._Likelihood(data)
 
             if maxL < loglik:
@@ -283,37 +297,47 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                 conv = convergence
                 best_r = r
 
-                if self.flag_conv == 'log':
+                if self.flag_conv == "log":
                     best_loglik = list(loglik_values)
-            logging.debug('Nreal = %s - Log-likelihood = %s - iterations = %s - '
-                          'time = %s seconds', r, loglik, it,
-                          np.round(time.time() - time_start, 2))
+            logging.debug(
+                "Nreal = %s - Log-likelihood = %s - iterations = %s - "
+                "time = %s seconds",
+                r,
+                loglik,
+                it,
+                np.round(time.time() - time_start, 2),
+            )
 
             # end cycle over realizations
 
-        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL,
-                      self.final_it)
+        logging.debug(
+            "Best real = %s - maxL = %s - best iterations = %s",
+            best_r,
+            maxL,
+            self.final_it,
+        )
 
         self.maxL = maxL
 
         if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence is not reached
-            logging.warning('Solution failed to converge in %s EM steps!', self.max_iter)
-            logging.warning('Parameters won\'t be saved!')
+            logging.warning(
+                "Solution failed to converge in %s EM steps!", self.max_iter
+            )
+            logging.warning("Parameters won't be saved!")
 
         else:
             if self.out_inference:
                 super()._output_results()
 
-        if np.logical_and(self.plot_loglik, self.flag_conv == 'log'):
+        if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
             plot_L(best_loglik, int_ticks=True)
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
     def _update_cache(
-            self,
-            data: Union[skt.dtensor, skt.sptensor],
-            subs_nz: tuple) -> None:
+        self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple
+    ) -> None:
         """
         Update the cache used in the em_update.
 
@@ -327,7 +351,9 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         self.lambda_aij = lambda_full(self.u, self.v, self.w)  # full matrix lambda
 
-        self.lambda_nz = super()._lambda_nz(subs_nz)  # matrix lambda for non-zero entries
+        self.lambda_nz = super()._lambda_nz(
+            subs_nz
+        )  # matrix lambda for non-zero entries
         lambda_zeros = self.lambda_nz == 0
         self.lambda_nz[lambda_zeros] = 1  # still good because with np.log(1)=0
         if isinstance(data, skt.dtensor):
@@ -339,9 +365,8 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.den_updates = 1 + self.eta * self.lambda_aij  # to use in the updates
         if not self.use_approximation:
             self.lambdalambdaT = np.einsum(
-                'aij,aji->aij',
-                self.lambda_aij,
-                self.lambda_aij)  # to use in Z and eta
+                "aij,aji->aij", self.lambda_aij, self.lambda_aij
+            )  # to use in Z and eta
             self.Z = self._calculate_Z()
 
     def _calculate_Z(self) -> np.ndarray:
@@ -354,16 +379,20 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
             Normalization constant Z of the Bivariate Bernoulli distribution.
         """
 
-        Z = self.lambda_aij + transpose_tensor(self.lambda_aij) + self.eta * self.lambdalambdaT + 1
+        Z = (
+            self.lambda_aij
+            + transpose_tensor(self.lambda_aij)
+            + self.eta * self.lambdalambdaT
+            + 1
+        )
         for _, z in enumerate(Z):
             assert check_symmetric(z)
 
         return Z
 
     def _update_em(
-            self,
-            data: Union[skt.dtensor, skt.sptensor],
-            subs_nz: tuple) -> tuple:
+        self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple
+    ) -> tuple:
         """
         Update parameters via EM procedure.
 
@@ -393,7 +422,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                 d_u = self._update_U(subs_nz)
             self._update_cache(data, subs_nz)
         else:
-            d_u = 0.
+            d_u = 0.0
 
         if self.undirected:
             self.v = self.u
@@ -408,7 +437,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                     d_v = self._update_V(subs_nz)
                 self._update_cache(data, subs_nz)
             else:
-                d_v = 0.
+                d_v = 0.0
 
         if not self.fix_w:
             if not self.assortative:
@@ -423,20 +452,19 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                     d_w = self._update_W_assortative(subs_nz)
             self._update_cache(data, subs_nz)
         else:
-            d_w = 0.
+            d_w = 0.0
 
         if not self.fix_eta:
             self.lambdalambdaT = np.einsum(
-                'aij,aji->aij',
-                self.lambda_aij,
-                self.lambda_aij)  # to use in Z and eta
+                "aij,aji->aij", self.lambda_aij, self.lambda_aij
+            )  # to use in Z and eta
             if self.use_approximation:
                 d_eta = self._update_eta_approx()
             else:
                 d_eta = self._update_eta()
             self._update_cache(data, subs_nz)
         else:
-            d_eta = 0.
+            d_eta = 0.0
 
         return d_u, d_v, d_w, d_eta
 
@@ -458,17 +486,17 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.u *= self._update_membership(subs_nz, 1)
 
         if not self.assortative:
-            VW = np.einsum('jq,akq->ajk', self.v, self.w)
+            VW = np.einsum("jq,akq->ajk", self.v, self.w)
         else:
-            VW = np.einsum('jk,ak->ajk', self.v, self.w)
-        den = np.einsum('aji,ajk->ik', self.den_updates, VW)
+            VW = np.einsum("jk,ak->ajk", self.v, self.w)
+        den = np.einsum("aji,ajk->ik", self.den_updates, VW)
 
-        non_zeros = den > 0.
-        self.u[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.u[den == 0] = 0.0
         self.u[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.u < self.err_max  # values are too low
-        self.u[low_values_indices] = 0.  # and set to 0.
+        self.u[low_values_indices] = 0.0  # and set to 0.
 
         dist_u = np.amax(abs(self.u - self.u_old))
         self.u_old = np.copy(self.u)
@@ -493,18 +521,18 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.u *= self._update_membership(subs_nz, 1)
 
         if not self.assortative:
-            VW = np.einsum('jq,akq->ajk', self.v, self.w)
+            VW = np.einsum("jq,akq->ajk", self.v, self.w)
         else:
-            VW = np.einsum('jk,ak->ajk', self.v, self.w)
-        VWL = np.einsum('aji,ajk->aijk', self.den_updates, VW)
-        den = np.einsum('aijk,aij->ik', VWL, 1. / self.Z)
+            VW = np.einsum("jk,ak->ajk", self.v, self.w)
+        VWL = np.einsum("aji,ajk->aijk", self.den_updates, VW)
+        den = np.einsum("aijk,aij->ik", VWL, 1.0 / self.Z)
 
-        non_zeros = den > 0.
-        self.u[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.u[den == 0] = 0.0
         self.u[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.u < self.err_max  # values are too low
-        self.u[low_values_indices] = 0.  # and set to 0.
+        self.u[low_values_indices] = 0.0  # and set to 0.
 
         dist_u = np.amax(abs(self.u - self.u_old))
         self.u_old = np.copy(self.u)
@@ -533,17 +561,17 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.v *= self._update_membership(subs_nz, 2)
 
         if not self.assortative:
-            UW = np.einsum('jq,aqk->ajk', self.u, self.w)
+            UW = np.einsum("jq,aqk->ajk", self.u, self.w)
         else:
-            UW = np.einsum('jk,ak->ajk', self.u, self.w)
-        den = np.einsum('aij,ajk->ik', self.den_updates, UW)
+            UW = np.einsum("jk,ak->ajk", self.u, self.w)
+        den = np.einsum("aij,ajk->ik", self.den_updates, UW)
 
-        non_zeros = den > 0.
-        self.v[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.v[den == 0] = 0.0
         self.v[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.v < self.err_max  # values are too low
-        self.v[low_values_indices] = 0.  # and set to 0.
+        self.v[low_values_indices] = 0.0  # and set to 0.
 
         dist_v = np.amax(abs(self.v - self.v_old))
         self.v_old = np.copy(self.v)
@@ -572,18 +600,18 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.v *= self._update_membership(subs_nz, 2)
 
         if not self.assortative:
-            UW = np.einsum('jq,aqk->ajk', self.u, self.w)
+            UW = np.einsum("jq,aqk->ajk", self.u, self.w)
         else:
-            UW = np.einsum('jk,ak->ajk', self.u, self.w)
-        UWL = np.einsum('aij,ajk->aijk', self.den_updates, UW)
-        den = np.einsum('aijk,aij->ik', UWL, 1. / self.Z)
+            UW = np.einsum("jk,ak->ajk", self.u, self.w)
+        UWL = np.einsum("aij,ajk->aijk", self.den_updates, UW)
+        den = np.einsum("aijk,aij->ik", UWL, 1.0 / self.Z)
 
-        non_zeros = den > 0.
-        self.v[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.v[den == 0] = 0.0
         self.v[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.v < self.err_max  # values are too low
-        self.v[low_values_indices] = 0.  # and set to 0.
+        self.v[low_values_indices] = 0.0  # and set to 0.
 
         dist_v = np.amax(abs(self.v - self.v_old))
         self.v_old = np.copy(self.v)
@@ -607,24 +635,25 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Iq->Ikq', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
-                uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0],
-                                                   weights=uttkrp_I[:, k, q], minlength=self.L)
+                uttkrp_DKQ[:, k, q] += np.bincount(
+                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                )
 
         self.w = self.w_old * uttkrp_DKQ
 
-        UL = np.einsum('ik,aji->aijk', self.u, self.den_updates)
-        den = np.einsum('jq,aijk->akq', self.v, UL)
+        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
+        den = np.einsum("jq,aijk->akq", self.v, UL)
 
-        non_zeros = den > 0.
-        self.w[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.w[den == 0] = 0.0
         self.w[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
@@ -648,22 +677,24 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
         for k in range(self.K):
-            uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L)
+            uttkrp_DKQ[:, k] += np.bincount(
+                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+            )
 
         self.w = self.w_old * uttkrp_DKQ
 
-        UL = np.einsum('ik,aji->aijk', self.u, self.den_updates)
-        den = np.einsum('jk,aijk->ak', self.v, UL)
+        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
+        den = np.einsum("jk,aijk->ak", self.v, UL)
 
-        non_zeros = den > 0.
-        self.w[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.w[den == 0] = 0.0
         self.w[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
@@ -687,25 +718,26 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Iq->Ikq', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
-                uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0],
-                                                   weights=uttkrp_I[:, k, q], minlength=self.L)
+                uttkrp_DKQ[:, k, q] += np.bincount(
+                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                )
 
         self.w = self.w_old * uttkrp_DKQ
 
-        UL = np.einsum('ik,aji->aijk', self.u, self.den_updates)
-        num = np.einsum('jq,aijk->aijkq', self.v, UL)
-        den = np.einsum('aijkq,aij->akq', num, 1. / self.Z)
+        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
+        num = np.einsum("jq,aijk->aijkq", self.v, UL)
+        den = np.einsum("aijkq,aij->akq", num, 1.0 / self.Z)
 
-        non_zeros = den > 0.
-        self.w[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.w[den == 0] = 0.0
         self.w[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
@@ -729,23 +761,25 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
         for k in range(self.K):
-            uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L)
+            uttkrp_DKQ[:, k] += np.bincount(
+                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+            )
 
         self.w = self.w_old * uttkrp_DKQ
 
-        UL = np.einsum('ik,aji->aijk', self.u, self.den_updates)
-        num = np.einsum('jk,aijk->aijk', self.v, UL)
-        den = np.einsum('aijk,aij->ak', num, 1. / self.Z)
+        UL = np.einsum("ik,aji->aijk", self.u, self.den_updates)
+        num = np.einsum("jk,aijk->aijk", self.v, UL)
+        den = np.einsum("aijk,aij->ak", num, 1.0 / self.Z)
 
-        non_zeros = den > 0.
-        self.w[den == 0] = 0.
+        non_zeros = den > 0.0
+        self.w[den == 0] = 0.0
         self.w[non_zeros] /= den[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
@@ -763,13 +797,13 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         """
 
         den = self.lambdalambdaT.sum()
-        if not den > 0.:
-            log_and_raise_error(ValueError, 'eta update_approx has zero denominator!')
+        if not den > 0.0:
+            log_and_raise_error(ValueError, "eta update_approx has zero denominator!")
 
         self.eta = self.AAtSum / den
 
         if self.eta < self.err_max:  # value is too low
-            self.eta = 0.  # and set to 0.
+            self.eta = 0.0  # and set to 0.
 
         dist_eta = abs(self.eta - self.eta_old)
         self.eta_old = np.copy(self.eta)  # type: ignore
@@ -786,7 +820,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         """
         st = (self.lambdalambdaT / self.Z).sum()
         if st <= 0:
-            log_and_raise_error(ValueError, 'eta fix point has zero denominator!')
+            log_and_raise_error(ValueError, "eta fix point has zero denominator!")
         return self.AAtSum / st
 
     def _update_eta(self) -> float:
@@ -802,7 +836,7 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         self.eta = self.eta_fix_point()
 
         if self.eta < self.err_max:  # value is too low
-            self.eta = 0.  # and set to 0.
+            self.eta = 0.0  # and set to 0.
 
         dist_eta = abs(self.eta - self.eta_old)
         self.eta_old = np.copy(self.eta)  # type: ignore
@@ -832,16 +866,21 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         if not self.assortative:
             uttkrp_DK = sp_uttkrp(self.data_M_nz, subs_nz, m, self.u, self.v, self.w)
         else:
-            uttkrp_DK = sp_uttkrp_assortative(self.data_M_nz, subs_nz, m, self.u, self.v, self.w)
+            uttkrp_DK = sp_uttkrp_assortative(
+                self.data_M_nz, subs_nz, m, self.u, self.v, self.w
+            )
 
         return uttkrp_DK
 
-    def _Likelihood(self, data: Union[skt.dtensor, skt.sptensor],
-                    data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
-                    data_T_vals: np.ndarray = None,
-                    subs_nz: tuple[np.ndarray] = None,
-                    T: int = None,
-                    mask: np.ndarray = None) -> float:
+    def _Likelihood(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
+        data_T_vals: np.ndarray = None,
+        subs_nz: tuple[np.ndarray] = None,
+        T: int = None,
+        mask: np.ndarray = None,
+    ) -> float:
         """
         Compute the log-likelihood of the data.
 
@@ -857,9 +896,8 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         """
 
         self.lambdalambdaT = np.einsum(
-            'aij,aji->aij',
-            self.lambda_aij,
-            self.lambda_aij)  # to use in Z and eta
+            "aij,aji->aij", self.lambda_aij, self.lambda_aij
+        )  # to use in Z and eta
         self.Z = self._calculate_Z()
 
         ft = (data.vals * np.log(self.lambda_nz)).sum()
@@ -871,6 +909,6 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
         l = ft + st - tt
 
         if np.isnan(l):
-            log_and_raise_error(ValueError, 'log-likelihood is NaN!')
+            log_and_raise_error(ValueError, "log-likelihood is NaN!")
 
         return l

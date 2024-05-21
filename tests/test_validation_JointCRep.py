@@ -23,19 +23,19 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
         Set up the test case.
         """
         # Test case parameters
-        self.algorithm = 'JointCRep'
-        self.keys_in_thetaGT = ['u', 'v', 'w', 'eta', 'final_it', 'maxL', 'nodes']
-        self.adj = 'synthetic_data.dat'
-        self.ego = 'source'
-        self.alter = 'target'
+        self.algorithm = "JointCRep"
+        self.keys_in_thetaGT = ["u", "v", "w", "eta", "final_it", "maxL", "nodes"]
+        self.adj = "synthetic_data.dat"
+        self.ego = "source"
+        self.alter = "target"
         self.K = 2
         self.undirected = False
-        self.flag_conv = 'log'
+        self.flag_conv = "log"
         self.force_dense = False
 
         # Import data: removing self-loops and making binary
 
-        with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):
+        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
             self.A, self.B, self.B_T, self.data_T_vals = import_data(
                 network.name,
                 ego=self.ego,
@@ -44,24 +44,29 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
                 force_dense=self.force_dense,
                 noselfloop=True,
                 binary=True,
-                header=0
+                header=0,
             )
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
 
-        with (files('pgm.data.model').joinpath('setting_' + self.algorithm + '.yaml').open('rb')
-              as fp):
+        with (
+            files("pgm.data.model")
+            .joinpath("setting_" + self.algorithm + ".yaml")
+            .open("rb") as fp
+        ):
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
-        conf['out_folder'] = self.folder
+        conf["out_folder"] = self.folder
 
-        conf['end_file'] = '_OUT_' + self.algorithm  # Adding a suffix to the output files
+        conf["end_file"] = (
+            "_OUT_" + self.algorithm
+        )  # Adding a suffix to the output files
 
         self.conf = conf
 
-        self.conf['K'] = self.K
+        self.conf["K"] = self.K
 
         self.L = len(self.A)
 
@@ -83,27 +88,3 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
             # If force_dense is False, assert that the sum of all values in the sparse
             # matrix B is greater than 0
             self.assertTrue(self.B.vals.sum() > 0)
-
-    # test case function to check the JointCRep.get_name function
-    # def test_running_algorithm(self):
-    #
-    #     _ = self.model.fit(data=self.B,
-    #                        data_T=self.B_T,
-    #                        data_T_vals=self.data_T_vals,
-    #                        nodes=self.nodes,
-    #                        **self.conf)
-    #
-    #     # Load the model results
-    #     theta = self._load_model_results()
-    #
-    #     # Load the ground truth results
-    #     thetaGT = self._load_ground_truth_results()
-    #
-    #     # Assert the model information
-    #     self._assert_model_information(theta)
-    #
-    #     # Assert the dictionary keys
-    #     self._assert_dictionary_keys(theta)
-    #
-    #     # Asserting GT information
-    #     self._assert_ground_truth_information(theta, thetaGT)

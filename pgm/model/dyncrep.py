@@ -2,6 +2,7 @@
 Class definition of CRep, the algorithm to perform inference in networks with reciprocity.
 The latent variables are related to community memberships and reciprocity value.
 """
+
 import logging
 from pathlib import Path
 import time
@@ -28,17 +29,18 @@ class DynCRep(ModelClass):
     with reciprocity.
     """
 
-    def __init__(self,
-                 inf=10000000000.0,
-                 err_max=0.000000000001,
-                 err=0.01,
-                 num_realizations=1,
-                 convergence_tol=0.0001,
-                 decision=10,
-                 max_iter=1000,
-                 plot_loglik=False,
-                 flag_conv='log'
-                 ):
+    def __init__(
+        self,
+        inf=10000000000.0,
+        err_max=0.000000000001,
+        err=0.01,
+        num_realizations=1,
+        convergence_tol=0.0001,
+        decision=10,
+        max_iter=1000,
+        plot_loglik=False,
+        flag_conv="log",
+    ):
 
         super().__init__(
             inf,
@@ -49,41 +51,45 @@ class DynCRep(ModelClass):
             decision,
             max_iter,
             plot_loglik,
-            flag_conv)
+            flag_conv,
+        )
 
         # Initialize the attributes
         self.u_f = None
         self.v_f = None
         self.w_f = None
 
-    def check_fit_params(self,
-                         K: int,
-                         data: Union[skt.sptensor, skt.dtensor],
-                         undirected: bool,
-                         initialization: int,
-                         assortative: bool,
-                         constrained: bool,
-                         constraintU: bool,
-                         eta0: Union[float, None],
-                         beta0: float,
-                         ag: float,
-                         bg: float,
-                         flag_data_T: int,
-                         **extra_params: Unpack[FitParams]
-                         ) -> None:
-        message = ('The initialization parameter can be either 0, or 1.  It is used as an '
-                   'indicator to initialize the membership matrices u and v and the affinity  '
-                   'matrix w. If it is 0, they will be generated randomly, otherwise they will  '
-                   'upload from file.')  # TODO: Update this message
+    def check_fit_params(
+        self,
+        K: int,
+        data: Union[skt.sptensor, skt.dtensor],
+        undirected: bool,
+        initialization: int,
+        assortative: bool,
+        constrained: bool,
+        constraintU: bool,
+        eta0: Union[float, None],
+        beta0: float,
+        ag: float,
+        bg: float,
+        flag_data_T: int,
+        **extra_params: Unpack[FitParams],
+    ) -> None:
+        message = (
+            "The initialization parameter can be either 0, or 1.  It is used as an "
+            "indicator to initialize the membership matrices u and v and the affinity  "
+            "matrix w. If it is 0, they will be generated randomly, otherwise they will  "
+            "upload from file."
+        )  # TODO: Update this message
         available_extra_params = [
-            'fix_eta',
-            'fix_beta',
-            'fix_w',
-            'fix_communities',
-            'files',
-            'out_inference',
-            'out_folder',
-            'end_file'
+            "fix_eta",
+            "fix_beta",
+            "fix_w",
+            "fix_communities",
+            "files",
+            "out_inference",
+            "out_folder",
+            "end_file",
         ]
 
         # Call the check_fit_params method from the parent class
@@ -99,7 +105,8 @@ class DynCRep(ModelClass):
             beta0=beta0,
             eta0=eta0,
             message=message,
-            **extra_params)
+            **extra_params,
+        )
 
         self.assortative = assortative  # if True, the network is assortative
         self.constrained = constrained  # if True, use the configuration with constraints on the updates
@@ -107,30 +114,27 @@ class DynCRep(ModelClass):
         self.ag = ag  # shape of gamma prior
         self.bg = bg  # rate of gamma prior
 
-        # if "ag" in extra_params:
-        #     self.ag = extra_params["ag"]  # shape of gamma prior
-        # else:
-        #     self.ag = ag
-        # if "bg" in extra_params:
-        #     self.bg = extra_params["bg"]  # rate of gamma prior
-        # else:
-        #     self.bg = bg
-
         self.beta0 = beta0
         if flag_data_T not in [0, 1]:
-            log_and_raise_error(ValueError, 'flag_data_T has to be either 0 or 1!')
+            log_and_raise_error(ValueError, "flag_data_T has to be either 0 or 1!")
         else:
-            self.flag_data_T = flag_data_T  # if 0: previous time step, 1: same time step
+            self.flag_data_T = (
+                flag_data_T  # if 0: previous time step, 1: same time step
+            )
 
         self.initialization = initialization
         if self.eta0 is not None:
             if (self.eta0 < 0) or (self.eta0 > 1):
-                raise ValueError('The reciprocity coefficient eta0 has to be in [0, 1]!')
+                raise ValueError(
+                    "The reciprocity coefficient eta0 has to be in [0, 1]!"
+                )
         if self.fix_eta:
             if self.eta0 is None:
                 self.eta0 = 0.0
 
-        if self.fix_eta:  # TODO: would it make sense to define this case only if self.eta0 is not
+        if (
+            self.fix_eta
+        ):  # TODO: would it make sense to define this case only if self.eta0 is not
             # None? Otherwise, mypy raises an error, giving that it leads to self.eta_old = None,
             # but somewhere there's a difference between self.eta and self.eta_old (float - None).
             self.eta = self.eta_old = self.eta_f = self.eta0  # type: ignore
@@ -145,19 +149,20 @@ class DynCRep(ModelClass):
         if self.initialization > 0:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
-    def fit(self,
-            data: Union[np.ndarray, skt.sptensor],
-            T: int,
-            nodes: List[int],
-            mask: Optional[np.ndarray] = None,
-            K: int = 2,
-            rseed: int = 0,
-            ag: float = 1.,
-            bg: float = 0.5,
-            flag_data_T: int = 0,
-            temporal: bool = True,
-            **extra_params: Unpack[FitParams]) \
-            -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, int]:
+    def fit(
+        self,
+        data: Union[np.ndarray, skt.sptensor],
+        T: int,
+        nodes: List[int],
+        mask: Optional[np.ndarray] = None,
+        K: int = 2,
+        rseed: int = 0,
+        ag: float = 1.0,
+        bg: float = 0.5,
+        flag_data_T: int = 0,
+        temporal: bool = True,
+        **extra_params: Unpack[FitParams],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, int]:
         """
         Model directed networks by using a probabilistic generative model that assumes community parameters and
         reciprocity coefficient. The inference is performed via the EM algorithm.
@@ -200,15 +205,17 @@ class DynCRep(ModelClass):
         final_it : int
                    Total number of iterations.
         """
-        self.check_fit_params(K,  # type: ignore
-                              data,
-                              ag=ag,
-                              bg=bg,
-                              flag_data_T=flag_data_T,
-                              **extra_params)  # TODO: fix missing positional arguments after
+        self.check_fit_params(
+            K,  # type: ignore
+            data,
+            ag=ag,
+            bg=bg,
+            flag_data_T=flag_data_T,
+            **extra_params,
+        )  # TODO: fix missing positional arguments after
         # change in extra_params
 
-        logging.debug('Fixing random seed to: %s', rseed)
+        logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)
         self.nodes = nodes
         T = max(0, min(T, data.shape[0] - 1))
@@ -217,32 +224,35 @@ class DynCRep(ModelClass):
 
         if self.temporal:
             self.L = T + 1
-            logging.debug('Temporal version, i.e., affinity tensor is dynamic.')
+            logging.debug("Temporal version, i.e., affinity tensor is dynamic.")
         else:
             self.L = 1
-            logging.debug('Static version, i.e., affinity tensor is static.')
-        logging.debug('Number of time steps L: %s', self.L)
+            logging.debug("Static version, i.e., affinity tensor is static.")
+        logging.debug("Number of time steps L: %s", self.L)
 
-        data = data[:T + 1, :, :]
+        data = data[: T + 1, :, :]
 
         # Pre-process data
         data_AtAtm1 = np.zeros(data.shape)
         # data_tm1 = np.zeros_like(data)
 
-        data_AtAtm1[0, :, :] = data[0, :,
-                                    :]  # to calculate numerator containing Aij(t)*(1-Aij(t-1))
+        data_AtAtm1[0, :, :] = data[
+            0, :, :
+        ]  # to calculate numerator containing Aij(t)*(1-Aij(t-1))
 
         if self.flag_data_T == 1:  # same time step
             self.E0 = np.sum(data[0])  # to calculate denominator eta
             self.Etg0 = np.sum(data[1:])  # to calculate denominator eta
         else:  # previous time step
-            self.E0 = 0.  # to calculate denominator eta
+            self.E0 = 0.0  # to calculate denominator eta
             self.Etg0 = np.sum(data[:-1])  # to calculate denominator eta
 
         self.bAtAtm1 = 0
         self.Atm11At = 0
 
-        data_T = np.einsum('aij->aji', data)  # to calculate denominator containing Aji(t)
+        data_T = np.einsum(
+            "aij->aji", data
+        )  # to calculate denominator containing Aji(t)
 
         if self.flag_data_T == 1:
             # Copy the data at time t to the array data_Tm1
@@ -257,8 +267,10 @@ class DynCRep(ModelClass):
         self.sum_datatm1 = data_Tm1[1:].sum()  # needed in the update of beta
 
         if T > 0:
-            logging.debug('T is greater than 0. Proceeding with calculations that require '
-                          'multiple time steps.')
+            logging.debug(
+                "T is greater than 0. Proceeding with calculations that require "
+                "multiple time steps."
+            )
             # Calculate Aij(t)*Aij(t-1) and (1-Aij(t))*Aij(t-1)
             bAtAtm1_l = 0
             Atm11At_l = 0
@@ -266,11 +278,16 @@ class DynCRep(ModelClass):
                 data_AtAtm1[i + 1, :, :] = data[i + 1, :, :] * (1 - data[i, :, :])
                 # calculate Aij(t)*Aij(t-1)
                 sub_nz_and = np.logical_and(data[i + 1, :, :] > 0, data[i, :, :] > 0)
-                bAtAtm1_l += ((data[i + 1, :, :][sub_nz_and] * data[i, :, :][sub_nz_and])).sum()
+                bAtAtm1_l += (
+                    (data[i + 1, :, :][sub_nz_and] * data[i, :, :][sub_nz_and])
+                ).sum()
                 # calculate (1-Aij(t))*Aij(t-1)
-                sub_nz_and = np.logical_and(data[i, :, :] > 0, (1 - data[i + 1, :, :]) > 0)
+                sub_nz_and = np.logical_and(
+                    data[i, :, :] > 0, (1 - data[i + 1, :, :]) > 0
+                )
                 Atm11At_l += (
-                    ((1 - data[i + 1, :, :])[sub_nz_and] * data[i, :, :][sub_nz_and])).sum()
+                    ((1 - data[i + 1, :, :])[sub_nz_and] * data[i, :, :][sub_nz_and])
+                ).sum()
             self.bAtAtm1 = bAtAtm1_l
             self.Atm11At = Atm11At_l
 
@@ -280,9 +297,9 @@ class DynCRep(ModelClass):
         data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())  # type: ignore
 
         data_AtAtm1 = preprocess(
-            data_AtAtm1)  # to calculate numerator containing Aij(t)*(1-Aij(t-1))
+            data_AtAtm1
+        )  # to calculate numerator containing Aij(t)*(1-Aij(t-1))
         data = preprocess(data)
-        # data_T = preprocess(data_Tm1)
 
         # save the indexes of the nonzero entries of Aij(t)*(1-Aij(t-1))
         if isinstance(data_AtAtm1, skt.dtensor):
@@ -309,8 +326,9 @@ class DynCRep(ModelClass):
 
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
-            logging.debug('Random number generator seed: %s',
-                          self.rng.get_state()[1][0])  # type: ignore
+            logging.debug(
+                "Random number generator seed: %s", self.rng.get_state()[1][0]
+            )  # type: ignore
             super()._initialize()
             super()._update_old_variables()
 
@@ -318,19 +336,17 @@ class DynCRep(ModelClass):
             coincide, it = 0, 0
             convergence = False
             loglik = -self.inf
-            maxL = - self.inf
+            maxL = -self.inf
 
-            logging.debug('Updating realization %s', r)
+            logging.debug("Updating realization %s", r)
             loglik_values = []
             time_start = time.time()
 
             # It enters a while loop that continues until either convergence is achieved or the maximum number of
             # iterations (self.max_iter) is reached.
             while np.logical_and(not convergence, it < self.max_iter):
-                _, _, _, _, _ = self._update_em(data_AtAtm1,
-                                                data_T_vals,
-                                                subs_nzp)
-                if self.flag_conv == 'log':
+                _, _, _, _, _ = self._update_em(data_AtAtm1, data_T_vals, subs_nzp)
+                if self.flag_conv == "log":
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data_AtAtm1,
                         data_T_vals=data_T_vals,
@@ -342,20 +358,19 @@ class DynCRep(ModelClass):
                         coincide=coincide,
                         convergence=convergence,
                         data_T=data_Tm1,
-                        mask=mask)
+                        mask=mask,
+                    )
                     loglik_values.append(loglik)
                     if not it % 100:
                         logging.debug(
-                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds',
+                            "Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds",
                             r,
                             loglik,
                             it,
-                            np.round(
-                                time.time() -
-                                time_start,
-                                2))
+                            np.round(time.time() - time_start, 2),
+                        )
                 else:
-                    log_and_raise_error(ValueError, 'flag_conv should be log!')
+                    log_and_raise_error(ValueError, "flag_conv should be log!")
 
             if maxL < loglik:
                 super()._update_optimal_parameters()
@@ -366,19 +381,30 @@ class DynCRep(ModelClass):
                 conv = convergence
                 best_r = r
 
-            logging.debug('Nreal = %s - Log-likelihood = %s - iterations = %s - '
-                          'time = %s seconds', r, loglik, it,
-                          np.round(time.time() - time_start, 2))
+            logging.debug(
+                "Nreal = %s - Log-likelihood = %s - iterations = %s - "
+                "time = %s seconds",
+                r,
+                loglik,
+                it,
+                np.round(time.time() - time_start, 2),
+            )
 
         # end cycle over realizations
 
-        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL,
-                      self.final_it)
+        logging.debug(
+            "Best real = %s - maxL = %s - best iterations = %s",
+            best_r,
+            maxL,
+            self.final_it,
+        )
 
         if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence is not reached
-            logging.warning('Solution failed to converge in %s EM steps!', self.max_iter)
-            logging.warning('Parameters won\'t be saved!')
+            logging.warning(
+                "Solution failed to converge in %s EM steps!", self.max_iter
+            )
+            logging.warning("Parameters won't be saved!")
         else:
             if self.out_inference:
                 super()._output_results()
@@ -387,6 +413,7 @@ class DynCRep(ModelClass):
             plot_L(best_loglik_values, int_ticks=True)
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, self.beta_f, self.maxL  # type: ignore
+
     # TODO: fix the problem with the None output once the self.fix_eta and self.fix_beta are
     #  understood
 
@@ -416,10 +443,12 @@ class DynCRep(ModelClass):
         # Randomize beta
         self._randomize_beta(1)  # Generates a single random number
 
-    def _update_cache(self,
-                      data: Union[dtensor, sptensor],
-                      data_T_vals: np.ndarray,
-                      subs_nz: Tuple[np.ndarray]) -> None:
+    def _update_cache(
+        self,
+        data: Union[dtensor, sptensor],
+        data_T_vals: np.ndarray,
+        subs_nz: Tuple[np.ndarray],
+    ) -> None:
         """
         Update the cache used in the em_update.
         Parameters
@@ -437,15 +466,19 @@ class DynCRep(ModelClass):
 
         if isinstance(data, skt.dtensor):
             self.data_M_nz = data[subs_nz] / self.M_nz
-            self.data_rho2 = ((data[subs_nz] * self.eta * data_T_vals) / self.M_nz).sum()
+            self.data_rho2 = (
+                (data[subs_nz] * self.eta * data_T_vals) / self.M_nz
+            ).sum()
         elif isinstance(data, skt.sptensor):
             self.data_M_nz = data.vals / self.M_nz
             self.data_rho2 = ((data.vals * self.eta * data_T_vals) / self.M_nz).sum()
 
-    def _update_em(self,
-                   data_AtAtm1: Union[dtensor, sptensor],
-                   data_T_vals: np.ndarray,
-                   subs_nzp: Tuple[np.ndarray]) -> Tuple[float, float, float, float, float]:
+    def _update_em(
+        self,
+        data_AtAtm1: Union[dtensor, sptensor],
+        data_T_vals: np.ndarray,
+        subs_nzp: Tuple[np.ndarray],
+    ) -> Tuple[float, float, float, float, float]:
         """
         Update parameters via EM procedure.
         Parameters
@@ -505,15 +538,15 @@ class DynCRep(ModelClass):
                 d_beta = self._update_beta()
                 self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
             else:
-                d_beta = 0.
+                d_beta = 0.0
         else:
-            d_beta = 0.
+            d_beta = 0.0
 
         if not self.fix_eta:
             denominator = self.E0 + self.Etg0 * self.beta_hat[-1]
             d_eta = self._update_eta(denominator=denominator)
         else:
-            d_eta = 0.
+            d_eta = 0.0
         self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
 
         return d_u, d_v, d_w, d_eta, d_beta
@@ -537,7 +570,7 @@ class DynCRep(ModelClass):
         if denominator > 0:
             self.eta = self.data_rho2 / denominator
         else:
-            self.eta = 0.
+            self.eta = 0.0
 
         if self.eta < 0 or self.eta > 1:
 
@@ -582,15 +615,17 @@ class DynCRep(ModelClass):
         """
 
         if self.constraintU:
-            u_tmp = self.u_old * (self._update_membership(subs_nz, self.u, self.v, self.w, 1))
+            u_tmp = self.u_old * (
+                self._update_membership(subs_nz, self.u, self.v, self.w, 1)
+            )
 
-            Du = np.einsum('iq->q', self.v)
+            Du = np.einsum("iq->q", self.v)
             if not self.assortative:
-                w_k = np.einsum('a,akq->kq', self.beta_hat, self.w)
-                Z_uk = np.einsum('q,kq->k', Du, w_k)
+                w_k = np.einsum("a,akq->kq", self.beta_hat, self.w)
+                Z_uk = np.einsum("q,kq->k", Du, w_k)
             else:
-                w_k = np.einsum('a,ak->k', self.beta_hat, self.w)
-                Z_uk = np.einsum('k,k->k', Du, w_k)
+                w_k = np.einsum("a,ak->k", self.beta_hat, self.w)
+                Z_uk = np.einsum("k,k->k", Du, w_k)
 
             for i in range(self.u.shape[0]):
                 lambda_i = self.enforce_constraintU(u_tmp[i], Z_uk)
@@ -599,31 +634,35 @@ class DynCRep(ModelClass):
         else:
 
             self.u = (self.ag - 1) + self.u_old * (
-                self._update_membership(subs_nz, self.u, self.v, self.w, 1))
+                self._update_membership(subs_nz, self.u, self.v, self.w, 1)
+            )
 
             if not self.constrained:
-                Du = np.einsum('iq->q', self.v)
+                Du = np.einsum("iq->q", self.v)
                 if not self.assortative:
-                    w_k = np.einsum('a,akq->kq', self.beta_hat, self.w)
-                    Z_uk = np.einsum('q,kq->k', Du, w_k)
+                    w_k = np.einsum("a,akq->kq", self.beta_hat, self.w)
+                    Z_uk = np.einsum("q,kq->k", Du, w_k)
                 else:
-                    w_k = np.einsum('a,ak->k', self.beta_hat, self.w)
-                    Z_uk = np.einsum('k,k->k', Du, w_k)
-                non_zeros = Z_uk > 0.
-                self.u[:, Z_uk == 0] = 0.
-                self.u[:, non_zeros] /= (self.bg + Z_uk[np.newaxis, non_zeros])
+                    w_k = np.einsum("a,ak->k", self.beta_hat, self.w)
+                    Z_uk = np.einsum("k,k->k", Du, w_k)
+                non_zeros = Z_uk > 0.0
+                self.u[:, Z_uk == 0] = 0.0
+                self.u[:, non_zeros] /= self.bg + Z_uk[np.newaxis, non_zeros]
             else:
-                Du = np.einsum('iq->q', self.v)
+                Du = np.einsum("iq->q", self.v)
                 if not self.assortative:
-                    w_k = np.einsum('a,akq->kq', self.beta_hat, self.w)
-                    Z_uk = np.einsum('q,kq->k', Du, w_k)
+                    w_k = np.einsum("a,akq->kq", self.beta_hat, self.w)
+                    Z_uk = np.einsum("q,kq->k", Du, w_k)
                 else:
-                    w_k = np.einsum('a,ak->k', self.beta_hat, self.w)
-                    Z_uk = np.einsum('k,k->k', Du, w_k)
+                    w_k = np.einsum("a,ak->k", self.beta_hat, self.w)
+                    Z_uk = np.einsum("k,k->k", Du, w_k)
                 for i in range(self.u.shape[0]):
                     if self.u[i].sum() > self.err_max:
-                        u_root = root(u_with_lagrange_multiplier, self.u_old[i],
-                                      args=(self.u[i], Z_uk))
+                        u_root = root(
+                            u_with_lagrange_multiplier,
+                            self.u_old[i],
+                            args=(self.u[i], Z_uk),
+                        )
                         self.u[i] = u_root.x
 
         dist_u = np.amax(abs(self.u - self.u_old))
@@ -648,33 +687,38 @@ class DynCRep(ModelClass):
                  Maximum distance between the old and the new membership matrix v.
         """
 
-        self.v = (self.ag - 1) + self.v_old * self._update_membership(subs_nz, self.u, self.v,
-                                                                      self.w, 2)
+        self.v = (self.ag - 1) + self.v_old * self._update_membership(
+            subs_nz, self.u, self.v, self.w, 2
+        )
 
         if not self.constrained:
-            Dv = np.einsum('iq->q', self.u)
+            Dv = np.einsum("iq->q", self.u)
 
             if not self.assortative:
-                w_k = np.einsum('a,aqk->qk', self.beta_hat, self.w)
-                Z_vk = np.einsum('q,qk->k', Dv, w_k)
+                w_k = np.einsum("a,aqk->qk", self.beta_hat, self.w)
+                Z_vk = np.einsum("q,qk->k", Dv, w_k)
             else:
-                w_k = np.einsum('a,ak->k', self.beta_hat, self.w)
-                Z_vk = np.einsum('k,k->k', Dv, w_k)
+                w_k = np.einsum("a,ak->k", self.beta_hat, self.w)
+                Z_vk = np.einsum("k,k->k", Dv, w_k)
             non_zeros = Z_vk > 0
-            self.v[:, Z_vk == 0] = 0.
-            self.v[:, non_zeros] /= (self.bg + Z_vk[np.newaxis, non_zeros])
+            self.v[:, Z_vk == 0] = 0.0
+            self.v[:, non_zeros] /= self.bg + Z_vk[np.newaxis, non_zeros]
         else:
-            Dv = np.einsum('iq->q', self.u)
+            Dv = np.einsum("iq->q", self.u)
             if not self.assortative:
-                w_k = np.einsum('a,aqk->qk', self.beta_hat, self.w)
-                Z_vk = np.einsum('q,qk->k', Dv, w_k)
+                w_k = np.einsum("a,aqk->qk", self.beta_hat, self.w)
+                Z_vk = np.einsum("q,qk->k", Dv, w_k)
             else:
-                w_k = np.einsum('a,ak->k', self.beta_hat, self.w)
-                Z_vk = np.einsum('k,k->k', Dv, w_k)
+                w_k = np.einsum("a,ak->k", self.beta_hat, self.w)
+                Z_vk = np.einsum("k,k->k", Dv, w_k)
 
             for i in range(self.v.shape[0]):
                 if self.v[i].sum() > self.err_max:
-                    v_root = root(u_with_lagrange_multiplier, self.v_old[i], args=(self.v[i], Z_vk))
+                    v_root = root(
+                        u_with_lagrange_multiplier,
+                        self.v_old[i],
+                        args=(self.v[i], Z_vk),
+                    )
                     self.v[i] = v_root.x
         dist_v = np.amax(abs(self.v - self.v_old))
         self.v_old = np.copy(self.v)
@@ -697,13 +741,15 @@ class DynCRep(ModelClass):
         uttkrp_DKQ = np.zeros_like(self.w)
 
         for idx, (a, i, j) in enumerate(zip(*subs_nz)):
-            uttkrp_DKQ[a, :, :] += self.data_M_nz[idx] * np.einsum('k,q->kq', self.u[i], self.v[j])
+            uttkrp_DKQ[a, :, :] += self.data_M_nz[idx] * np.einsum(
+                "k,q->kq", self.u[i], self.v[j]
+            )
 
         # self.w =   (self.ag - 1) + self.w * uttkrp_DKQ
         self.w = self.w * uttkrp_DKQ
 
-        Z = np.einsum('k,q->kq', self.u.sum(axis=0), self.v.sum(axis=0))
-        Z = np.einsum('a,kq->akq', self.beta_hat, Z)
+        Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))
+        Z = np.einsum("a,kq->akq", self.beta_hat, Z)
         # Z += self.bg
 
         non_zeros = Z > 0
@@ -732,24 +778,27 @@ class DynCRep(ModelClass):
         sub_w_nz = self.w.nonzero()
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Iq->Ikq', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
 
         for _a, k, q in zip(*sub_w_nz):
-            uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k, q], minlength=1)[
-                0]
+            uttkrp_DKQ[:, k, q] += np.bincount(
+                subs_nz[0], weights=uttkrp_I[:, k, q], minlength=1
+            )[0]
 
         self.w = (self.ag - 1) + self.w * uttkrp_DKQ
 
-        Z = np.einsum('k,q->kq', self.u.sum(axis=0), self.v.sum(axis=0))[np.newaxis, :, :]
-        Z *= (1. + self.beta_hat[self.T] * self.T)
+        Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))[
+            np.newaxis, :, :
+        ]
+        Z *= 1.0 + self.beta_hat[self.T] * self.T
         Z += self.bg
 
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # self.err_max  # and set to 0.
+        self.w[low_values_indices] = 0.0  # self.err_max  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w_old)
@@ -777,8 +826,8 @@ class DynCRep(ModelClass):
 
         self.w = (self.ag - 1) + self.w * uttkrp_DKQ
 
-        Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))
-        Z = np.einsum('a,k->ak', self.beta_hat, Z)
+        Z = (self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0))
+        Z = np.einsum("a,k->ak", self.beta_hat, Z)
         Z += self.bg
 
         non_zeros = Z > 0
@@ -786,7 +835,7 @@ class DynCRep(ModelClass):
         self.w[non_zeros] /= Z[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
@@ -809,11 +858,13 @@ class DynCRep(ModelClass):
         sub_w_nz = self.w.nonzero()
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum('Ik,Ik->Ik', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
 
         for _, k in zip(*sub_w_nz):
-            uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=1)[0]
+            uttkrp_DKQ[:, k] += np.bincount(
+                subs_nz[0], weights=uttkrp_I[:, k], minlength=1
+            )[0]
 
         # for k in range(self.K):
         #     uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=1)
@@ -821,14 +872,14 @@ class DynCRep(ModelClass):
         self.w = (self.ag - 1) + self.w * uttkrp_DKQ
 
         Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
-        Z *= (1. + self.beta_hat[self.T] * self.T)
+        Z *= 1.0 + self.beta_hat[self.T] * self.T
         Z += self.bg
 
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
         low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.  # and set to 0.
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w)
@@ -858,20 +909,25 @@ class DynCRep(ModelClass):
                     Khatri-Rao product of the membership matrix.
         """
         if not self.assortative:
-            uttkrp_DK = sp_uttkrp(self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal)
+            uttkrp_DK = sp_uttkrp(
+                self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal
+            )
         else:
             uttkrp_DK = sp_uttkrp_assortative(
-                self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal)
+                self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal
+            )
         return uttkrp_DK
 
-    def _Likelihood(self,
-                    data: Union[dtensor, sptensor],
-                    data_T: Union[dtensor, sptensor],
-                    data_T_vals: np.ndarray,
-                    subs_nz: Tuple[np.ndarray],
-                    T: int,
-                    mask: Optional[np.ndarray] = None,
-                    EPS: float = EPS_) -> float:
+    def _Likelihood(
+        self,
+        data: Union[dtensor, sptensor],
+        data_T: Union[dtensor, sptensor],
+        data_T_vals: np.ndarray,
+        subs_nz: Tuple[np.ndarray],
+        T: int,
+        mask: Optional[np.ndarray] = None,
+        EPS: float = EPS_,
+    ) -> float:
         """
         Compute the pseudo log-likelihood of the data.
 
@@ -900,27 +956,38 @@ class DynCRep(ModelClass):
         self._update_cache(data, data_T_vals, subs_nz)
 
         if not self.assortative:
-            w_k = np.einsum('a,akq->akq', self.beta_hat, self.w)
+            w_k = np.einsum("a,akq->akq", self.beta_hat, self.w)
         else:
-            w_k = np.einsum('a,ak->ak', self.beta_hat, self.w)
+            w_k = np.einsum("a,ak->ak", self.beta_hat, self.w)
 
         lambda0_ija_loc = lambda_full(self.u, self.v, w_k)
 
         if mask is not None:
             sub_mask_nz = mask.nonzero()
             if isinstance(data, skt.dtensor):
-                l = - (1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum() - self.eta * (
-                    data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
+                l = (
+                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
+                    - self.eta
+                    * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
+                )
             elif isinstance(data, skt.sptensor):
-                l = - (1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum() - self.eta * (
-                    data_T.toarray()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
+                l = (
+                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
+                    - self.eta
+                    * (
+                        data_T.toarray()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]
+                    ).sum()
+                )
         else:
             if isinstance(data, skt.dtensor):
-                l = - (1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (
-                    data_T[0].sum() + self.beta0 * data_T[1:].sum())
+                l = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (
+                    data_T[0].sum() + self.beta0 * data_T[1:].sum()
+                )
             elif isinstance(data, skt.sptensor):
-                l = - lambda0_ija_loc.sum() - self.eta * (
-                    data_T.sum(axis=(1, 2)) * self.beta_hat).sum()
+                l = (
+                    -lambda0_ija_loc.sum()
+                    - self.eta * (data_T.sum(axis=(1, 2)) * self.beta_hat).sum()
+                )
 
         logM = np.log(self.M_nz)
         if isinstance(data, skt.dtensor):
@@ -935,10 +1002,10 @@ class DynCRep(ModelClass):
             l += (np.log(self.beta_hat[-1] + EPS) * self.Atm11At).sum()
 
         if not self.constraintU:
-            if self.ag >= 1.:
+            if self.ag >= 1.0:
                 l += (self.ag - 1) * np.log(self.u + EPS).sum()
                 l += (self.ag - 1) * np.log(self.v + EPS).sum()
-            if self.bg >= 0.:
+            if self.bg >= 0.0:
                 l -= self.bg * self.u.sum()
                 l -= self.bg * self.v.sum()
 
@@ -986,17 +1053,22 @@ class DynCRep(ModelClass):
         """
         # assert type(obj) is CRepDyn_w_temp
         if self.assortative:
-            lambda0_ija = np.einsum('k,k->k', self.u.sum(axis=0), self.w[1:].sum(axis=0))
+            lambda0_ija = np.einsum(
+                "k,k->k", self.u.sum(axis=0), self.w[1:].sum(axis=0)
+            )
         else:
-            lambda0_ija = np.einsum('k,kq->q', self.u.sum(axis=0), self.w[1:].sum(axis=0))
-        lambda0_ija = np.einsum('k,k->', self.v.sum(axis=0), lambda0_ija)
+            lambda0_ija = np.einsum(
+                "k,kq->q", self.u.sum(axis=0), self.w[1:].sum(axis=0)
+            )
+        lambda0_ija = np.einsum("k,k->", self.v.sum(axis=0), lambda0_ija)
 
-        bt = - (lambda0_ija + self.eta * self.sum_datatm1)
+        bt = -(lambda0_ija + self.eta * self.sum_datatm1)
         bt -= self.bAtAtm1 / (1 - beta_t)  # adding Aij(t-1)*Aij(t)
 
         bt += self.sum_data_hat / beta_t  # adding sum A_hat from 1 to T
         bt += self.Atm11At / beta_t  # adding Aij(t-1)*(1-Aij(t))
         return bt
+
 
 # TODO: Ask what this is useful for
 # def fit_model(data, T, nodes, K, algo='Crep_wtemp', **conf):
