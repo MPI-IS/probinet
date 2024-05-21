@@ -8,7 +8,7 @@ import numpy as np
 
 from pgm.input.generate_network import affinity_matrix, BaseSyntheticNetwork, GM_reciprocity
 
-from .fixtures import rtol
+from .fixtures import RTOL
 
 # pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 
@@ -152,12 +152,12 @@ class TestGMReciprocity(unittest.TestCase):
     def test_affinity_matrix_assortative(self):
         expected_result = np.array([[0.02, 0.002], [0.002, 0.02]])
         actual_result = affinity_matrix(structure='assortative', N=100, K=2, a=0.1, b=0.3)
-        np.testing.assert_allclose(actual_result, expected_result, rtol=rtol)
+        np.testing.assert_allclose(actual_result, expected_result, rtol=RTOL)
 
     def test_affinity_matrix_disassortative(self):
         expected_result = np.array([[0.002, 0.02], [0.02, 0.002]])
         actual_result = affinity_matrix(structure='disassortative', N=100, K=2, a=0.1, b=0.3)
-        np.testing.assert_allclose(actual_result, expected_result, rtol=rtol)
+        np.testing.assert_allclose(actual_result, expected_result, rtol=RTOL)
 
 
 class TestBaseSyntheticNetwork(unittest.TestCase):

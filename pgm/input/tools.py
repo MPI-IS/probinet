@@ -403,7 +403,7 @@ def transpose_tensor(M: np.ndarray) -> np.ndarray:
 
 
 def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
-              v: np.ndarray, w: np.ndarray) -> np.ndarray:
+              v: np.ndarray, w: np.ndarray, temporal: bool = True) -> np.ndarray:
     """
     Compute the Khatri-Rao product (sparse version).
 
@@ -425,6 +425,8 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
         In-coming membership matrix.
     w : ndarray
         Affinity tensor.
+    temporal : bool
+        Flag to determine if the function should behave in a temporal manner.
 
     Returns
     -------
@@ -445,12 +447,22 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
 
     for k in range(K):
         tmp = vals.copy()
-        if m == 1:  # we are updating u
-            tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
-                    v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
-        elif m == 2:  # we are updating v
-            tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
-                    u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
+        if temporal:
+            if m == 1:  # we are updating u
+                tmp *= (w[subs[0], k, :].astype(tmp.dtype) *
+                        v[subs[2], :].astype(tmp.dtype)).sum(axis=1)
+            elif m == 2:  # we are updating v
+                tmp *= (w[subs[0], :, k].astype(tmp.dtype) *
+                        u[subs[1], :].astype(tmp.dtype)).sum(axis=1)
+        else:
+            if m == 1:  # we are updating u
+                w_I = w[0, k, :]
+                tmp *= (w_I[np.newaxis, :].astype(tmp.dtype) * v[subs[2], :].astype(tmp.dtype)).sum(
+                    axis=1)
+            elif m == 2:  # we are updating v
+                w_I = w[0, :, k]
+                tmp *= (w_I[np.newaxis, :].astype(tmp.dtype) * u[subs[1], :].astype(tmp.dtype)).sum(
+                    axis=1)
         out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out
@@ -458,7 +470,7 @@ def sp_uttkrp(vals: np.ndarray, subs: Tuple[np.ndarray], m: int, u: np.ndarray,
 
 def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
                           u: np.ndarray, v: np.ndarray,
-                          w: np.ndarray) -> np.ndarray:
+                          w: np.ndarray, temporal: bool = False) -> np.ndarray:
     """
     Compute the Khatri-Rao product (sparse version) with the assumption of assortativity.
 
@@ -468,25 +480,24 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
            Values of the non-zero entries.
     subs : tuple
            Indices of elements that are non-zero. It is a n-tuple of array-likes and the length
-           of tuple n must be
-           equal to the dimension of tensor.
+           of tuple n must be equal to the dimension of tensor.
     m : int
         Mode in which the Khatri-Rao product of the membership matrix is multiplied with the
-        tensor: if 1 it
-        works with the matrix u; if 2 it works with v.
+        tensor: if 1 it works with the matrix u; if 2 it works with v.
     u : ndarray
         Out-going membership matrix.
     v : ndarray
         In-coming membership matrix.
     w : ndarray
         Affinity tensor.
+    dynamic : bool
+        If True, use the static version of the function.
 
     Returns
     -------
     out : ndarray
           Matrix which is the result of the matrix product of the unfolding of the tensor and
-          the Khatri-Rao product
-          of the membership matrix.
+          the Khatri-Rao product of the membership matrix.
     """
     if len(subs) < 3:
         log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
@@ -501,11 +512,16 @@ def sp_uttkrp_assortative(vals: np.ndarray, subs: Tuple[np.ndarray], m: int,
     for k in range(K):
         tmp = vals.copy()
         if m == 1:  # we are updating u
-            tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(
-                tmp.dtype)
+            if temporal:
+                tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(tmp.dtype)
+            else:
+                tmp *= w[0, k].astype(tmp.dtype) * v[subs[2], k].astype(tmp.dtype)
+
         elif m == 2:  # we are updating v
-            tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(
-                tmp.dtype)
+            if temporal:
+                tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(tmp.dtype)
+            else:
+                tmp *= w[0, k].astype(tmp.dtype) * u[subs[1], k].astype(tmp.dtype)
         out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out
@@ -518,3 +534,32 @@ def log_and_raise_error(error_type, message):
 
     # Raise the exception
     raise error_type(message)
+
+
+def reciprocal_edges(G):
+    """
+            Compute the proportion of bi-directional edges, by considering the unordered pairs.
+
+            Parameters
+            ----------
+            G: MultiDigraph
+               MultiDiGraph NetworkX object.
+
+            Returns
+            -------
+            reciprocity: float
+                                     Reciprocity value, intended as the proportion of bi-directional edges over the unordered pairs.
+    """
+
+    n_all_edge = G.number_of_edges()
+    # unique pairs of edges, i.e. edges in the undirected graph
+    n_undirected = G.to_undirected().number_of_edges()
+    # number of undirected edges reciprocated in the directed network
+    n_overlap_edge = (n_all_edge - n_undirected)
+
+    if n_all_edge == 0:
+        raise nx.NetworkXError("Not defined for empty graphs.")
+
+    reciprocity = float(n_overlap_edge) / float(n_undirected)
+
+    return reciprocity

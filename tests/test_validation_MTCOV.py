@@ -173,7 +173,6 @@ class MTCOVTestCase(BaseTest):
         assert all(key in theta for key in ['u', 'v', 'w', 'beta', 'final_it', 'maxL',
                                             'nodes']), "Some keys are missing in the theta dictionary"
 
-
         # Asserting GT information
 
         # Assert that the 'u' value in the thetaGT dictionary is close to the 'u'

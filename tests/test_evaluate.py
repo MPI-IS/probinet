@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 
 from pgm.output.evaluate import (
-    _lambda0_full, calculate_AUC, calculate_conditional_expectation, calculate_expectation,
+    calculate_AUC, calculate_conditional_expectation, calculate_expectation, lambda_full,
     PSloglikelihood)
 
 
@@ -66,7 +66,7 @@ class TestEvaluateFunctions(unittest.TestCase):
                                     [[0.63, 0.85], [1.41, 1.91]]])
 
         # Call the _lambda0_full function
-        result = _lambda0_full(u, v, w)
+        result = lambda_full(u, v, w)
 
         # Check if the result matches the updated expected output
         self.assertTrue(np.allclose(result, expected_result))

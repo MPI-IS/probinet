@@ -15,7 +15,7 @@ from typing_extensions import Unpack
 from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
-from ..output.evaluate import _lambda0_full
+from ..output.evaluate import lambda_full
 from .base import FitParams, ModelClass
 
 
@@ -74,6 +74,7 @@ class CRep(ModelClass):
             data_X=None,
             gamma=None,
             eta0=eta0,
+            beta0=None,
             message=message,
             **extra_params)
 
@@ -184,7 +185,7 @@ class CRep(ModelClass):
             # For each realization (r), it initializes the parameters, updates the old variables
             # and updates the cache.
             logging.debug('Random number generator seed: %s', self.rng.get_state()[1][0])
-            self._initialize()
+            super()._initialize()
             super()._update_old_variables()
             self._update_cache(data, data_T_vals, subs_nz)
 
@@ -249,6 +250,7 @@ class CRep(ModelClass):
                 maxL = loglik
                 self.final_it = it
                 conv = convergence
+                best_r = r
 
             logging.debug(
                 'Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds',
@@ -257,13 +259,18 @@ class CRep(ModelClass):
 
             # end cycle over realizations
 
+        logging.debug('Best real = %s - maxL = %s - best iterations = %s', best_r, maxL,
+                      self.final_it)
+
         self.maxPSL = maxL
 
         if np.logical_and(self.final_it == self.max_iter, not conv):
             # convergence not reached
             logging.error('Solution failed to converge in %s EM steps!', self.max_iter)
-        if self.out_inference:
-            super()._output_results()
+            logging.warning('Parameters won\'t be saved!')
+        else:
+            if self.out_inference:
+                super()._output_results()
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
 
@@ -618,7 +625,7 @@ class CRep(ModelClass):
             Pseudo log-likelihood value.
         """
 
-        self.lambda0_ija = _lambda0_full(self.u, self.v, self.w)
+        self.lambda0_ija = lambda_full(self.u, self.v, self.w)
 
         if mask is not None:
             sub_mask_nz = mask.nonzero()
