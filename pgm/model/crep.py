@@ -250,7 +250,7 @@ class CRep(ModelClass):
                 maxL = loglik
                 self.final_it = it
                 conv = convergence
-                    best_r = r
+                best_r = r
 
             logging.debug(
                 'Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds',

@@ -9,6 +9,7 @@ import numpy as np
 from sklearn import metrics
 
 from ..input.tools import check_symmetric, transpose_ij2, transpose_ij3
+from ..model.constants import EPS_
 
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
 # too-many-statements
@@ -112,8 +113,9 @@ def calculate_conditional_expectation_dyncrep(B, B_to_T, u, v, w, eta=0.0, beta=
         Matrix whose elements are lambda_{ij}.
     """
     M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
-                1. + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)))
+        1. + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)))
     return M
+
 
 def calculate_expectation(u: np.ndarray, v: np.ndarray, w: np.ndarray,
                           eta: float) -> np.ndarray:
@@ -366,6 +368,7 @@ def expected_computation(B: np.ndarray, U: np.ndarray, V: np.ndarray,
 
     return M_marginal, M_conditional
 
+
 def func_lagrange_multiplier(lambda_i: float, num: float, den: float) -> float:
     """
     Function to calculate the value of the Lagrange multiplier.
@@ -386,6 +389,7 @@ def func_lagrange_multiplier(lambda_i: float, num: float, den: float) -> float:
     """
     f = num / (lambda_i + den)
     return np.sum(f) - 1
+
 
 def u_with_lagrange_multiplier(u: np.ndarray, x: np.ndarray, y: np.ndarray) -> np.ndarray:
     """
@@ -412,7 +416,7 @@ def u_with_lagrange_multiplier(u: np.ndarray, x: np.ndarray, y: np.ndarray) -> n
     return (f_ui - u)
 
 
-def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
+def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
     """
         Compute the log-likelihood of the data conditioned in the previous time step
 
@@ -448,7 +452,7 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
 def CalculatePermutation(U_infer, U0):
     """
     Permuting the overlap matrix so that the groups from the two partitions correspond
-    U0 has dimension NxK, reference memebership
+    U0 has dimension NxK, reference membership
     """
     N, RANK = U0.shape
     M = np.dot(np.transpose(U_infer), U0) / float(N)  # dim=RANKxRANK
@@ -482,7 +486,7 @@ def cosine_similarity(U_infer, U0):
     It is assumed that matrices are row-normalized
     """
     P = CalculatePermutation(U_infer, U0)
-    U_infer = np.dot(U_infer, P);  # Permute infered matrix
+    U_infer = np.dot(U_infer, P)  # Permute inferred matrix
     N, K = U0.shape
     U_infer0 = U_infer.copy()
     U0tmp = U0.copy()
@@ -490,8 +494,10 @@ def cosine_similarity(U_infer, U0):
     norm_inf = np.linalg.norm(U_infer, axis=1)
     norm0 = np.linalg.norm(U0, axis=1)
     for i in range(N):
-        if (norm_inf[i] > 0.): U_infer[i, :] = U_infer[i, :] / norm_inf[i]
-        if (norm0[i] > 0.): U0[i, :] = U0[i, :] / norm0[i]
+        if (norm_inf[i] > 0.):
+            U_infer[i, :] = U_infer[i, :] / norm_inf[i]
+        if (norm0[i] > 0.):
+            U0[i, :] = U0[i, :] / norm0[i]
 
     for k in range(K):
         cosine_sim += np.dot(np.transpose(U_infer[:, k]), U0[:, k])

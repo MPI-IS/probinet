@@ -241,14 +241,9 @@ class MTCOV(ModelClass):
                     loglik_values.append(loglik)
                     if not it % 100:
                         logging.debug(
-                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds',
-                            r,
-                            loglik,
-                            it,
-                            np.round(
-                                time.time() -
-                                time_start,
-                                2))
+                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  '
+                            'seconds', r, loglik, it, np.round(time.time() - time_start, 2)
+                        )
                 elif flag_conv == 'deltas':
                     it, coincide, convergence = super()._check_for_convergence_delta(
                         it, coincide, delta_u, delta_v, delta_w, delta_beta, convergence)
@@ -272,7 +267,7 @@ class MTCOV(ModelClass):
                 maxL = loglik
                 self.final_it = it
                 conv = convergence
-                # best_r = r
+                best_r = r
                 if flag_conv == 'log':
                     best_loglik = list(loglik_values)
             logging.debug('Nreal = %s - Loglikelihood = %s - iterations = %s - time = '
@@ -298,7 +293,6 @@ class MTCOV(ModelClass):
         if np.logical_and(self.plot_loglik, flag_conv == 'log'):
             plot_L(best_loglik, int_ticks=True)
 
-        self.final_it = final_it
         self.maxL = maxL
 
         return self.u_f, self.v_f, self.w_f, self.beta_f, maxL
@@ -327,8 +321,6 @@ class MTCOV(ModelClass):
         # If gamma is not 1, randomize w
         if self.gamma != 1:
             self._randomize_w()
-
-
 
     def _update_cache(self,
                       data: Union[skt.dtensor, skt.sptensor],

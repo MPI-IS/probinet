@@ -28,7 +28,7 @@ from .tools import (
     check_symmetric, Exp_ija_matrix, log_and_raise_error, normalize_nonzero_membership,
     output_adjacency, transpose_tensor)
 
-# TODO: add type hints into a separte script
+# TODO: add type hints into a separate script
 
 DEFAULT_N = 1000
 DEFAULT_L = 1
@@ -251,8 +251,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         # Compute the expected reciprocity in the network
         Exp_r = (
             self.eta +
-            ((MM0 * Mt + self.eta * Mt ** 2).sum() /
-                            MM.sum())
+                ((MM0 * Mt + self.eta * Mt ** 2).sum() / MM.sum())
         )
 
         # Generate the network G and the adjacency matrix A using the latent variables
@@ -500,12 +499,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
                      np.round(triu(A, k=1).sum(), 2))
         logging.info(
             'Sum of weights in the lower triangular matrix: %s',
-            np.round(
-                tril(
-                    A,
-                    k=-
-                    1).sum(),
-                2))
+            np.round(tril(A, k=-1).sum(), 2))
         logging.info('Removed %s nodes, because not part of the largest connected component',
                      len(nodes_to_remove))
         logging.info('Number of nodes: %s',
@@ -1778,11 +1772,11 @@ def membership_vectors(prng=10, L1=False, eta_dir=0.5, alpha=0.6, beta=1, K=2, N
 
 
 def affinity_matrix_dyncrep(structure='assortative',
-                    N=100,
-                    K=2,
-                    avg_degree=4.,
-                    a=0.1,
-                    b=0.3):
+                            N=100,
+                            K=2,
+                            avg_degree=4.,
+                            a=0.1,
+                            b=0.3):
     """
         Compute the KxK affinity matrix w with probabilities between and within groups.
         INPUT

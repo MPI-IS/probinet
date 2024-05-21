@@ -1,7 +1,9 @@
 """
-Class definition of CRep, the algorithm to perform inference in networks with reciprocity.
-The latent variables are related to community memberships and reciprocity value.
-"""# TODO: correct this
+The original static version of the code. I started integrating this one into the package too
+until I realized I could actually do this with the dyncrep.py and temporal attribute set to 
+False. I decided to keep it for a while until I know that I am not missing any of its features 
+with the new implementation.   
+"""
 
 from __future__ import print_function
 
@@ -13,13 +15,11 @@ import numpy as np
 from scipy.optimize import brentq, root
 import sktensor as skt
 
-from ..input import global_timing as gl
 from ..input.preprocessing import preprocess
 from ..input.tools import get_item_array_from_subs, sp_uttkrp, sp_uttkrp_assortative
 from ..output.plot import plot_L
+from .constants import EPS_
 from .dyncrep import u_with_lagrange_multiplier
-
-EPS = 1e-12
 
 
 class CRepDyn:
@@ -196,7 +196,6 @@ class CRepDyn:
         if T > 0:
             self.beta_hat[1:] = self.beta0
 
-
         # INFERENCE
 
         maxL = -self.inf  # initialization of the maximum log-likelihood
@@ -286,7 +285,7 @@ class CRepDyn:
             self._randomize_w(rng=rng)
             self._randomize_u_v(rng=rng)
 
-        elif self.initialization == 2: # Intentionally left as 2
+        elif self.initialization == 2:  # Intentionally left as 2
             if self.verbose:
                 print('w is initialized randomly; u, and v are initialized using the input files:')
                 print(self.in_parameters + '.npz')
@@ -302,7 +301,7 @@ class CRepDyn:
                              'files:' + str(self.in_parameters
                                             / '.npz'))
             theta = np.load(self.in_parameters.with_suffix('.npz'),
-                                allow_pickle=True)  # TODO: is  this a Path or a string in the
+                            allow_pickle=True)  # TODO: is  this a Path or a string in the
             # chosen logic?
             self._initialize_u(theta['u'], rng=rng)
             self._initialize_v(theta['v'], rng=rng)
@@ -482,7 +481,7 @@ class CRepDyn:
 
         return nz_recon_I
 
-    @gl.timeit('update_em')
+#    @gl.timeit('update_em')
     def _update_em(self, data_AtAtm1, data_T_vals, subs_nzp, denominator=None):
         # data_t,data_AtAtm1_t, data_T_vals_t,subs_nz,subs_nzp
         """
@@ -864,7 +863,7 @@ class CRepDyn:
         return it, loglik, coincide, convergence
 
     # @gl.timeit('Likelihood')
-    def __Likelihood(self, data, data_T, data_T_vals, subs_nz, T, mask=None, EPS=1e-12):
+    def __Likelihood(self, data, data_T, data_T_vals, subs_nz, T, mask=None, EPS=EPS_):
         """
             Compute the pseudo log-likelihood of the data.
             Parameters
@@ -1036,7 +1035,7 @@ def calculate_lambda(u, v, w):
     return M
 
 
-def likelihood_aggr(u, v, w, B, EPS=1e-12):
+def likelihood_aggr(u, v, w, B, EPS=EPS_):
     lambda0_ija = calculate_lambda(u, v, w)
     l = - lambda0_ija.sum()
     AlogM = (B * np.log(lambda0_ija + EPS)).sum()

@@ -160,7 +160,6 @@ class TestGMReciprocity(unittest.TestCase):
         np.testing.assert_allclose(actual_result, expected_result, rtol=RTOL)
 
 
-
 class TestBaseSyntheticNetwork(unittest.TestCase):
     def setUp(self):
         self.N = 100

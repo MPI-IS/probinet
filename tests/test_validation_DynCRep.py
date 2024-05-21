@@ -16,11 +16,11 @@ from pgm.output.evaluate import calculate_AUC
 class DynCRepTestCase(BaseTest):
     def setUp(self):
         self.algorithm = 'DynCRep'
-        self.label = 'GT_DynCRep_for_initialization.npz' # Formerly called using these params
+        self.label = 'GT_DynCRep_for_initialization.npz'  # Formerly called using these params
         # '100_2_5.0_4_0.2_0.2_0'
         self.data_path = Path(__file__).parent / 'inputs'
-        self.theta = np.load((self.data_path /  str('theta_' + self.label)).with_suffix('.npz'),
-                      allow_pickle=True)
+        self.theta = np.load((self.data_path / str('theta_' + self.label)).with_suffix('.npz'),
+                             allow_pickle=True)
         self.adj = 'synthetic_data_for_DynCRep.dat'
         self.K = self.theta['u'].shape[1]
         with (files('pgm.data.input').joinpath(self.adj).open('rb') as network):
@@ -28,7 +28,7 @@ class DynCRepTestCase(BaseTest):
                 network.name,
                 header=0)
 
-        #self.model = CRepDyn_w_temp()
+        # self.model = CRepDyn_w_temp()
         self.nodes = self.A[0].nodes()
         self.pos = nx.spring_layout(self.A[0])
         self.N = len(self.nodes)
@@ -55,14 +55,14 @@ class DynCRepTestCase(BaseTest):
         conf['undirected'] = False
         conf['eta0'] = 0.2
         conf['beta0'] = self.theta['beta']
-        #conf['fix_beta'] = True
+        # conf['fix_beta'] = True
         self.conf = conf
 
         model = DynCRep(
             max_iter=800,
             num_realizations=1,
             plot_loglik=True,
-            )
+        )
 
         u, v, w, eta, beta, Loglikelihood = model.fit(
             data=self.B,
@@ -72,7 +72,7 @@ class DynCRepTestCase(BaseTest):
             ag=1.1,
             bg=0.5,
             **self.conf
-            )
+        )
 
         # Add your assertions here
         self.assertEqual(u.shape, (100, 2))
@@ -122,7 +122,8 @@ class DynCRepTestCase(BaseTest):
             bg=0.5,
             fix_eta=False)
 
-        u, v, w, eta, beta, Loglikelihood = model.fit(data=self.B, T=self.T, nodes=self.nodes, K=self.K)
+        u, v, w, eta, beta, Loglikelihood = model.fit(
+            data=self.B, T=self.T, nodes=self.nodes, K=self.K)
 
         # Add your assertions here
         self.assertEqual(u.shape, (100, 2))
@@ -175,10 +176,10 @@ class DynCRepTestCase(BaseTest):
         # Fit the model to the data
         u_static, v_static, w_static, eta_static, beta_static, Loglikelihood_static = (
             model_static.fit(
-            data=self.B,
-            T=self.T,
-            nodes=self.nodes,
-            K=self.K)
+                data=self.B,
+                T=self.T,
+                nodes=self.nodes,
+                K=self.K)
         )
 
         # Setting to run the dynamic algorithm with the extra flag
@@ -211,10 +212,10 @@ class DynCRepTestCase(BaseTest):
             data=self.B,
             T=self.T,
             nodes=self.nodes,
-            flag_data_T=1, # this is the important flag
+            flag_data_T=1,  # this is the important flag
             ag=1.1,
             bg=0.5,
-            temporal = False,
+            temporal=False,
             **self.conf
         )
 

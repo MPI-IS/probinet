@@ -21,10 +21,12 @@ class BaseTest(unittest.TestCase):
             # Call the parent class's run method to execute the test
             super().run(result)
 
+
 def flt(x, d=3):
     return round(x, d)
 
-def expected_Aija(U, V, W): #TODO: future refactoring ticket: use a similar function from pgm,
+
+def expected_Aija(U, V, W):  # TODO: future refactoring ticket: use a similar function from pgm,
     # and avoid defining this new one here
     if W.ndim == 1:
         M = np.einsum('ik,jk->ijk', U, V)
@@ -34,6 +36,8 @@ def expected_Aija(U, V, W): #TODO: future refactoring ticket: use a similar func
         M = np.einsum('ijkq,kq->ij', M, W)
     return M
 
+
 def check_shape_and_sum(matrix, expected_shape, expected_sum, matrix_name):
     assert matrix.shape == expected_shape, f"Expected {matrix_name} to have shape {expected_shape}, but got {matrix.shape}"
-    assert np.isclose(np.sum(matrix), expected_sum, atol=TOLERANCE_1), f"Expected sum of {matrix_name} to be {expected_sum}, but got {np.sum(matrix)}"
+    assert np.isclose(np.sum(matrix), expected_sum,
+                      atol=TOLERANCE_1), f"Expected sum of {matrix_name} to be {expected_sum}, but got {np.sum(matrix)}"

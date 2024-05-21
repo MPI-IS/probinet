@@ -58,6 +58,17 @@ class ModelClass(DataBase):
             plot_loglik,
             flag_conv)
 
+        self.attributes_to_save_names = [
+            'u_f',
+            'v_f',
+            'w_f',
+            'eta_f',
+            'final_it',
+            'maxL',
+            'maxPSL',
+            'beta_f',
+            'nodes']
+
     def _check_fit_params(self,
                           initialization: int,
                           undirected: bool,
@@ -69,7 +80,7 @@ class ModelClass(DataBase):
                           eta0: Union[float, None],
                           beta0: Union[float, None],
                           gamma: Union[float, None],
-                          message: str = None,
+                          message: str = "Invalid initialization parameter.",
                           **extra_params: Unpack[FitParams]
                           ) -> None:
         """
@@ -90,7 +101,6 @@ class ModelClass(DataBase):
         self.assortative = assortative
 
         self.N = data.shape[1]
-        #assert self.N == self.u.shape[0]
         self.L = data.shape[0]
         self.K = K
         if data_X is not None:
@@ -119,9 +129,6 @@ class ModelClass(DataBase):
                     log_and_raise_error(ValueError, 'If fix_beta=True, provide a value for beta0.')
                 else:
                     self.beta0 = beta0
-            # else:
-            #     if beta0 is not None:
-            #         log_and_raise_error(ValueError, 'If fix_beta=False, beta0 must be None.')
 
         if "fix_w" in extra_params:
             self.fix_w = extra_params["fix_w"]
@@ -217,7 +224,6 @@ class ModelClass(DataBase):
         self._randomize_w()
         self._randomize_u_v(normalize_rows=self.normalize_rows)
 
-
     def _file_initialization(self) -> None:
         # Log a message indicating that u, v and w are being initialized using the input file
         logging.debug('u, v and w are initialized using the input file: %s', self.files)
@@ -225,20 +231,6 @@ class ModelClass(DataBase):
         self._initialize_u()
         self._initialize_v()
         self._initialize_w()
-        # # If the class name includes 'DynCRep'
-        # if 'DynCRep' in type(self).__name__:
-        #     # If temporal is True, initialize w dynamically
-        #     if self.temporal:
-        #         self._initialize_w_dyn()
-        #     else:
-        #         # If temporal is False, initialize w statically
-        #         self._initialize_w_stat()
-        # else:
-        #     # If the class name does not include 'DynCRep', initialize w
-        #     self._initialize_w()
-        # # If the class name includes 'MTCOV', initialize beta
-        # if 'MTCOV' in type(self).__name__:
-        #     self._initialize_beta_from_file()
 
     def _initialize_membership_matrix(self, matrix_name: str, matrix_value: np.ndarray) -> None:
 
@@ -256,7 +248,8 @@ class ModelClass(DataBase):
         # multiplied by the maximum entry in the 'matrix' and the error rate 'self.err'
         matrix += max_entry * self.err * self.rng.random_sample(matrix.shape)
 
-        # Set the attribute of the current object with the name 'matrix_name' to the value of 'matrix'
+        # Set the attribute of the current object with the name 'matrix_name' to
+        # the value of 'matrix'
         setattr(self, matrix_name, matrix)
 
     def _initialize_u(self) -> None:
@@ -337,7 +330,6 @@ class ModelClass(DataBase):
         # Add random noise to the affinity tensor w if fix_w is False
         if not self.fix_w:
             self.w = self._add_random_noise(self.w)
-
 
     @singledispatchmethod
     def _randomize_beta(self, shape):
@@ -488,8 +480,6 @@ class ModelClass(DataBase):
 
         return nz_recon_I
 
-
-
     def _check_for_convergence(self,
                                data,
                                it: int,
@@ -544,10 +534,11 @@ class ModelClass(DataBase):
         convergence : bool
                       Flag for convergence.
         """
+        # Check for convergence
         if it % 10 == 0:
             old_L = loglik
             if use_pseudo_likelihood:
-                    loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
+                loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
             else:
                 if data_T_vals is not None and subs_nz is not None and T is not None:
                     loglik = self._Likelihood(data, data_T, data_T_vals, subs_nz, T, mask=mask)
@@ -557,12 +548,12 @@ class ModelClass(DataBase):
                 coincide += 1
             else:
                 coincide = 0
-        if coincide > self.decision:
-            convergence = True
+        # Define the convergence criterion
+        convergence = coincide > self.decision or convergence
+        # Update the number of iterations
         it += 1
 
         return it, loglik, coincide, convergence
-
 
     def _check_for_convergence_delta(self,
                                      it: int,
@@ -605,7 +596,9 @@ class ModelClass(DataBase):
                       Flag for convergence.
         """
 
-        if (du < self.convergence_tol and dv < self.convergence_tol and dw < self.convergence_tol
+        if (du < self.convergence_tol
+                and dv < self.convergence_tol
+                and dw < self.convergence_tol
                 and de < self.convergence_tol):
             coincide += 1
         else:
@@ -629,23 +622,10 @@ class ModelClass(DataBase):
         """
         # Check if the output folder exists, otherwise create it
         output_path = Path(self.out_folder)
-        if not output_path.exists():
-            output_path.mkdir(parents=True, exist_ok=True)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # Define the output file
         outfile = (Path(self.out_folder) / str('theta' + self.end_file)).with_suffix('.npz')
-
-        # Define the list of attribute names to save
-        attributes_to_save_names = [
-            'u_f',
-            'v_f',
-            'w_f',
-            'eta_f',
-            'final_it',
-            'maxL',
-            'maxPSL',
-            'beta_f',
-            'nodes']
 
         # Create a dictionary to hold the attributes to be saved
         attributes_to_save = {}
@@ -653,12 +633,9 @@ class ModelClass(DataBase):
         # Iterate over the instance's attributes
         for attr_name, attr_value in self.__dict__.items():
             # Check if the attribute is a numpy array and its name is in the list
-            if attr_name in attributes_to_save_names:
-                # Initialize the cleaned attribute name
-                attr_name_clean = attr_name
-                if '_f' in attr_name:
-                    # Remove the '_f' suffix from the attribute name if it exists
-                    attr_name_clean = attr_name.replace('_f', '')
+            if attr_name in self.attributes_to_save_names:
+                # Remove the '_f' suffix from the attribute name if it exists
+                attr_name_clean = attr_name.removesuffix('_f')
                 # Add the attribute to the dictionary with the cleaned name
                 attributes_to_save[attr_name_clean] = attr_value
 

@@ -38,15 +38,20 @@ def parse_args():
     parser.add_argument('-g', '--gamma', type=float, default=0.5,
                         help='Scaling hyper parameter in MTCOV')
     parser.add_argument('--rseed', type=int, default=None, help='Random seed')
-    parser.add_argument('-nr','--num_realizations', type=int, default=None, help=('Number of '
-                                                                             'realizations'))
+    parser.add_argument('-nr', '--num_realizations', type=int, default=None, help=('Number of '
+                                                                                   'realizations'))
     parser.add_argument('-T', '--T', type=int, default=None, help='Number of time snapshots')
-    parser.add_argument('-fdT','--flag_data_T', type=str, default=0, help='Flag to use data_T') #
+    parser.add_argument('-fdT', '--flag_data_T', type=str, default=0, help='Flag to use data_T')
     # TODO: Improve these model specific arguments
     parser.add_argument('-ag', type=float, default=1.0, help='Parameter ag')
     parser.add_argument('-bg', type=float, default=0.5, help='Parameter bg')
-    parser.add_argument('-temp','--temporal', type=bool, default=False, help='Flag to use temporal '
-                                                                      'version of DynCRep')
+    parser.add_argument(
+        '-temp',
+        '--temporal',
+        type=bool,
+        default=False,
+        help='Flag to use temporal '
+        'version of DynCRep')
 
     # Input/Output related arguments
     parser.add_argument(
@@ -157,8 +162,8 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     in_folder = str(in_folder)
     if args.algorithm != 'MTCOV':
         if args.algorithm == 'DynCRep':
-            binary = True # exactly this in source
-            args.force_dense = True # exactly this in source
+            binary = True  # exactly this in source
+            args.force_dense = True  # exactly this in source
 
         network = in_folder + '/' + args.adj_name
         A, B, B_T, data_T_vals = import_data(
@@ -258,7 +263,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         """
         Fit the model to the data.
         """
-        if algorithm in {'CRep','JointCRep'}:
+        if algorithm in {'CRep', 'JointCRep'}:
             model.fit(data=B, data_T=B_T, data_T_vals=data_T_vals, nodes=nodes, **conf)
         elif algorithm == 'DynCRep':
             model.fit(

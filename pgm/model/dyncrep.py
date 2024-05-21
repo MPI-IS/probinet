@@ -18,8 +18,7 @@ from ..input.tools import (
 from ..output.evaluate import func_lagrange_multiplier, lambda_full, u_with_lagrange_multiplier
 from ..output.plot import plot_L
 from .base import FitParams, ModelClass
-
-EPS = 1e-12
+from .constants import EPS_
 
 
 class DynCRep(ModelClass):
@@ -27,6 +26,7 @@ class DynCRep(ModelClass):
     Class definition of CRepDyn_w_temp, the algorithm to perform inference in temporal  networks
     with reciprocity.
     """
+
     def __init__(self,
                  inf=10000000000.0,
                  err_max=0.000000000001,
@@ -68,7 +68,7 @@ class DynCRep(ModelClass):
         message = ('The initialization parameter can be either 0, or 1.  It is used as an '
                    'indicator to initialize the membership matrices u and v and the affinity  '
                    'matrix w. If it is 0, they will be generated randomly, otherwise they will  '
-                   'upload from file.') # TODO: Update this message
+                   'upload from file.')  # TODO: Update this message
         available_extra_params = [
             'fix_eta',
             'fix_beta',
@@ -100,11 +100,11 @@ class DynCRep(ModelClass):
         self.constraintU = constraintU  # if True, use constraint on U
 
         if "ag" in extra_params:
-            self.ag = extra_params["ag"] # shape of gamma prior
+            self.ag = extra_params["ag"]  # shape of gamma prior
         else:
             self.ag = ag
         if "bg" in extra_params:
-            self.bg = extra_params["bg"] # rate of gamma prior
+            self.bg = extra_params["bg"]  # rate of gamma prior
         else:
             self.bg = bg
 
@@ -203,7 +203,7 @@ class DynCRep(ModelClass):
         self.T = T
         self.temporal = temporal
 
-        if self.temporal == True:
+        if self.temporal:
             self.L = T + 1
             logging.debug('Temporal version, i.e., affinity tensor is dynamic.')
         else:
@@ -245,7 +245,8 @@ class DynCRep(ModelClass):
         self.sum_datatm1 = data_Tm1[1:].sum()  # needed in the update of beta
 
         if T > 0:
-            logging.debug('T is greater than 0.')
+            logging.debug('T is greater than 0. Proceeding with calculations that require '
+                          'multiple time steps.')
             # Calculate Aij(t)*Aij(t-1) and (1-Aij(t))*Aij(t-1)
             bAtAtm1_l = 0
             Atm11At_l = 0
@@ -260,8 +261,6 @@ class DynCRep(ModelClass):
                     ((1 - data[i + 1, :, :])[sub_nz_and] * data[i, :, :][sub_nz_and])).sum()
             self.bAtAtm1 = bAtAtm1_l
             self.Atm11At = Atm11At_l
-
-
 
         self.sum_data_hat = data_AtAtm1[1:].sum()  # needed in the update of beta
 
@@ -289,11 +288,10 @@ class DynCRep(ModelClass):
         if T > 0:
             self.beta_hat[1:] = self.beta0
 
-
         # INFERENCE
 
         maxL = -self.inf  # initialization of the maximum log-likelihood
-        #rng = np.random.RandomState(self.rseed)
+        # rng = np.random.RandomState(self.rseed)
 
         for r in range(self.num_realizations):
 
@@ -317,9 +315,9 @@ class DynCRep(ModelClass):
             # iterations (self.max_iter) is reached.
             while np.logical_and(not convergence, it < self.max_iter):
                 _, _, _, _, _ = self._update_em(data_AtAtm1,
-                                                                                   data_T_vals,
-                                                                                   subs_nzp,
-                                                                                   denominator=None)
+                                                data_T_vals,
+                                                subs_nzp,
+                                                denominator=None)
                 if self.flag_conv == 'log':
                     it, loglik, coincide, convergence = self._check_for_convergence(
                         data_AtAtm1,
@@ -346,7 +344,6 @@ class DynCRep(ModelClass):
                                 2))
                 else:
                     log_and_raise_error(ValueError, 'flag_conv should be log!')
-
 
             if maxL < loglik:
                 super()._update_optimal_parameters()
@@ -378,7 +375,6 @@ class DynCRep(ModelClass):
             plot_L(best_loglik_values, int_ticks=True)
 
         return self.u_f, self.v_f, self.w_f, self.eta_f, self.beta_f, self.maxL
-
 
     def _initialize_beta(self) -> None:
 
@@ -418,7 +414,7 @@ class DynCRep(ModelClass):
         subs_nz : tuple
                   Indices of elements of data that are non-zero.
         """
-        self.lambda0_nz = super()._lambda_nz(subs_nz, temporal = self.temporal)
+        self.lambda0_nz = super()._lambda_nz(subs_nz, temporal=self.temporal)
         self.M_nz = self.lambda0_nz + self.eta * data_T_vals  # [np.newaxis,:]
         self.M_nz[self.M_nz == 0] = 1
 
@@ -428,7 +424,6 @@ class DynCRep(ModelClass):
         elif isinstance(data, skt.sptensor):
             self.data_M_nz = data.vals / self.M_nz
             self.data_rho2 = ((data.vals * self.eta * data_T_vals) / self.M_nz).sum()
-
 
     def _update_em(self, data_AtAtm1, data_T_vals, subs_nzp, denominator=None):
         """
@@ -712,7 +707,7 @@ class DynCRep(ModelClass):
         UV = np.einsum('Ik,Iq->Ikq', self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
 
-        for a, k, q in zip(*sub_w_nz):
+        for _a, k, q in zip(*sub_w_nz):
             uttkrp_DKQ[:, k, q] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k, q], minlength=1)[
                 0]
 
@@ -733,8 +728,8 @@ class DynCRep(ModelClass):
 
         return dist_w
 
-
     # @gl.timeit_cum('update_W_ass')
+
     def _update_W_assortative_dyn(self, subs_nz):
         """
         Update affinity tensor (assuming assortativity).
@@ -837,12 +832,11 @@ class DynCRep(ModelClass):
         if not self.assortative:
             uttkrp_DK = sp_uttkrp(self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal)
         else:
-            uttkrp_DK = sp_uttkrp_assortative(self.data_M_nz, subs_nz, m, u, v, w, temporal=
-            self.temporal)
+            uttkrp_DK = sp_uttkrp_assortative(
+                self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal)
         return uttkrp_DK
 
-
-    def _Likelihood(self, data, data_T, data_T_vals, subs_nz, T, mask=None, EPS=1e-12):
+    def _Likelihood(self, data, data_T, data_T_vals, subs_nz, T, mask=None, EPS=EPS_):
         """
         Compute the pseudo log-likelihood of the data.
         Parameters
@@ -909,7 +903,6 @@ class DynCRep(ModelClass):
 
         return l
 
-
     def enforce_constraintU(self, num, den):
 
         lambda_i_test = root(func_lagrange_multiplier, 0.1, args=(num, den))
@@ -917,7 +910,7 @@ class DynCRep(ModelClass):
 
         return lambda_i
 
-    def func_beta_static(self,beta_t):
+    def func_beta_static(self, beta_t):
         # assert type(obj) is CRepDyn_w_temp
         if self.assortative:
             lambda0_ija = np.einsum('k,k->k', self.u.sum(axis=0), self.w[1:].sum(axis=0))
@@ -984,7 +977,6 @@ class DynCRep(ModelClass):
 #             raise ValueError('algo is invalid', algo)
 #
 #     return uf, vf, wf, etaf, betaf, maxL, model
-
 
 
 #

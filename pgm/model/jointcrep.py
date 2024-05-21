@@ -260,15 +260,9 @@ class JointCRep(ModelClass):  # pylint: disable=too-many-instance-attributes
                     loglik_values.append(loglik)
                     if not it % 100:
                         logging.debug(
-                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s '
-                        'seconds',
-                            r,
-                            loglik,
-                            it,
-                            np.round(
-                                time.time() -
-                                time_start,
-                                2))
+                            'Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  '
+                            'seconds', r, loglik, it, np.round(time.time() - time_start, 2)
+                        )
                 elif self.flag_conv == 'deltas':
                     it, coincide, convergence = super()._check_for_convergence_delta(
                         it,

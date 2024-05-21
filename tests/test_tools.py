@@ -99,6 +99,7 @@ class TestTensors(unittest.TestCase):
         result = Exp_ija_matrix(u, v, w)
         np.testing.assert_allclose(result, expected_result, rtol=RTOL)
 
+
 class TestWriteDesignMatrix(BaseTest):
     def setUp(self):
         self.metadata = {"node1": "metadata1", "node2": "metadata2"}
