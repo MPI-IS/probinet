@@ -90,38 +90,7 @@ def calculate_conditional_expectation(
 
 
 def calculate_conditional_expectation_dyncrep(
-    B, B_to_T, u, v, w, eta=0.0, beta=1.0):
-    """
-    Compute the conditional expectations, e.g. the parameters of the conditional distribution lambda_{ij}.
-
-    Parameters
-    ----------
-    B : ndarray
-        Graph adjacency tensor.
-    u : ndarray
-        Out-going membership matrix.
-    v : ndarray
-        In-coming membership matrix.
-    w : ndarray
-        Affinity tensor.
-    eta : float
-          Reciprocity coefficient.
-    beta : float
-          rate of edge removal.
-    mean : ndarray
-           Matrix with mean entries.
-
-    Returns
-    -------
-    Matrix whose elements are lambda_{ij}.
-    """
-    M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
-        1.0 + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))
-    )
-    return M
-
-
-def calculate_conditional_expectation_dyncrep(B_to_T: Union[dtensor, sptensor],
+    B_to_T: Union[dtensor, sptensor],
     u: np.ndarray,
     v: np.ndarray,
     w: np.ndarray,
@@ -449,14 +418,14 @@ def expected_computation(
 
     Z = calculate_Z(lambda0_aij, eta)
     M_marginal = (lambda0_aij + eta * lambda0_aij * transpose_ij3(lambda0_aij)) / Z
-    for l in np.arange(L):
-        np.fill_diagonal(M_marginal[l], 0.0)
+    for layer in np.arange(L):
+        np.fill_diagonal(M_marginal[layer], 0.0)
 
     M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / (
         eta ** transpose_ij3(B) * lambda0_aij + 1
     )
-    for l in np.arange(L):
-        np.fill_diagonal(M_conditional[l], 0.0)
+    for layer in np.arange(L):
+        np.fill_diagonal(M_conditional[layer], 0.0)
 
     return M_marginal, M_conditional
 

@@ -340,8 +340,6 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         yaml.dump(conf, f)
 
     def fit_model(model, algorithm, conf):  #
-        # pylint:
-        # disable=too-many-arguments
         """
         Fit the model to the data.
         """

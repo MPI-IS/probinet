@@ -18,10 +18,11 @@ from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import func_lagrange_multiplier, lambda_full, u_with_lagrange_multiplier
-from .base import FitParams, ModelClass, UpdateMixin
+from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .constants import EPS_
 
 
-class DynCRep(ModelClass, UpdateMixin):
+class DynCRep(ModelBase, ModelUpdateMixin):
     """
     Class definition of CRepDyn_w_temp, the algorithm to perform inference in temporal  networks
     with reciprocity.
@@ -71,7 +72,7 @@ class DynCRep(ModelClass, UpdateMixin):
         ag: float,
         bg: float,
         flag_data_T: int,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
         message = (
             "The initialization parameter can be either 0, or 1.  It is used as an "
@@ -159,7 +160,7 @@ class DynCRep(ModelClass, UpdateMixin):
         bg: float = 0.5,
         flag_data_T: int = 0,
         temporal: bool = True,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> Tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -392,12 +393,12 @@ class DynCRep(ModelClass, UpdateMixin):
             Atm11At_l = 0
             for i in range(T):
                 data_AtAtm1[i + 1, :, :] = data[i + 1, :, :] * (1 - data[i, :, :])
-                # calculate Aij(t)*Aij(t-1)
+                # Calculate the expression Aij(t)*Aij(t-1)
                 sub_nz_and = np.logical_and(data[i + 1, :, :] > 0, data[i, :, :] > 0)
                 bAtAtm1_l += (
                     (data[i + 1, :, :][sub_nz_and] * data[i, :, :][sub_nz_and])
                 ).sum()
-                # calculate (1-Aij(t))*Aij(t-1)
+                # Calculate the expression (1-Aij(t))*Aij(t-1)
                 sub_nz_and = np.logical_and(
                     data[i, :, :] > 0, (1 - data[i + 1, :, :]) > 0
                 )
@@ -414,8 +415,7 @@ class DynCRep(ModelClass, UpdateMixin):
         data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())
 
         # Preprocess the data to handle the sparsity
-        data_AtAtm1 = preprocess(data_AtAtm1
-        )
+        data_AtAtm1 = preprocess(data_AtAtm1)
         data = preprocess(data)
 
         # Save the indices of the non-zero entries
@@ -619,9 +619,6 @@ class DynCRep(ModelClass, UpdateMixin):
             message = f"Eta has to be a positive number! Current value is {self.eta}"
             log_and_raise_error(ValueError, message)
 
-            message = f"Eta has to be a positive number! Current value is {self.eta}"
-            log_and_raise_error(ValueError, message)
-
         dist_eta = abs(self.eta - self.eta_old)  # type: ignore
         self.eta_old = float(self.eta)
 
@@ -797,12 +794,10 @@ class DynCRep(ModelClass, UpdateMixin):
                 "k,q->kq", self.u[i], self.v[j]
             )
 
-        # self.w =   (self.ag - 1) + self.w * uttkrp_DKQ
         self.w = self.w * uttkrp_DKQ
 
         Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))
         Z = np.einsum("a,kq->akq", self.beta_hat, Z)
-        # Z += self.bg
 
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
@@ -874,8 +869,6 @@ class DynCRep(ModelClass, UpdateMixin):
 
         return dist_w
 
-        # @gl.timeit_cum('update_W_ass')
-
     def _specific_update_W_assortative_dyn(self, subs_nz: tuple):
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -922,9 +915,6 @@ class DynCRep(ModelClass, UpdateMixin):
             uttkrp_DKQ[:, k] += np.bincount(
                 subs_nz[0], weights=uttkrp_I[:, k], minlength=1
             )[0]
-
-        # for k in range(self.K):
-        #     uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=1)
 
         self.w = (self.ag - 1) + self.w * uttkrp_DKQ
 
@@ -1034,13 +1024,13 @@ class DynCRep(ModelClass, UpdateMixin):
         if mask is not None:
             sub_mask_nz = mask.nonzero()
             if isinstance(data, skt.dtensor):
-                l = (
+                loglik = (
                     -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta
                     * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
                 )
             elif isinstance(data, skt.sptensor):
-                l = (
+                loglik = (
                     -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta
                     * (
@@ -1049,11 +1039,11 @@ class DynCRep(ModelClass, UpdateMixin):
                 )
         else:
             if isinstance(data, skt.dtensor):
-                l = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (
+                loglik = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (
                     data_T[0].sum() + self.beta0 * data_T[1:].sum()
                 )
             elif isinstance(data, skt.sptensor):
-                l = (
+                loglik = (
                     -lambda0_ija_loc.sum()
                     - self.eta * (data_T.sum(axis=(1, 2)) * self.beta_hat).sum()
                 )
@@ -1063,26 +1053,26 @@ class DynCRep(ModelClass, UpdateMixin):
             Alog = data[data.nonzero()] * logM
         elif isinstance(data, skt.sptensor):
             Alog = (data.vals * logM).sum()
-        l += Alog
+        loglik += Alog
 
-        l += (np.log(self.beta_hat[subs_nz[0]] + EPS) * data.vals).sum()
+        loglik += (np.log(self.beta_hat[subs_nz[0]] + EPS) * data.vals).sum()
         if self.T > 0:
-            l += (np.log(1 - self.beta_hat[-1] + EPS) * self.bAtAtm1).sum()
-            l += (np.log(self.beta_hat[-1] + EPS) * self.Atm11At).sum()
+            loglik += (np.log(1 - self.beta_hat[-1] + EPS) * self.bAtAtm1).sum()
+            loglik += (np.log(self.beta_hat[-1] + EPS) * self.Atm11At).sum()
 
         if not self.constraintU:
             if self.ag >= 1.0:
-                l += (self.ag - 1) * np.log(self.u + EPS).sum()
-                l += (self.ag - 1) * np.log(self.v + EPS).sum()
+                loglik += (self.ag - 1) * np.log(self.u + EPS).sum()
+                loglik += (self.ag - 1) * np.log(self.v + EPS).sum()
             if self.bg >= 0.0:
-                l -= self.bg * self.u.sum()
-                l -= self.bg * self.v.sum()
+                loglik -= self.bg * self.u.sum()
+                loglik -= self.bg * self.v.sum()
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             message = "Likelihood is NaN!"
             log_and_raise_error(ValueError, message)
 
-        return l
+        return loglik
 
     def enforce_constraintU(self, num: float, den: float) -> float:
         """
@@ -1120,7 +1110,7 @@ class DynCRep(ModelClass, UpdateMixin):
         bt : float
             The calculated value of beta at time t for the static model.
         """
-        # assert type(obj) is CRepDyn_w_temp
+
         if self.assortative:
             lambda0_ija = np.einsum(
                 "k,k->k", self.u.sum(axis=0), self.w[1:].sum(axis=0)
@@ -1137,3 +1127,26 @@ class DynCRep(ModelClass, UpdateMixin):
         bt += self.sum_data_hat / beta_t  # adding sum A_hat from 1 to T
         bt += self.Atm11At / beta_t  # adding Aij(t-1)*(1-Aij(t))
         return bt
+
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        """
+        Copy variables from source to target.
+
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        # Call the base method
+        super()._copy_variables(source_suffix, target_suffix)
+
+        # Copy the specific variables
+        source_var = getattr(self, f"eta{source_suffix}")
+        setattr(self, f"eta{target_suffix}", float(source_var))
+
+        source_var = getattr(self, f"beta{source_suffix}")
+        setattr(self, f"beta{target_suffix}", np.copy(source_var))

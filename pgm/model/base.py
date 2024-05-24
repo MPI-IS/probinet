@@ -15,7 +15,7 @@ from pgm.input.tools import log_and_raise_error
 from pgm.output.plot import plot_L
 
 
-class FitParams(TypedDict):
+class ModelFitParameters(TypedDict):
     """
     Type hint for the fit method parameters.
     """
@@ -32,7 +32,7 @@ class FitParams(TypedDict):
 
 
 @dataclasses.dataclass
-class DataBase:
+class ModelBaseParameters:
     """
     Base class for the model classes.
     """
@@ -50,11 +50,11 @@ class DataBase:
     flag_conv: str = "log"  # flag to choose the convergence criterion
 
 
-class ModelClass(DataBase):
+class ModelBase(ModelBaseParameters):
     """
-    Base class for the model classes that inherit from the DataBase class. It contains the
+    Base class for the model classes that inherit from the ModelBaseParameters class. It contains the
     methods to check the parameters of the fit method, initialize the parameters, and check for
-    convergence.
+    convergence. All the model classes should inherit from this class.
     """
 
     def __init__(
@@ -114,7 +114,7 @@ class ModelClass(DataBase):
         beta0: Union[float, None],
         gamma: Union[float, None],
         message: str = "Invalid initialization parameter.",
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
         """
         Check the parameters of the fit method.
@@ -458,31 +458,6 @@ class ModelClass(DataBase):
         else:
             self.eta = self.rng.uniform(1.01, 49.99)
 
-    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
-        """
-        Copy variables from source to target.
-
-        Parameters
-        ----------
-        source_suffix : str
-                        The suffix of the source variable names.
-        target_suffix : str
-                        The suffix of the target variable names.
-        """
-        for var in ["u", "v", "w"]:
-            source_var = getattr(self, f"{var}{source_suffix}")
-            setattr(self, f"{var}{target_suffix}", np.copy(source_var))
-
-        if "MTCOV" in type(self).__name__:
-            source_var = getattr(self, f"beta{source_suffix}")
-            setattr(self, f"beta{target_suffix}", np.copy(source_var))
-        else:
-            source_var = getattr(self, f"eta{source_suffix}")
-            setattr(self, f"eta{target_suffix}", float(source_var))
-            if "DynCRep" in type(self).__name__:
-                source_var = getattr(self, f"beta{source_suffix}")
-                setattr(self, f"beta{target_suffix}", np.copy(source_var))
-
     def _update_old_variables(self) -> None:
         """
         Update values of the parameters in the previous iteration.
@@ -518,15 +493,7 @@ class ModelClass(DataBase):
                 )
             else:
                 nz_recon_IQ = np.einsum(
-                    "Ik,Ik->Ik", self.u[subs_nz[1], :],self.w[subs_nz[0], :]
-                )
-                                       else:
-            if not self.assortative:
-                nz_recon_IQ = np.einsum(
-                    "Ik,kq->Iq", self.u[subs_nz[1], :], self.w[0, :, :]
-                )
-            else:
-                nz_recon_IQ = np.einsum("Ik,k->Ik", self.u[subs_nz[1], :], self.w[0, :]
+                    "Ik,Ik->Ik", self.u[subs_nz[1], :], self.w[subs_nz[0], :]
                 )
 
         else:
@@ -613,9 +580,7 @@ class ModelClass(DataBase):
         # Check for convergence
         if it % 10 == 0:
             old_L = loglik
-            # args_dict = self.get_compute_likelihood_args()
             loglik = self.compute_likelihood(
-                # **args_dict
             )
             if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
@@ -735,7 +700,8 @@ class ModelClass(DataBase):
         conv : bool
             A flag indicating whether the fitting process has converged.
         best_loglik_values : list of float, optional
-            A list of the best log-likelihood values obtained at each iteration of the fitting process.
+            A list of the best log-likelihood values obtained at each iteration of the fitting
+            process.
             If not provided, it defaults to None.
         """
         # Log the best real, maximum log-likelihood, and the best iterations
@@ -762,10 +728,19 @@ class ModelClass(DataBase):
         if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
             plot_L(best_loglik_values, int_ticks=True)
 
+    @abstractmethod
+    def compute_likelihood(self, *args, **kwargs) -> float:
+        """
+        Compute the log-likelihood of the data.
 
-class UpdateMixin(ABC):
+        This is an abstract method that must be implemented in each derived class.
+        """
+
+
+class ModelUpdateMixin(ABC):
     """
-    Mixin class for the update methods of the model classes.
+    Mixin class for the update methods of the model classes. It is not a requirement to inherit
+    from this class. 
     """
 
     not_implemented_message = "This method should be overridden in the derived class"
@@ -920,18 +895,18 @@ class UpdateMixin(ABC):
         """
         logging.debug("Updating realization %s ...", r)
 
-        # It enters a while loop that continues until either convergence is achieved or the maximum number of
-        # iterations (self.max_iter) is reached.
+        # It enters a while loop that continues until either convergence is achieved or the
+        # maximum number of iterations (self.max_iter) is reached.
         while np.logical_and(not convergence, it < self.max_iter):
-            #  it performs the main EM update (self._update_em(data, data_T_vals, subs_nz, denominator=E))
+            #  it performs the main EM update (self._update_em()
             # which updates the memberships and calculates the maximum difference
             # between new and old parameters.
-            # Call the _update_em method
             self._update_em()
-            # Depending on the convergence flag (self.flag_conv), it checks for convergence using either the
-            # pseudo log-likelihood values (self._check_for_convergence(data, it, loglik, coincide, convergence,
-            # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
-            # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
+            # Depending on the convergence flag (self.flag_conv), it checks for convergence using
+            # either the pseudo log-likelihood values (self._check_for_convergence(data, it,
+            # loglik,  coincide, convergence, data_T=data_T, mask=mask)) or the maximum distances
+            # between the old and the new parameters (self._check_for_convergence_delta(it,
+            # coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
 
             if self.flag_conv == "log":
                 it, loglik, coincide, convergence = self._check_for_convergence(
@@ -983,15 +958,10 @@ class UpdateMixin(ABC):
         This is an abstract method that must be implemented in each derived class.
         """
 
-    @abstractmethod
-    def compute_likelihood(self, *args, **kwargs) -> float:
-        """
-        Compute the log-likelihood of the data.
-
-        This is an abstract method that must be implemented in each derived class.
-        """
-
-    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        # of derived classes
         """
         Copy variables from source to target.
 
@@ -1005,13 +975,3 @@ class UpdateMixin(ABC):
         for var in ["u", "v", "w"]:
             source_var = getattr(self, f"{var}{source_suffix}")
             setattr(self, f"{var}{target_suffix}", np.copy(source_var))
-
-        if "MTCOV" in type(self).__name__:  # TODO: Fix this
-            source_var = getattr(self, f"beta{source_suffix}")
-            setattr(self, f"beta{target_suffix}", np.copy(source_var))
-        else:
-            source_var = getattr(self, f"eta{source_suffix}")
-            setattr(self, f"eta{target_suffix}", float(source_var))
-            if "DynCRep" in type(self).__name__:
-                source_var = getattr(self, f"beta{source_suffix}")
-                setattr(self, f"beta{target_suffix}", np.copy(source_var))

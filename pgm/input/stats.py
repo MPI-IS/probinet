@@ -38,25 +38,25 @@ def print_graph_stat(
     N = G[0].number_of_nodes()
 
     logging.info("Number of edges and average degree in each layer:")
-    for l in range(L):
-        E = G[l].number_of_edges()
+    for layer in range(L):
+        E = G[layer].number_of_edges()
         k = 2 * float(E) / float(N)
-        logging.info("E[%s] = %s - <k> = %s", l, E, np.round(k, 3))
+        logging.info("E[%s] = %s - <k> = %s", layer, E, np.round(k, 3))
 
-        weights = [d["weight"] for u, v, d in list(G[l].edges(data=True))]
+        weights = [d["weight"] for u, v, d in list(G[layer].edges(data=True))]
         if not np.array_equal(weights, np.ones_like(weights)):
-            M = np.sum([d["weight"] for u, v, d in list(G[l].edges(data=True))])
+            M = np.sum([d["weight"] for u, v, d in list(G[layer].edges(data=True))])
             kW = 2 * float(M) / float(N)
-            logging.info("M[%s] = %s - <k_weighted> = %s", l, M, np.round(kW, 3))
+            logging.info("M[%s] = %s - <k_weighted> = %s", layer, M, np.round(kW, 3))
 
-        logging.info("Sparsity [%s] = %s", l, np.round(E / (N * N), 3))
+        logging.info("Sparsity [%s] = %s", layer, np.round(E / (N * N), 3))
 
-        logging.info("Reciprocity (networkX) = %s", np.round(nx.reciprocity(G[l]), 3))
+        logging.info("Reciprocity (networkX) = %s", np.round(nx.reciprocity(G[layer]), 3))
 
         if rw is not None:
             logging.info(
                 "Reciprocity (considering the weights of the edges) = %s",
-                np.round(rw[l], 3),
+                np.round(rw[layer], 3),
             )
 
 
@@ -78,23 +78,23 @@ def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
     avg_M = 0.0
     avg_densityW = 0.0
     unweighted = True
-    for l in range(L):
-        E = A[l].number_of_edges()
+    for layer in range(L):
+        E = A[layer].number_of_edges()
         k = 2 * float(E) / float(N)
         avg_edges += E
         avg_density += k
-        logging.info("E[%s] = %s - <k> = %s", l, E, np.round(k, 3))
+        logging.info("E[%s] = %s - <k> = %s", layer, E, np.round(k, 3))
 
-        weights = [d["weight"] for u, v, d in list(A[l].edges(data=True))]
+        weights = [d["weight"] for u, v, d in list(A[layer].edges(data=True))]
         if not np.array_equal(weights, np.ones_like(weights)):
             unweighted = False
-            M = np.sum([d["weight"] for u, v, d in list(A[l].edges(data=True))])
+            M = np.sum([d["weight"] for u, v, d in list(A[layer].edges(data=True))])
             kW = 2 * float(M) / float(N)
             avg_M += M
             avg_densityW += kW
-            logging.info("M[%s] = %s - <k_weighted> = %s", l, M, np.round(kW, 3))
+            logging.info("M[%s] = %s - <k_weighted> = %s", layer, M, np.round(kW, 3))
 
-        logging.info("Sparsity [%s] = %s", l, np.round(E / (N * N), 3))
+        logging.info("Sparsity [%s] = %s", layer, np.round(E / (N * N), 3))
 
     logging.info("\nAverage edges over all layers: %s", np.round(avg_edges / L, 3))
     logging.info("Average degree over all layers: %s", np.round(avg_density / L, 2))

@@ -19,12 +19,11 @@ from ..input.tools import (
     check_symmetric, get_item_array_from_subs, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
 from ..output.evaluate import lambda_full
-from ..output.plot import plot_L
-from .base import FitParams, ModelClass, UpdateMixin
+from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
 
 
 class JointCRep(
-    ModelClass, UpdateMixin
+    ModelBase, ModelUpdateMixin
 ):  # pylint: disable=too-many-instance-attributes
     """
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
@@ -63,7 +62,7 @@ class JointCRep(
         assortative: bool,
         data: Union[skt.dtensor, skt.sptensor],
         K: int,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
 
         message = (
@@ -130,7 +129,7 @@ class JointCRep(
         eta0: Union[float, None] = None,
         undirected: bool = False,
         assortative: bool = True,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -627,31 +626,6 @@ class JointCRep(
         self.w[den == 0] = 0.0
         self.w[non_zeros] /= den[non_zeros]
 
-    # def _update_W_assortative(self, subs_nz: tuple) -> float:
-    #     """
-    #     Update affinity tensor (assuming assortativity).
-    #
-    #     Parameters
-    #     ----------
-    #     subs_nz : tuple
-    #               Indices of elements of data that are non-zero.
-    #
-    #     Returns
-    #     -------
-    #     dist_w : float
-    #              Maximum distance between the old and the new affinity tensor w.
-    #     """
-    #
-    #
-    #
-    #     low_values_indices = self.w < self.err_max  # values are too low
-    #     self.w[low_values_indices] = 0.  # and set to 0.
-    #
-    #     dist_w = np.amax(abs(self.w - self.w_old))
-    #     self.w_old = np.copy(self.w)
-    #
-    #     return dist_w
-
     def _update_W_approx(self, subs_nz: tuple) -> float:
         """
         Update affinity tensor.
@@ -840,7 +814,7 @@ class JointCRep(
 
         Returns
         -------
-        l : float
+        loglik : float
             Log-likelihood value.
         """
 
@@ -855,9 +829,29 @@ class JointCRep(
 
         tt = 0.5 * np.log(self.Z).sum()
 
-        l = ft + st - tt
+        loglik = ft + st - tt
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             log_and_raise_error(ValueError, "log-likelihood is NaN!")
 
-        return l
+        return loglik
+
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        """
+        Copy variables from source to target.
+
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        # Call the base method
+        super()._copy_variables(source_suffix, target_suffix)
+
+        # Copy the specific variables
+        source_var = getattr(self, f"eta{source_suffix}")
+        setattr(self, f"eta{target_suffix}", float(source_var))

@@ -17,10 +17,10 @@ from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import lambda_full
-from .base import FitParams, ModelClass, UpdateMixin
+from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
 
 
-class CRep(ModelClass, UpdateMixin):
+class CRep(ModelBase, ModelUpdateMixin):
     """
     Class to perform inference in networks with reciprocity.
     """
@@ -34,7 +34,6 @@ class CRep(ModelClass, UpdateMixin):
         convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
         decision: int = 10,  # convergence parameter
         max_iter: int = 1000,  # maximum number of EM steps before aborting
-        plot_loglik: bool = False,  # flag to plot the log-likelihood
         plot_loglik: bool = False,  # flag to plot the log-likelihood
         flag_conv: str = "log",  # flag to choose the convergence criterion
     ) -> None:
@@ -65,7 +64,7 @@ class CRep(ModelClass, UpdateMixin):
         data: Union[skt.dtensor, skt.sptensor],
         K: int,
         constrained: bool,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
 
         message = "The initialization parameter can be either 0, 1, 2 or 3."
@@ -116,7 +115,7 @@ class CRep(ModelClass, UpdateMixin):
         undirected: bool = False,
         assortative: bool = True,
         constrained: bool = True,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> tuple[
         ndarray[Any, dtype[np.float64]],
         ndarray[Any, dtype[np.float64]],
@@ -477,24 +476,7 @@ class CRep(ModelClass, UpdateMixin):
 
         return dist_u
 
-    def _update_V(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update in-coming membership matrix.
-        Same as _update_U but with:
-        data <-> data_T
-        w <-> w_T
-        u <-> v
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_v : float
-                 Maximum distance between the old and the new membership matrix v.
-        """
+    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None):
 
         self.v *= self._update_membership(subs_nz, 2)
 
@@ -513,50 +495,7 @@ class CRep(ModelClass, UpdateMixin):
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-    # def _update_V(self, subs_nz: Tuple[np.ndarray]) -> float:
-    #     """
-    #     Update in-coming membership matrix.
-    #     Same as _update_U but with:
-    #     data <-> data_T
-    #     w <-> w_T
-    #     u <-> v
-    #
-    #     Parameters
-    #     ----------
-    #     subs_nz : tuple
-    #               Indices of elements of data that are non-zero.
-    #
-    #     Returns
-    #     -------
-    #     dist_v : float
-    #              Maximum distance between the old and the new membership matrix v.
-    #     """
-    #
-    #
-    #     low_values_indices = self.v < self.err_max  # values are too low
-    #     self.v[low_values_indices] = 0.0  # and set to 0.
-    #
-    #     dist_v = np.amax(abs(self.v - self.v_old))
-    #     self.v_old = np.copy(self.v)
-    #
-    #     return dist_v
-
-    def _update_W(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update affinity tensor.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
-        """
-        if len(subs_nz) < 3:
-            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
+    def _specific_update_W(self, subs_nz: tuple):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -576,31 +515,7 @@ class CRep(ModelClass, UpdateMixin):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
-
-    def _update_W_assortative(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update affinity tensor (assuming assortativity).
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
-        """
-        if len(subs_nz) < 3:
-            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
-
+    def _specific_update_W_assortative(self, subs_nz: tuple):
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
@@ -615,14 +530,6 @@ class CRep(ModelClass, UpdateMixin):
         Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
-
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
 
     def _update_membership(self, subs_nz: Tuple[np.ndarray], m: int) -> np.ndarray:
         """
@@ -676,7 +583,7 @@ class CRep(ModelClass, UpdateMixin):
 
         Returns
         -------
-        l : float
+        loglik : float
             Pseudo log-likelihood value.
         """
 
@@ -685,28 +592,48 @@ class CRep(ModelClass, UpdateMixin):
         if mask is not None:
             sub_mask_nz = mask.nonzero()
             if isinstance(data, skt.dtensor):
-                l = (
+                loglik = (
                     -self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta * data_T[sub_mask_nz].sum()
                 )
             elif isinstance(data, skt.sptensor):
-                l = (
+                loglik = (
                     -self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta * data_T.toarray()[sub_mask_nz].sum()
                 )
         else:
             if isinstance(data, skt.dtensor):
-                l = -self.lambda0_ija.sum() - self.eta * data_T.sum()
+                loglik = -self.lambda0_ija.sum() - self.eta * data_T.sum()
             elif isinstance(data, skt.sptensor):
-                l = -self.lambda0_ija.sum() - self.eta * data_T.vals.sum()
+                loglik = -self.lambda0_ija.sum() - self.eta * data_T.vals.sum()
         logM = np.log(self.M_nz)
         if isinstance(data, skt.dtensor):
             Alog = data[data.nonzero()] * logM
         elif isinstance(data, skt.sptensor):
             Alog = data.vals * logM
 
-        l += Alog.sum()
+        loglik += Alog.sum()
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             log_and_raise_error(ValueError, "PSLikelihood is NaN!!!!")
-        return l
+        return loglik
+
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        """
+        Copy variables from source to target.
+
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        # Call the base method
+        super()._copy_variables(source_suffix, target_suffix)
+
+        # Copy the specific variables
+        source_var = getattr(self, f"eta{source_suffix}")
+        setattr(self, f"eta{target_suffix}", float(source_var))

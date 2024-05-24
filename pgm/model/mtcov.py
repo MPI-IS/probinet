@@ -16,10 +16,10 @@ from typing_extensions import Unpack
 from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import lambda_full
-from .base import FitParams, ModelClass, UpdateMixin
+from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
 
 
-class MTCOV(ModelClass, UpdateMixin):
+class MTCOV(ModelBase, ModelUpdateMixin):
     """
     Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
@@ -64,7 +64,7 @@ class MTCOV(ModelClass, UpdateMixin):
         data: Union[skt.dtensor, skt.sptensor, np.ndarray],
         data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
         K: int,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
 
         message = (
@@ -110,11 +110,8 @@ class MTCOV(ModelClass, UpdateMixin):
 
     def preprocess_data_for_fit(
         self,
-        rseed: int,
-        initialization: int,
         data: Union[skt.dtensor, skt.sptensor],
         data_X: np.ndarray,
-        nodes: List[Any],
         batch_size: Optional[int] = None,
     ) -> Tuple[
         Union[skt.dtensor, skt.sptensor],
@@ -127,10 +124,42 @@ class MTCOV(ModelClass, UpdateMixin):
         float,
     ]:
         """
-        Preprocess the data.
+        Preprocesses the input data for fitting the model.
+
+        This method handles the sparsity of the data, saves the indices of the non-zero entries,
+        and optionally selects a subset of nodes for batch processing.
+
+        Parameters
+        ----------
+        data : Union[skt.dtensor, skt.sptensor]
+            The graph adjacency tensor to be preprocessed.
+        data_X : np.ndarray
+            The one-hot encoding version of the design matrix to be preprocessed.
+        batch_size : Optional[int], default=None
+            The size of the subset of nodes to compute the likelihood with. If None, the method
+            will automatically determine the batch size based on the number of nodes.
+
+        Returns
+        -------
+        preprocessed_data : Union[skt.dtensor, skt.sptensor]
+            The preprocessed graph adjacency tensor.
+        preprocessed_data_X : np.ndarray
+            The preprocessed one-hot encoding version of the design matrix.
+        subs_nz : Tuple[np.ndarray]
+            The indices of the non-zero entries in the data.
+        subs_X_nz : Tuple[np.ndarray]
+            The indices of the non-zero entries in the design matrix.
+        subset_N : Optional[np.ndarray]
+            The subset of nodes selected for batch processing. None if no subset is selected.
+        Subs : Optional[Tuple[np.ndarray]]
+            The list of tuples representing the non-zero entries in the data. None if no subset is selected.
+        SubsX : Optional[Tuple[np.ndarray]]
+            The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
+        batch_size : float
+            The final batch size used for processing.
         """
 
-        # pre-processing of the data to handle the sparsity
+        # Pre-processing of the data to handle the sparsity
         if not isinstance(data, skt.sptensor):
             data = preprocess(data)
         data_X = preprocess_X(data_X)
@@ -181,7 +210,7 @@ class MTCOV(ModelClass, UpdateMixin):
         initialization: int = 0,
         undirected: bool = False,
         assortative: bool = True,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -245,7 +274,7 @@ class MTCOV(ModelClass, UpdateMixin):
         # Preprocess the data for fitting the model
         data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX = (
             self.preprocess_data_for_fit(
-                rseed, initialization, data, data_X, nodes, batch_size
+                data, data_X, batch_size
             )
         )
 
@@ -684,12 +713,12 @@ class MTCOV(ModelClass, UpdateMixin):
             Xlog = data_X.data * logP
         lX = Xlog.sum()
 
-        l = (1.0 - self.gamma) * lG + self.gamma * lX
+        loglik = (1.0 - self.gamma) * lG + self.gamma * lX
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             raise ValueError("Likelihood is NaN!!!!")
 
-        return l
+        return loglik
 
     def __Likelihood_batch(
         self,
@@ -744,13 +773,13 @@ class MTCOV(ModelClass, UpdateMixin):
         Xlog = X_attr.data[IDXs] * logP[(IDXs, X_attr.nonzero()[1][IDXs])]
         lX = Xlog.sum()
 
-        l = (1.0 - self.gamma) * lG + self.gamma * lX
+        loglik = (1.0 - self.gamma) * lG + self.gamma * lX
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             logging.error("Likelihood is NaN!!!!")
             sys.exit(1)
         else:
-            return l
+            return loglik
 
     def _check_for_convergence_delta(
         self, it, coincide, du, dv, dw, db, convergence
@@ -800,3 +829,23 @@ class MTCOV(ModelClass, UpdateMixin):
         it += 1
 
         return it, coincide, convergence
+
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        """
+        Copy variables from source to target.
+
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        # Call the base method
+        super()._copy_variables(source_suffix, target_suffix)
+
+        # Set specific variables
+        source_var = getattr(self, f"beta{source_suffix}")
+        setattr(self, f"beta{target_suffix}", np.copy(source_var))
