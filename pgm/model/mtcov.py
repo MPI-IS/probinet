@@ -14,13 +14,12 @@ import sktensor as skt
 from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess, preprocess_X
-from ..input.tools import log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative
+from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import lambda_full
-from ..output.plot import plot_L
-from .base import FitParams, ModelClass
+from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
 
 
-class MTCOV(ModelClass):
+class MTCOV(ModelBase, ModelUpdateMixin):
     """
     Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
@@ -65,7 +64,7 @@ class MTCOV(ModelClass):
         data: Union[skt.dtensor, skt.sptensor, np.ndarray],
         data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
         K: int,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
 
         message = (
@@ -109,6 +108,95 @@ class MTCOV(ModelClass):
             self.Z = dfB.shape[1]
             assert self.K == dfU.shape[1] == dfB.shape[0]
 
+    def preprocess_data_for_fit(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_X: np.ndarray,
+        batch_size: Optional[int] = None,
+    ) -> Tuple[
+        Union[skt.dtensor, skt.sptensor],
+        np.ndarray,
+        Tuple[np.ndarray],
+        Tuple[np.ndarray],
+        Optional[np.ndarray],
+        Optional[Tuple[np.ndarray]],
+        Optional[Tuple[np.ndarray]],
+        float,
+    ]:
+        """
+        Preprocesses the input data for fitting the model.
+
+        This method handles the sparsity of the data, saves the indices of the non-zero entries,
+        and optionally selects a subset of nodes for batch processing.
+
+        Parameters
+        ----------
+        data : Union[skt.dtensor, skt.sptensor]
+            The graph adjacency tensor to be preprocessed.
+        data_X : np.ndarray
+            The one-hot encoding version of the design matrix to be preprocessed.
+        batch_size : Optional[int], default=None
+            The size of the subset of nodes to compute the likelihood with. If None, the method
+            will automatically determine the batch size based on the number of nodes.
+
+        Returns
+        -------
+        preprocessed_data : Union[skt.dtensor, skt.sptensor]
+            The preprocessed graph adjacency tensor.
+        preprocessed_data_X : np.ndarray
+            The preprocessed one-hot encoding version of the design matrix.
+        subs_nz : Tuple[np.ndarray]
+            The indices of the non-zero entries in the data.
+        subs_X_nz : Tuple[np.ndarray]
+            The indices of the non-zero entries in the design matrix.
+        subset_N : Optional[np.ndarray]
+            The subset of nodes selected for batch processing. None if no subset is selected.
+        Subs : Optional[Tuple[np.ndarray]]
+            The list of tuples representing the non-zero entries in the data. None if no subset is selected.
+        SubsX : Optional[Tuple[np.ndarray]]
+            The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
+        batch_size : float
+            The final batch size used for processing.
+        """
+
+        # Pre-processing of the data to handle the sparsity
+        if not isinstance(data, skt.sptensor):
+            data = preprocess(data)
+        data_X = preprocess_X(data_X)
+
+        # save the indexes of the nonzero entries
+        if isinstance(data, skt.dtensor):
+            subs_nz = data.nonzero()
+        elif isinstance(data, skt.sptensor):
+            subs_nz = data.subs
+        subs_X_nz = data_X.nonzero()
+
+        if batch_size:
+            if batch_size > self.N:
+                batch_size = min(5000, self.N)
+            np.random.seed(10)
+            subset_N = np.random.choice(
+                np.arange(self.N), size=batch_size, replace=False
+            )
+            Subs = list(zip(*subs_nz))
+            SubsX = list(zip(*subs_X_nz))
+        else:
+            if self.N > 5000:
+                batch_size = 5000
+                np.random.seed(10)
+                subset_N = np.random.choice(
+                    np.arange(self.N), size=batch_size, replace=False
+                )
+                Subs = list(zip(*subs_nz))
+                SubsX = list(zip(*subs_X_nz))
+            else:
+                subset_N = None
+                Subs = None
+                SubsX = None
+        logging.debug("batch_size: %s", batch_size)
+
+        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX
+
     def fit(
         self,
         data: Union[skt.dtensor, skt.sptensor],
@@ -122,8 +210,7 @@ class MTCOV(ModelClass):
         initialization: int = 0,
         undirected: bool = False,
         assortative: bool = True,
-        **extra_params: Unpack[FitParams],
-        # complaining about the types of the values
+        **extra_params: Unpack[ModelFitParameters],
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -164,6 +251,7 @@ class MTCOV(ModelClass):
         maxL : float
                Maximum log-likelihood value.
         """
+        # Check the parameters for fitting the model
         self.check_fit_params(
             data=data,
             data_X=data_X,
@@ -174,168 +262,175 @@ class MTCOV(ModelClass):
             assortative=assortative,
             **extra_params,
         )
-
+        # Set the random seed
+        logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
+
+        # Initialize the fit parameters
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
         self.nodes = nodes
 
-        # pre-processing of the data to handle the sparsity
-        if not isinstance(data, skt.sptensor):
-            data = preprocess(data)
-        data_X = preprocess_X(data_X)
-
-        # save the indexes of the nonzero entries
-        if isinstance(data, skt.dtensor):
-            subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
-        subs_X_nz = data_X.nonzero()
-
-        if batch_size:
-            if batch_size > self.N:
-                batch_size = min(5000, self.N)
-            np.random.seed(10)
-            subset_N = np.random.choice(
-                np.arange(self.N), size=batch_size, replace=False
+        # Preprocess the data for fitting the model
+        data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX = (
+            self.preprocess_data_for_fit(
+                data, data_X, batch_size
             )
-            Subs = list(zip(*subs_nz))
-            SubsX = list(zip(*subs_X_nz))
-        else:
-            if self.N > 5000:
-                batch_size = 5000
-                np.random.seed(10)
-                subset_N = np.random.choice(
-                    np.arange(self.N), size=batch_size, replace=False
-                )
-                Subs = list(zip(*subs_nz))
-                SubsX = list(zip(*subs_X_nz))
-            else:
-                subset_N = None
-                Subs = None
-                SubsX = None
-        logging.debug("batch_size: %s", batch_size)
+        )
 
+        # Set the preprocessed data and other related variables as attributes of the class instance
+        self.data = data
+        self.data_X = data_X
+        self.subs_nz = subs_nz
+        self.subs_X_nz = subs_X_nz
+        self.batch_size = batch_size
+        self.subset_N = subset_N
+        self.Subs = Subs
+        self.SubsX = SubsX
+
+        # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
         for r in range(self.num_realizations):
 
-            # For each realization (r), it initializes the parameters, updates the old variables
-            # and updates the cache.
-            logging.debug(
-                "Random number generator seed: %s", self.rng.get_state()[1][0]
+            # Initialize the parameters for the current realization
+            coincide, convergence, it, loglik, loglik_values = (
+                self._initialize_realization()
             )
-            super()._initialize()
-            super()._update_old_variables()
-            self._update_cache(data, subs_nz, data_X, subs_X_nz)  # type: ignore
 
-            # convergence local variables
-            coincide, it = 0, 0
-            convergence = False
-            if flag_conv == "log":
-                loglik = self.inf
+            # Update the parameters for the current realization
+            it, loglik, coincide, convergence, loglik_values = self._update_realization(
+                r, it, loglik, coincide, convergence, loglik_values
+            )
 
-            logging.debug("Updating realization %s ...", r)
-            loglik_values = []
-            time_start = time.time()
-            # It enters a while loop that continues until either convergence is achieved or the maximum number of
-            # iterations (self.max_iter) is reached.
-            while np.logical_and(not convergence, it < self.max_iter):
-                # main EM update: updates memberships and calculates max difference new vs old
-                delta_u, delta_v, delta_w, delta_beta = self._update_em(
-                    data, data_X, subs_nz, subs_X_nz
-                )  # type: ignore
-                if flag_conv == "log":
-                    it, loglik, coincide, convergence = self._check_for_convergence(
-                        data,
-                        it,
-                        loglik,
-                        coincide,
-                        convergence,
-                        data_X=data_X,
-                        batch_size=batch_size,
-                        subset_N=subset_N,  # type: ignore
-                        Subs=Subs,  # type: ignore
-                        SubsX=SubsX,  # type: ignore
-                    )
-                    loglik_values.append(loglik)
-                    if not it % 100:
-                        logging.debug(
-                            "Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s  "
-                            "seconds",
-                            r,
-                            loglik,
-                            it,
-                            np.round(time.time() - time_start, 2),
-                        )
-                elif flag_conv == "deltas":
-                    it, coincide, convergence = super()._check_for_convergence_delta(
-                        it, coincide, delta_u, delta_v, delta_w, delta_beta, convergence
-                    )
-                    if not it % 100:
-                        logging.debug(
-                            "Nreal = %s - iterations = %s - time = %s seconds",
-                            r,
-                            it,
-                            np.round(time.time() - time_start, 2),
-                        )
-                else:
-                    log_and_raise_error(
-                        ValueError,
-                        'Error! flag_conv can be either "log" or ' '"deltas"',
-                    )
-
-            if flag_conv == "deltas":
-                if not batch_size:
-                    loglik = self.__Likelihood(data, data_X)
-                else:
-                    loglik = self.__Likelihood_batch(
-                        data, data_X, subset_N, Subs, SubsX
-                    )
-
+            # If the current log-likelihood is greater than the maximum log-likelihood so far,
+            # update the optimal parameters and the maximum log-likelihood
             if maxL < loglik:
                 super()._update_optimal_parameters()
-                maxL = loglik
+                self.maxL = loglik
                 self.final_it = it
                 conv = convergence
-                best_r = r
+                self.best_r = r
                 if flag_conv == "log":
-                    best_loglik = list(loglik_values)
+                    best_loglik_values = list(loglik_values)
+            # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             logging.debug(
                 "Nreal = %s - Loglikelihood = %s - iterations = %s - time = "
                 "%s seconds",
                 r,
                 loglik,
                 self.final_it,
-                np.round(time.time() - time_start, 2),
+                np.round(time.time() - self.time_start, 2),
             )
 
             # end cycle over realizations
 
-        logging.debug(
-            "Best real = %s - maxL = %s - best iterations = %s",
-            best_r,
-            maxL,
-            self.final_it,
-        )
+        # Evaluate the results of the fitting process
+        self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
 
-        self.maxL = maxL
+        # Return the final parameters and the maximum log-likelihood
+        return self.u_f, self.v_f, self.w_f, self.beta_f, self.maxL
 
-        if np.logical_and(self.final_it == self.max_iter, not conv):
-            # convergence is not reached
-            logging.warning(
-                "Solution failed to converge in %s EM steps!", self.max_iter
-            )
-            logging.warning("Parameters won't be saved!")
+    def _initialize_realization(self):
+        """
+        This method initializes the parameters for each realization of the EM algorithm.
+        It also sets up local variables for convergence checking.
+        """
+        # Log the current state of the random number generator
+        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
 
+        # Call the _initialize method from the parent class to initialize the parameters for the current realization
+        super()._initialize()
+
+        # Call the _update_old_variables method from the parent class to update the old variables for the current realization
+        super()._update_old_variables()
+
+        # Update the cache used in the EM update
+        self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)  # type: ignore
+
+        # Set up local variables for convergence checking
+        # coincide and it are counters, convergence is a boolean flag
+        # loglik is the initial pseudo log-likelihood
+        coincide, it = 0, 0
+        convergence = False
+        loglik = self.inf
+        loglik_values = []
+
+        # Record the start time of the realization
+        self.time_start = time.time()
+
+        # Return the initial state of the realization
+        return coincide, convergence, it, loglik, loglik_values
+
+    def compute_likelihood(self):
+        """
+        Compute the pseudo log-likelihood of the data.
+
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T : sptensor/dtensor, optional
+                 Graph adjacency tensor (transpose).
+        mask : ndarray, optional
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+
+        Returns
+        -------
+        loglik : float
+                 Pseudo log-likelihood value.
+        """
+        if not self.batch_size:
+            return self.__Likelihood(self.data, self.data_X)
         else:
-            if self.out_inference:
-                super()._output_results()
+            return self.__Likelihood_batch(
+                self.data, self.data_X, self.subset_N, self.Subs, self.SubsX
+            )
 
-        if np.logical_and(self.plot_loglik, flag_conv == "log"):
-            plot_L(best_loglik, int_ticks=True)
+    def _update_em(self):
+        """
+        Update parameters via EM procedure.
 
-        self.maxL = maxL
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_X : ndarray
+                 Object representing the one-hot encoding version of the design matrix.
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        subs_X_nz : tuple
+                    Indices of elements of data_X that are non-zero.
+        """
 
-        return self.u_f, self.v_f, self.w_f, self.beta_f, maxL
+        if self.gamma < 1.0:
+            if not self.assortative:
+                d_w = self._update_W(self.subs_nz)
+            else:
+                d_w = self._update_W_assortative(self.subs_nz)
+        else:
+            d_w = 0
+        self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
+
+        if self.gamma > 0.0:
+            d_beta = self._update_beta(self.subs_X_nz)
+        else:
+            d_beta = 0.0
+        self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
+
+        d_u = self._update_U(self.subs_nz, self.subs_X_nz)
+        self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
+
+        if self.undirected:
+            self.v = self.u
+            self.v_old = self.v
+            d_v = d_u
+        else:
+            d_v = self._update_V(self.subs_nz, self.subs_X_nz)
+        self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
+
+        self.delta_u = d_u
+        self.delta_v = d_v
+        self.delta_w = d_w
+        self.delta_beta = d_beta
 
     def _initialize_eta(self) -> None:
         """
@@ -431,81 +526,7 @@ class MTCOV(ModelClass):
             return np.einsum("Ik,kz->Iz", u[subs_X_nz[0], :], beta)
         return np.einsum("Ik,kz->Iz", u[subs_X_nz[0], :] + v[subs_X_nz[0], :], beta)
 
-    def _update_em(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_X: np.ndarray,
-        subs_nz: Tuple[np.ndarray],
-        subs_X_nz: Tuple[np.ndarray],
-    ) -> Tuple[float, float, float, float]:
-        """
-        Update parameters via EM procedure.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_X : ndarray
-                 Object representing the one-hot encoding version of the design matrix.
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-        subs_X_nz : tuple
-                    Indices of elements of data_X that are non-zero.
-
-        Returns
-        -------
-        d_u : float
-              Maximum distance between the old and the new membership matrix U.
-        d_v : float
-              Maximum distance between the old and the new membership matrix V.
-        d_beta : float
-                 Maximum distance between the old and the new beta matrix.
-        d_w : float
-              Maximum distance between the old and the new affinity tensor W.
-        """
-
-        if self.gamma < 1.0:
-            if not self.assortative:
-                d_w = self._update_W(subs_nz)
-            else:
-                d_w = self._update_W_assortative(subs_nz)
-        else:
-            d_w = 0
-        self._update_cache(data, subs_nz, data_X, subs_X_nz)
-
-        if self.gamma > 0.0:
-            d_beta = self._update_beta(subs_X_nz)
-        else:
-            d_beta = 0.0
-        self._update_cache(data, subs_nz, data_X, subs_X_nz)
-
-        d_u = self._update_U(subs_nz, subs_X_nz)
-        self._update_cache(data, subs_nz, data_X, subs_X_nz)
-
-        if self.undirected:
-            self.v = self.u
-            self.v_old = self.v
-            d_v = d_u
-        else:
-            d_v = self._update_V(subs_nz, subs_X_nz)
-        self._update_cache(data, subs_nz, data_X, subs_X_nz)
-
-        return d_u, d_v, d_w, d_beta
-
-    def _update_W(self, subs_nz):
-        """
-        Update affinity tensor.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor W.
-        """
+    def _specific_update_W(self, subs_nz: tuple):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -517,38 +538,13 @@ class MTCOV(ModelClass):
                 uttkrp_DKQ[:, k, q] += np.bincount(
                     subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
                 )
-
         self.w *= uttkrp_DKQ
-
         Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))
         non_zeros = Z > 0
 
-        for a in range(self.L):
-            self.w[a, non_zeros] /= Z[non_zeros]
+        self.w[:, non_zeros] /= Z[non_zeros]
 
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
-
-    def _update_W_assortative(self, subs_nz):
-        """
-        Update affinity tensor (assuming assortativity).
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor W.
-        """
-
+    def _specific_update_W_assortative(self, subs_nz: tuple):
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
@@ -565,14 +561,6 @@ class MTCOV(ModelClass):
         non_zeros = Z > 0
         for a in range(self.L):
             self.w[a, non_zeros] /= Z[non_zeros]
-
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
 
     def _update_beta(self, subs_X_nz: Tuple[np.ndarray]) -> float:
         """
@@ -610,25 +598,7 @@ class MTCOV(ModelClass):
 
         return dist_beta
 
-    def _update_U(
-        self, subs_nz: Tuple[np.ndarray], subs_X_nz: Tuple[np.ndarray]
-    ) -> float:
-        """
-        Update out-going membership matrix.
-
-        Parameters
-        ----------
-        subs_nz : Tuple[np.ndarray]
-                  Indices of elements of data that are non-zero.
-        subs_X_nz : Tuple[np.ndarray]
-                    Indices of elements of data_X that are non-zero.
-
-        Returns
-        -------
-        dist_u : float
-                 Maximum distance between the old and the new membership matrix U.
-        """
-
+    def _specific_update_U(self, subs_nz: tuple, subs_X_nz: tuple = None) -> None:
         self.u = self._update_membership(
             subs_nz, subs_X_nz, self.u, self.v, self.w, self.beta, 1
         )
@@ -636,47 +606,13 @@ class MTCOV(ModelClass):
         row_sums = self.u.sum(axis=1)
         self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-        low_values_indices = self.u < self.err_max  # values are too low
-        self.u[low_values_indices] = 0.0  # and set to 0.
-
-        dist_u = np.amax(abs(self.u - self.u_old))
-        self.u_old = np.copy(self.u)
-
-        return dist_u
-
-    def _update_V(
-        self, subs_nz: Tuple[np.ndarray], subs_X_nz: Tuple[np.ndarray]
-    ) -> float:
-        """
-        Update in-coming membership matrix.
-
-        Parameters
-        ----------
-        subs_nz : Tuple[np.ndarray]
-                  Indices of elements of data that are non-zero.
-        subs_X_nz : Tuple[np.ndarray]
-                    Indices of elements of data_X that are non-zero.
-
-        Returns
-        -------
-        dist_v : float
-                 Maximum distance between the old and the new membership matrix V.
-        """
-
+    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None) -> None:
         self.v = self._update_membership(
             subs_nz, subs_X_nz, self.u, self.v, self.w, self.beta, 2
         )
 
         row_sums = self.v.sum(axis=1)
         self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
-
-        low_values_indices = self.v < self.err_max  # values are too low
-        self.v[low_values_indices] = 0.0  # and set to 0.
-
-        dist_v = np.amax(abs(self.v - self.v_old))
-        self.v_old = np.copy(self.v)
-
-        return dist_v
 
     def _update_membership(
         self,
@@ -738,55 +674,6 @@ class MTCOV(ModelClass):
 
         return out
 
-    def _compute_loglik(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        use_pseudo_likelihood: bool,
-        data_T: Union[skt.dtensor, skt.sptensor],
-        mask: Optional[np.ndarray],
-        data_T_vals: Optional[np.ndarray],
-        subs_nz: Tuple[np.ndarray],
-        T: int,
-        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]],
-    ) -> float:
-        """
-        Compute the log-likelihood of the data.
-
-        Parameters
-        ----------
-        data : Union[skt.dtensor, skt.sptensor]
-               Graph adjacency tensor.
-        use_pseudo_likelihood : bool
-                                Flag to indicate whether to use pseudo likelihood.
-        data_T : Union[skt.dtensor, skt.sptensor]
-                 Graph adjacency tensor (transpose).
-        mask : Optional[np.ndarray]
-               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
-        data_T_vals : Optional[np.ndarray]
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
-        subs_nz : Tuple[np.ndarray]
-                  Indices of elements of data that are non-zero.
-        T : int
-            Number of time steps.
-        kwargs : Union[np.ndarray, int, List[int], Tuple[np.ndarray]]
-                 Additional parameters that might be needed for the computation.
-
-        Returns
-        -------
-        loglik : float
-                 Computed log-likelihood value.
-        """
-
-        data_X = kwargs.get("data_X")
-        batch_size = kwargs.get("batch_size")
-        subset_N = kwargs.get("subset_N")
-        Subs = kwargs.get("Subs")
-        SubsX = kwargs.get("SubsX")
-        if not batch_size:
-            return self.__Likelihood(data, data_X)
-
-        return self.__Likelihood_batch(data, data_X, subset_N, Subs, SubsX)
-
     def __Likelihood(
         self, data: Union[skt.dtensor, skt.sptensor], data_X: np.ndarray
     ) -> float:
@@ -826,12 +713,12 @@ class MTCOV(ModelClass):
             Xlog = data_X.data * logP
         lX = Xlog.sum()
 
-        l = (1.0 - self.gamma) * lG + self.gamma * lX
+        loglik = (1.0 - self.gamma) * lG + self.gamma * lX
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             raise ValueError("Likelihood is NaN!!!!")
 
-        return l
+        return loglik
 
     def __Likelihood_batch(
         self,
@@ -886,13 +773,13 @@ class MTCOV(ModelClass):
         Xlog = X_attr.data[IDXs] * logP[(IDXs, X_attr.nonzero()[1][IDXs])]
         lX = Xlog.sum()
 
-        l = (1.0 - self.gamma) * lG + self.gamma * lX
+        loglik = (1.0 - self.gamma) * lG + self.gamma * lX
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             logging.error("Likelihood is NaN!!!!")
             sys.exit(1)
         else:
-            return l
+            return loglik
 
     def _check_for_convergence_delta(
         self, it, coincide, du, dv, dw, db, convergence
@@ -942,3 +829,23 @@ class MTCOV(ModelClass):
         it += 1
 
         return it, coincide, convergence
+
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        """
+        Copy variables from source to target.
+
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        # Call the base method
+        super()._copy_variables(source_suffix, target_suffix)
+
+        # Set specific variables
+        source_var = getattr(self, f"beta{source_suffix}")
+        setattr(self, f"beta{target_suffix}", np.copy(source_var))

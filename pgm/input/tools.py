@@ -239,15 +239,15 @@ def check_symmetric(
     return np.allclose(a, a.T, rtol=rtol, atol=atol)
 
 
-def build_edgelist(A: coo_matrix, l: int) -> pd.DataFrame:
+def build_edgelist(A: coo_matrix, layer: int) -> pd.DataFrame:
     """
-    Build the edgelist for a given layer, a in DataFrame format.
+    Build the edgelist for a given layer, A in DataFrame format.
 
     Parameters
     ----------
     A : ndarray or sptensor
         Adjacency tensor.
-    l : int
+    layer : int
         Layer index.
     Returns
     -------
@@ -260,7 +260,7 @@ def build_edgelist(A: coo_matrix, l: int) -> pd.DataFrame:
     # Create a dictionary with 'source', 'target', and 'L' keys
     # 'source' and 'target' represent the row and column indices of non-zero elements in A
     # 'L' represents the data of non-zero elements in A
-    data_dict = {"source": A_coo.row, "target": A_coo.col, "L" + str(l): A_coo.data}
+    data_dict = {"source": A_coo.row, "target": A_coo.col, "L" + str(layer): A_coo.data}
 
     # Convert the dictionary to a pandas DataFrame
     df_res = pd.DataFrame(data_dict)
@@ -295,7 +295,7 @@ def output_adjacency(A: List, out_folder: str, label: str):
     out_folder_path.mkdir(parents=True, exist_ok=True)
 
     # For each layer in A, build an edge list and store them in a list
-    df_list = [build_edgelist(A[l], l) for l in range(len(A))]
+    df_list = [build_edgelist(A[layer], layer) for layer in range(len(A))]
 
     # Concatenate all the DataFrames in the list into a single DataFrame
     df = pd.concat(df_list)
@@ -336,14 +336,14 @@ def write_adjacency(
     N = G[0].number_of_nodes()
     L = len(G)
     B = np.empty(shape=[len(G), N, N])
-    for l in range(len(G)):
-        B[l, :, :] = nx.to_numpy_array(G[l], weight="weight")
+    for layer in range(len(G)):
+        B[layer, :, :] = nx.to_numpy_array(G[layer], weight="weight")
     df_list = []
     for i in range(N):
         for j in range(N):
             Z = 0
-            for l in range(L):
-                Z += B[l][i][j]
+            for layer in range(L):
+                Z += B[layer][i][j]
             if Z > 0:
                 data = [i, j]
                 data.extend([int(B[a][i][j]) for a in range(L)])
@@ -500,8 +500,11 @@ def sp_uttkrp(
                     w_I = w[0, :, k]
                     tmp *= (
                         w_I[np.newaxis, :].astype(tmp.dtype)
-                        * u[subs[1], :].astype(tmp.dtype)  # type: ignore
-                    ).sum(axis=1)
+                        * u[subs[1], :].astype(tmp.dtype)
+                    ).sum(
+                        axis=1
+                    )  # type: ignore
+
             out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out
@@ -602,32 +605,3 @@ def log_and_raise_error(error_type: Type[BaseException], message: str) -> None:
 
     # Raise the exception
     raise error_type(message)
-
-
-def reciprocal_edges(G):
-    """
-    Compute the proportion of bi-directional edges, by considering the unordered pairs.
-
-    Parameters
-    ----------
-    G: MultiDigraph
-       MultiDiGraph NetworkX object.
-
-    Returns
-    -------
-    reciprocity: float
-         Reciprocity value, intended as the proportion of bi-directional edges over the unordered pairs.
-    """
-
-    n_all_edge = G.number_of_edges()
-    # unique pairs of edges, i.e. edges in the undirected graph
-    n_undirected = G.to_undirected().number_of_edges()
-    # number of undirected edges reciprocated in the directed network
-    n_overlap_edge = n_all_edge - n_undirected
-
-    if n_all_edge == 0:
-        raise nx.NetworkXError("Not defined for empty graphs.")
-
-    reciprocity = float(n_overlap_edge) / float(n_undirected)
-
-    return reciprocity

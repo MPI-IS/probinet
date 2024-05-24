@@ -61,7 +61,7 @@ def build_B_from_A(
 
     # Loop over each layer in A using enumeration to get both the layer index (l) and the graph
     # (A[l])
-    for l, A_layer in enumerate(A):
+    for layer, A_layer in enumerate(A):
         # Check if the current graph has the same set of nodes as the first graph
         assert set(A_layer.nodes()) == set(
             nodes
@@ -76,13 +76,13 @@ def build_B_from_A(
         # - weight='weight': consider edge weights
         # - dtype=int: ensure the resulting array has integer data type
         # - nodelist=nodes: use the specified nodes
-        B[l, :, :] = nx.to_numpy_array(
+        B[layer, :, :] = nx.to_numpy_array(
             A_layer, weight="weight", dtype=int, nodelist=nodes
         )
 
         # Calculate reciprocity for the current layer and append it to the rw list
         if calculate_reciprocity:
-            rw_layer = np.multiply(B[l], B[l].T).sum() / B[l].sum()
+            rw_layer = np.multiply(B[layer], B[layer].T).sum() / B[layer].sum()
             rw.append(rw_layer)
 
     if not calculate_reciprocity:
@@ -130,10 +130,10 @@ def build_sparse_B_from_A(
     )  # type: ndarray, ndarray, ndarray
 
     # Loop over each layer in A
-    for l in range(L):
+    for layer in range(L):
         # Convert the graph A[l] to a scipy sparse array and its transpose
-        b = nx.to_scipy_sparse_array(A[l])
-        b_T = nx.to_scipy_sparse_array(A[l]).transpose()
+        b = nx.to_scipy_sparse_array(A[layer])
+        b_T = nx.to_scipy_sparse_array(A[layer]).transpose()
 
         # Calculate reciprocity for the current layer and append it to the rw list
         if calculate_reciprocity:
@@ -144,7 +144,7 @@ def build_sparse_B_from_A(
         nz_T = b_T.nonzero()
 
         # Append indices and values to the arrays for building sparse tensors
-        d1 = np.hstack((d1, np.array([l] * len(nz[0]))))
+        d1 = np.hstack((d1, np.array([layer] * len(nz[0]))))
         d2 = np.hstack((d2, nz[0]))
         d2_T = np.hstack((d2_T, nz_T[0]))
         d3 = np.hstack((d3, nz[1]))

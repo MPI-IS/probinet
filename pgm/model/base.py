@@ -1,7 +1,9 @@
+from abc import ABC, abstractmethod
 import dataclasses
 from functools import singledispatchmethod
 import logging
 from pathlib import Path
+import time
 from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 import numpy as np
@@ -10,9 +12,10 @@ import sktensor as skt
 from typing_extensions import Unpack
 
 from pgm.input.tools import log_and_raise_error
+from pgm.output.plot import plot_L
 
 
-class FitParams(TypedDict):
+class ModelFitParameters(TypedDict):
     """
     Type hint for the fit method parameters.
     """
@@ -29,7 +32,7 @@ class FitParams(TypedDict):
 
 
 @dataclasses.dataclass
-class DataBase:
+class ModelBaseParameters:
     """
     Base class for the model classes.
     """
@@ -47,11 +50,11 @@ class DataBase:
     flag_conv: str = "log"  # flag to choose the convergence criterion
 
 
-class ModelClass(DataBase):
+class ModelBase(ModelBaseParameters):
     """
-    Base class for the model classes that inherit from the DataBase class. It contains the
+    Base class for the model classes that inherit from the ModelBaseParameters class. It contains the
     methods to check the parameters of the fit method, initialize the parameters, and check for
-    convergence.
+    convergence. All the model classes should inherit from this class.
     """
 
     def __init__(
@@ -111,7 +114,7 @@ class ModelClass(DataBase):
         beta0: Union[float, None],
         gamma: Union[float, None],
         message: str = "Invalid initialization parameter.",
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
         """
         Check the parameters of the fit method.
@@ -455,31 +458,6 @@ class ModelClass(DataBase):
         else:
             self.eta = self.rng.uniform(1.01, 49.99)
 
-    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
-        """
-        Copy variables from source to target.
-
-        Parameters
-        ----------
-        source_suffix : str
-                        The suffix of the source variable names.
-        target_suffix : str
-                        The suffix of the target variable names.
-        """
-        for var in ["u", "v", "w"]:
-            source_var = getattr(self, f"{var}{source_suffix}")
-            setattr(self, f"{var}{target_suffix}", np.copy(source_var))
-
-        if "MTCOV" in type(self).__name__:
-            source_var = getattr(self, f"beta{source_suffix}")
-            setattr(self, f"beta{target_suffix}", np.copy(source_var))
-        else:
-            source_var = getattr(self, f"eta{source_suffix}")
-            setattr(self, f"eta{target_suffix}", float(source_var))
-            if "DynCRep" in type(self).__name__:
-                source_var = getattr(self, f"beta{source_suffix}")
-                setattr(self, f"beta{target_suffix}", np.copy(source_var))
-
     def _update_old_variables(self) -> None:
         """
         Update values of the parameters in the previous iteration.
@@ -554,68 +532,8 @@ class ModelClass(DataBase):
         Compute the log-likelihood.
         """
 
-    def _compute_loglik(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        use_pseudo_likelihood: bool,
-        data_T: Union[skt.dtensor, skt.sptensor],
-        mask: Optional[np.ndarray],
-        data_T_vals: Optional[np.ndarray],
-        subs_nz: Tuple[np.ndarray],
-        T: int,
-        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]],
-    ) -> float:
-        """
-        Compute the log-likelihood of the data.
-
-        Parameters
-        ----------
-        data : Union[skt.dtensor, skt.sptensor]
-               Graph adjacency tensor.
-        use_pseudo_likelihood : bool
-                                Flag to indicate whether to use pseudo likelihood.
-        data_T : Union[skt.dtensor, skt.sptensor]
-                 Graph adjacency tensor (transpose).
-        mask : Optional[np.ndarray]
-               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
-        data_T_vals : Optional[np.ndarray]
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
-        subs_nz : Tuple[np.ndarray]
-                  Indices of elements of data that are non-zero.
-        T : int
-            Number of time steps.
-        kwargs : Union[np.ndarray, int, List[int], Tuple[np.ndarray]]
-                 Additional parameters that might be needed for the computation.
-
-        Returns
-        -------
-        loglik : float
-                 Computed log-likelihood value.
-        """
-        if use_pseudo_likelihood:
-            return self._PSLikelihood(data, data_T=data_T, mask=mask)
-        else:
-            if data_T_vals is not None and subs_nz is not None and T is not None:
-                return self._Likelihood(
-                    data, data_T, data_T_vals, subs_nz, T, mask=mask
-                )
-            else:
-                return self._Likelihood(data)
-
     def _check_for_convergence(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        it: int,
-        loglik: float,
-        coincide: int,
-        convergence: bool,
-        use_pseudo_likelihood: bool = False,
-        data_T_vals: Optional[np.ndarray] = None,
-        subs_nz: Optional[Tuple[np.ndarray]] = None,
-        T: Optional[int] = None,
-        data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
-        mask: Optional[np.ndarray] = None,
-        **kwargs: Union[np.ndarray, int, List[int], Tuple[np.ndarray]],
+        self, it: int, loglik: float, coincide: int, convergence: bool
     ) -> Tuple[int, float, int, bool]:
         """
         Check for convergence of the model.
@@ -658,18 +576,11 @@ class ModelClass(DataBase):
         convergence : bool
                       Updated flag for convergence.
         """
+
         # Check for convergence
         if it % 10 == 0:
             old_L = loglik
-            loglik = self._compute_loglik(
-                data,
-                use_pseudo_likelihood,
-                data_T,
-                mask,
-                data_T_vals,
-                subs_nz,
-                T,
-                **kwargs,
+            loglik = self.compute_likelihood(
             )
             if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
@@ -775,3 +686,292 @@ class ModelClass(DataBase):
 
         logging.info("Inferred parameters saved in: %s", outfile.resolve())
         logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
+
+    def _evaluate_fit_results(
+        self, maxL: float, conv: bool, best_loglik_values: Optional[List[float]] = None
+    ) -> None:
+        """
+        Evaluate the results of the fitting process and log the results.
+
+        Parameters
+        ----------
+        maxL : float
+            The maximum log-likelihood obtained from the fitting process.
+        conv : bool
+            A flag indicating whether the fitting process has converged.
+        best_loglik_values : list of float, optional
+            A list of the best log-likelihood values obtained at each iteration of the fitting
+            process.
+            If not provided, it defaults to None.
+        """
+        # Log the best real, maximum log-likelihood, and the best iterations
+        logging.debug(
+            "Best real = %s - maxL = %s - best iterations = %s",
+            self.best_r,
+            maxL,
+            self.final_it,
+        )
+
+        # Check if the fitting process has converged
+        if np.logical_and(self.final_it == self.max_iter, not conv):
+            # If the fitting process has not converged, log a warning
+            logging.warning(
+                "Solution failed to converge in %s EM steps!", self.max_iter
+            )
+            logging.warning("Parameters won't be saved!")
+        else:
+            # If the fitting process has converged and out_inference is True, output the results
+            if self.out_inference:
+                self._output_results()
+
+        # If plot_loglik and flag_conv are both True, plot the best log-likelihood values
+        if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
+            plot_L(best_loglik_values, int_ticks=True)
+
+    @abstractmethod
+    def compute_likelihood(self, *args, **kwargs) -> float:
+        """
+        Compute the log-likelihood of the data.
+
+        This is an abstract method that must be implemented in each derived class.
+        """
+
+
+class ModelUpdateMixin(ABC):
+    """
+    Mixin class for the update methods of the model classes. It is not a requirement to inherit
+    from this class. 
+    """
+
+    not_implemented_message = "This method should be overridden in the derived class"
+
+    def _finalize_update(
+        self, matrix: np.ndarray, matrix_old: np.ndarray
+    ) -> Tuple[float, np.ndarray, np.ndarray]:
+        low_values_indices = matrix < self.err_max  # values are too low
+        matrix[low_values_indices] = 0.0  # and set to 0.
+
+        dist = np.amax(abs(matrix - matrix_old))
+        matrix_old = np.copy(matrix)
+
+        return dist, matrix, matrix_old
+
+    def _update_U(self, subs_nz: tuple, subs_X_nz: tuple = None) -> float:
+        # A generic function here that will do what each class needs
+        self._specific_update_U(subs_nz, subs_X_nz)
+
+        # Finalize the update of the membership matrix U
+        dist, self.u, self.u_old = self._finalize_update(self.u, self.u_old)
+
+        return dist
+
+    @abstractmethod
+    def _specific_update_U(self, *args, **kwargs):
+        """
+        Update the membership matrix U.
+        """
+
+    def _update_V(self, subs_nz: tuple, subs_X_nz: tuple = None) -> float:
+        # a generic function here that will do what each class needs
+        self._specific_update_V(subs_nz, subs_X_nz)
+
+        dist, self.v, self.v_old = self._finalize_update(self.v, self.v_old)
+
+        return dist
+
+    @abstractmethod
+    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None):
+        """
+        Update the membership matrix V.
+
+        This is an abstract method that must be implemented in each derived class.
+        """
+
+    def _update_W(self, subs_nz: tuple) -> float:
+        # a generic function here that will do what each class needs
+        self._specific_update_W(subs_nz)
+
+        dist, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
+
+        return dist
+
+    # @abstractmethod
+    def _specific_update_W(self, *args, **kwargs):
+        """
+        Update the affinity tensor W.
+
+        This is an abstract method that must be implemented in each derived class.
+        """
+
+    def _update_W_assortative(self, subs_nz: tuple) -> float:
+        # a generic function here that will do what each class needs
+
+        self._specific_update_W_assortative(subs_nz)
+
+        dist, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
+
+        return dist
+
+    def _specific_update_W_assortative(self, subs_nz: tuple):
+        raise NotImplementedError(self.not_implemented_message)
+
+    @abstractmethod
+    def _update_membership(self, *args, **kwargs):
+        """
+        Update the membership matrix.
+
+        This is an abstract method that must be implemented in each derived class.
+        """
+
+    @abstractmethod
+    def _update_cache(self, *args, **kwargs):
+        """
+        Update the cache.
+
+        This is an abstract method that must be implemented in each derived class.
+        """
+
+    def _update_old_variables(self) -> None:
+        """
+        Update values of the parameters in the previous iteration.
+        """
+        self._copy_variables(source_suffix="", target_suffix="_old")
+
+    def _update_optimal_parameters(self) -> None:
+        """
+        Update values of the parameters after convergence.
+        """
+        self._copy_variables(source_suffix="", target_suffix="_f")
+        if "DynCRep" in type(self).__name__ and not self.fix_beta:
+            self.beta_f = np.copy(self.beta_hat[-1])  # TODO: Fix this
+
+    def _update_realization(
+        self,
+        r,
+        it,
+        loglik,
+        coincide,
+        convergence,
+        loglik_values,
+    ) -> Tuple[int, float, int, bool, list]:
+        """
+        Perform the EM update and check for convergence.
+
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T_vals : ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        denominator : float
+                      Denominator used in the update of the eta parameter.
+        it : int
+             Number of iteration.
+        loglik : float
+                 Log-likelihood value.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
+        loglik_values : list
+                        List of log-likelihood values.
+        r : int
+            Number of realizations.
+
+        Returns
+        -------
+        it : int
+             Number of iteration.
+        loglik : float
+                 Log-likelihood value.
+        coincide : int
+                   Number of time the update of the log-likelihood respects the convergence_tol.
+        convergence : bool
+                      Flag for convergence.
+        loglik_values : list
+                        List of log-likelihood values.
+        """
+        logging.debug("Updating realization %s ...", r)
+
+        # It enters a while loop that continues until either convergence is achieved or the
+        # maximum number of iterations (self.max_iter) is reached.
+        while np.logical_and(not convergence, it < self.max_iter):
+            #  it performs the main EM update (self._update_em()
+            # which updates the memberships and calculates the maximum difference
+            # between new and old parameters.
+            self._update_em()
+            # Depending on the convergence flag (self.flag_conv), it checks for convergence using
+            # either the pseudo log-likelihood values (self._check_for_convergence(data, it,
+            # loglik,  coincide, convergence, data_T=data_T, mask=mask)) or the maximum distances
+            # between the old and the new parameters (self._check_for_convergence_delta(it,
+            # coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
+
+            if self.flag_conv == "log":
+                it, loglik, coincide, convergence = self._check_for_convergence(
+                    it, loglik, coincide, convergence
+                )
+                loglik_values.append(loglik)
+                if not it % 100:
+                    logging.debug(
+                        "Nreal = %s - iterations = %s - time = %.2f seconds",
+                        r,
+                        it,
+                        time.time() - self.time_start,
+                    )
+            elif self.flag_conv == "deltas":
+                it, coincide, convergence = self._check_for_convergence_delta(
+                    it,
+                    coincide,
+                    self.delta_u,
+                    self.delta_v,
+                    self.delta_w,
+                    self.delta_eta,
+                    convergence,
+                )
+
+                if not it % 100:
+                    logging.debug(
+                        "Nreal = %s - iterations = %s - time = %.2f seconds",
+                        r,
+                        it,
+                        time.time() - self.time_start,
+                    )
+            else:
+                log_and_raise_error(
+                    ValueError, "flag_conv can be either log or deltas!"
+                )
+        # After the while loop, it checks if the current pseudo log-likelihood is the maximum
+        # so far. If it is, it updates the optimal parameters (
+        # self._update_optimal_parameters()) and sets maxL to the current pseudo log-likelihood.
+        if self.flag_conv == "deltas":
+            loglik = self.compute_likelihood()  # data, data_T, mask
+
+        return it, loglik, coincide, convergence, loglik_values
+
+    @abstractmethod
+    def _update_em(self, *args, **kwargs):
+        """
+        Update parameters via EM procedure.
+
+        This is an abstract method that must be implemented in each derived class.
+        """
+
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        # of derived classes
+        """
+        Copy variables from source to target.
+
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        for var in ["u", "v", "w"]:
+            source_var = getattr(self, f"{var}{source_suffix}")
+            setattr(self, f"{var}{target_suffix}", np.copy(source_var))

@@ -1053,8 +1053,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
         # Generate Y
 
         self.M = Exp_ija_matrix(self.u, self.v, self.w)
-        for l in range(self.L):
-            np.fill_diagonal(self.M[l], 0)
+        for layer in range(self.L):
+            np.fill_diagonal(self.M[layer], 0)
         # sparsity parameter for Y
         if self.is_sparse:
             c = self.ExpEdges / self.M.sum()
@@ -1069,18 +1069,18 @@ class StandardMMSBM(BaseSyntheticNetwork):
         nodes_to_remove = []
         self.G = []
         self.layer_graphs = []
-        for l in range(self.L):
-            self.G.append(nx.from_numpy_array(Y[l], create_using=nx.DiGraph()))
-            Gc = max(nx.weakly_connected_components(self.G[l]), key=len)
-            nodes_to_remove.append(set(self.G[l].nodes()).difference(Gc))
+        for layer in range(self.L):
+            self.G.append(nx.from_numpy_array(Y[layer], create_using=nx.DiGraph()))
+            Gc = max(nx.weakly_connected_components(self.G[layer]), key=len)
+            nodes_to_remove.append(set(self.G[layer].nodes()).difference(Gc))
 
         n_to_remove = nodes_to_remove[0].intersection(*nodes_to_remove)
-        for l in range(self.L):
-            self.G[l].remove_nodes_from(list(n_to_remove))
-            self.nodes = list(self.G[l].nodes())
+        for layer in range(self.L):
+            self.G[layer].remove_nodes_from(list(n_to_remove))
+            self.nodes = list(self.G[layer].nodes())
 
             self.layer_graphs.append(
-                nx.to_scipy_sparse_array(self.G[l], nodelist=self.nodes)
+                nx.to_scipy_sparse_array(self.G[layer], nodelist=self.nodes)
             )
 
         self.u = self.u[self.nodes]
@@ -1201,8 +1201,8 @@ class StandardMMSBM(BaseSyntheticNetwork):
 
         # Generate w
         w = np.zeros((self.L, self.K, self.K))
-        for l in range(self.L):
-            w[l, :, :] = self._compute_affinity_matrix(self.structure[l])
+        for layer in range(self.L):
+            w[layer, :, :] = self._compute_affinity_matrix(self.structure[layer])
 
         return u, v, w
 
@@ -1246,10 +1246,10 @@ class StandardMMSBM(BaseSyntheticNetwork):
             Mean lambda for all entries.
         """
 
-        for l in range(self.L):
+        for layer in range(self.L):
             _, ax = plt.subplots(figsize=(7, 7))
-            ax.matshow(self.M[l], cmap=plt.get_cmap(cmap))
-            ax.set_title(f"Marginal means matrix layer {l}", fontsize=15)
+            ax.matshow(self.M[layer], cmap=plt.get_cmap(cmap))
+            ax.set_title(f"Marginal means matrix layer {layer}", fontsize=15)
             for PCM in ax.get_children():
                 if isinstance(PCM, plt.cm.ScalarMappable):
                     break
@@ -1342,45 +1342,45 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
         self.layer_graphs = []
 
         nodes_to_remove = []
-        for l in range(self.L):
+        for layer in range(self.L):
             for i in range(self.N):
-                self.G[l].add_node(i)
+                self.G[layer].add_node(i)
 
         # whose elements are lambda0_{ij}
         self.M0 = lambda_full(self.u, self.v, self.w)
-        for l in range(self.L):
-            np.fill_diagonal(self.M0[l], 0)
+        for layer in range(self.L):
+            np.fill_diagonal(self.M0[layer], 0)
             if self.is_sparse:
                 # constant to enforce sparsity
                 c = brentq(
                     self._eq_c,
                     0.00001,
                     100.0,
-                    args=(self.ExpEdges, self.M0[l], self.eta),
+                    args=(self.ExpEdges, self.M0[layer], self.eta),
                 )
-                self.M0[l] *= c
+                self.M0[layer] *= c
                 if parameters is None:
-                    self.w[l] *= c
+                    self.w[layer] *= c
         # compute the normalization constant
         self.Z = self._calculate_Z(self.M0, self.eta)
 
-        for l in range(self.L):
+        for layer in range(self.L):
             for i in range(self.N):
                 for j in range(i + 1, self.N):
-                    # [p00, p01, p10, p11]
+                    # The probabilities look like [p00, p01, p10, p11]
                     probabilities = (
                         np.array(
                             [
                                 1.0,
-                                self.M0[l, j, i],
-                                self.M0[l, i, j],
-                                self.M0[l, i, j] * self.M0[l, j, i] * self.eta,
+                                self.M0[layer, j, i],
+                                self.M0[layer, i, j],
+                                self.M0[layer, i, j] * self.M0[layer, j, i] * self.eta,
                             ]
                         )
-                        / self.Z[l, i, j]
+                        / self.Z[layer, i, j]
                     )
                     cumulative = [
-                        1.0 / self.Z[l, i, j],
+                        1.0 / self.Z[layer, i, j],
                         np.sum(probabilities[:2]),
                         np.sum(probabilities[:3]),
                         1.0,
@@ -1396,23 +1396,23 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
                     elif r > cumulative[2]:
                         A_ij, A_ji = 1, 1
                     if A_ij > 0:
-                        self.G[l].add_edge(i, j, weight=1)  # binary
+                        self.G[layer].add_edge(i, j, weight=1)  # binary
                     if A_ji > 0:
-                        self.G[l].add_edge(j, i, weight=1)  # binary
+                        self.G[layer].add_edge(j, i, weight=1)  # binary
 
-            assert len(list(self.G[l].nodes())) == self.N
+            assert len(list(self.G[layer].nodes())) == self.N
 
             # keep largest connected component
-            Gc = max(nx.weakly_connected_components(self.G[l]), key=len)
-            nodes_to_remove.append(set(self.G[l].nodes()).difference(Gc))
+            Gc = max(nx.weakly_connected_components(self.G[layer]), key=len)
+            nodes_to_remove.append(set(self.G[layer].nodes()).difference(Gc))
 
         n_to_remove = nodes_to_remove[0].intersection(*nodes_to_remove)
-        for l in range(self.L):
-            self.G[l].remove_nodes_from(list(n_to_remove))
-            self.nodes = list(self.G[l].nodes())
+        for layer in range(self.L):
+            self.G[layer].remove_nodes_from(list(n_to_remove))
+            self.nodes = list(self.G[layer].nodes())
 
             self.layer_graphs.append(
-                nx.to_scipy_sparse_array(self.G[l], nodelist=self.nodes)
+                nx.to_scipy_sparse_array(self.G[layer], nodelist=self.nodes)
             )
 
         self.u = self.u[self.nodes]
@@ -1484,11 +1484,11 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
         """
 
         M = (self.M0 + self.eta * self.M0 * transpose_tensor(self.M0)) / self.Z
-        for l in range(self.L):
-            np.fill_diagonal(M[l], 0.0)
+        for layer in range(self.L):
+            np.fill_diagonal(M[layer], 0.0)
             _, ax = plt.subplots(figsize=(7, 7))
-            ax.matshow(M[l], cmap=plt.get_cmap(cmap))
-            ax.set_title(f"Marginal means matrix layer {l}", fontsize=15)
+            ax.matshow(M[layer], cmap=plt.get_cmap(cmap))
+            ax.set_title(f"Marginal means matrix layer {layer}", fontsize=15)
             for PCM in ax.get_children():
                 if isinstance(PCM, plt.cm.ScalarMappable):
                     break
@@ -1653,7 +1653,7 @@ class CRepDyn:
         # Set c sparsity parameter
         Exp_M_inferred = M.sum()
         c = self.ExpM / Exp_M_inferred
-        # t == 0
+        # For t = 0
         for i in range(self.N):
             for j in range(self.N):
                 if i != j:
@@ -1661,7 +1661,7 @@ class CRepDyn:
                     if A_ij > 0:
                         G[0].add_edge(i, j, weight=1)  # binarized
 
-        # t > 0
+        # For t > 0
         for t in range(self.T):
             for i in range(self.N):
                 for j in range(self.N):

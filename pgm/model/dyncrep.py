@@ -6,7 +6,7 @@ The latent variables are related to community memberships and reciprocity value.
 import logging
 from pathlib import Path
 import time
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy.optimize import brentq, root
@@ -18,12 +18,11 @@ from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import func_lagrange_multiplier, lambda_full, u_with_lagrange_multiplier
-from ..output.plot import plot_L
-from .base import FitParams, ModelClass
+from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
 from .constants import EPS_
 
 
-class DynCRep(ModelClass):
+class DynCRep(ModelBase, ModelUpdateMixin):
     """
     Class definition of CRepDyn_w_temp, the algorithm to perform inference in temporal  networks
     with reciprocity.
@@ -73,7 +72,7 @@ class DynCRep(ModelClass):
         ag: float,
         bg: float,
         flag_data_T: int,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
         message = (
             "The initialization parameter can be either 0, or 1.  It is used as an "
@@ -161,8 +160,15 @@ class DynCRep(ModelClass):
         bg: float = 0.5,
         flag_data_T: int = 0,
         temporal: bool = True,
-        **extra_params: Unpack[FitParams],
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, int]:
+        **extra_params: Unpack[ModelFitParameters],
+    ) -> Tuple[
+        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray[Any, np.dtype[np.float64]],
+        float,
+        np.ndarray[Any, np.dtype[np.float64]],
+        float,
+    ]:
         """
         Model directed networks by using a probabilistic generative model that assumes community parameters and
         reciprocity coefficient. The inference is performed via the EM algorithm.
@@ -205,6 +211,7 @@ class DynCRep(ModelClass):
         final_it : int
                    Total number of iterations.
         """
+        # Check the parameters for fitting the model
         self.check_fit_params(
             K,  # type: ignore
             data,
@@ -215,30 +222,143 @@ class DynCRep(ModelClass):
         )  # TODO: fix missing positional arguments after
         # change in extra_params
 
+        # Set the random seed
         logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)
+
+        # Initialize the fit parameters
         self.nodes = nodes
+        maxL = -self.inf
         T = max(0, min(T, data.shape[0] - 1))
         self.T = T
         self.temporal = temporal
 
-        if self.temporal:
-            self.L = T + 1
-            logging.debug("Temporal version, i.e., affinity tensor is dynamic.")
-        else:
-            self.L = 1
-            logging.debug("Static version, i.e., affinity tensor is static.")
+        # Preprocess the data for fitting the model
+        T, data, data_AtAtm1, data_T, data_T_vals, data_Tm1, subs_nzp = (
+            self._preprocess_data_for_fit(T, data)
+        )
+
+        # Set the preprocessed data and other related variables as attributes of the class instance
+        self.data_AtAtm1 = data_AtAtm1
+        self.data_Tm1 = data_Tm1
+        self.data_T_vals = data_T_vals
+        self.subs_nzp = subs_nzp
+        self.data = data
+        self.data_T = data_T
+        self.T = T
+        self.mask = mask
+
+        # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
+        for r in range(self.num_realizations):
+
+            # Initialize the parameters for the current realization
+            coincide, convergence, it, loglik, loglik_values = (
+                self._initialize_realization()
+            )
+
+            # Update the parameters for the current realization
+            it, loglik, coincide, convergence, loglik_values = self._update_realization(
+                r, it, loglik, coincide, convergence, loglik_values
+            )
+
+            # If the current log-likelihood is greater than the maximum log-likelihood so far,
+            # update the optimal parameters and the maximum log-likelihood
+            if maxL < loglik:
+                super()._update_optimal_parameters()
+                best_loglik_values = list(loglik_values)
+                self.maxL = loglik
+                self.final_it = it
+                conv = convergence
+                self.best_r = r
+
+            # Log the current realization number, log-likelihood, number of iterations, and elapsed time
+            logging.debug(
+                "Nreal = %s - Log-likelihood = %s - iterations = %s - "
+                "time = %s seconds",
+                r,
+                loglik,
+                self.final_it,
+                np.round(time.time() - self.time_start, 2),
+            )
+
+        # end cycle over realizations
+
+        # Evaluate the results of the fitting process
+        self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
+
+        # Return the final parameters and the maximum log-likelihood
+        return self.u_f, self.v_f, self.w_f, self.eta_f, self.beta_f, self.maxL  # type: ignore
+
+    def _initialize_realization(self):
+        """
+        This method initializes the parameters for each realization of the EM algorithm.
+        It also sets up local variables for convergence checking.
+        """
+        # Log the current state of the random number generator
+        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+
+        # Call the _initialize method from the parent class to initialize the parameters for the current realization
+        super()._initialize()
+
+        # Call the _update_old_variables method from the parent class to update the old variables for the current realization
+        super()._update_old_variables()
+
+        # Set up local variables for convergence checking
+        # coincide and it are counters, convergence is a boolean flag
+        # loglik is the initial pseudo log-likelihood
+        coincide, it = 0, 0
+        convergence = False
+        loglik = self.inf
+        loglik_values = []
+
+        # Record the start time of the realization
+        self.time_start = time.time()
+
+        # Return the initial state of the realization
+        return coincide, convergence, it, loglik, loglik_values
+
+    def _preprocess_data_for_fit(
+        self, T: int, data: Union[skt.dtensor, skt.sptensor]
+    ) -> Tuple[
+        int,
+        Union[skt.dtensor, skt.sptensor],
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        tuple,
+    ]:
+        """
+        Preprocess the data for fitting the model.
+
+        Parameters
+        ----------
+        T : int
+            Number of time steps.
+        data : skt.dtensor or skt.sptensor
+            The input data tensor.
+        temporal : bool
+            Flag to determine if the function should behave in a temporal manner.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the number of time steps, the preprocessed data tensor, the preprocessed data tensor for
+            numerator containing Aij(t)*(1-Aij(t-1)), the transposed data tensor, the values of the non-zero entries in
+            the transposed data tensor, the transposed data tensor at time t-1, and the indices of the non-zero entries
+            in the data tensor.
+        """
+
+        # Set the number of time steps based on whether the model is temporal or static
+        self.L = T + 1 if self.temporal else 1
         logging.debug("Number of time steps L: %s", self.L)
 
+        # Limit the data to the number of time steps
         data = data[: T + 1, :, :]
 
-        # Pre-process data
+        # Initialize the data for calculating the numerator containing Aij(t)*(1-Aij(t-1))
         data_AtAtm1 = np.zeros(data.shape)
-        # data_tm1 = np.zeros_like(data)
-
-        data_AtAtm1[0, :, :] = data[
-            0, :, :
-        ]  # to calculate numerator containing Aij(t)*(1-Aij(t-1))
+        data_AtAtm1[0, :, :] = data[0, :, :]
 
         if self.flag_data_T == 1:  # same time step
             self.E0 = np.sum(data[0])  # to calculate denominator eta
@@ -246,14 +366,11 @@ class DynCRep(ModelClass):
         else:  # previous time step
             self.E0 = 0.0  # to calculate denominator eta
             self.Etg0 = np.sum(data[:-1])  # to calculate denominator eta
-
         self.bAtAtm1 = 0
         self.Atm11At = 0
-
         data_T = np.einsum(
             "aij->aji", data
         )  # to calculate denominator containing Aji(t)
-
         if self.flag_data_T == 1:
             # Copy the data at time t to the array data_Tm1
             data_Tm1 = data_T.copy()
@@ -263,9 +380,9 @@ class DynCRep(ModelClass):
             # Copy the data at time t-1 to the array
             for i in range(T):
                 data_Tm1[i + 1, :, :] = data_T[i, :, :]
-        # Calculate the sum of the data at time t-1
-        self.sum_datatm1 = data_Tm1[1:].sum()  # needed in the update of beta
+        self.sum_datatm1 = data_Tm1[1:].sum()
 
+        # Calculate Aij(t)*Aij(t-1) and (1-Aij(t))*Aij(t-1)
         if T > 0:
             logging.debug(
                 "T is greater than 0. Proceeding with calculations that require "
@@ -276,12 +393,12 @@ class DynCRep(ModelClass):
             Atm11At_l = 0
             for i in range(T):
                 data_AtAtm1[i + 1, :, :] = data[i + 1, :, :] * (1 - data[i, :, :])
-                # calculate Aij(t)*Aij(t-1)
+                # Calculate the expression Aij(t)*Aij(t-1)
                 sub_nz_and = np.logical_and(data[i + 1, :, :] > 0, data[i, :, :] > 0)
                 bAtAtm1_l += (
                     (data[i + 1, :, :][sub_nz_and] * data[i, :, :][sub_nz_and])
                 ).sum()
-                # calculate (1-Aij(t))*Aij(t-1)
+                # Calculate the expression (1-Aij(t))*Aij(t-1)
                 sub_nz_and = np.logical_and(
                     data[i, :, :] > 0, (1 - data[i + 1, :, :]) > 0
                 )
@@ -291,131 +408,61 @@ class DynCRep(ModelClass):
             self.bAtAtm1 = bAtAtm1_l
             self.Atm11At = Atm11At_l
 
-        self.sum_data_hat = data_AtAtm1[1:].sum()  # needed in the update of beta
+        # Calculate the sum of the data hat from 1 to T
+        self.sum_data_hat = data_AtAtm1[1:].sum()
 
-        # to calculate denominator containing Aji(t)
-        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())  # type: ignore
+        # Calculate the denominator containing Aji(t)
+        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())
 
-        data_AtAtm1 = preprocess(
-            data_AtAtm1
-        )  # to calculate numerator containing Aij(t)*(1-Aij(t-1))
+        # Preprocess the data to handle the sparsity
+        data_AtAtm1 = preprocess(data_AtAtm1)
         data = preprocess(data)
 
-        # save the indexes of the nonzero entries of Aij(t)*(1-Aij(t-1))
-        if isinstance(data_AtAtm1, skt.dtensor):
-            subs_nzp = data_AtAtm1.nonzero()
-        elif isinstance(data_AtAtm1, skt.sptensor):
-            subs_nzp = data_AtAtm1.subs
+        # Save the indices of the non-zero entries
+        subs_nzp = (
+            data_AtAtm1.nonzero()
+            if isinstance(data_AtAtm1, skt.dtensor)
+            else data_AtAtm1.subs
+        )
 
-        # save the indexes of the nonzero entries of  Aij(t)
-        # TODO: Check with Hadiseh what this code is for
-        # if isinstance(data, skt.dtensor):
-        #     subs_nz = data.nonzero()
-        # elif isinstance(data, skt.sptensor):
-        #     subs_nz = data.subs
-
+        # Initialize the beta hat
         self.beta_hat = np.ones(T + 1)
         if T > 0:
             self.beta_hat[1:] = self.beta0
 
-        # INFERENCE
+        return T, data, data_AtAtm1, data_T, data_T_vals, data_Tm1, subs_nzp
 
-        maxL = -self.inf  # initialization of the maximum log-likelihood
+    def compute_likelihood(self):
+        """
+        Compute the likelihood of the model.
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T : sptensor/dtensor
+                 Transposed graph adjacency tensor.
+        data_T_vals : ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : tuple
+                    Indices of elements of data that are non-zero.
+        T : int
+            Number of time steps.
+        mask : ndarray, optional
+               Mask for selecting the held-out set in the adjacency tensor in case of cross-validation.
+        Returns
+        -------
+        loglik : float
+                 Log-likelihood of the model.
 
-        for r in range(self.num_realizations):
-
-            # For each realization (r), it initializes the parameters, updates the old variables
-            # and updates the cache.
-            logging.debug(
-                "Random number generator seed: %s", self.rng.get_state()[1][0]
-            )  # type: ignore
-            super()._initialize()
-            super()._update_old_variables()
-
-            # convergence local variables
-            coincide, it = 0, 0
-            convergence = False
-            loglik = -self.inf
-            maxL = -self.inf
-
-            logging.debug("Updating realization %s", r)
-            loglik_values = []
-            time_start = time.time()
-
-            # It enters a while loop that continues until either convergence is achieved or the maximum number of
-            # iterations (self.max_iter) is reached.
-            while np.logical_and(not convergence, it < self.max_iter):
-                _, _, _, _, _ = self._update_em(data_AtAtm1, data_T_vals, subs_nzp)
-                if self.flag_conv == "log":
-                    it, loglik, coincide, convergence = self._check_for_convergence(
-                        data_AtAtm1,
-                        data_T_vals=data_T_vals,
-                        subs_nz=subs_nzp,
-                        T=T,
-                        r=r,
-                        it=it,
-                        loglik=loglik,
-                        coincide=coincide,
-                        convergence=convergence,
-                        data_T=data_Tm1,
-                        mask=mask,
-                    )
-                    loglik_values.append(loglik)
-                    if not it % 100:
-                        logging.debug(
-                            "Nreal = %s - Log-likelihood = %s - iterations = %s - time = %s seconds",
-                            r,
-                            loglik,
-                            it,
-                            np.round(time.time() - time_start, 2),
-                        )
-                else:
-                    log_and_raise_error(ValueError, "flag_conv should be log!")
-
-            if maxL < loglik:
-                super()._update_optimal_parameters()
-                best_loglik_values = list(loglik_values)
-                maxL = loglik
-                self.maxL = loglik
-                self.final_it = it
-                conv = convergence
-                best_r = r
-
-            logging.debug(
-                "Nreal = %s - Log-likelihood = %s - iterations = %s - "
-                "time = %s seconds",
-                r,
-                loglik,
-                it,
-                np.round(time.time() - time_start, 2),
-            )
-
-        # end cycle over realizations
-
-        logging.debug(
-            "Best real = %s - maxL = %s - best iterations = %s",
-            best_r,
-            maxL,
-            self.final_it,
+        """
+        return self._Likelihood(
+            self.data_AtAtm1,
+            self.data_Tm1,
+            self.data_T_vals,
+            self.subs_nzp,
+            self.T,
+            self.mask,
         )
-
-        if np.logical_and(self.final_it == self.max_iter, not conv):
-            # convergence is not reached
-            logging.warning(
-                "Solution failed to converge in %s EM steps!", self.max_iter
-            )
-            logging.warning("Parameters won't be saved!")
-        else:
-            if self.out_inference:
-                super()._output_results()
-
-        if self.plot_loglik:
-            plot_L(best_loglik_values, int_ticks=True)
-
-        return self.u_f, self.v_f, self.w_f, self.eta_f, self.beta_f, self.maxL  # type: ignore
-
-    # TODO: fix the problem with the None output once the self.fix_eta and self.fix_beta are
-    #  understood
 
     def _initialize_beta(self) -> None:
 
@@ -473,12 +520,7 @@ class DynCRep(ModelClass):
             self.data_M_nz = data.vals / self.M_nz
             self.data_rho2 = ((data.vals * self.eta * data_T_vals) / self.M_nz).sum()
 
-    def _update_em(
-        self,
-        data_AtAtm1: Union[dtensor, sptensor],
-        data_T_vals: np.ndarray,
-        subs_nzp: Tuple[np.ndarray],
-    ) -> Tuple[float, float, float, float, float]:
+    def _update_em(self) -> Tuple[float, float, float, float, float]:
         """
         Update parameters via EM procedure.
         Parameters
@@ -502,18 +544,18 @@ class DynCRep(ModelClass):
         d_eta : float
                 Maximum distance between the old and the new reciprocity coefficient eta.
         """
-        self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
+        self._update_cache(self.data_AtAtm1, self.data_T_vals, self.subs_nzp)
 
         if not self.fix_communities:
-            d_u = self._update_U(subs_nzp)
-            self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
+            d_u = self._update_U(self.subs_nzp)
+            self._update_cache(self.data_AtAtm1, self.data_T_vals, self.subs_nzp)
             if self.undirected:
                 self.v = self.u
                 self.v_old = self.v
                 d_v = d_u
             else:
-                d_v = self._update_V(subs_nzp)
-                self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
+                d_v = self._update_V(self.subs_nzp)
+                self._update_cache(self.data_AtAtm1, self.data_T_vals, self.subs_nzp)
         else:
             d_u = 0
             d_v = 0
@@ -521,22 +563,22 @@ class DynCRep(ModelClass):
         if not self.fix_w:
             if not self.assortative:
                 if self.temporal:
-                    d_w = self._update_W_dyn(subs_nzp)
+                    d_w = self._update_W_dyn(self.subs_nzp)
                 else:
-                    d_w = self._update_W_stat(subs_nzp)
+                    d_w = self._update_W_stat(self.subs_nzp)
             else:
                 if self.temporal:
-                    d_w = self._update_W_assortative_dyn(subs_nzp)
+                    d_w = self._update_W_assortative_dyn(self.subs_nzp)
                 else:
-                    d_w = self._update_W_assortative_stat(subs_nzp)
-            self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
+                    d_w = self._update_W_assortative_stat(self.subs_nzp)
+            self._update_cache(self.data_AtAtm1, self.data_T_vals, self.subs_nzp)
         else:
             d_w = 0
 
         if not self.fix_beta:
             if self.T > 0:
                 d_beta = self._update_beta()
-                self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
+                self._update_cache(self.data_AtAtm1, self.data_T_vals, self.subs_nzp)
             else:
                 d_beta = 0.0
         else:
@@ -547,7 +589,7 @@ class DynCRep(ModelClass):
             d_eta = self._update_eta(denominator=denominator)
         else:
             d_eta = 0.0
-        self._update_cache(data_AtAtm1, data_T_vals, subs_nzp)
+        self._update_cache(self.data_AtAtm1, self.data_T_vals, self.subs_nzp)
 
         return d_u, d_v, d_w, d_eta, d_beta
 
@@ -573,9 +615,6 @@ class DynCRep(ModelClass):
             self.eta = 0.0
 
         if self.eta < 0 or self.eta > 1:
-
-            message = f"Eta has to be a positive number! Current value is {self.eta}"
-            log_and_raise_error(ValueError, message)
 
             message = f"Eta has to be a positive number! Current value is {self.eta}"
             log_and_raise_error(ValueError, message)
@@ -612,6 +651,23 @@ class DynCRep(ModelClass):
         -------
         dist_u : float
                  Maximum distance between the old and the new membership matrix u.
+        """
+
+        # Call the specific update U method
+        self._specific_update_U(subs_nz)
+
+        dist_u = np.amax(abs(self.u - self.u_old))
+        self.u_old = np.copy(self.u)
+
+        return dist_u
+
+    def _specific_update_U(self, subs_nz):
+        """
+        Specific logic for updating U in the DynCRep class.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
         """
 
         if self.constraintU:
@@ -665,18 +721,9 @@ class DynCRep(ModelClass):
                         )
                         self.u[i] = u_root.x
 
-        dist_u = np.amax(abs(self.u - self.u_old))
-        self.u_old = np.copy(self.u)
-
-        return dist_u
-
     def _update_V(self, subs_nz):
         """
         Update in-coming membership matrix.
-        Same as _update_U but with:
-        data <-> data_T
-        w <-> w_T
-        u <-> v
         Parameters
         ----------
         subs_nz : tuple
@@ -685,6 +732,23 @@ class DynCRep(ModelClass):
         -------
         dist_v : float
                  Maximum distance between the old and the new membership matrix v.
+        """
+
+        # Call the specific update V method
+        self._specific_update_V(subs_nz)
+
+        dist_v = np.amax(abs(self.v - self.v_old))
+        self.v_old = np.copy(self.v)
+
+        return dist_v
+
+    def _specific_update_V(self, subs_nz):
+        """
+        Specific logic for updating V in the DynCRep class.
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
         """
 
         self.v = (self.ag - 1) + self.v_old * self._update_membership(
@@ -720,10 +784,23 @@ class DynCRep(ModelClass):
                         args=(self.v[i], Z_vk),
                     )
                     self.v[i] = v_root.x
-        dist_v = np.amax(abs(self.v - self.v_old))
-        self.v_old = np.copy(self.v)
 
-        return dist_v
+    def _specific_update_W_dyn(self, subs_nz: tuple):
+
+        uttkrp_DKQ = np.zeros_like(self.w)
+
+        for idx, (a, i, j) in enumerate(zip(*subs_nz)):
+            uttkrp_DKQ[a, :, :] += self.data_M_nz[idx] * np.einsum(
+                "k,q->kq", self.u[i], self.v[j]
+            )
+
+        self.w = self.w * uttkrp_DKQ
+
+        Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))
+        Z = np.einsum("a,kq->akq", self.beta_hat, Z)
+
+        non_zeros = Z > 0
+        self.w[non_zeros] /= Z[non_zeros]
 
     def _update_W_dyn(self, subs_nz):
         """
@@ -738,23 +815,9 @@ class DynCRep(ModelClass):
                  Maximum distance between the old and the new affinity tensor w.
         """
 
-        uttkrp_DKQ = np.zeros_like(self.w)
+        self._specific_update_W_dyn(subs_nz)
 
-        for idx, (a, i, j) in enumerate(zip(*subs_nz)):
-            uttkrp_DKQ[a, :, :] += self.data_M_nz[idx] * np.einsum(
-                "k,q->kq", self.u[i], self.v[j]
-            )
-
-        # self.w =   (self.ag - 1) + self.w * uttkrp_DKQ
-        self.w = self.w * uttkrp_DKQ
-
-        Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))
-        Z = np.einsum("a,kq->akq", self.beta_hat, Z)
-        # Z += self.bg
-
-        non_zeros = Z > 0
-        self.w[non_zeros] /= Z[non_zeros]
-
+        # TODO: Ask why this is commented out
         # low_values_indices = self.w < self.err_max  # values are too low
         # self.w[low_values_indices] = 0. #self.err_max  # and set to 0.
 
@@ -763,18 +826,8 @@ class DynCRep(ModelClass):
 
         return dist_w
 
-    def _update_W_stat(self, subs_nz):
-        """
-        Update affinity tensor.
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
-        """
+    def _specific_update_W_stat(self, subs_nz: tuple):
+
         sub_w_nz = self.w.nonzero()
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -797,19 +850,9 @@ class DynCRep(ModelClass):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # self.err_max  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w_old)
-
-        return dist_w
-
-    # @gl.timeit_cum('update_W_ass')
-
-    def _update_W_assortative_dyn(self, subs_nz):
+    def _update_W_stat(self, subs_nz):
         """
-        Update affinity tensor (assuming assortativity).
+        Update affinity tensor.
         Parameters
         ----------
         subs_nz : tuple
@@ -819,6 +862,14 @@ class DynCRep(ModelClass):
         dist_w : float
                  Maximum distance between the old and the new affinity tensor w.
         """
+
+        self._specific_update_W_stat(subs_nz)
+
+        dist_w, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
+
+        return dist_w
+
+    def _specific_update_W_assortative_dyn(self, subs_nz: tuple):
         uttkrp_DKQ = np.zeros_like(self.w)
 
         for idx, (a, i, j) in enumerate(zip(*subs_nz)):
@@ -834,13 +885,45 @@ class DynCRep(ModelClass):
 
         self.w[non_zeros] /= Z[non_zeros]
 
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
+    def _update_W_assortative_dyn(self, subs_nz):
+        """
+        Update affinity tensor (assuming assortativity).
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor w.
+        """
 
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
+        self._specific_update_W_assortative_dyn(subs_nz)
+
+        dist_w, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
 
         return dist_w
+
+    def _specific_update_W_assortative_stat(self, subs_nz: tuple):
+        sub_w_nz = self.w.nonzero()
+        uttkrp_DKQ = np.zeros_like(self.w)
+
+        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
+
+        for _, k in zip(*sub_w_nz):
+            uttkrp_DKQ[:, k] += np.bincount(
+                subs_nz[0], weights=uttkrp_I[:, k], minlength=1
+            )[0]
+
+        self.w = (self.ag - 1) + self.w * uttkrp_DKQ
+
+        Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
+        Z *= 1.0 + self.beta_hat[self.T] * self.T
+        Z += self.bg
+
+        non_zeros = Z > 0
+        self.w[non_zeros] /= Z[non_zeros]
 
     def _update_W_assortative_stat(self, subs_nz):
         """
@@ -855,34 +938,9 @@ class DynCRep(ModelClass):
                  Maximum distance between the old and the new affinity tensor w.
         """
 
-        sub_w_nz = self.w.nonzero()
-        uttkrp_DKQ = np.zeros_like(self.w)
+        self._specific_update_W_assortative_stat(subs_nz)
 
-        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
-        uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
-
-        for _, k in zip(*sub_w_nz):
-            uttkrp_DKQ[:, k] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k], minlength=1
-            )[0]
-
-        # for k in range(self.K):
-        #     uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=1)
-
-        self.w = (self.ag - 1) + self.w * uttkrp_DKQ
-
-        Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
-        Z *= 1.0 + self.beta_hat[self.T] * self.T
-        Z += self.bg
-
-        non_zeros = Z > 0
-        self.w[non_zeros] /= Z[non_zeros]
-
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
+        dist_w, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
 
         return dist_w
 
@@ -953,6 +1011,7 @@ class DynCRep(ModelClass):
         l : float
             Pseudo log-likelihood value.
         """
+
         self._update_cache(data, data_T_vals, subs_nz)
 
         if not self.assortative:
@@ -965,13 +1024,13 @@ class DynCRep(ModelClass):
         if mask is not None:
             sub_mask_nz = mask.nonzero()
             if isinstance(data, skt.dtensor):
-                l = (
+                loglik = (
                     -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta
                     * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
                 )
             elif isinstance(data, skt.sptensor):
-                l = (
+                loglik = (
                     -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta
                     * (
@@ -980,11 +1039,11 @@ class DynCRep(ModelClass):
                 )
         else:
             if isinstance(data, skt.dtensor):
-                l = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (
+                loglik = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (
                     data_T[0].sum() + self.beta0 * data_T[1:].sum()
                 )
             elif isinstance(data, skt.sptensor):
-                l = (
+                loglik = (
                     -lambda0_ija_loc.sum()
                     - self.eta * (data_T.sum(axis=(1, 2)) * self.beta_hat).sum()
                 )
@@ -994,26 +1053,26 @@ class DynCRep(ModelClass):
             Alog = data[data.nonzero()] * logM
         elif isinstance(data, skt.sptensor):
             Alog = (data.vals * logM).sum()
-        l += Alog
+        loglik += Alog
 
-        l += (np.log(self.beta_hat[subs_nz[0]] + EPS) * data.vals).sum()
+        loglik += (np.log(self.beta_hat[subs_nz[0]] + EPS) * data.vals).sum()
         if self.T > 0:
-            l += (np.log(1 - self.beta_hat[-1] + EPS) * self.bAtAtm1).sum()
-            l += (np.log(self.beta_hat[-1] + EPS) * self.Atm11At).sum()
+            loglik += (np.log(1 - self.beta_hat[-1] + EPS) * self.bAtAtm1).sum()
+            loglik += (np.log(self.beta_hat[-1] + EPS) * self.Atm11At).sum()
 
         if not self.constraintU:
             if self.ag >= 1.0:
-                l += (self.ag - 1) * np.log(self.u + EPS).sum()
-                l += (self.ag - 1) * np.log(self.v + EPS).sum()
+                loglik += (self.ag - 1) * np.log(self.u + EPS).sum()
+                loglik += (self.ag - 1) * np.log(self.v + EPS).sum()
             if self.bg >= 0.0:
-                l -= self.bg * self.u.sum()
-                l -= self.bg * self.v.sum()
+                loglik -= self.bg * self.u.sum()
+                loglik -= self.bg * self.v.sum()
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             message = "Likelihood is NaN!"
             log_and_raise_error(ValueError, message)
 
-        return l
+        return loglik
 
     def enforce_constraintU(self, num: float, den: float) -> float:
         """
@@ -1051,7 +1110,7 @@ class DynCRep(ModelClass):
         bt : float
             The calculated value of beta at time t for the static model.
         """
-        # assert type(obj) is CRepDyn_w_temp
+
         if self.assortative:
             lambda0_ija = np.einsum(
                 "k,k->k", self.u.sum(axis=0), self.w[1:].sum(axis=0)
@@ -1069,146 +1128,25 @@ class DynCRep(ModelClass):
         bt += self.Atm11At / beta_t  # adding Aij(t-1)*(1-Aij(t))
         return bt
 
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        """
+        Copy variables from source to target.
 
-# TODO: Ask what this is useful for
-# def fit_model(data, T, nodes, K, algo='Crep_wtemp', **conf):
-#     """
-#         Model directed networks by using a probabilistic generative model that assume community parameters and
-#         reciprocity coefficient. The inference is performed via EM algorithm.
-#
-#         Parameters
-#         ----------
-#         B : ndarray
-#             Graph adjacency tensor.
-#         B_T : None/sptensor
-#               Graph adjacency tensor (transpose).
-#         data_T_vals : None/ndarray
-#                       Array with values of entries A[j, i] given non-zero entry (i, j).
-#         nodes : list
-#                 List of nodes IDs.
-#         N : int
-#             Number of nodes.
-#         L : int
-#             Number of layers.
-#         algo : str
-#                Configuration to use (CRep, CRepnc, CRep0).
-#         K : int
-#             Number of communities.
-#
-#         Returns
-#         -------
-#         u_f : ndarray
-#               Out-going membership matrix.
-#         v_f : ndarray
-#               In-coming membership matrix.
-#         w_f : ndarray
-#               Affinity tensor.
-#         eta_f : float
-#                 Reciprocity coefficient.
-#         maxL : float
-#                  Maximum  log-likelihood.
-#         mod : obj
-#               The CRep object.
-#     """
-#
-#     # setting to run the algorithm
-#     with open(conf['out_folder'] + '/setting_' + algo + '.yaml', 'w') as f:
-#         yaml.dump(conf, f)
-#
-#         if algo in ['Crep_static', 'Crep_wtemp']:
-#             model = DynCRep(**conf)
-#             uf, vf, wf, etaf, betaf, maxL = model.fit(T=T, data=data, K=K, nodes=nodes)
-#         else:
-#             raise ValueError('algo is invalid', algo)
-#
-#     return uf, vf, wf, etaf, betaf, maxL, model
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        # Call the base method
+        super()._copy_variables(source_suffix, target_suffix)
 
+        # Copy the specific variables
+        source_var = getattr(self, f"eta{source_suffix}")
+        setattr(self, f"eta{target_suffix}", float(source_var))
 
-#
-#
-#
-# def evalu(U_infer, U0, metric='f1', com=False):
-#     """
-#         Compute an evaluation metric.
-#
-#         Compare a set of ground-truth communities to a set of detected communities. It matches every detected
-#         community with its most similar ground-truth community and given this matching, it computes the performance;
-#         then every ground-truth community is matched with a detected community and again computed the performance.
-#         The final performance is the average of these two metrics.
-#
-#         Parameters
-#         ----------
-#         U_infer : ndarray
-#                   Inferred membership matrix (detected communities).
-#         U0 : ndarray
-#              Ground-truth membership matrix (ground-truth communities).
-#         metric : str
-#                  Similarity measure between the true community and the detected one. If 'f1', it used the F1-score,
-#                  if 'jaccard', it uses the Jaccard similarity.
-#         com : bool
-#               Flag to indicate if U_infer contains the communities (True) or if they have to be inferred from the
-#               membership matrix (False).
-#
-#         Returns
-#         -------
-#         Evaluation metric.
-#     """
-#
-#     if metric not in {'f1', 'jaccard'}:
-#         raise ValueError(
-#             'The similarity measure can be either "f1" to use the F1-score, or "jaccard" to use the '
-#             'Jaccard similarity!')
-#
-#     K = U0.shape[1]
-#
-#     gt = {}
-#     d = {}
-#     threshold = 1 / U0.shape[1]
-#     for i in range(K):
-#         gt[i] = list(np.argwhere(U0[:, i] > threshold).flatten())
-#         if com:
-#             try:
-#                 d[i] = U_infer[i]
-#             except:
-#                 pass
-#         else:
-#             d[i] = list(np.argwhere(U_infer[:, i] > threshold).flatten())
-#     # First term
-#     R = 0
-#     for i in np.arange(K):
-#         ground_truth = set(gt[i])
-#         _max = -1
-#         M = 0
-#         for j in d.keys():
-#             detected = set(d[j])
-#             if len(ground_truth & detected) != 0:
-#                 precision = len(ground_truth & detected) / len(detected)
-#                 recall = len(ground_truth & detected) / len(ground_truth)
-#                 if metric == 'f1':
-#                     M = 2 * (precision * recall) / (precision + recall)
-#                 elif metric == 'jaccard':
-#                     M = len(ground_truth & detected) / len(ground_truth.union(detected))
-#             if M > _max:
-#                 _max = M
-#         R += _max
-#     # Second term
-#     S = 0
-#     for j in d.keys():
-#         detected = set(d[j])
-#         _max = -1
-#         M = 0
-#         for i in np.arange(K):
-#             ground_truth = set(gt[i])
-#             if len(ground_truth & detected) != 0:
-#                 precision = len(ground_truth & detected) / len(detected)
-#                 recall = len(ground_truth & detected) / len(ground_truth)
-#                 if metric == 'f1':
-#                     M = 2 * (precision * recall) / (precision + recall)
-#                 elif metric == 'jaccard':
-#                     M = len(ground_truth & detected) / len(ground_truth.union(detected))
-#             if M > _max:
-#                 _max = M
-#         S += _max
-#
-#     return np.round(R / (2 * len(gt)) + S / (2 * len(d)), 4)
-#
+        source_var = getattr(self, f"beta{source_suffix}")
+        setattr(self, f"beta{target_suffix}", np.copy(source_var))

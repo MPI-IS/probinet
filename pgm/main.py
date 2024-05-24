@@ -63,7 +63,13 @@ def parse_args():
         "-T", "--T", type=int, default=None, help="Number of time snapshots"
     )
     parser.add_argument(
-        "-fdT", "--flag_data_T", type=str, default=0, help="Flag to use data_T"
+        "-fdT",
+        "--flag_data_T",
+        type=str,
+        default=0,
+        help="Flag to use data_T. "
+        "It is recommended to "
+        "use 0, but in case it does not work, try 1.",
     )
     # TODO: Improve these model specific arguments
     parser.add_argument("-ag", type=float, default=1.0, help="Parameter ag")
@@ -334,8 +340,6 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         yaml.dump(conf, f)
 
     def fit_model(model, algorithm, conf):  #
-        # pylint:
-        # disable=too-many-arguments
         """
         Fit the model to the data.
         """

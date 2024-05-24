@@ -17,10 +17,10 @@ from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import lambda_full
-from .base import FitParams, ModelClass
+from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
 
 
-class CRep(ModelClass):
+class CRep(ModelBase, ModelUpdateMixin):
     """
     Class to perform inference in networks with reciprocity.
     """
@@ -64,7 +64,7 @@ class CRep(ModelClass):
         data: Union[skt.dtensor, skt.sptensor],
         K: int,
         constrained: bool,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> None:
 
         message = "The initialization parameter can be either 0, 1, 2 or 3."
@@ -115,7 +115,7 @@ class CRep(ModelClass):
         undirected: bool = False,
         assortative: bool = True,
         constrained: bool = True,
-        **extra_params: Unpack[FitParams],
+        **extra_params: Unpack[ModelFitParameters],
     ) -> tuple[
         ndarray[Any, dtype[np.float64]],
         ndarray[Any, dtype[np.float64]],
@@ -171,137 +171,162 @@ class CRep(ModelClass):
         )
         logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
+
+        # Initialize the fit parameters
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
         self.nodes = nodes
 
-        if data_T is None:
-            E = np.sum(data)  # weighted sum of edges (needed in the denominator of eta)
-            data_T = np.einsum("aij->aji", data)
-            data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
-            # pre-processing of the data to handle the sparsity
-            data = preprocess(data)
-            data_T = preprocess(data_T)
-        else:
-            E = np.sum(data.vals)
+        # Preprocess the data for fitting the model
+        E, data, data_T, data_T_vals, subs_nz = self._preprocess_data_for_fit(
+            data, data_T, data_T_vals
+        )
+        # Set the preprocessed data and other related variables as attributes of the class instance
+        self.data = data
+        self.data_T = data_T
+        self.data_T_vals = data_T_vals
+        self.subs_nz = subs_nz
+        self.denominator = E
+        self.mask = mask
 
-        # save the indexes of the nonzero entries
-        if isinstance(data, skt.dtensor):
-            subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
-
-        # The following part of the code is responsible for running the Expectation-Maximization (EM) algorithm for a
-        # specified number of realizations (self.num_realizations):
+        # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
         for r in range(self.num_realizations):
 
-            # For each realization (r), it initializes the parameters, updates the old variables
-            # and updates the cache.
-            logging.debug(
-                "Random number generator seed: %s", self.rng.get_state()[1][0]
+            # Initialize the parameters for the current realization
+            coincide, convergence, it, loglik, loglik_values = (
+                self._initialize_realization()
             )
-            super()._initialize()
-            super()._update_old_variables()
-            self._update_cache(data, data_T_vals, subs_nz)
 
-            # It sets up local variables for convergence checking. coincide and it are counters, convergence is a
-            # boolean flag, and loglik is the initial pseudo log-likelihood.
-            coincide, it = 0, 0
-            convergence = False
-            loglik = self.inf
+            # Update the parameters for the current realization
+            it, loglik, coincide, convergence, loglik_values = self._update_realization(
+                r, it, loglik, coincide, convergence, loglik_values
+            )
 
-            logging.debug("Updating realization %s ...", r)
-            time_start = time.time()
-            # It enters a while loop that continues until either convergence is achieved or the maximum number of
-            # iterations (self.max_iter) is reached.
-            while np.logical_and(not convergence, it < self.max_iter):
-                #  it performs the main EM update (self._update_em(data, data_T_vals, subs_nz, denominator=E))
-                # which updates the memberships and calculates the maximum difference
-                # between new and old parameters.
-                delta_u, delta_v, delta_w, delta_eta = self._update_em(
-                    data, data_T_vals, subs_nz, denominator=E
-                )
-
-                # Depending on the convergence flag (self.flag_conv), it checks for convergence using either the
-                # pseudo log-likelihood values (self._check_for_convergence(data, it, loglik, coincide, convergence,
-                # data_T=data_T, mask=mask)) or the maximum distances between the old and the new parameters
-                # (self._check_for_convergence_delta(it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
-                if self.flag_conv == "log":
-                    it, loglik, coincide, convergence = super()._check_for_convergence(
-                        data,
-                        it,
-                        loglik,
-                        coincide,
-                        convergence,
-                        use_pseudo_likelihood=True,
-                        data_T=data_T,
-                        mask=mask,
-                    )
-
-                    if not it % 100:
-                        logging.debug(
-                            "Nreal = %s - iterations = %s - time = %.2f seconds",
-                            r,
-                            it,
-                            time.time() - time_start,
-                        )
-                elif self.flag_conv == "deltas":
-                    it, coincide, convergence = super()._check_for_convergence_delta(
-                        it, coincide, delta_u, delta_v, delta_w, delta_eta, convergence
-                    )
-
-                    if not it % 100:
-                        logging.debug(
-                            "Nreal = %s - iterations = %s - time = %.2f seconds",
-                            r,
-                            it,
-                            time.time() - time_start,
-                        )
-                else:
-                    log_and_raise_error(
-                        ValueError, "flag_conv can be either log or deltas!"
-                    )
-            # After the while loop, it checks if the current pseudo log-likelihood is the maximum so far. If it is,
-            # it updates the optimal parameters (self._update_optimal_parameters()) and sets maxL to the current
-            # pseudo log-likelihood.
-            if self.flag_conv == "deltas":
-                loglik = self._PSLikelihood(data, data_T=data_T, mask=mask)
-
+            # If the current log-likelihood is greater than the maximum log-likelihood so far,
+            # update the optimal parameters and the maximum log-likelihood
             if maxL < loglik:
                 super()._update_optimal_parameters()
                 maxL = loglik
                 self.final_it = it
                 conv = convergence
-                best_r = r
-
+                self.best_r = r
+                if self.flag_conv == "log":
+                    best_loglik_values = list(loglik_values)
+            # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             logging.debug(
                 "Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds",
                 r,
                 loglik,
                 it,
-                time.time() - time_start,
+                time.time() - self.time_start,
             )
 
-            # end cycle over realizations
+        # end cycle over realizations
 
-        logging.debug(
-            "Best real = %s - maxL = %s - best iterations = %s",
-            best_r,
-            maxL,
-            self.final_it,
-        )
-
+        # Store the maximum pseudo log-likelihood
         self.maxPSL = maxL
 
-        if np.logical_and(self.final_it == self.max_iter, not conv):
-            # convergence not reached
-            logging.error("Solution failed to converge in %s EM steps!", self.max_iter)
-            logging.warning("Parameters won't be saved!")
-        else:
-            if self.out_inference:
-                super()._output_results()
+        # Evaluate the results of the fitting process
+        self._evaluate_fit_results(self.maxPSL, conv, best_loglik_values)
 
+        # Return the final parameters and the maximum log-likelihood
         return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
+
+    def _initialize_realization(self) -> Tuple[int, bool, int, float, List[float]]:
+        """
+        This method initializes the parameters for each realization of the EM algorithm.
+        It also sets up local variables for convergence checking.
+        """
+
+        # Log the current state of the random number generator
+        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+
+        # Initialize the parameters for the current realization
+        super()._initialize()
+
+        # Update the old variables for the current realization
+        super()._update_old_variables()
+
+        # Update the cache used in the EM update
+        self._update_cache(self.data, self.data_T_vals, self.subs_nz)
+
+        # Set up local variables for convergence checking
+        # coincide and it are counters, convergence is a boolean flag
+        # loglik is the initial pseudo log-likelihood
+        coincide, it = 0, 0
+        convergence = False
+        loglik = self.inf
+        loglik_values = []
+
+        # Record the start time of the realization
+        self.time_start = time.time()
+
+        # Return the initial state of the realization
+        return coincide, convergence, it, loglik, loglik_values
+
+    def _preprocess_data_for_fit(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_T: Union[skt.dtensor, skt.sptensor, None],
+        data_T_vals: Union[np.ndarray, None],
+    ) -> Tuple[int, Any, Any, np.ndarray, Tuple[np.ndarray]]:
+        """
+        Preprocess the data for fitting the model.
+
+        Parameters
+        ----------
+        data : skt.dtensor or skt.sptensor
+            The input data tensor.
+        data_T : skt.dtensor, skt.sptensor or None
+            The transposed input data tensor. If None, it will be calculated from the input data tensor.
+        data_T_vals : np.ndarray or None
+            The values of the non-zero entries in the transposed input data tensor. If None, it will be calculated from data_T.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the preprocessed data tensor, the values of the non-zero entries in the transposed data tensor,
+            and the indices of the non-zero entries in the data tensor.
+        """
+
+        # If data_T is not provided, calculate it from the input data tensor
+        if data_T is None:
+            E = np.sum(data)  # weighted sum of edges (needed in the denominator of eta)
+            data_T = np.einsum("aij->aji", data)
+            data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
+            # Pre-process the data to handle the sparsity
+            data = preprocess(data)
+            data_T = preprocess(data_T)
+        else:
+            E = np.sum(data.vals)
+
+        # Save the indices of the non-zero entries
+        if isinstance(data, skt.dtensor):
+            subs_nz = data.nonzero()
+        elif isinstance(data, skt.sptensor):
+            subs_nz = data.subs
+
+        return E, data, data_T, data_T_vals, subs_nz
+
+    def compute_likelihood(self):
+        """
+        Compute the pseudo log-likelihood of the data.
+
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T : sptensor/dtensor, optional
+                 Graph adjacency tensor (transpose).
+        mask : ndarray, optional
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+
+        Returns
+        -------
+        loglik : float
+                 Pseudo log-likelihood value.
+        """
+        return self._PSLikelihood(self.data, self.data_T, self.mask)
 
     def _update_cache(
         self,
@@ -331,13 +356,7 @@ class CRep(ModelClass):
             self.data_M_nz = data.vals / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
-    def _update_em(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T_vals: np.ndarray,
-        subs_nz: Tuple[np.ndarray],
-        denominator: float,
-    ) -> Tuple[float, float, float, float]:
+    def _update_em(self):
         """
         Update parameters via EM procedure.
 
@@ -352,27 +371,19 @@ class CRep(ModelClass):
         denominator : float
                       Denominator used in the update of the eta parameter.
 
-        Returns
-        -------
-        d_u : float
-              Maximum distance between the old and the new membership matrix u.
-        d_v : float
-              Maximum distance between the old and the new membership matrix v.
-        d_w : float
-              Maximum distance between the old and the new affinity tensor w.
-        d_eta : float
-                Maximum distance between the old and the new reciprocity coefficient eta.
         """
 
         if not self.fix_eta:
-            d_eta = self._update_eta(data, data_T_vals, denominator=denominator)
+            d_eta = self._update_eta(
+                self.data, self.data_T_vals, denominator=self.denominator
+            )
         else:
             d_eta = 0.0
-        self._update_cache(data, data_T_vals, subs_nz)
+        self._update_cache(self.data, self.data_T_vals, self.subs_nz)
 
         if not self.fix_communities:
-            d_u = self._update_U(subs_nz)
-            self._update_cache(data, data_T_vals, subs_nz)
+            d_u = self._update_U(self.subs_nz)
+            self._update_cache(self.data, self.data_T_vals, self.subs_nz)
         else:
             d_u = 0.0
 
@@ -380,24 +391,27 @@ class CRep(ModelClass):
             self.v = self.u
             self.v_old = self.v
             d_v = d_u
-            self._update_cache(data, data_T_vals, subs_nz)
+            self._update_cache(self.data, self.data_T_vals, self.subs_nz)
         else:
             if not self.fix_communities:
-                d_v = self._update_V(subs_nz)
-                self._update_cache(data, data_T_vals, subs_nz)
+                d_v = self._update_V(self.subs_nz)
+                self._update_cache(self.data, self.data_T_vals, self.subs_nz)
             else:
                 d_v = 0.0
 
         if not self.fix_w:
             if not self.assortative:
-                d_w = self._update_W(subs_nz)
+                d_w = self._update_W(self.subs_nz)
             else:
-                d_w = self._update_W_assortative(subs_nz)
-            self._update_cache(data, data_T_vals, subs_nz)
+                d_w = self._update_W_assortative(self.subs_nz)
+            self._update_cache(self.data, self.data_T_vals, self.subs_nz)
         else:
             d_w = 0
 
-        return d_u, d_v, d_w, d_eta
+        self.delta_u = d_u
+        self.delta_v = d_v
+        self.delta_w = d_w
+        self.delta_eta = d_eta
 
     def _update_eta(
         self,
@@ -435,20 +449,7 @@ class CRep(ModelClass):
 
         return dist_eta
 
-    def _update_U(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update out-going membership matrix.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_u : float
-                 Maximum distance between the old and the new membership matrix u.
-        """
+    def _specific_update_U(self, subs_nz: tuple, subs_X_nz: tuple = None):
 
         self.u = self.u_old * self._update_membership(subs_nz, 1)  # type: ignore
 
@@ -475,24 +476,7 @@ class CRep(ModelClass):
 
         return dist_u
 
-    def _update_V(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update in-coming membership matrix.
-        Same as _update_U but with:
-        data <-> data_T
-        w <-> w_T
-        u <-> v
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_v : float
-                 Maximum distance between the old and the new membership matrix v.
-        """
+    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None):
 
         self.v *= self._update_membership(subs_nz, 2)
 
@@ -511,30 +495,7 @@ class CRep(ModelClass):
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-        low_values_indices = self.v < self.err_max  # values are too low
-        self.v[low_values_indices] = 0.0  # and set to 0.
-
-        dist_v = np.amax(abs(self.v - self.v_old))
-        self.v_old = np.copy(self.v)
-
-        return dist_v
-
-    def _update_W(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update affinity tensor.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
-        """
-        if len(subs_nz) < 3:
-            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
+    def _specific_update_W(self, subs_nz: tuple):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -554,31 +515,7 @@ class CRep(ModelClass):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
-
-    def _update_W_assortative(self, subs_nz: Tuple[np.ndarray]) -> float:
-        """
-        Update affinity tensor (assuming assortativity).
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
-        """
-        if len(subs_nz) < 3:
-            log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
-
+    def _specific_update_W_assortative(self, subs_nz: tuple):
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
@@ -593,14 +530,6 @@ class CRep(ModelClass):
         Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
-
-        low_values_indices = self.w < self.err_max  # values are too low
-        self.w[low_values_indices] = 0.0  # and set to 0.
-
-        dist_w = np.amax(abs(self.w - self.w_old))
-        self.w_old = np.copy(self.w)
-
-        return dist_w
 
     def _update_membership(self, subs_nz: Tuple[np.ndarray], m: int) -> np.ndarray:
         """
@@ -654,7 +583,7 @@ class CRep(ModelClass):
 
         Returns
         -------
-        l : float
+        loglik : float
             Pseudo log-likelihood value.
         """
 
@@ -663,28 +592,48 @@ class CRep(ModelClass):
         if mask is not None:
             sub_mask_nz = mask.nonzero()
             if isinstance(data, skt.dtensor):
-                l = (
+                loglik = (
                     -self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta * data_T[sub_mask_nz].sum()
                 )
             elif isinstance(data, skt.sptensor):
-                l = (
+                loglik = (
                     -self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta * data_T.toarray()[sub_mask_nz].sum()
                 )
         else:
             if isinstance(data, skt.dtensor):
-                l = -self.lambda0_ija.sum() - self.eta * data_T.sum()
+                loglik = -self.lambda0_ija.sum() - self.eta * data_T.sum()
             elif isinstance(data, skt.sptensor):
-                l = -self.lambda0_ija.sum() - self.eta * data_T.vals.sum()
+                loglik = -self.lambda0_ija.sum() - self.eta * data_T.vals.sum()
         logM = np.log(self.M_nz)
         if isinstance(data, skt.dtensor):
             Alog = data[data.nonzero()] * logM
         elif isinstance(data, skt.sptensor):
             Alog = data.vals * logM
 
-        l += Alog.sum()
+        loglik += Alog.sum()
 
-        if np.isnan(l):
+        if np.isnan(loglik):
             log_and_raise_error(ValueError, "PSLikelihood is NaN!!!!")
-        return l
+        return loglik
+
+    def _copy_variables(
+        self, source_suffix: str, target_suffix: str
+    ) -> None:
+        """
+        Copy variables from source to target.
+
+        Parameters
+        ----------
+        source_suffix : str
+                        The suffix of the source variable names.
+        target_suffix : str
+                        The suffix of the target variable names.
+        """
+        # Call the base method
+        super()._copy_variables(source_suffix, target_suffix)
+
+        # Copy the specific variables
+        source_var = getattr(self, f"eta{source_suffix}")
+        setattr(self, f"eta{target_suffix}", float(source_var))

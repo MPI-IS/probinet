@@ -247,32 +247,32 @@ def read_graph(
 
     logging.debug("Creating the network ...")
     # set the same set of nodes and order over all layers
-    for l in range(L):
-        A[l].add_nodes_from(nodes)
+    for layer in range(L):
+        A[layer].add_nodes_from(nodes)
 
     for _, row in df_adj.iterrows():
         v1 = row[ego]
         v2 = row[alter]
-        for l in range(L):
-            if row[l + 2] > 0:
+        for layer in range(L):
+            if row[layer + 2] > 0:
                 if binary:
-                    if A[l].has_edge(v1, v2):
-                        A[l][v1][v2][0]["weight"] = 1
+                    if A[layer].has_edge(v1, v2):
+                        A[layer][v1][v2][0]["weight"] = 1
                     else:
-                        A[l].add_edge(v1, v2, weight=1)
+                        A[layer].add_edge(v1, v2, weight=1)
                 else:
-                    if A[l].has_edge(v1, v2):
-                        A[l][v1][v2][0]["weight"] += int(
-                            row[l + 2]
+                    if A[layer].has_edge(v1, v2):
+                        A[layer][v1][v2][0]["weight"] += int(
+                            row[layer + 2]
                         )  # the edge already exists, no parallel edge created
                     else:
-                        A[l].add_edge(v1, v2, weight=int(row[l + 2]))
+                        A[layer].add_edge(v1, v2, weight=int(row[layer + 2]))
 
     # remove self-loops
     if noselfloop:
         logging.debug("Removing self loops")
-        for l in range(L):
-            A[l].remove_edges_from(list(nx.selfloop_edges(A[l])))
+        for layer in range(L):
+            A[layer].remove_edges_from(list(nx.selfloop_edges(A[layer])))
 
     return A
 

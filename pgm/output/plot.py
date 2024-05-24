@@ -500,11 +500,11 @@ def plot_A(A: List, cmap="Blues") -> List[plt.Figure]:
 
     figures = []
     L = len(A)
-    for l in range(L):
-        Ad = A[l].todense()
+    for layer in range(L):
+        Ad = A[layer].todense()
         fig, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(Ad, cmap=plt.get_cmap(cmap))
-        ax.set_title(f"Adjacency matrix layer {l}", fontsize=15)
+        ax.set_title(f"Adjacency matrix layer {layer}", fontsize=15)
         for PCM in ax.get_children():
             if isinstance(PCM, plt.cm.ScalarMappable):
                 break

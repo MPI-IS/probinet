@@ -846,9 +846,6 @@ class CRepDyn:
                 subs_nz[0], weights=uttkrp_I[:, k], minlength=1
             )[0]
 
-        # for k in range(self.K):
-        #     uttkrp_DKQ[:, k] += np.bincount(subs_nz[0], weights=uttkrp_I[:, k], minlength=1)
-
         self.w = (self.ag - 1) + self.w * uttkrp_DKQ
 
         Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
@@ -970,7 +967,6 @@ class CRepDyn:
         l : float
             Pseudo log-likelihood value.
         """
-        # self._update_cache(data, data_T_vals, subs_nz)
 
         self.lambda0_ija = self._lambda0_full(self.u, self.v, self.w)
 

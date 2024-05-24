@@ -89,37 +89,6 @@ def calculate_conditional_expectation(
     return lambda_full(u, v, w) + eta * transpose_ij3(mean)
 
 
-def calculate_conditional_expectation_dyncrep(B, B_to_T, u, v, w, eta=0.0, beta=1.0):
-    """
-    Compute the conditional expectations, e.g. the parameters of the conditional distribution lambda_{ij}.
-
-    Parameters
-    ----------
-    B : ndarray
-        Graph adjacency tensor.
-    u : ndarray
-        Out-going membership matrix.
-    v : ndarray
-        In-coming membership matrix.
-    w : ndarray
-        Affinity tensor.
-    eta : float
-          Reciprocity coefficient.
-    beta : float
-          rate of edge removal.
-    mean : ndarray
-           Matrix with mean entries.
-
-    Returns
-    -------
-    Matrix whose elements are lambda_{ij}.
-    """
-    M = (beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))) / (
-        1.0 + beta * (lambda_full(u, v, w) + eta * transpose_ij2(B_to_T))
-    )
-    return M
-
-
 def calculate_conditional_expectation_dyncrep(
     B_to_T: Union[dtensor, sptensor],
     u: np.ndarray,
@@ -368,6 +337,55 @@ def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> 
     return [p00, p01, p10, p11]
 
 
+def func_lagrange_multiplier(lambda_i: float, num: float, den: float) -> float:
+    """
+    Function to calculate the value of the Lagrange multiplier.
+
+    Parameters
+    ----------
+    lambda_i : float
+        The current value of the Lagrange multiplier.
+    num : float
+        The numerator of the function.
+    den : float
+        The denominator of the function.
+
+    Returns
+    -------
+    float
+        The calculated value of the function.
+    """
+    f = num / (lambda_i + den)
+    return np.sum(f) - 1
+
+
+def u_with_lagrange_multiplier(
+    u: np.ndarray, x: np.ndarray, y: np.ndarray
+) -> np.ndarray:
+    """
+    Function to update the membership matrix 'u' using the Lagrange multiplier.
+
+    Parameters
+    ----------
+    u : ndarray
+        The current membership matrix 'u'.
+    x : ndarray
+        The first operand in the calculation.
+    y : ndarray
+        The second operand in the calculation.
+
+    Returns
+    -------
+    ndarray
+        The updated membership matrix 'u'.
+    """
+    denominator = x.sum() - (y * u).sum()
+    f_ui = x / (y + denominator)
+    if (u < 0).sum() > 0:
+        return 100.0 * np.ones(u.shape)
+    return f_ui - u
+
+
 def expected_computation(
     B: np.ndarray, U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float
 ) -> tuple:
@@ -400,14 +418,14 @@ def expected_computation(
 
     Z = calculate_Z(lambda0_aij, eta)
     M_marginal = (lambda0_aij + eta * lambda0_aij * transpose_ij3(lambda0_aij)) / Z
-    for l in np.arange(L):
-        np.fill_diagonal(M_marginal[l], 0.0)
+    for layer in np.arange(L):
+        np.fill_diagonal(M_marginal[layer], 0.0)
 
     M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / (
         eta ** transpose_ij3(B) * lambda0_aij + 1
     )
-    for l in np.arange(L):
-        np.fill_diagonal(M_conditional[l], 0.0)
+    for layer in np.arange(L):
+        np.fill_diagonal(M_conditional[layer], 0.0)
 
     return M_marginal, M_conditional
 

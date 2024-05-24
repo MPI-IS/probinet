@@ -1,5 +1,5 @@
 """
-Unti tests for the ModelClass class.
+Unit tests for the ModelClass class.
 """
 
 from pathlib import Path
@@ -7,7 +7,7 @@ import unittest
 
 import numpy as np
 
-from pgm.model.base import ModelClass
+from pgm.model.base import ModelBase
 
 
 class TestModelClass(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestModelClass(unittest.TestCase):
         self.N = 100
         self.L = 1
         self.K = 2
-        self.model_class = ModelClass()
+        self.model_class = ModelBase()
         self.model_class.N = self.N
         self.model_class.L = self.L
         self.model_class.K = self.K
