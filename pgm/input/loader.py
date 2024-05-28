@@ -205,6 +205,7 @@ def read_graph(
     undirected: bool = False,
     noselfloop: bool = True,
     binary: bool = True,
+    label: str = "weight",
 ) -> List:
     """
     Create the graph by adding edges and nodes.
@@ -257,16 +258,18 @@ def read_graph(
             if row[layer + 2] > 0:
                 if binary:
                     if A[layer].has_edge(v1, v2):
-                        A[layer][v1][v2][0]["weight"] = 1
+                        A[layer][v1][v2][0][label] = 1
                     else:
-                        A[layer].add_edge(v1, v2, weight=1)
+                        edge_attributes = {label: 1}
+                        A[layer].add_edge(v1, v2, **edge_attributes)
                 else:
                     if A[layer].has_edge(v1, v2):
-                        A[layer][v1][v2][0]["weight"] += int(
+                        A[layer][v1][v2][0][label] += int(
                             row[layer + 2]
                         )  # the edge already exists, no parallel edge created
                     else:
-                        A[layer].add_edge(v1, v2, weight=int(row[layer + 2]))
+                        edge_attributes = {label: int(row[layer + 2])}
+                        A[layer].add_edge(v1, v2, **edge_attributes)
 
     # remove self-loops
     if noselfloop:

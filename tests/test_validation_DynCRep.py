@@ -3,14 +3,14 @@ from pathlib import Path
 
 import networkx as nx
 import numpy as np
-from tests.fixtures import BaseTest, expected_Aija, flt, TOLERANCE_2
+from tests.fixtures import BaseTest, TOLERANCE_2
 import yaml
 
 from pgm.input.loader import import_data
-from pgm.input.tools import transpose_tensor
+from pgm.input.tools import flt, transpose_tensor
 from pgm.model.dyncrep import DynCRep
 from pgm.model.dyncrep_static import CRepDyn
-from pgm.output.evaluate import calculate_AUC
+from pgm.output.evaluate import calculate_AUC, expected_Aija
 
 
 class DynCRepTestCase(BaseTest):

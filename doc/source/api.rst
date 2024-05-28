@@ -13,8 +13,9 @@ API
     pgm.model
     pgm.model.crep
     pgm.model.jointcrep
+    pgm.model.dyncrep
     pgm.model.mtcov
-    pgm.model.cv
+    pgm.model.constants
     pgm.output
     pgm.output.evaluate
     pgm.output.plot

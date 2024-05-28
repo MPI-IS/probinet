@@ -272,14 +272,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 self.best_r = r
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            logging.debug(
-                "Nreal = %s - Log-likelihood = %s - iterations = %s - "
-                "time = %s seconds",
-                r,
-                loglik,
-                self.final_it,
-                np.round(time.time() - self.time_start, 2),
-            )
+            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
 
         # end cycle over realizations
 

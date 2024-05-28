@@ -9,7 +9,7 @@ import math
 import os
 from pathlib import Path
 import sys
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 import warnings
 
 import matplotlib.pyplot as plt
@@ -17,8 +17,9 @@ import networkx as nx
 import numpy as np
 from numpy.random import RandomState
 import pandas as pd
+import scipy
 from scipy.optimize import brentq
-from scipy.sparse import tril, triu
+from scipy.sparse import coo_matrix, tril, triu
 
 from . import tools as tl
 from ..model.constants import EPS_
@@ -67,7 +68,6 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         K: int,
         eta: float = 0.5,
         k: float = 3,
-        ExpM: Optional[float] = None,
         over: float = 0.0,
         corr: float = 0.0,
         seed: int = 0,
@@ -81,6 +81,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         output_parameters: bool = False,
         output_adj: bool = False,
         outfile_adj: str = "None",
+        ExpM: Optional[float] = None,
     ):
         self.N = N  # number of nodes
         self.K = K  # number of communities
@@ -1499,34 +1500,93 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
 
 
 class CRepDyn:
-
+    """
+    A class to generate a synthetic network using the DynCRep model.
+    """
     def __init__(
         self,
-        N,
-        K,
-        T=1,
-        eta=0.0,
-        L=1,
-        avg_degree=5.0,
-        ExpM=None,
-        prng=0,
-        verbose=0,
-        beta=0.2,
-        ag=0.1,
-        bg=0.1,
-        eta_dir=0.5,
-        L1=True,
-        corr=1.0,
-        over=0.0,
-        label=None,
-        end_file=".dat",
-        undirected=False,
-        folder="",
-        structure="assortative",
-        output_parameters=False,
-        output_adj=False,
-        outfile_adj=None,
+        N: int,
+        K: int,
+        T: int = 1,
+        eta: float = 0.0,  # reciprocity parameter
+        L: int = 1,
+        avg_degree: float = 5.0,
+        prng: Union[int, np.random.RandomState] = 0,
+        verbose: int = 0,
+        beta: float = 0.2,  # edge disappearance rate β(t)
+        ag: float = 1.0,  # shape of gamma prior
+        bg: float = 0.5,  # rate of gamma prior
+        eta_dir: float = 0.5,
+        L1: bool = True,  # u,v generation preference
+        corr: float = 1.0,  # correlation between u and v synthetically generated
+        over: float = 0.0,
+        label: Optional[str] = None,
+        end_file: str = ".dat",
+        folder: str = "",
+        structure: str = "assortative",
+        output_parameters: bool = False,
+        output_adj: bool = False,
+        outfile_adj: Optional[str] = None,
+        figsize: Tuple[int, int] = (7,7),
+        fontsize: int = 15,
+        ExpM: Optional[np.ndarray] = None,
     ):
+        """
+        Initialize the CRepDyn class to generate a synthetic network using the DynCRep model.
+
+        Parameters
+        ----------
+        N : int
+            Number of nodes in the network.
+        K : int
+            Number of communities in the network.
+        T : int, optional
+            Number of time steps in the network. Defaults to 1.
+        eta : float, optional
+            Reciprocity parameter. Defaults to 0.0.
+        L : int, optional
+            Number of layers in the network. Defaults to 1.
+        avg_degree : float, optional
+            Average degree of nodes in the network. Defaults to 5.0.
+        prng : Union[int, np.random.RandomState], optional
+            Seed for random number generator. Defaults to 0.
+        verbose : int, optional
+            Verbosity level. Defaults to 0.
+        beta : float, optional
+            Parameter (beta) for Gamma. Defaults to 0.2.
+        ag : float, optional
+            Shape parameter of the gamma prior. Defaults to 1.0.
+        bg : float, optional
+            Rate parameter of the gamma prior. Defaults to 0.5.
+        eta_dir : float, optional
+            Parameter for Dirichlet. Defaults to 0.5.
+        L1 : bool, optional
+            Flag for parameter generation method. True for Dirichlet, False for Gamma. Defaults to True.
+        corr : float, optional
+            Correlation between u and v synthetically generated. Defaults to 1.0.
+        over : float, optional
+            Fraction of nodes with mixed membership. Defaults to 0.0.
+        label : str, optional
+            Label for the model. This label is used as part of the filename when saving the output. Defaults to None.
+        end_file : str, optional
+            File extension for output files. Defaults to ".dat".
+        folder : str, optional
+            Folder to save output files. Defaults to "".
+        structure : str, optional
+            Structure of the network. Defaults to "assortative".
+        output_parameters : bool, optional
+            Whether to output parameters. Defaults to False.
+        output_adj : bool, optional
+            Whether to output adjacency matrix. Defaults to False.
+        outfile_adj : str, optional
+            File name for output adjacency matrix. Defaults to None.
+        figsize : Tuple[int, int], optional
+            Size of the figures generated during the network creation process. Defaults to (7,7).
+        fontsize : int, optional
+            Font size of the figures generated during the network creation process. Defaults to 15.
+        ExpM : np.ndarray, optional
+            Expected number of edges in the network. Defaults to None.
+        """
         self.N = N
         self.K = K
         self.T = T
@@ -1534,11 +1594,13 @@ class CRepDyn:
         self.avg_degree = avg_degree
         self.prng = prng
         self.end_file = end_file
-        self.undirected = undirected
+        # self.undirected = undirected # TODO: let Hadiseh know that this is not used
         self.folder = folder
         self.output_parameters = output_parameters
         self.output_adj = output_adj
         self.outfile_adj = outfile_adj
+        self.figsize = figsize
+        self.fontsize = fontsize
 
         if label is not None:
             self.label = label
@@ -1547,8 +1609,6 @@ class CRepDyn:
                 [str(N), str(K), str(avg_degree), str(T), str(eta), str(beta)]
             )
         self.structure = structure
-        print("=" * 30)
-        print("self.structure:", self.structure)
 
         if ExpM is None:
             self.ExpM = self.avg_degree * self.N * 0.5
@@ -1556,9 +1616,9 @@ class CRepDyn:
             self.ExpM = float(ExpM)
 
         # Set verbosity flag
-        if verbose not in {0, 1, 2}:
+        if verbose not in {0, 1, 2, 3}:
             raise ValueError(
-                "The verbosity parameter can only assume values in {0,1,2}!"
+                "The verbosity parameter can only assume values in {0,1,2,3}!"
             )
         self.verbose = verbose
 
@@ -1609,24 +1669,48 @@ class CRepDyn:
         self.over = over
 
     def Exp_ija_matrix(self, u, v, w):
+        """
+        Compute the expected adjacency matrix for the DynCRep model.
+
+        Parameters
+        ----------
+        u : np.ndarray
+            Outgoing membership matrix.
+        v : np.ndarray
+            Incoming membership matrix.
+        w : np.ndarray
+            Affinity tensor.
+
+        Returns
+        -------
+        Exp_ija : np.ndarray
+            Expected adjacency matrix.
+        """
+        # Compute the product of the outgoing membership matrix and the affinity tensor
         Exp_ija = np.einsum("ik,kq->iq", u, w)
+
+        # Compute the product of the result and the incoming membership matrix
         Exp_ija = np.einsum("iq,jq->ij", Exp_ija, v)
+
         return Exp_ija
 
     def CRepDyn_network(self, parameters=None):
         """
-        Generate a directed, possibly weighted network by using CRep Dyn
+        Generate a directed, possibly weighted network by using DynCRep.
+
         Steps:
-            1. Generate a network A[0]
-            2. Extract A[t] entries (network edges) using transition probabilities
-        INPUT
+            1. Generate a network A[0].
+            2. Extract A[t] entries (network edges) using transition probabilities.
+
+        Parameters
         ----------
-        parameters : object
-                     Latent variables eta, beta, u, v and w.
-        OUTPUT
-        ----------
-        G : Digraph
-            DiGraph NetworkX object. Self-loops allowed.
+        parameters : dict, optional
+            Latent variables eta, beta, u, v and w.
+
+        Returns
+        -------
+        G : networkx.classes.digraph.DiGraph
+            NetworkX DiGraph object. Self-loops allowed.
         """
 
         # Set seed random number generator
@@ -1721,55 +1805,60 @@ class CRepDyn:
         self.N = len(nodes)
 
         if self.verbose > 0:
-            print(
-                f"Removed {len(nodes_to_remove)} nodes, because not part of the largest connected component"
-            )
+            if len(nodes_to_remove) > 0:
+                logging.debug(
+                    "Removed %s nodes, because not part of the largest connected component",
+                    len(nodes_to_remove),
+                )
 
         if self.verbose > 0:
             for t in range(len(G)):
-                print("-" * 30)
-                print("t=", t)
+                logging.debug("-" * 30)
+                logging.debug("t=%s", t)
                 ave_w_deg = np.round(
                     2 * G[t].number_of_edges() / float(G[t].number_of_nodes()), 3
                 )
-                print(
-                    f"Number of nodes: {G[t].number_of_nodes()} \n"
-                    f"Number of edges: {G[t].number_of_edges()}"
+                logging.debug(
+                    "Number of nodes: %s \nNumber of edges: %s",
+                    G[t].number_of_nodes(),
+                    G[t].number_of_edges(),
                 )
-                print(f"Average degree (2E/N): {ave_w_deg}")
-                print(f"Reciprocity at t: {nx.reciprocity(G[t])}")
-                print("-" * 30)
-
-            self.check_reciprocity_tm1(A, A_sum)
+                logging.debug("Average degree (2E/N): %s", ave_w_deg)
+                logging.debug("Reciprocity at t: %s", nx.reciprocity(G[t]))
+                logging.debug("-" * 30)
+            self.check_reciprocity_tm1(A) # A_sum was passed originally too
 
         if self.output_parameters:
             self._output_results(nodes)
 
-        if self.verbose == 2:
-            self._plot_A(A)
-            if M is not None:
-                self._plot_M(M)
+        if self.verbose >= 2:
+            self._plot_A(A, figsize=self.figsize, fontsize=self.fontsize)
+            if self.verbose == 3:
+                if M is not None:
+                    self._plot_M(M, figsize=self.figsize, fontsize=self.fontsize)
 
         return G
 
-    def _generate_lv(self, prng=42):
+    def _generate_lv(self, prng: int = 42) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Generate z, u, v, w latent variables.
-        INPUT
+        Generate u, v, w latent variables.
+
+        Parameters
         ----------
-        prng : int
-               Seed for the random number generator.
-        OUTPUT
+        prng : int, optional
+            Seed for the random number generator. Default is 42.
+
+        Returns
         ----------
-        u : Numpy array
+        u : np.ndarray
             Matrix NxK of out-going membership vectors, positive element-wise.
             With unitary L1 norm computed row-wise.
 
-        v : Numpy array
+        v : np.ndarray
             Matrix NxK of in-coming membership vectors, positive element-wise.
             With unitary L1 norm computed row-wise.
 
-        w : Numpy array
+        w : np.ndarray
             Affinity matrix KxK. Possibly None if in pure SpringRank.
             Element (k,h) gives the density of edges going from the nodes
             of group k to nodes of group h.
@@ -1791,38 +1880,67 @@ class CRepDyn:
         w = affinity_matrix_dyncrep(self.structure, self.N, self.K, self.avg_degree)
         return u, v, w
 
-    def _build_multilayer_edgelist(self, nodes, A_tot, A, nodes_to_keep=None):
+    def _build_multilayer_edgelist(self, A_tot: coo_matrix, A: List[coo_matrix],
+                                   nodes_to_keep: Optional[List[int]] = None) -> pd.DataFrame:
+        """
+        Build a multilayer edge list from the given adjacency matrices.
+
+        This function converts the total adjacency matrix to a coordinate format and initializes a dictionary to store the source and target nodes.
+        It then loops over each adjacency matrix in A and adds the weights of the edges at each time t to the dictionary.
+
+        Parameters
+        ----------
+        A_tot : scipy.sparse.coo_matrix
+            The total adjacency matrix.
+        A : List[scipy.sparse.coo_matrix]
+            List of adjacency matrices for each layer.
+        nodes_to_keep : List[int], optional
+            List of node IDs to keep. If not provided, all nodes are kept.
+            
+        Returns
+        -------
+        df_res : pd.DataFrame
+            DataFrame containing the multilayer edge list.
+        """
+        # Convert the total adjacency matrix to a coordinate format
         A_coo = A_tot.tocoo()
+
+        # Initialize a dictionary to store the source and target nodes
         data_dict = {"source": A_coo.row, "target": A_coo.col}
+
+        # Loop over each adjacency matrix in A
         for t in range(len(A)):
-            data_dict["weight_t" + str(t)] = np.squeeze(
-                np.asarray(A[t][A_tot.nonzero()])
-            )
+            # Add the weights of the edges at time t to the dictionary
+            data_dict["weight_t" + str(t)] = np.squeeze(np.asarray(A[t][A_tot.nonzero()]))
 
+        # Convert the dictionary to a DataFrame
         df_res = pd.DataFrame(data_dict)
-        print(len(df_res))
+
+        # If nodes_to_keep is not None, filter the DataFrame to only include these nodes
         if nodes_to_keep is not None:
-            df_res = df_res[
-                df_res.source.isin(nodes_to_keep) & df_res.target.isin(nodes_to_keep)
-            ]
+            df_res = df_res[df_res.source.isin(nodes_to_keep) & df_res.target.isin(nodes_to_keep)]
 
+        # Get the list of unique nodes
         nodes = list(set(df_res.source).union(set(df_res.target)))
-        id2node = {}
-        for i, n in enumerate(nodes):
-            id2node[i] = n
 
+        # Create a dictionary mapping node IDs to nodes
+        id2node = {i: n for i, n in enumerate(nodes)}
+
+        # Replace the source and target node IDs with the actual nodes
         df_res["source"] = df_res.source.map(id2node)
         df_res["target"] = df_res.target.map(id2node)
 
+        # Return the resulting DataFrame
         return df_res
 
-    def _output_results(self, nodes):
+    def _output_results(self, nodes: List[int]) -> None:
         """
         Output results in a compressed file.
-        INPUT
+
+        Parameters
         ----------
-        nodes : list
-                List of nodes IDs.
+        nodes : List[int]
+            List of node IDs.
         """
         output_parameters = self.folder + "theta_" + self.label + "_" + str(self.prng)
         np.savez_compressed(
@@ -1839,81 +1957,121 @@ class CRepDyn:
             print(f"Parameters saved in: {output_parameters}.npz")
             print('To load: theta=np.load(filename), then e.g. theta["u"]')
 
-    def _output_adjacency(self, nodes, A_tot, A, nodes_to_keep=None, outfile=None):
+    def _output_adjacency(self, nodes: List[int], A_tot: scipy.sparse.coo_matrix,
+                          A: List[scipy.sparse.coo_matrix],
+                          nodes_to_keep: Optional[List[int]] = None,
+                          outfile: Optional[str] = None) -> None:
         """
-        Output the adjacency matrix. Default format is space-separated .csv
-        with 3 columns: node1 node2 weight
-        INPUT
+        Output the adjacency matrix. The default format is a space-separated .csv file with 3 columns: node1, node2, and weight.
+
+        Parameters
         ----------
-        G: Digraph
-           DiGraph NetworkX object.
-        outfile: str
-                 Name of the adjacency matrix.
+        nodes : List[int]
+            List of node IDs.
+        A_tot : scipy.sparse.coo_matrix
+            The total adjacency matrix.
+        A : List[scipy.sparse.coo_matrix]
+            List of adjacency matrices for each layer.
+        nodes_to_keep : List[int], optional
+            List of node IDs to keep. If not provided, all nodes are kept.
+        outfile : str, optional
+            Name of the output file for the adjacency matrix. If not provided, a default name is used.
         """
         if outfile is None:
             outfile = "syn_" + self.label + "_" + str(self.prng) + ".dat"
 
         df = self._build_multilayer_edgelist(
-            nodes, A_tot, A, nodes_to_keep=nodes_to_keep
+            A_tot, A, nodes_to_keep=nodes_to_keep
         )
         df.to_csv(self.folder + outfile, index=False, sep=" ")
         if self.verbose:
             print(f"Adjacency matrix saved in: {self.folder + outfile}")
 
-    def _plot_A(self, A, cmap="PuBuGn"):
+    def _plot_A(self, A: np.ndarray, cmap: str = "PuBuGn", figsize: Tuple[int, int] = (7, 7),
+                fontsize: int = 15) -> None:
         """
         Plot the adjacency matrix produced by the generative algorithm.
-        INPUT
+
+        Parameters
         ----------
-        A : Scipy array
+        A : np.ndarray
             Sparse version of the NxN adjacency matrix associated to the graph.
-        cmap : Matplotlib object
-               Colormap used for the plot.
+        cmap : str, optional
+            Colormap used for the plot. Defaults to "PuBuGn".
+        figsize : Tuple[int, int], optional
+            Size of the figure to be plotted. Defaults to (7, 7).
+        fontsize : int, optional
+            Font size to be used in the plot title. Defaults to 15.
         """
         for i in range(len(A)):
             Ad = A[i].todense()
-            _, ax = plt.subplots(figsize=(7, 7))
+            _, ax = plt.subplots(figsize=figsize)
             ax.matshow(Ad, cmap=plt.get_cmap(cmap))
-            ax.set_title("Adjacency matrix", fontsize=15)
+            ax.set_title(f"Adjacency matrix at time {i}", fontsize=fontsize)
             for PCM in ax.get_children():
                 if isinstance(PCM, plt.cm.ScalarMappable):
                     break
             plt.colorbar(PCM, ax=ax)
-            plt.show()
 
-    def _plot_M(self, M, cmap="PuBuGn"):
+    def _plot_M(self, M: np.ndarray, cmap: str = "PuBuGn", figsize: Tuple[int, int] = (7, 7),
+                fontsize: int = 15) -> None:
         """
         Plot the M matrix produced by the generative algorithm. Each entry is the
-        poisson mean associated to each couple of nodes of the graph.
-        INPUT
+        Poisson mean associated with each pair of nodes in the graph.
+
+        Parameters
         ----------
-        M : Numpy array
-            NxN M matrix associated to the graph. Contains all the means used
+        M : np.ndarray
+            NxN M matrix associated with the graph. Contains all the means used
             for generating edges.
-        cmap : Matplotlib object
-               Colormap used for the plot.
+        cmap : str, optional
+            Colormap used for the plot. Defaults to "PuBuGn".
+        figsize : Tuple[int, int], optional
+            Size of the figure to be plotted. Defaults to (7, 7).
+        fontsize : int, optional
+            Font size to be used in the plot title. Defaults to 15.
         """
 
-        _, ax = plt.subplots(figsize=(7, 7))
+        _, ax = plt.subplots(figsize=figsize)
         ax.matshow(M, cmap=plt.get_cmap(cmap))
-        ax.set_title("MT means matrix", fontsize=15)
+        ax.set_title("MT means matrix", fontsize=fontsize)
         for PCM in ax.get_children():
             if isinstance(PCM, plt.cm.ScalarMappable):
                 break
         plt.colorbar(PCM, ax=ax)
-        plt.show()
 
-    def check_reciprocity_tm1(self, A):
+    def check_reciprocity_tm1(self, A: List[coo_matrix]) -> None:
+        """
+        Check the reciprocity of the adjacency matrices at time t and t-1.
+
+        Parameters
+        ----------
+        A : List[scipy.sparse.coo_matrix]
+            List of adjacency matrices for each time step.
+        """
+        if len(A) > 1:
+            logging.debug("Compare current and previous reciprocity.")
+        # Loop over each adjacency matrix in A, starting from the second one
         for t in range(1, len(A)):
+            # Get the indices of the non-zero elements in the adjacency matrix at time t
             ref_subs = A[t].nonzero()
+
+            # Get the non-zero elements in the transposed adjacency matrix at time t
             M_t_T = A[t].transpose()[ref_subs]
+
+            # Get the non-zero elements in the transposed adjacency matrix at time t-1
             M_tm1_T = A[t - 1].transpose()[ref_subs]
+
+            # Get the number of non-zero elements in the adjacency matrix at time t
             nnz = float(A[t].count_nonzero())
-            print(
-                nnz,
-                M_t_T.nonzero()[0].shape[0] / nnz,
-                M_tm1_T.nonzero()[0].shape[0] / nnz,
-            )
+
+            # Log the number of non-zero elements in the adjacency matrix at time t,
+            # the fraction of non-zero elements in the transposed adjacency matrix at time t,
+            # and the fraction of non-zero elements in the transposed adjacency matrix at time t-1
+            logging.debug("Time step: %s", t)
+            logging.debug("Number of non-zero elements in the adjacency matrix at time t: %s", nnz)
+            logging.debug("Fraction of non-zero elements in the transposed adjacency matrix at time t: %s", M_t_T.nonzero()[0].shape[0] / nnz)
+            logging.debug("Fraction of non-zero elements in the transposed adjacency matrix at time t-1: %s", M_tm1_T.nonzero()[0].shape[0] / nnz)
 
 
 def membership_vectors(
@@ -1929,37 +2087,40 @@ def membership_vectors(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the NxK membership vectors u, v using a Dirichlet or a Gamma distribution.
-    INPUT
+
+    Parameters
     ----------
-    prng: Numpy Random object
-          Random number generator container.
+    prng : numpy.random.RandomState
+        Random number generator container.
     L1 : bool
-         Flag for parameter generation method. True for Dirichlet, False for Gamma.
-    eta : float
-          Parameter for Dirichlet.
+        Flag for parameter generation method. True for Dirichlet, False for Gamma.
+    eta_dir : float
+        Parameter for Dirichlet.
     alpha : float
         Parameter (alpha) for Gamma.
     beta : float
         Parameter (beta) for Gamma.
-    N : int
-        Number of nodes.
     K : int
         Number of communities.
+    N : int
+        Number of nodes.
     corr : float
-           Correlation between u and v synthetically generated.
+        Correlation between u and v synthetically generated.
     over : float
-           Fraction of nodes with mixed membership.
-    OUTPUT
-    -------
-    u : Numpy array
-        Matrix NxK of out-going membership vectors, positive element-wise.
-        Possibly None if in pure SpringRank or pure Multitensor.
-        With unitary L1 norm computed row-wise.
+        Fraction of nodes with mixed membership.
 
-    v : Numpy array
-        Matrix NxK of in-coming membership vectors, positive element-wise.
-        Possibly None if in pure SpringRank or pure Multitensor.
-        With unitary L1 norm computed row-wise.
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        u : Numpy array
+            Matrix NxK of out-going membership vectors, positive element-wise.
+            Possibly None if in pure SpringRank or pure Multitensor.
+            With unitary L1 norm computed row-wise.
+
+        v : Numpy array
+            Matrix NxK of in-coming membership vectors, positive element-wise.
+            Possibly None if in pure SpringRank or pure Multitensor.
+            With unitary L1 norm computed row-wise.
     """
     # Generate equal-size unmixed group membership
     size = int(N / K)
@@ -1981,10 +2142,9 @@ def membership_vectors(
         if L1:
             u[ind_over] = prng.dirichlet(
                 eta_dir * np.ones(K), overlapping
-            )  # TODO: Ask Hadiseh
-            # why eta is not defined
+            )  # TODO: Ask Hadiseh  why eta is not defined. Answer: its probably eta_dir
             v[ind_over] = corr * u[ind_over] + (1.0 - corr) * prng.dirichlet(
-                eta * np.ones(K), overlapping  # pylint: disable=undefined-variable
+                eta_dir * np.ones(K), overlapping  # pylint: disable=undefined-variable
             )
             if corr == 1.0:
                 assert np.allclose(u, v)

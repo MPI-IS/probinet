@@ -20,6 +20,7 @@ def build_B_from_A(
     A: List[nx.MultiDiGraph],
     nodes: Optional[List] = None,
     calculate_reciprocity: bool = True,
+    label: str = "weight",
 ) -> Union[ndarray, Tuple[ndarray, List[Any]]]:
     """
     Create the numpy adjacency tensor of a networkX graph.
@@ -69,7 +70,7 @@ def build_B_from_A(
 
         # Check if all weights in B[l] are integers
         assert all(
-            isinstance(a[2], int) for a in A_layer.edges(data="weight")
+            isinstance(a[2], int) for a in A_layer.edges(data=label)
         ), "All weights in A must be integers."
 
         # Convert the graph A[l] to a numpy array with specified options
@@ -77,7 +78,7 @@ def build_B_from_A(
         # - dtype=int: ensure the resulting array has integer data type
         # - nodelist=nodes: use the specified nodes
         B[layer, :, :] = nx.to_numpy_array(
-            A_layer, weight="weight", dtype=int, nodelist=nodes
+            A_layer, weight=label, dtype=int, nodelist=nodes
         )
 
         # Calculate reciprocity for the current layer and append it to the rw list

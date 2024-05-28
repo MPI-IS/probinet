@@ -36,7 +36,7 @@ class TestNotebooks(unittest.TestCase):
             notebook_content = nbformat.read(notebook_file, as_version=4)
 
         # Initialize the ExecutePreprocessor
-        ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
+        ep = ExecutePreprocessor(timeout=1000, kernel_name="python3")
 
         # Execute the notebook
         ep.preprocess(notebook_content, {"metadata": {"path": "."}})
@@ -52,3 +52,6 @@ class TestNotebooks(unittest.TestCase):
 
     def test_MTCOV_notebook_execution(self):
         self.run_notebook("MTCOV")
+
+    def test_DynCRep_notebook_execution(self):
+        self.run_notebook("DynCRep")

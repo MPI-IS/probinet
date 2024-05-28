@@ -242,7 +242,7 @@ class TestCRepDyn(unittest.TestCase):
 
     def test_invalid_verbose(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, verbose=3)
+            CRepDyn(self.N, self.K, verbose=4)
 
     def test_invalid_eta(self):
         with self.assertRaises(ValueError):

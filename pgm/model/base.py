@@ -713,7 +713,9 @@ class ModelBase(ModelBaseParameters):
         )
 
         # Check if the fitting process has converged
-        if np.logical_and(self.final_it == self.max_iter, not conv):
+        if np.logical_and(self.final_it == self.max_iter, not conv): # TODO: if the number of
+            # realizations is equal to the maximum number of iterations and the fitting process
+            # has converged, then ask user to increase the number of realizations
             # If the fitting process has not converged, log a warning
             logging.warning(
                 "Solution failed to converge in %s EM steps!", self.max_iter
@@ -728,6 +730,26 @@ class ModelBase(ModelBaseParameters):
         if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
             plot_L(best_loglik_values, int_ticks=True)
 
+    def _log_realization_info(self, r, loglik, final_it, time_start, convergence) -> None:
+        """
+        Log the current realization number, log-likelihood, number of iterations, and elapsed time.
+
+        Parameters:
+        r (int): Current realization number.
+        loglik (float): Current log-likelihood.
+        final_it (int): Current number of iterations.
+        time_start (float): Start time of the realization.
+        """
+        logging.debug(
+            "num. realizations = %s - Log-likelihood = %s - iterations = %s - time = %s seconds - "
+            "convergence = %s",
+            r,
+            loglik,
+            final_it,
+            np.round(time.time() - time_start, 2),
+            convergence
+        )
+
     @abstractmethod
     def compute_likelihood(self, *args, **kwargs) -> float:
         """
@@ -740,7 +762,7 @@ class ModelBase(ModelBaseParameters):
 class ModelUpdateMixin(ABC):
     """
     Mixin class for the update methods of the model classes. It is not a requirement to inherit
-    from this class. 
+    from this class.
     """
 
     not_implemented_message = "This method should be overridden in the derived class"
@@ -915,7 +937,7 @@ class ModelUpdateMixin(ABC):
                 loglik_values.append(loglik)
                 if not it % 100:
                     logging.debug(
-                        "Nreal = %s - iterations = %s - time = %.2f seconds",
+                        "num. realization = %s - iterations = %s - time = %.2f seconds",
                         r,
                         it,
                         time.time() - self.time_start,
@@ -975,3 +997,4 @@ class ModelUpdateMixin(ABC):
         for var in ["u", "v", "w"]:
             source_var = getattr(self, f"{var}{source_suffix}")
             setattr(self, f"{var}{target_suffix}", np.copy(source_var))
+
