@@ -312,16 +312,9 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 if flag_conv == "log":
                     best_loglik_values = list(loglik_values)
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            logging.debug(
-                "Nreal = %s - Loglikelihood = %s - iterations = %s - time = "
-                "%s seconds",
-                r,
-                loglik,
-                self.final_it,
-                np.round(time.time() - self.time_start, 2),
-            )
+            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
 
-            # end cycle over realizations
+        # end cycle over realizations
 
         # Evaluate the results of the fitting process
         self._evaluate_fit_results(self.maxL, conv, best_loglik_values)

@@ -1,6 +1,5 @@
 """
-Class definition of CRep, the algorithm to perform inference in networks with reciprocity.
-The latent variables are related to community memberships and reciprocity value.
+Class definition of DynCRep, the algorithm to perform inference in temporal networks.
 """
 
 import logging
@@ -24,7 +23,7 @@ from .constants import EPS_
 
 class DynCRep(ModelBase, ModelUpdateMixin):
     """
-    Class definition of CRepDyn_w_temp, the algorithm to perform inference in temporal  networks
+    Class definition of DynCRep, the algorithm to perform inference in temporal  networks
     with reciprocity.
     """
 

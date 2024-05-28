@@ -245,14 +245,7 @@ class JointCRep(
                     best_loglik_values = list(loglik_values)
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            logging.debug(
-                "Nreal = %s - Log-likelihood = %s - iterations = %s - "
-                "time = %s seconds",
-                r,
-                loglik,
-                it,
-                np.round(time.time() - self.time_start, 2),
-            )
+            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
 
         # Store the maximum log-likelihood
         self.maxL = maxL
@@ -835,26 +828,6 @@ class JointCRep(
             log_and_raise_error(ValueError, "log-likelihood is NaN!")
 
         return loglik
-
-    def _copy_variables(
-        self, source_suffix: str, target_suffix: str
-    ) -> None:
-        """
-        Copy variables from source to target.
-
-        Parameters
-        ----------
-        source_suffix : str
-                        The suffix of the source variable names.
-        target_suffix : str
-                        The suffix of the target variable names.
-        """
-        # Call the base method
-        super()._copy_variables(source_suffix, target_suffix)
-
-        # Copy the specific variables
-        source_var = getattr(self, f"eta{source_suffix}")
-        setattr(self, f"eta{target_suffix}", float(source_var))
 
     def _copy_variables(
         self, source_suffix: str, target_suffix: str
