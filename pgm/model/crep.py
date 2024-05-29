@@ -212,14 +212,9 @@ class CRep(ModelBase, ModelUpdateMixin):
                 self.best_r = r
                 if self.flag_conv == "log":
                     best_loglik_values = list(loglik_values)
+
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            logging.debug(
-                "Nreal = %s - Pseudo Log-likelihood = %s - iterations = %s - time = %.2f seconds",
-                r,
-                loglik,
-                it,
-                time.time() - self.time_start,
-            )
+            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
 
         # end cycle over realizations
 

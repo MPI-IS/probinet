@@ -25,9 +25,8 @@ def parse_args():
     Parse the command-line arguments.
     """
     parser = argparse.ArgumentParser(
-        description="Script to run the CRep, JointCRep,DynCRep and "
-        "MTCOV "
-        "algorithms.",
+        description="Script to run the CRep, JointCRep, DynCRep and "
+        "MTCOV algorithms.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     # Add the command line arguments
@@ -72,14 +71,15 @@ def parse_args():
         "use 0, but in case it does not work, try 1.",
     )
     # TODO: Improve these model specific arguments
-    parser.add_argument("-ag", type=float, default=1.0, help="Parameter ag")
+    parser.add_argument("-ag", type=float, default=1.1, help="Parameter ag")
     parser.add_argument("-bg", type=float, default=0.5, help="Parameter bg")
     parser.add_argument(
         "-temp",
         "--temporal",
-        type=bool,
-        default=False,
-        help="Flag to use temporal " "version of DynCRep",
+        action='store_false',
+        default=True,
+        help="Flag to use non-temporal version of DynCRep. If not set, it will use the temporal "
+             "version.",
     )
 
     # Input/Output related arguments
@@ -372,6 +372,8 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     if args.algorithm == "MTCOV":
         logging.info("gamma = %s", conf["gamma"])
     logging.info("### Running %s ###", args.algorithm)
+    if 'DynCRep' in args.algorithm:
+        logging.info("### Version: %s ###", "w-DYN" if args.temporal else "w-STATIC")
 
     # Map algorithm names to their classes
     algorithm_classes = {
@@ -397,4 +399,4 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     fit_model(model, args.algorithm, conf)
 
     # Print the time elapsed
-    logging.info("Time elapsed: %s seconds.", np.round(time.time() - time_start, 2))
+    logging.info("Time elapsed: %.2f seconds.", time.time() - time_start)

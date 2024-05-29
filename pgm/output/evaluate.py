@@ -162,7 +162,7 @@ def calculate_expectation(
 
 def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
-    Compute the mean lambda0 for all entries.
+    Compute the mean lambda for all entries.
 
     Parameters
     ----------
@@ -302,6 +302,17 @@ def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
 
     return Z
 
+def expected_Aija(U, V, W):
+    """
+    Compute the expected value of the adjacency tensor.
+    """
+    if W.ndim == 1:
+        M = np.einsum("ik,jk->ijk", U, V)
+        M = np.einsum("ijk,k->ij", M, W)
+    else:
+        M = np.einsum("ik,jq->ijkq", U, V)
+        M = np.einsum("ijkq,kq->ij", M, W)
+    return M
 
 def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> list:
     """
@@ -519,11 +530,33 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
 def CalculatePermutation(U_infer, U0):
     """
     Permuting the overlap matrix so that the groups from the two partitions correspond
-    U0 has dimension NxK, reference membership
+    U0 has dimension NxK, reference memebership
     """
+    N, RANK = U0.shape
+    M = np.dot(np.transpose(U_infer), U0) / float(N)  # dim=RANKxRANK
+    rows = np.zeros(RANK)
+    columns = np.zeros(RANK)
+    P = np.zeros((RANK, RANK))  # Permutation matrix
+    for t in range(RANK):
+        # Find the max element in the remaining submatrix,
+        # the one with rows and columns removed from previous iterations
+        max_entry = 0.
+        c_index = 1
+        r_index = 1
+        for i in range(RANK):
+            if columns[i] == 0:
+                for j in range(RANK):
+                    if rows[j] == 0:
+                        if M[j, i] > max_entry:
+                            max_entry = M[j, i]
+                            c_index = i
+                            r_index = j
 
-    lambda0_aij = lambda_full(U, V, W)
-    L = lambda0_aij.shape[0]
+        P[r_index, c_index] = 1
+        columns[c_index] = 1
+        rows[r_index] = 1
+
+    return P
 
 
 def cosine_similarity(U_infer, U0):
@@ -544,10 +577,7 @@ def cosine_similarity(U_infer, U0):
         if norm0[i] > 0.0:
             U0[i, :] = U0[i, :] / norm0[i]
 
-    M_conditional = (eta ** transpose_ij3(B) * lambda0_aij) / (
-        eta ** transpose_ij3(B) * lambda0_aij + 1
-    )
-    for l in np.arange(L):
-        np.fill_diagonal(M_conditional[l], 0.0)
-
-    return M_marginal, M_conditional
+    for k in range(K):
+        cosine_sim += np.dot(np.transpose(U_infer[:, k]), U0[:, k])
+    U0 = U0tmp.copy()
+    return U_infer0, cosine_sim / float(N)

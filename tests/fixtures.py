@@ -161,23 +161,6 @@ class ModelTestMixin:
         self._assert_ground_truth_information(theta, thetaGT)
 
 
-def flt(x, d=3):
-    return round(x, d)
-
-
-def expected_Aija(
-    U, V, W
-):  # TODO: future refactoring ticket: use a similar function from pgm,
-    # and avoid defining this new one here
-    if W.ndim == 1:
-        M = np.einsum("ik,jk->ijk", U, V)
-        M = np.einsum("ijk,k->ij", M, W)
-    else:
-        M = np.einsum("ik,jq->ijkq", U, V)
-        M = np.einsum("ijkq,kq->ij", M, W)
-    return M
-
-
 def check_shape_and_sum(matrix, expected_shape, expected_sum, matrix_name):
     assert (
         matrix.shape == expected_shape

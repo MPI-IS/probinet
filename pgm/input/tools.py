@@ -214,7 +214,6 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
 
     return M
 
-
 def check_symmetric(
     a: Union[np.ndarray, List[np.ndarray]], rtol: float = 1e-05, atol: float = 1e-08
 ) -> bool:
@@ -605,3 +604,9 @@ def log_and_raise_error(error_type: Type[BaseException], message: str) -> None:
 
     # Raise the exception
     raise error_type(message)
+
+def flt(x, d=3):
+    """
+    Round a number to a specified number of decimal places.
+    """
+    return round(x, d)

@@ -8,7 +8,8 @@ import networkx as nx
 import numpy as np
 
 from pgm.input.generate_network import (
-    affinity_matrix, BaseSyntheticNetwork, CRepDyn, GM_reciprocity, ReciprocityMMSBM_joints)
+    affinity_matrix, BaseSyntheticNetwork, GM_reciprocity, ReciprocityMMSBM_joints,
+    SyntheticDynCRep)
 
 from .fixtures import RTOL
 
@@ -226,8 +227,8 @@ class TestCRepDyn(unittest.TestCase):
             self.expected_number_of_edges_graph_2,
         ]
         # Create the CRepDyn object
-        crepdyn = CRepDyn(N=self.N, K=self.K, T=self.T)
-        graphs = crepdyn.CRepDyn_network()
+        crepdyn = SyntheticDynCRep(N=self.N, K=self.K, T=self.T)
+        graphs = crepdyn.generate_net()
         self.assertEqual(len(graphs), self.T + 1)
         # Check the number of nodes and edges in each graph
         for i, graph in enumerate(graphs):
@@ -242,41 +243,41 @@ class TestCRepDyn(unittest.TestCase):
 
     def test_invalid_verbose(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, verbose=3)
+            SyntheticDynCRep(self.N, self.K, verbose=4)
 
     def test_invalid_eta(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, eta=-1)
+            SyntheticDynCRep(self.N, self.K, eta=-1)
 
     def test_invalid_beta(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, beta=-1)
+            SyntheticDynCRep(self.N, self.K, beta=-1)
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, beta=2)
+            SyntheticDynCRep(self.N, self.K, beta=2)
 
     def test_invalid_structure(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, structure="invalid_structure")
+            SyntheticDynCRep(self.N, self.K, structure="invalid_structure")
 
     def test_invalid_ag(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, ag=-1, L1=False)
+            SyntheticDynCRep(self.N, self.K, ag=-1, L1=False)
 
     def test_invalid_bg(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, bg=-1, L1=False)
+            SyntheticDynCRep(self.N, self.K, bg=-1, L1=False)
 
     def test_invalid_corr(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, corr=-1)
+            SyntheticDynCRep(self.N, self.K, corr=-1)
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, corr=2)
+            SyntheticDynCRep(self.N, self.K, corr=2)
 
     def test_invalid_over(self):
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, over=-1)
+            SyntheticDynCRep(self.N, self.K, over=-1)
         with self.assertRaises(ValueError):
-            CRepDyn(self.N, self.K, over=2)
+            SyntheticDynCRep(self.N, self.K, over=2)
 
 
 class TestReciprocityMMSBM_joints(unittest.TestCase):
