@@ -344,12 +344,12 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
             "Number of links in the lower triangular matrix: %s", tril(A, k=-1).nnz
         )
         logging.info(
-            "Sum of weights in the upper triangular matrix: %s",
-            np.round(triu(A, k=1).sum(), 2),
+            "Sum of weights in the upper triangular matrix: %.3f",
+            triu(A, k=1).sum(),
         )
         logging.info(
-            "Sum of weights in the lower triangular matrix: %s",
-            np.round(tril(A, k=-1).sum(), 2),
+            "Sum of weights in the lower triangular matrix: %.3f",
+            tril(A, k=-1).sum(),
         )
         logging.info("Number of possible unordered pairs: %s", counter)
         logging.info(
@@ -360,11 +360,9 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         logging.info("Number of edges: %s", G.number_of_edges())
         logging.info("Average degree (2E/N): %s", Sparsity_cof)
         logging.info("Average weighted degree (2M/N): %s", ave_w_deg)
-        logging.info("Expected reciprocity: %s", np.round(Exp_r, 3))
-        logging.info("Reciprocity (networkX) = %s", np.round(nx.reciprocity(G), 3))
-        logging.info(
-            "Reciprocity (considering the weights of the edges) = %s", np.round(rw, 3)
-        )
+        logging.info("Expected reciprocity: %.3f", Exp_r)
+        logging.info("Reciprocity (networkX) = %.3f", nx.reciprocity(G))
+        logging.info("Reciprocity (considering the weights of the edges) = %.3f", rw)
 
         # Output the parameters of the network if output_parameters is True
         if self.output_parameters:
@@ -548,7 +546,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         logging.info("Number of edges: %s", G.number_of_edges())
         logging.info("Average degree (2E/N): %s", Sparsity_cof)
         logging.info("Average weighted degree (2M/N): %s", ave_w_deg)
-        logging.info("Expected reciprocity: %s", np.round(rw, 3))
+        logging.info("Expected reciprocity: %.3f", rw )
         logging.info(
             "Reciprocity (intended as the proportion of bi-directional edges over the "
             "unordered pairs): %s",
@@ -1499,7 +1497,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
     # pylint: enable=W0631
 
 
-class CRepDyn:
+class SyntheticDynCRep:
     """
     A class to generate a synthetic network using the DynCRep model.
     """
@@ -1511,7 +1509,7 @@ class CRepDyn:
         eta: float = 0.0,  # reciprocity parameter
         L: int = 1,
         avg_degree: float = 5.0,
-        prng: Union[int, np.random.RandomState] = 0,
+        prng: Union[int, np.random.RandomState] = 0, # TODO: change this by seed
         verbose: int = 0,
         beta: float = 0.2,  # edge disappearance rate β(t)
         ag: float = 1.0,  # shape of gamma prior
@@ -1541,51 +1539,52 @@ class CRepDyn:
         K : int
             Number of communities in the network.
         T : int, optional
-            Number of time steps in the network. Defaults to 1.
+            Number of time steps in the network.
         eta : float, optional
-            Reciprocity parameter. Defaults to 0.0.
+            Reciprocity parameter.
         L : int, optional
-            Number of layers in the network. Defaults to 1.
+            Number of layers in the network.
         avg_degree : float, optional
-            Average degree of nodes in the network. Defaults to 5.0.
-        prng : Union[int, np.random.RandomState], optional
-            Seed for random number generator. Defaults to 0.
+            Average degree of nodes in the network.
+        prng : Union[int, np.random.RandomState], optional # TODO: change this by seed
+            Seed for random number generator.
         verbose : int, optional
-            Verbosity level. Defaults to 0.
+            Verbosity level.
         beta : float, optional
-            Parameter (beta) for Gamma. Defaults to 0.2.
+            Parameter (beta) for Gamma. 
         ag : float, optional
-            Shape parameter of the gamma prior. Defaults to 1.0.
+            Shape parameter of the gamma prior.
         bg : float, optional
-            Rate parameter of the gamma prior. Defaults to 0.5.
+            Rate parameter of the gamma prior.
         eta_dir : float, optional
-            Parameter for Dirichlet. Defaults to 0.5.
+            Parameter for Dirichlet.
         L1 : bool, optional
-            Flag for parameter generation method. True for Dirichlet, False for Gamma. Defaults to True.
+            Flag for parameter generation method. True for Dirichlet, False for Gamma.
         corr : float, optional
-            Correlation between u and v synthetically generated. Defaults to 1.0.
+            Correlation between u and v synthetically generated.
         over : float, optional
-            Fraction of nodes with mixed membership. Defaults to 0.0.
+            Fraction of nodes with mixed membership.
         label : str, optional
-            Label for the model. This label is used as part of the filename when saving the output. Defaults to None.
+            Label for the model. This label is used as part of the filename when saving the
+            output.
         end_file : str, optional
-            File extension for output files. Defaults to ".dat".
+            File extension for output files.
         folder : str, optional
-            Folder to save output files. Defaults to "".
+            Folder to save output files.  
         structure : str, optional
-            Structure of the network. Defaults to "assortative".
+            Structure of the network.
         output_parameters : bool, optional
-            Whether to output parameters. Defaults to False.
+            Whether to output parameters.
         output_adj : bool, optional
-            Whether to output adjacency matrix. Defaults to False.
+            Whether to output adjacency matrix.
         outfile_adj : str, optional
-            File name for output adjacency matrix. Defaults to None.
+            File name for output adjacency matrix.
         figsize : Tuple[int, int], optional
-            Size of the figures generated during the network creation process. Defaults to (7,7).
+            Size of the figures generated during the network creation process.
         fontsize : int, optional
-            Font size of the figures generated during the network creation process. Defaults to 15.
+            Font size of the figures generated during the network creation process.
         ExpM : np.ndarray, optional
-            Expected number of edges in the network. Defaults to None.
+            Expected number of edges in the network.
         """
         self.N = N
         self.K = K
@@ -1694,7 +1693,7 @@ class CRepDyn:
 
         return Exp_ija
 
-    def CRepDyn_network(self, parameters=None):
+    def generate_net(self, parameters=None):
         """
         Generate a directed, possibly weighted network by using DynCRep.
 
@@ -1997,11 +1996,11 @@ class CRepDyn:
         A : np.ndarray
             Sparse version of the NxN adjacency matrix associated to the graph.
         cmap : str, optional
-            Colormap used for the plot. Defaults to "PuBuGn".
+            Colormap used for the plot.
         figsize : Tuple[int, int], optional
-            Size of the figure to be plotted. Defaults to (7, 7).
+            Size of the figure to be plotted.
         fontsize : int, optional
-            Font size to be used in the plot title. Defaults to 15.
+            Font size to be used in the plot title.
         """
         for i in range(len(A)):
             Ad = A[i].todense()
@@ -2025,11 +2024,11 @@ class CRepDyn:
             NxN M matrix associated with the graph. Contains all the means used
             for generating edges.
         cmap : str, optional
-            Colormap used for the plot. Defaults to "PuBuGn".
+            Colormap used for the plot.
         figsize : Tuple[int, int], optional
-            Size of the figure to be plotted. Defaults to (7, 7).
+            Size of the figure to be plotted.
         fontsize : int, optional
-            Font size to be used in the plot title. Defaults to 15.
+            Font size to be used in the plot title.
         """
 
         _, ax = plt.subplots(figsize=figsize)
@@ -2075,7 +2074,7 @@ class CRepDyn:
 
 
 def membership_vectors(
-    prng: RandomState = RandomState(10),
+    prng: RandomState = RandomState(10), # TODO: change this to use random seeds instead of prng
     L1: bool = False,
     eta_dir: float = 0.5,
     alpha: float = 0.6,

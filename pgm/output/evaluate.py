@@ -533,28 +533,28 @@ def CalculatePermutation(U_infer, U0):
     U0 has dimension NxK, reference memebership
     """
     N, RANK = U0.shape
-    M = np.dot(np.transpose(U_infer), U0) / float(N);  # dim=RANKxRANK
-    rows = np.zeros(RANK);
-    columns = np.zeros(RANK);
-    P = np.zeros((RANK, RANK));  # Permutation matrix
+    M = np.dot(np.transpose(U_infer), U0) / float(N)  # dim=RANKxRANK
+    rows = np.zeros(RANK)
+    columns = np.zeros(RANK)
+    P = np.zeros((RANK, RANK))  # Permutation matrix
     for t in range(RANK):
         # Find the max element in the remaining submatrix,
         # the one with rows and columns removed from previous iterations
-        max_entry = 0.;
-        c_index = 1;
-        r_index = 1;
+        max_entry = 0.
+        c_index = 1
+        r_index = 1
         for i in range(RANK):
             if columns[i] == 0:
                 for j in range(RANK):
                     if rows[j] == 0:
                         if M[j, i] > max_entry:
-                            max_entry = M[j, i];
-                            c_index = i;
-                            r_index = j;
+                            max_entry = M[j, i]
+                            c_index = i
+                            r_index = j
 
-        P[r_index, c_index] = 1;
-        columns[c_index] = 1;
-        rows[r_index] = 1;
+        P[r_index, c_index] = 1
+        columns[c_index] = 1
+        rows[r_index] = 1
 
     return P
 
@@ -564,7 +564,7 @@ def cosine_similarity(U_infer, U0):
     It is assumed that matrices are row-normalized
     """
     P = CalculatePermutation(U_infer, U0)
-    U_infer = np.dot(U_infer, P)  # Permute infered matrix
+    U_infer = np.dot(U_infer, P)  # Permute inferred matrix
     N, K = U0.shape
     U_infer0 = U_infer.copy()
     U0tmp = U0.copy()

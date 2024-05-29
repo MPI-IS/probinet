@@ -734,11 +734,16 @@ class ModelBase(ModelBaseParameters):
         """
         Log the current realization number, log-likelihood, number of iterations, and elapsed time.
 
-        Parameters:
-        r (int): Current realization number.
-        loglik (float): Current log-likelihood.
-        final_it (int): Current number of iterations.
-        time_start (float): Start time of the realization.
+        Parameters
+        ----------
+        r : int
+            Current realization number.
+        loglik : float
+            Current log-likelihood.
+        final_it : int
+            Current number of iterations.
+        time_start : float
+            Start time of the realization.
         """
         logging.debug(
             "num. realizations = %s - Log-likelihood = %s - iterations = %s - time = %s seconds - "

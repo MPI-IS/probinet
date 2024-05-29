@@ -399,4 +399,4 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     fit_model(model, args.algorithm, conf)
 
     # Print the time elapsed
-    logging.info("Time elapsed: %s seconds.", np.round(time.time() - time_start, 2))
+    logging.info("Time elapsed: %.2f seconds.", time.time() - time_start)
