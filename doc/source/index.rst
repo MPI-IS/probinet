@@ -5,10 +5,9 @@
    :caption: Contents
 
    api
-   Tutorial: A Beginner's Guide to Probabilistic Generative Models and the MTCOV Algorithm <tutorials/MTCOV.ipynb>
-   Tutorial: Generating model-based networks using the CRep algorithm <tutorials/CRep.ipynb>
-   Tutorial: Decoding Network Patterns with JointCRep: A User-Friendly Guide <tutorials/JointCRep.ipynb>
-   Tutorial: Understanding Temporal Relationships in Networks with `DynCRep` <tutorials/DynCRep.ipynb>
+   Tutorial: A beginner's guide to the Probabilistic Generative Models package by using the MTCOV algorithm <tutorials/MTCOV.ipynb>
+   Tutorial: Generation of synthetic networks using the CRep algorithm <tutorials/CRep.ipynb>
+   Tutorial: Analysis of a real-world dataset using the JointCRep algorithm <tutorials/JointCRep.ipynb>
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_

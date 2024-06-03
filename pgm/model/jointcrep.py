@@ -29,14 +29,12 @@ class JointCRep(
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
 
-    def __init__(
-        self,  # pylint: disable=too-many-arguments
-        inf: float = 1e10,  # initial value of the log-likelihood
-        err_max: float = 1e-12,  # minimum value for the parameters
-        err: float = 0.1,  # noise for the initialization
-        num_realizations: int = 3,
-        # number of iterations with different random initialization
-        convergence_tol: float = 0.0001,  # convergence_tol parameter for convergence
+    def __init__(self,  # pylint: disable=too-many-arguments
+                 inf: float = 1e10,  # initial value of the log-likelihood
+                 err_max: float = 1e-12,  # minimum value for the parameters
+                 err: float = 0.1,  # noise for the initialization
+                 num_realizations: int = 3,  # number of iterations with different random initialization
+                 convergence_tol: float = 0.0001,  # tolerance for convergence
         decision: int = 10,  # convergence parameter
         max_iter: int = 500,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
@@ -186,6 +184,7 @@ class JointCRep(
         maxL : float
                Maximum log-likelihood.
         """
+
         # Check the parameters for fitting the model
         self.check_fit_params(
             data=data,
@@ -198,12 +197,13 @@ class JointCRep(
         )
 
         # Fix the random seed
+
         logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
 
         # Initialize the fit parameters
         self.initialization = initialization
-        maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
+        maxL = -self.inf  # initialization of the maximum log-likelihood
         self.nodes = nodes
 
         # Preprocess the data for fitting the model
@@ -246,6 +246,8 @@ class JointCRep(
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
+
+        # End cycle over realizations
 
         # Store the maximum log-likelihood
         self.maxL = maxL
@@ -476,7 +478,7 @@ class JointCRep(
 
     def _update_U_approx(self, subs_nz: tuple) -> float:
         """
-        Update out-going membership matrix.
+        Update out-going membership matrix by using an approximation.
 
         Parameters
         ----------
@@ -526,7 +528,7 @@ class JointCRep(
 
     def _update_V_approx(self, subs_nz: tuple) -> float:
         """
-        Update in-coming membership matrix.
+        Update in-coming membership matrix by using an approximation.
         Same as _update_U but with:
         data <-> data_T
         w <-> w_T
@@ -704,7 +706,7 @@ class JointCRep(
 
     def _update_eta_approx(self) -> float:
         """
-        Update pair interaction coefficient eta.
+        Update pair interaction coefficient eta by using an approximation.
 
         Returns
         -------
@@ -734,6 +736,7 @@ class JointCRep(
         eta : float
               Fix point of the pair interaction coefficient eta.
         """
+
         st = (self.lambdalambdaT / self.Z).sum()
         if st <= 0:
             log_and_raise_error(ValueError, "eta fix point has zero denominator!")

@@ -27,13 +27,13 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def __init__(
         self,
-        inf: float = 1e10,
-        err_max: float = 0.0000001,
-        err: float = 0.1,
-        num_realizations: int = 1,
-        convergence_tol: float = 0.0001,
-        decision: int = 10,
-        max_iter: int = 500,
+        inf: float = 1e10,  # initial value of the log-likelihood
+        err_max: float = 0.0000001,  # minimum value for the parameters
+        err: float = 0.1,  # noise for the initialization
+        num_realizations: int = 1,  # number of iterations with different random initialization
+        convergence_tol: float = 0.0001,  # tolerance for convergence
+        decision: int = 10,  # convergence parameter
+        max_iter: int = 500,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
         flag_conv: str = "log",  # flag to choose the convergence criterion
     ) -> None:
@@ -268,7 +268,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         # Initialize the fit parameters
         self.initialization = initialization
-        maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
+        maxL = -self.inf  # initialization of the maximum log-likelihood
         self.nodes = nodes
 
         # Preprocess the data for fitting the model
@@ -288,7 +288,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         self.Subs = Subs
         self.SubsX = SubsX
 
-        # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
+        # The following part of the code is responsible for running the Expectation-Maximization
+        # (EM)  algorithm for a specified number of realizations (self.num_realizations):
         for r in range(self.num_realizations):
 
             # Initialize the parameters for the current realization
@@ -314,7 +315,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
 
-        # end cycle over realizations
+        # End cycle over realizations
 
         # Evaluate the results of the fitting process
         self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
@@ -324,8 +325,10 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def _initialize_realization(self):
         """
-        This method initializes the parameters for each realization of the EM algorithm.
-        It also sets up local variables for convergence checking.
+        This method initializes the parameters, updates the old variables
+        and updates the cache.  It sets up local variables for convergence checking.
+        coincide and it are counters, convergence is a boolean flag, and loglik is the
+        initial log-likelihood.
         """
         # Log the current state of the random number generator
         logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
@@ -519,7 +522,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             return np.einsum("Ik,kz->Iz", u[subs_X_nz[0], :], beta)
         return np.einsum("Ik,kz->Iz", u[subs_X_nz[0], :] + v[subs_X_nz[0], :], beta)
 
-    def _specific_update_W(self, subs_nz: tuple):
+    def _specific_update_W(self, subs_nz : tuple
+                  ):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -537,7 +541,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         self.w[:, non_zeros] /= Z[non_zeros]
 
-    def _specific_update_W_assortative(self, subs_nz: tuple):
+    def _specific_update_W_assortative(self,subs_nz : tuple
+              ):
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
@@ -713,13 +718,12 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         return loglik
 
-    def __Likelihood_batch(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_X: np.ndarray,
-        subset_N: List[int],
-        Subs: List[Tuple[int, int, int]],
-        SubsX: List[Tuple[int, int]],
+    def _Likelihood_batch(self,
+                          data: Union[skt.dtensor, skt.sptensor],
+                          data_X: np.ndarray,
+                          subset_N: List[int],
+                          Subs: List[Tuple[int, int, int]],
+                          SubsX: List[Tuple[int, int]],
     ) -> float:
         """
         Compute the log-likelihood of a batch of data.

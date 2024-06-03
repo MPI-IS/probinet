@@ -30,8 +30,8 @@ class CRep(ModelBase, ModelUpdateMixin):
         inf: float = 1e10,  # initial value of the pseudo log-likelihood, aka, infinity
         err_max: float = 1e-12,  # minimum value for the parameters
         err: float = 0.1,  # noise for the initialization
-        num_realizations: int = 5,  # number of iterations with different random init
-        convergence_tol: float = 1e-4,  # convergence_tol parameter for convergence
+        num_realizations: int = 5,  # number of iterations with different random initialization
+        convergence_tol: float = 1e-4,  # tolerance for convergence
         decision: int = 10,  # convergence parameter
         max_iter: int = 1000,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
@@ -140,8 +140,8 @@ class CRep(ModelBase, ModelUpdateMixin):
                 List of nodes IDs.
         flag_conv : str
                     If 'log' the convergence is based on the log-likelihood values; if 'deltas'
-                     convergence is based on the differences in the parameters values. The
-                     latter is suggested when the dataset is big (N > 1000 ca.).
+                    convergence is based on the differences in the parameters values. The
+                    latter is suggested when the dataset is big (N > 1000 ca.).
         mask : ndarray
                Mask for selecting the held out set in the adjacency tensor in case of
                cross-validation.
@@ -159,6 +159,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         maxL : float
                Maximum pseudo log-likelihood.
         """
+
         self.check_fit_params(
             data=data,
             K=K,
@@ -169,6 +170,7 @@ class CRep(ModelBase, ModelUpdateMixin):
             constrained=constrained,
             **extra_params,
         )
+
         logging.debug("Fixing random seed to: %s", rseed)
         self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
 
@@ -351,6 +353,7 @@ class CRep(ModelBase, ModelUpdateMixin):
             self.data_M_nz = data.vals / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
+
     def _update_em(self):
         """
         Update parameters via EM procedure.
@@ -407,6 +410,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         self.delta_v = d_v
         self.delta_w = d_w
         self.delta_eta = d_eta
+
 
     def _update_eta(
         self,

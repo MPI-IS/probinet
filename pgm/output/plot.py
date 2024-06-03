@@ -34,17 +34,17 @@ def plot_hard_membership(
     node_size : ndarray
                 Array with the sizes of the nodes.
     colors : Dict
-                Dictionary with the colors of the nodes.
+             Dictionary with the colors of the nodes.
     edge_color : str
-                    Color of the edges.
+                 Color of the edges.
 
     Returns
     -------
     fig : plt.Figure
-        The matplotlib figure object.
+          The matplotlib figure object.
     """
 
-    fig = plt.figure(figsize=(10, 5))
+    fig = plt.figure(figsize=(8, 3))
     for i, k in enumerate(communities):
         plt.subplot(1, 2, i + 1)
         nx.draw_networkx(
@@ -59,7 +59,7 @@ def plot_hard_membership(
             arrowsize=5,
             connectionstyle="arc3,rad=0.2",
         )
-        plt.title(k, fontsize=17)
+        plt.title(rf'${k}$', fontsize=17)
         plt.axis("off")
     plt.tight_layout()
 
@@ -71,6 +71,7 @@ def extract_bridge_properties(
 ) -> Tuple[np.ndarray, list]:
     """
     Extract the properties of the bridges of a node i.
+
     Parameters
     ----------
     i : int
@@ -88,6 +89,7 @@ def extract_bridge_properties(
     wedge_colors : list
                    Colors of the wedges.
     """
+
     groups = np.where(U[i] > threshold)[0]
     wedge_sizes = U[i][groups]
     wedge_colors = [color[c] for c in groups]
@@ -104,6 +106,7 @@ def plot_soft_membership(
 ) -> plt.Figure:
     """
     Plot a graph with nodes colored by their mixed (soft) memberships.
+
     Parameters
     ----------
     graph : nx.DiGraph
@@ -115,17 +118,17 @@ def plot_soft_membership(
     node_size : ndarray
                 Array with the sizes of the nodes.
     colors : Dict
-                Dictionary with the colors of the nodes.
+             Dictionary with the colors of the nodes.
     edge_color : str
-                    Color of the edges.
+                 Color of the edges.
 
     Returns
     -------
     fig : plt.Figure
-        The matplotlib figure object.
+          The matplotlib figure object.
     """
 
-    fig = plt.figure(figsize=(10, 5))
+    fig = plt.figure(figsize=(9, 4))
     for j, k in enumerate(thetas):
         plt.subplot(1, 2, j + 1)
         ax = plt.gca()
@@ -150,7 +153,7 @@ def plot_soft_membership(
                     radius=(node_size[i]) * 0.0005,
                 )
                 ax.axis("equal")
-        plt.title(k, fontsize=17)
+        plt.title(rf'${k}$', fontsize=17)
         plt.axis("off")
     plt.tight_layout()
 
@@ -167,6 +170,7 @@ def plot_adjacency(
     """
     Plot the adjacency matrix and its reconstruction given by the marginal and the conditional
     expected values.
+
     Parameters
     ----------
     Bd : ndarray
@@ -178,13 +182,14 @@ def plot_adjacency(
     nodes : list
             List of nodes.
     cm : Matplotlib object
-            Colormap used for the plot.
+         Colormap used for the plot.
 
     Returns
     -------
     fig : plt.Figure
-        The matplotlib figure object.
+          The matplotlib figure object.
     """
+
     sns.set_style("ticks")
 
     fig = plt.figure(figsize=(15, 5))
@@ -220,6 +225,7 @@ def plot_adjacency(
 def mapping(G: nx.DiGraph, A: nx.DiGraph) -> nx.DiGraph:
     """
     Map the nodes of a graph G to the nodes of a graph A.
+
     Parameters
     ----------
     G : nx.DiGraph
@@ -231,6 +237,7 @@ def mapping(G: nx.DiGraph, A: nx.DiGraph) -> nx.DiGraph:
     G : nx.DiGraph
         Graph G with the nodes mapped to the nodes of A.
     """
+
     # Define the mapping
     old = list(G.nodes)
     new = list(A.nodes)
@@ -254,6 +261,7 @@ def plot_graph(
 ) -> plt.Figure:
     """
     Plot a graph and its reconstruction given by the marginal and the conditional expected values.
+
     Parameters
     ----------
     graph : nx.DiGraph
@@ -263,20 +271,20 @@ def plot_graph(
     M_conditional : ndarray
                     Conditional expected values.
     pos : dict
-            Dictionary with the positions of the nodes.
+          Dictionary with the positions of the nodes.
     node_size : int
                 Size of the nodes.
     node_color : str
                  Color of the nodes.
     edge_color : str
-                    Color of the edges.
+                 Color of the edges.
     threshold : float
                 Threshold for the membership values.
 
     Returns
     -------
     fig : plt.Figure
-        The matplotlib figure object.
+          The matplotlib figure object.
     """
 
     fig = plt.figure(figsize=(15, 5))
@@ -366,15 +374,15 @@ def plot_precision_recall(conf_matrix: np.ndarray, cm: str = "Blues") -> plt.Fig
     conf_matrix : ndarray
                   Confusion matrix.
     cm : Matplotlib object
-            Colormap used for the plot.
+         Colormap used for the plot.
 
     Returns
     -------
     fig : plt.Figure
-        The matplotlib figure object.
+          The matplotlib figure object.
     """
 
-    fig = plt.figure(figsize=(10, 5))
+    fig = plt.figure(figsize=(8, 3))
 
     # normalized by row
     gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05])
@@ -422,7 +430,7 @@ def plot_precision_recall(conf_matrix: np.ndarray, cm: str = "Blues") -> plt.Fig
     axes = plt.subplot(gs[0, 2])
     plt.colorbar(im, cax=axes)
 
-    plt.tight_layout()
+    #plt.tight_layout()
 
     return fig
 

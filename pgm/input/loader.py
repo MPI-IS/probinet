@@ -57,7 +57,7 @@ def import_data(
                   Array with values of entries A[j, i] given non-zero entry (i, j).
     """
 
-    # read adjacency file
+    # Read adjacency file
     df_adj = pd.read_csv(dataset, sep="\\s+", header=header)
     logging.debug(
         "Read adjacency file from %s. The shape of the data is %s.",
@@ -145,7 +145,7 @@ def import_data_mtcov(
 
     def get_data_path(in_folder):
         """
-        Try to treat in_folder as a package data path, if that fails, treat in_folder as a file path
+        Try to treat in_folder as a package data path, if that fails, treat in_folder as a file path.
         """
         try:
             # Try to treat in_folder as a package data path
@@ -167,7 +167,7 @@ def import_data_mtcov(
     )  # read the csv file with the covariates
     logging.debug("Indiv shape: %s", df_X.shape)
 
-    # create the graph adding nodes and edges
+    # Create the graph adding nodes and edges
     A = read_graph(
         df_adj=df_adj,
         ego=ego,
@@ -186,13 +186,13 @@ def import_data_mtcov(
     if current_level <= logging.DEBUG:
         print_graph_stat_MTCOV(A)
 
-    # save the multilayer network in a tensor with all layers
+    # Save the multilayer network in a tensor with all layers
     if force_dense:
         B, _ = build_B_from_A(A, nodes=nodes, calculate_reciprocity=False)
     else:
         B = build_sparse_B_from_A(A)
 
-    # read the design matrix with covariates
+    # Read the design matrix with covariates
     X_attr = read_design_matrix(df_X, nodes, attribute=attr_name, ego=egoX)
 
     return A, B, X_attr, nodes
@@ -215,31 +215,31 @@ def read_graph(
     Parameters
     ----------
     df_adj: DataFrame
-             Pandas DataFrame object containing the edges of the graph.
+            Pandas DataFrame object containing the edges of the graph.
     ego: str
-          Name of the column to consider as the source of the edge.
+         Name of the column to consider as the source of the edge.
     alter: str
-            Name of the column to consider as the target of the edge.
+           Name of the column to consider as the target of the edge.
     undirected: bool
-                 If set to True, the algorithm considers an undirected graph.
+                If set to True, the algorithm considers an undirected graph.
     noselfloop: bool
-                 If set to True, the algorithm removes the self-loops.
+                If set to True, the algorithm removes the self-loops.
     binary: bool
-             If set to True, read the graph with binary edges.
+            If set to True, read the graph with binary edges.
 
     Returns
     -------
     A: list
-        List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+       List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
     """
 
-    # build nodes
+    # Build nodes
     egoID = df_adj[ego].unique()
     alterID = df_adj[alter].unique()
     nodes = sorted(set(egoID).union(set(alterID)))
 
     L = df_adj.shape[1] - 2  # number of layers
-    # build the multilayer NetworkX graph: create a list of graphs, as many
+    # Build the multilayer NetworkX graph: create a list of graphs, as many
     # graphs as there are layers
     if undirected:
         A = [nx.MultiGraph() for _ in range(L)]
@@ -247,7 +247,7 @@ def read_graph(
         A = [nx.MultiDiGraph() for _ in range(L)]
 
     logging.debug("Creating the network ...")
-    # set the same set of nodes and order over all layers
+    # Set the same set of nodes and order over all layers
     for layer in range(L):
         A[layer].add_nodes_from(nodes)
 
@@ -271,7 +271,7 @@ def read_graph(
                         edge_attributes = {label: int(row[layer + 2])}
                         A[layer].add_edge(v1, v2, **edge_attributes)
 
-    # remove self-loops
+    # Remove self-loops
     if noselfloop:
         logging.debug("Removing self loops")
         for layer in range(L):

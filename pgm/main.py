@@ -1,5 +1,5 @@
 """
-Implementation of CRep and JointCRep algorithm.
+Implementation of CRep, JointCRep, and MTCOV algorithm.
 """
 
 import argparse
@@ -38,7 +38,7 @@ def parse_args():
         type=str,
         choices=["CRep", "JointCRep", "MTCOV", "DynCRep"],
         default="CRep",
-        help="Choose the algorithm to run: CRep, JointCRep, MTCOV.",
+        help="Choose the algorithm to run: CRep, JointCRep, MTCOV",
     )
     parser.add_argument(
         "-K", "--K", type=int, default=None, help="Number of communities"
