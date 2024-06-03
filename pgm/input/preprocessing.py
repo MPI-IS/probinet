@@ -30,9 +30,9 @@ def build_B_from_A(
     A : list
         List of MultiDiGraph NetworkX objects.
     nodes : list, optional
-        List of nodes IDs. If not provided, use all nodes in the first graph as the default.
+            List of nodes IDs. If not provided, use all nodes in the first graph as the default.
     calculate_reciprocity : bool, optional
-        Whether to calculate reciprocity or not. Default is True.
+                            Whether to calculate reciprocity or not. Default is True.
 
     Returns
     -------
@@ -103,7 +103,7 @@ def build_sparse_B_from_A(
     A : list
         List of MultiDiGraph NetworkX objects.
     calculate_reciprocity : bool, optional
-        Whether to calculate and return the reciprocity values. Default is False.
+                            Whether to calculate and return the reciprocity values. Default is False.
 
     Returns
     -------

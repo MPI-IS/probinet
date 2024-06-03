@@ -116,6 +116,7 @@ def sptensor_from_dense_array(X: np.ndarray) -> skt.sptensor:
     -------
     sptensor from a ndarray or dtensor.
     """
+
     subs = X.nonzero()
 
     # Extract the values of non-zero elements in the dense tensor X.
@@ -130,6 +131,7 @@ def sptensor_from_dense_array(X: np.ndarray) -> skt.sptensor:
 def get_item_array_from_subs(A: np.ndarray, ref_subs: Tuple[np.ndarray]) -> np.ndarray:
     """
     Retrieves the values of specific entries in a dense tensor.
+    Output is a 1-d array with dimension = number of non-zero entries.
 
     Parameters
     ----------
@@ -227,11 +229,13 @@ def check_symmetric(
     rtol : float
            Relative convergence_tol.
     atol : float
-              Absolute convergence_tol.
+           Absolute convergence_tol.
+
     Returns
     -------
     True if the matrix is symmetric, False otherwise.
     """
+
     if isinstance(a, list):
         return all(np.allclose(mat, mat.T, rtol=rtol, atol=atol) for mat in a)
 
@@ -248,6 +252,7 @@ def build_edgelist(A: coo_matrix, layer: int) -> pd.DataFrame:
         Adjacency tensor.
     layer : int
         Layer index.
+
     Returns
     -------
     Dataframe with the edgelist for a given layer.
@@ -380,6 +385,7 @@ def write_design_Matrix(
     attr_name : str
                 Name of the column to consider as attribute.
     """
+
     # Create a DataFrame from the metadata dictionary
     X = pd.DataFrame.from_dict(metadata, orient="index", columns=[attr_name])
 
@@ -455,6 +461,7 @@ def sp_uttkrp(
           the Khatri-Rao product
           of the membership matrix.
     """
+
     if len(subs) < 3:
         log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
@@ -546,6 +553,7 @@ def sp_uttkrp_assortative(
           Matrix which is the result of the matrix product of the unfolding of the tensor and
           the Khatri-Rao product of the membership matrix.
     """
+
     if len(subs) < 3:
         log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 

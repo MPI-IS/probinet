@@ -43,7 +43,7 @@ class ModelBaseParameters:
     num_realizations: int = (
         3  # number of iterations with different random initialization
     )
-    convergence_tol: float = 0.0001  # convergence_tol parameter for convergence
+    convergence_tol: float = 0.0001  # tolerance for convergence
     decision: int = 10  # convergence parameter
     max_iter: int = 500  # maximum number of EM steps before aborting
     plot_loglik: bool = False  # flag to plot the log-likelihood
@@ -91,7 +91,8 @@ class ModelBase(ModelBaseParameters):
             "maxPSL",
             "beta_f",
             "nodes",
-        ]
+
+]
 
         # Define attributes
         self.use_unit_uniform = False
@@ -119,9 +120,9 @@ class ModelBase(ModelBaseParameters):
         """
         Check the parameters of the fit method.
         """
+
         if initialization not in {0, 1}:
             log_and_raise_error(ValueError, message)
-
         self.initialization = initialization
 
         if (eta0 is not None) and (eta0 <= 0.0):
@@ -149,7 +150,6 @@ class ModelBase(ModelBaseParameters):
 
         if "fix_eta" in extra_params:
             self.fix_eta = extra_params["fix_eta"]
-
             if self.fix_eta:
                 if self.eta0 is None:
                     log_and_raise_error(
@@ -212,12 +212,12 @@ class ModelBase(ModelBaseParameters):
         else:
             self.end_file = ""
 
-        if self.undirected:
-            if not (self.fix_eta and self.eta0 == 1):
-                message = (
-                    "If undirected=True, the parameter eta has to be fixed equal to 1."
+        if self.undirected and not (self.fix_eta and self.eta0 == 1):
+            message = (
+                    "If undirected=True, the parameter eta has to be fixed equal to 1"
+                    " (s.t. log(eta)=0)."
                 )
-                log_and_raise_error(ValueError, message)
+            log_and_raise_error(ValueError, message)
 
     def _initialize(self) -> None:
         """
@@ -384,7 +384,8 @@ class ModelBase(ModelBaseParameters):
     @singledispatchmethod
     def _randomize_beta(self, shape: int) -> None:
         """
-        Generate a random number in (0, 1.).
+        Initialize community-parameter matrix beta from file.
+
         Parameters
         ----------
         shape : int
@@ -414,6 +415,7 @@ class ModelBase(ModelBaseParameters):
         normalize_rows : bool
                          If True, normalize each row of the membership matrices u and v.
         """
+
         self.u = self.rng.random_sample((self.N, self.K))
         # Normalize each row of the membership matrix u
         if normalize_rows:
@@ -438,6 +440,7 @@ class ModelBase(ModelBaseParameters):
         """
         Assign a random number in (0, 1.) to each entry of the affinity tensor w.
         """
+
         if self.assortative:
             self.w = self.rng.random_sample((self.L, self.K))
         else:
@@ -446,6 +449,7 @@ class ModelBase(ModelBaseParameters):
     def _randomize_eta(self, use_unit_uniform: bool = False) -> None:
         """
         Generate a random number in (0, 1.) or (1., 50.) based on the flag.
+        For CRep the default is (0, 1.) and for JointCRep the default is (1., 50.).
 
         Parameters
         ----------
@@ -453,6 +457,7 @@ class ModelBase(ModelBaseParameters):
             If True, generate a random number in (1., 50.).
             If False, generate a random number in (0, 1.).
         """
+
         if use_unit_uniform:
             self.eta = float((self.rng.random_sample(1)[0]))
         else:
@@ -660,6 +665,7 @@ class ModelBase(ModelBaseParameters):
         nodes : list
                 List of nodes IDs.
         """
+
         # Check if the output folder exists, otherwise create it
         output_path = Path(self.out_folder)
         output_path.mkdir(parents=True, exist_ok=True)
@@ -925,12 +931,12 @@ class ModelUpdateMixin(ABC):
         # It enters a while loop that continues until either convergence is achieved or the
         # maximum number of iterations (self.max_iter) is reached.
         while np.logical_and(not convergence, it < self.max_iter):
-            #  it performs the main EM update (self._update_em()
+            # It performs the main EM update (self._update_em()
             # which updates the memberships and calculates the maximum difference
             # between new and old parameters.
             self._update_em()
             # Depending on the convergence flag (self.flag_conv), it checks for convergence using
-            # either the pseudo log-likelihood values (self._check_for_convergence(data, it,
+            # either the  log-likelihood values (self._check_for_convergence(data, it,
             # loglik,  coincide, convergence, data_T=data_T, mask=mask)) or the maximum distances
             # between the old and the new parameters (self._check_for_convergence_delta(it,
             # coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).
@@ -969,9 +975,9 @@ class ModelUpdateMixin(ABC):
                 log_and_raise_error(
                     ValueError, "flag_conv can be either log or deltas!"
                 )
-        # After the while loop, it checks if the current pseudo log-likelihood is the maximum
+        # After the while loop, it checks if the current  log-likelihood is the maximum
         # so far. If it is, it updates the optimal parameters (
-        # self._update_optimal_parameters()) and sets maxL to the current pseudo log-likelihood.
+        # self._update_optimal_parameters()) and sets maxL to the current log-likelihood.
         if self.flag_conv == "deltas":
             loglik = self.compute_likelihood()  # data, data_T, mask
 

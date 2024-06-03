@@ -163,7 +163,7 @@ class GM_reciprocity:  # this could be called CRep (synthetic.CRep)
         G: MultiDiGraph
            MultiDiGraph NetworkX object.
         A: np.ndarray
-            The adjacency matrix of the generated network.
+           The adjacency matrix of the generated network.
         """
 
         # Create a random number generator with a specific seed
