@@ -7,8 +7,7 @@ from typing import List, Optional
 
 import numpy as np
 
-from pgm.input.tools import transpose_ij3
-from pgm.output.evaluate import calculate_Z, lambda_full
+from pgm.input.tools import log_and_raise_error
 
 
 def extract_mask_kfold(
@@ -186,8 +185,7 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
     sub_nz_and = np.logical_and(data_tm1 > 0, (1 - data) > 0)
     l += np.log(beta + EPS) * ((1 - data)[sub_nz_and] * data_tm1[sub_nz_and]).sum()
     if np.isnan(l):
-        print("Likelihood is NaN!!!!")
-        sys.exit(1)
+        log_and_raise_error(ValueError, "Likelihood is NaN!")
     else:
         return l
 
@@ -245,3 +243,90 @@ def probabilities(
         p[1, 0] = beta * p1
 
     return p
+
+
+def evalu(U_infer, U0, metric="f1", com=False):
+    """
+    Compute an evaluation metric.
+
+    Compare a set of ground-truth communities to a set of detected communities. It matches every detected
+    community with its most similar ground-truth community and given this matching, it computes the performance;
+    then every ground-truth community is matched with a detected community and again computed the performance.
+    The final performance is the average of these two metrics.
+
+    Parameters
+    ----------
+    U_infer : ndarray
+              Inferred membership matrix (detected communities).
+    U0 : ndarray
+         Ground-truth membership matrix (ground-truth communities).
+    metric : str
+             Similarity measure between the true community and the detected one. If 'f1', it used the F1-score,
+             if 'jaccard', it uses the Jaccard similarity.
+    com : bool
+          Flag to indicate if U_infer contains the communities (True) or if they have to be inferred from the
+          membership matrix (False).
+
+    Returns
+    -------
+    Evaluation metric.
+    """
+
+    if metric not in {"f1", "jaccard"}:
+        raise ValueError(
+            'The similarity measure can be either "f1" to use the F1-score, or "jaccard" to use the '
+            "Jaccard similarity!"
+        )
+
+    K = U0.shape[1]
+
+    gt = {}
+    d = {}
+    threshold = 1 / U0.shape[1]
+    for i in range(K):
+        gt[i] = list(np.argwhere(U0[:, i] > threshold).flatten())
+        if com:
+            try:
+                d[i] = U_infer[i]
+            except:
+                pass
+        else:
+            d[i] = list(np.argwhere(U_infer[:, i] > threshold).flatten())
+    # First term
+    R = 0
+    for i in np.arange(K):
+        ground_truth = set(gt[i])
+        _max = -1
+        M = 0
+        for j in d.keys():
+            detected = set(d[j])
+            if len(ground_truth & detected) != 0:
+                precision = len(ground_truth & detected) / len(detected)
+                recall = len(ground_truth & detected) / len(ground_truth)
+                if metric == "f1":
+                    M = 2 * (precision * recall) / (precision + recall)
+                elif metric == "jaccard":
+                    M = len(ground_truth & detected) / len(ground_truth.union(detected))
+            if M > _max:
+                _max = M
+        R += _max
+    # Second term
+    S = 0
+    for j in d.keys():
+        detected = set(d[j])
+        _max = -1
+        M = 0
+        for i in np.arange(K):
+            ground_truth = set(gt[i])
+            if len(ground_truth & detected) != 0:
+                precision = len(ground_truth & detected) / len(detected)
+                recall = len(ground_truth & detected) / len(ground_truth)
+                if metric == "f1":
+                    M = 2 * (precision * recall) / (precision + recall)
+                elif metric == "jaccard":
+                    M = len(ground_truth & detected) / len(ground_truth.union(detected))
+            if M > _max:
+                _max = M
+        S += _max
+
+    return np.round(R / (2 * len(gt)) + S / (2 * len(d)), 4)

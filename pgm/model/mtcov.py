@@ -273,9 +273,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         # Preprocess the data for fitting the model
         data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX = (
-            self.preprocess_data_for_fit(
-                data, data_X, batch_size
-            )
+            self.preprocess_data_for_fit(data, data_X, batch_size)
         )
 
         # Set the preprocessed data and other related variables as attributes of the class instance
@@ -313,7 +311,9 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 if flag_conv == "log":
                     best_loglik_values = list(loglik_values)
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
+            self._log_realization_info(
+                r, loglik, self.final_it, self.time_start, convergence
+            )
 
         # End cycle over realizations
 
@@ -399,9 +399,9 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         if self.gamma < 1.0:
             if not self.assortative:
-                d_w = self._update_W(self.subs_nz)
+                d_w = self._update_W()
             else:
-                d_w = self._update_W_assortative(self.subs_nz)
+                d_w = self._update_W_assortative()
         else:
             d_w = 0
         self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
@@ -412,7 +412,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             d_beta = 0.0
         self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
 
-        d_u = self._update_U(self.subs_nz, self.subs_X_nz)
+        d_u = self._update_U()
         self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
 
         if self.undirected:
@@ -420,7 +420,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             self.v_old = self.v
             d_v = d_u
         else:
-            d_v = self._update_V(self.subs_nz, self.subs_X_nz)
+            d_v = self._update_V()
         self._update_cache(self.data, self.subs_nz, self.data_X, self.subs_X_nz)
 
         self.delta_u = d_u
@@ -522,18 +522,19 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             return np.einsum("Ik,kz->Iz", u[subs_X_nz[0], :], beta)
         return np.einsum("Ik,kz->Iz", u[subs_X_nz[0], :] + v[subs_X_nz[0], :], beta)
 
-    def _specific_update_W(self, subs_nz : tuple
-                  ):
+    def _specific_update_W(self):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Iq->Ikq", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
 
         for k in range(self.K):
             for q in range(self.K):
                 uttkrp_DKQ[:, k, q] += np.bincount(
-                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                    self.subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
                 )
         self.w *= uttkrp_DKQ
         Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))
@@ -541,16 +542,17 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         self.w[:, non_zeros] /= Z[non_zeros]
 
-    def _specific_update_W_assortative(self,subs_nz : tuple
-              ):
+    def _specific_update_W_assortative(self):
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Ik->Ik", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
 
         for k in range(self.K):
             uttkrp_DKQ[:, k] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+                self.subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
             )
 
         self.w *= uttkrp_DKQ
@@ -596,17 +598,17 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         return dist_beta
 
-    def _specific_update_U(self, subs_nz: tuple, subs_X_nz: tuple = None) -> None:
+    def _specific_update_U(self) -> None:
         self.u = self._update_membership(
-            subs_nz, subs_X_nz, self.u, self.v, self.w, self.beta, 1
+            self.subs_nz, self.subs_X_nz, self.u, self.v, self.w, self.beta, 1
         )
 
         row_sums = self.u.sum(axis=1)
         self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None) -> None:
+    def _specific_update_V(self) -> None:
         self.v = self._update_membership(
-            subs_nz, subs_X_nz, self.u, self.v, self.w, self.beta, 2
+            self.subs_nz, self.subs_X_nz, self.u, self.v, self.w, self.beta, 2
         )
 
         row_sums = self.v.sum(axis=1)
@@ -718,12 +720,13 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         return loglik
 
-    def _Likelihood_batch(self,
-                          data: Union[skt.dtensor, skt.sptensor],
-                          data_X: np.ndarray,
-                          subset_N: List[int],
-                          Subs: List[Tuple[int, int, int]],
-                          SubsX: List[Tuple[int, int]],
+    def _Likelihood_batch(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_X: np.ndarray,
+        subset_N: List[int],
+        Subs: List[Tuple[int, int, int]],
+        SubsX: List[Tuple[int, int]],
     ) -> float:
         """
         Compute the log-likelihood of a batch of data.
@@ -827,9 +830,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         return it, coincide, convergence
 
-    def _copy_variables(
-        self, source_suffix: str, target_suffix: str
-    ) -> None:
+    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
         """
         Copy variables from source to target.
 

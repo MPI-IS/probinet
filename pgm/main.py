@@ -14,6 +14,7 @@ import yaml
 
 from .input.loader import import_data, import_data_mtcov
 from .input.tools import log_and_raise_error
+from .model.acd import AnomalyDetection
 from .model.crep import CRep
 from .model.dyncrep import DynCRep
 from .model.jointcrep import JointCRep
@@ -25,8 +26,8 @@ def parse_args():
     Parse the command-line arguments.
     """
     parser = argparse.ArgumentParser(
-        description="Script to run the CRep, JointCRep, DynCRep and "
-        "MTCOV algorithms.",
+        description="Script to run the CRep, JointCRep, DynCRep, "
+        "MTCOV and ACD algorithms.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     # Add the command line arguments
@@ -36,9 +37,9 @@ def parse_args():
         "-a",
         "--algorithm",
         type=str,
-        choices=["CRep", "JointCRep", "MTCOV", "DynCRep"],
+        choices=["CRep", "JointCRep", "MTCOV", "DynCRep", "ACD"],
         default="CRep",
-        help="Choose the algorithm to run: CRep, JointCRep, MTCOV",
+        help="Choose the algorithm to run: CRep, JointCRep, MTCOV, ACD",
     )
     parser.add_argument(
         "-K", "--K", type=int, default=None, help="Number of communities"
@@ -56,7 +57,14 @@ def parse_args():
         "--num_realizations",
         type=int,
         default=None,
-        help=("Number of " "realizations"),
+        help=("Number of realizations"),
+    )
+    parser.add_argument(
+        "-tol",
+        "--convergence_tol",
+        type=float,
+        default=None,
+        help=("Tolerance used to determine convergence"),
     )
     parser.add_argument(
         "-T", "--T", type=int, default=None, help="Number of time snapshots"
@@ -67,19 +75,22 @@ def parse_args():
         type=str,
         default=0,
         help="Flag to use data_T. "
-        "It is recommended to "
-        "use 0, but in case it does not work, try 1.",
+        "It is recommended to use 0, but in case it does not work, try 1.",
     )
+    parser.add_argument("-no_anomaly","--flag_anomaly", action='store_false', default=True,
+                        help="Flag to detect anomalies")
     # TODO: Improve these model specific arguments
     parser.add_argument("-ag", type=float, default=1.1, help="Parameter ag")
     parser.add_argument("-bg", type=float, default=0.5, help="Parameter bg")
+    parser.add_argument("-pibr0", default=None, help="Anomaly parameter pi")
+    parser.add_argument("-mupr0", default=None, help="Prior mu")
     parser.add_argument(
         "-temp",
         "--temporal",
-        action='store_false',
+        action="store_false",
         default=True,
         help="Flag to use non-temporal version of DynCRep. If not set, it will use the temporal "
-             "version.",
+        "version.",
     )
 
     # Input/Output related arguments
@@ -104,6 +115,11 @@ def parse_args():
         default="",
         help="Path of the output folder",
     )
+    parser.add_argument(
+        "-out_inference",
+        "--out_inference",
+        action='store_true', default=False,
+        help="Flag to save the inference results")
 
     # Network related arguments
     parser.add_argument(
@@ -180,7 +196,7 @@ def parse_args():
         dest="debug",
         action="store_true",
         default=False,
-        help="enable debug mode",
+        help="Enable debug mode",
     )
 
     # Parse the command line arguments
@@ -196,6 +212,7 @@ def parse_args():
         "JointCRep": "synthetic_data.dat",
         "MTCOV": "adj.csv",
         "DynCRep": "synthetic_data_for_DynCRep.dat",
+        "ACD": "synthetic_data_for_ACD.dat",
     }
 
     # Correcting default values based on the chosen algorithm
@@ -205,6 +222,8 @@ def parse_args():
     if args.num_realizations is None:
         if args.algorithm == "JointCRep":
             args.num_realizations = 3
+        elif args.algorithm == "ACD":
+            args.num_realizations = 1
         else:
             args.num_realizations = 5
 
@@ -229,6 +248,12 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         level=logging.DEBUG if args.debug else logging.INFO,
         format="*** [%(levelname)s][%(asctime)s][%(module)s] %(message)s",
     )
+
+    # Print all the args used in alphabetical order
+    logging.debug("Arguments used:")
+    for arg in sorted(vars(args)):
+        logging.debug("%s: %s", arg, getattr(args, arg))
+
 
     # Step 2: Import the data
 
@@ -255,16 +280,23 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
             args.force_dense = True  # exactly this in source
 
         network = in_folder + "/" + args.adj_name
-        A, B, B_T, data_T_vals = import_data(
-            network,
-            ego=args.ego,
-            alter=args.alter,
-            undirected=undirected,
-            force_dense=args.force_dense,
-            noselfloop=noselfloop,
-            binary=binary,
-            header=0,
-        )
+        if args.algorithm != "ACD":
+            A, B, B_T, data_T_vals = import_data(
+                network,
+                ego=args.ego,
+                alter=args.alter,
+                undirected=undirected,
+                force_dense=args.force_dense,
+                noselfloop=noselfloop,
+                binary=binary,
+                header=0,
+            )
+        else:
+            A, B, B_T, data_T_vals = import_data(
+                network,
+                header=0,
+            )
+        logging.debug("Data looks like this: %s", B)
         logging.debug("Data loaded successfully from %s", network)
         nodes = A[0].nodes()
         Xs = None
@@ -295,13 +327,22 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         assert any(isinstance(B, vt) for vt in valid_types)
         logging.debug("Data loaded successfully from %s", in_folder)
     # Step 3: Load the configuration settings
-    logging.debug("Loading the configuration file: setting_%s.yaml", args.algorithm)
-    config_path = "setting_" + args.algorithm + ".yaml"
-    with files("pgm.data.model").joinpath(config_path).open("rb") as fp:
-        conf = yaml.safe_load(fp)
-
-    # Change the output folder
-    conf["out_folder"] = args.out_folder
+    if args.algorithm == "ACD":
+        logging.debug("Building configuration file for ACD.")
+        conf = {
+            "K": args.K,
+            "fix_communities": False,
+            "files": args.in_folder,
+            "out_inference": args.out_inference,
+            "end_file": "_ACD",
+            # "end_file": self.label,
+            "verbose": 1,
+        }
+    else:
+        logging.debug("Loading the configuration file: setting_%s.yaml", args.algorithm)
+        config_path = "setting_" + args.algorithm + ".yaml"
+        with files("pgm.data.model").joinpath(config_path).open("rb") as fp:
+            conf = yaml.safe_load(fp)
 
     def set_config(args, conf):
         """
@@ -312,6 +353,10 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
             conf["K"] = args.K
         if args.rseed is not None:  # if it has a value, then update the configuration
             conf["rseed"] = args.rseed
+        # Change the output inference flag
+        conf["out_inference"] = args.out_inference
+        # Change the output folder
+        conf["out_folder"] = args.out_folder
 
         # Algorithm specific settings
         algorithm_settings = {"MTCOV": {"gamma": args.gamma}}
@@ -328,16 +373,17 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     # Print the configuration file
     logging.debug("The configuration file is: %s", yaml.dump(conf))
 
-    # Step 4: Create the output directory
+    # Step 4 (Optional): Create the output directory and store the configuration file
+    if conf["out_inference"]:
 
-    # Create the output directory
-    out_folder_path = Path(conf["out_folder"])
-    out_folder_path.mkdir(parents=True, exist_ok=True)
+        # Create the output directory
+        out_folder_path = Path(conf["out_folder"])
+        out_folder_path.mkdir(parents=True, exist_ok=True)
 
-    # Save the configuration file
-    output_config_path = conf["out_folder"] + "/setting_" + args.algorithm + ".yaml"
-    with open(output_config_path, "w", encoding="utf-8") as f:
-        yaml.dump(conf, f)
+        # Save the configuration file
+        output_config_path = conf["out_folder"] + "/setting_" + args.algorithm + ".yaml"
+        with open(output_config_path, "w", encoding="utf-8") as f:
+            yaml.dump(conf, f)
 
     def fit_model(model, algorithm, conf):  #
         """
@@ -356,6 +402,23 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
                 temporal=args.temporal,
                 **conf,
             )
+        elif algorithm == "ACD":
+            model.fit(
+                data=B,
+                nodes=nodes,
+                undirected=False,
+                initialization=0,
+                assortative=True,
+                constrained=False,
+                ag=args.ag,  # 1.5
+                bg=args.bg,  # 10.0
+                pibr0=args.pibr0,
+                mupr0=args.mupr0,
+                flag_anomaly=args.flag_anomaly,
+                fix_pibr=False,
+                fix_mupr=False,
+                **conf,
+            )
         else:
             model.fit(
                 data=B,
@@ -372,7 +435,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     if args.algorithm == "MTCOV":
         logging.info("gamma = %s", conf["gamma"])
     logging.info("### Running %s ###", args.algorithm)
-    if 'DynCRep' in args.algorithm:
+    if "DynCRep" in args.algorithm:
         logging.info("### Version: %s ###", "w-DYN" if args.temporal else "w-STATIC")
 
     # Map algorithm names to their classes
@@ -381,6 +444,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         "JointCRep": JointCRep,
         "MTCOV": MTCOV,
         "DynCRep": DynCRep,
+        "ACD": AnomalyDetection,
     }
 
     # Create the model

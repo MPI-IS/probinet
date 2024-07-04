@@ -36,8 +36,8 @@ def print_graph_stat(
     L = len(G)
     N = G[0].number_of_nodes()
 
-    logging.info(f'Number of nodes = {N}')
-    logging.info(f'Number of layers = {L}')
+    logging.info(f"Number of nodes = {N}")
+    logging.info(f"Number of layers = {L}")
 
     logging.info("Number of edges and average degree in each layer:")
     for layer in range(L):
@@ -101,7 +101,9 @@ def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
     logging.info("Total number of edges: %s", avg_edges)
     if not unweighted:
         logging.info("Average edges over all layers (weighted): %.3f", avg_M / L)
-        logging.info("Average degree over all layers (weighted): %.2f", avg_densityW / L)
+        logging.info(
+            "Average degree over all layers (weighted): %.2f", avg_densityW / L
+        )
         logging.info("Total number of edges (weighted):", avg_M)
     logging.info("Sparsity = %.3f", avg_edges / (N * N * L))
 
@@ -135,14 +137,16 @@ def reciprocal_edges(G: nx.MultiDiGraph) -> float:
 
     return reciprocity
 
+
 def probabilities(
-        structure: str,
-        sizes: List[int],
-        N: int = 100,
-        K: int = 2,
-        avg_degree: float = 4.,
-        alpha: float = 0.1,
-        beta: Optional[float] = None) -> np.ndarray:
+    structure: str,
+    sizes: List[int],
+    N: int = 100,
+    K: int = 2,
+    avg_degree: float = 4.0,
+    alpha: float = 0.1,
+    beta: Optional[float] = None,
+) -> np.ndarray:
     """
     Return the CxC array with probabilities between and within groups.
 
@@ -172,17 +176,17 @@ def probabilities(
     if beta is None:
         beta = alpha * 0.3
     p1 = avg_degree * K / N
-    if structure == 'assortative':
+    if structure == "assortative":
         p = p1 * alpha * np.ones((len(sizes), len(sizes)))  # secondary-probabilities
         np.fill_diagonal(p, p1)  # primary-probabilities
-    elif structure == 'disassortative':
+    elif structure == "disassortative":
         p = p1 * np.ones((len(sizes), len(sizes)))
         np.fill_diagonal(p, alpha * p1)
-    elif structure == 'core-periphery':
+    elif structure == "core-periphery":
         p = p1 * np.ones((len(sizes), len(sizes)))
         np.fill_diagonal(np.fliplr(p), alpha * p1)
         p[1, 1] = beta * p1
-    elif structure == 'directed-biased':
+    elif structure == "directed-biased":
         p = alpha * p1 * np.ones((len(sizes), len(sizes)))
         p[0, 1] = p1
         p[1, 0] = beta * p1

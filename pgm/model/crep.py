@@ -216,7 +216,9 @@ class CRep(ModelBase, ModelUpdateMixin):
                     best_loglik_values = list(loglik_values)
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
+            self._log_realization_info(
+                r, loglik, self.final_it, self.time_start, convergence
+            )
 
         # end cycle over realizations
 
@@ -353,7 +355,6 @@ class CRep(ModelBase, ModelUpdateMixin):
             self.data_M_nz = data.vals / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
-
     def _update_em(self):
         """
         Update parameters via EM procedure.
@@ -380,7 +381,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         self._update_cache(self.data, self.data_T_vals, self.subs_nz)
 
         if not self.fix_communities:
-            d_u = self._update_U(self.subs_nz)
+            d_u = self._update_U()
             self._update_cache(self.data, self.data_T_vals, self.subs_nz)
         else:
             d_u = 0.0
@@ -392,16 +393,16 @@ class CRep(ModelBase, ModelUpdateMixin):
             self._update_cache(self.data, self.data_T_vals, self.subs_nz)
         else:
             if not self.fix_communities:
-                d_v = self._update_V(self.subs_nz)
+                d_v = self._update_V()
                 self._update_cache(self.data, self.data_T_vals, self.subs_nz)
             else:
                 d_v = 0.0
 
         if not self.fix_w:
             if not self.assortative:
-                d_w = self._update_W(self.subs_nz)
+                d_w = self._update_W()
             else:
-                d_w = self._update_W_assortative(self.subs_nz)
+                d_w = self._update_W_assortative()
             self._update_cache(self.data, self.data_T_vals, self.subs_nz)
         else:
             d_w = 0
@@ -410,7 +411,6 @@ class CRep(ModelBase, ModelUpdateMixin):
         self.delta_v = d_v
         self.delta_w = d_w
         self.delta_eta = d_eta
-
 
     def _update_eta(
         self,
@@ -448,9 +448,9 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         return dist_eta
 
-    def _specific_update_U(self, subs_nz: tuple, subs_X_nz: tuple = None):
+    def _specific_update_U(self):
 
-        self.u = self.u_old * self._update_membership(subs_nz, 1)  # type: ignore
+        self.u = self.u_old * self._update_membership(self.subs_nz, 1)  # type: ignore
 
         if not self.constrained:
             Du = np.einsum("iq->q", self.v)
@@ -475,9 +475,9 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         return dist_u
 
-    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None):
+    def _specific_update_V(self):
 
-        self.v *= self._update_membership(subs_nz, 2)
+        self.v *= self._update_membership(self.subs_nz, 2)
 
         if not self.constrained:
             Dv = np.einsum("iq->q", self.u)
@@ -494,16 +494,18 @@ class CRep(ModelBase, ModelUpdateMixin):
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-    def _specific_update_W(self, subs_nz: tuple):
+    def _specific_update_W(self):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Iq->Ikq", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
                 uttkrp_DKQ[:, k, q] += np.bincount(
-                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                    self.subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
                 )
 
         self.w *= uttkrp_DKQ
@@ -514,14 +516,16 @@ class CRep(ModelBase, ModelUpdateMixin):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-    def _specific_update_W_assortative(self, subs_nz: tuple):
+    def _specific_update_W_assortative(self):
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Ik->Ik", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
         for k in range(self.K):
             uttkrp_DKQ[:, k] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+                self.subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
             )
 
         self.w *= uttkrp_DKQ
@@ -617,9 +621,7 @@ class CRep(ModelBase, ModelUpdateMixin):
             log_and_raise_error(ValueError, "PSLikelihood is NaN!!!!")
         return loglik
 
-    def _copy_variables(
-        self, source_suffix: str, target_suffix: str
-    ) -> None:
+    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
         """
         Copy variables from source to target.
 
