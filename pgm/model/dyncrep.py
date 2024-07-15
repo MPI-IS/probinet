@@ -106,13 +106,12 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             **extra_params,
         )
 
-        self.assortative = assortative  # if True, the network is assortative
         self.constrained = constrained  # if True, use the configuration with constraints on the updates
         self.constraintU = constraintU  # if True, use constraint on U
         self.ag = ag  # shape of gamma prior
         self.bg = bg  # rate of gamma prior
-
         self.beta0 = beta0
+
         if flag_data_T not in [0, 1]:
             log_and_raise_error(ValueError, "flag_data_T has to be either 0 or 1!")
         else:
@@ -120,7 +119,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 flag_data_T  # if 0: previous time step, 1: same time step
             )
 
-        self.initialization = initialization
         if self.eta0 is not None:
             if (self.eta0 < 0) or (self.eta0 > 1):
                 raise ValueError(
@@ -271,7 +269,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 self.best_r = r
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
+            self._log_realization_info(
+                r, loglik, self.final_it, self.time_start, convergence
+            )
 
         # end cycle over realizations
 
@@ -861,7 +861,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         return dist_w
 
-    def _specific_update_W_assortative_dyn(self, subs_nz: tuple):
+    def _specific_update_W_assortative(self, subs_nz: tuple, temporal: bool):
         uttkrp_DKQ = np.zeros_like(self.w)
 
         for idx, (a, i, j) in enumerate(zip(*subs_nz)):
@@ -869,12 +869,15 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         self.w = (self.ag - 1) + self.w * uttkrp_DKQ
 
-        Z = (self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0))
-        Z = np.einsum("a,k->ak", self.beta_hat, Z)
+        if temporal:
+            Z = (self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0))
+            Z = np.einsum("a,k->ak", self.beta_hat, Z)
+        else:
+            Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
+            Z *= 1.0 + self.beta_hat[self.T] * self.T
         Z += self.bg
 
         non_zeros = Z > 0
-
         self.w[non_zeros] /= Z[non_zeros]
 
     def _update_W_assortative_dyn(self, subs_nz):
@@ -890,32 +893,11 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                  Maximum distance between the old and the new affinity tensor w.
         """
 
-        self._specific_update_W_assortative_dyn(subs_nz)
+        self._specific_update_W_assortative(subs_nz, self.temporal)
 
         dist_w, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
 
         return dist_w
-
-    def _specific_update_W_assortative_stat(self, subs_nz: tuple):
-        sub_w_nz = self.w.nonzero()
-        uttkrp_DKQ = np.zeros_like(self.w)
-
-        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
-        uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
-
-        for _, k in zip(*sub_w_nz):
-            uttkrp_DKQ[:, k] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k], minlength=1
-            )[0]
-
-        self.w = (self.ag - 1) + self.w * uttkrp_DKQ
-
-        Z = ((self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0)))[np.newaxis, :]
-        Z *= 1.0 + self.beta_hat[self.T] * self.T
-        Z += self.bg
-
-        non_zeros = Z > 0
-        self.w[non_zeros] /= Z[non_zeros]
 
     def _update_W_assortative_stat(self, subs_nz):
         """
@@ -930,7 +912,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                  Maximum distance between the old and the new affinity tensor w.
         """
 
-        self._specific_update_W_assortative_stat(subs_nz)
+        self._specific_update_W_assortative_stat(subs_nz, self.temporal)
 
         dist_w, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
 
@@ -967,6 +949,13 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 self.data_M_nz, subs_nz, m, u, v, w, temporal=self.temporal
             )
         return uttkrp_DK
+
+    def _update_optimal_parameters(self) -> None:
+        """
+        Update values of the parameters after convergence.
+        """
+        super()._update_optimal_parameters()
+        self.beta_f = np.copy(self.beta_hat[-1])
 
     def _Likelihood(
         self,
@@ -1120,9 +1109,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         bt += self.Atm11At / beta_t  # adding Aij(t-1)*(1-Aij(t))
         return bt
 
-    def _copy_variables(
-        self, source_suffix: str, target_suffix: str
-    ) -> None:
+    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
         """
         Copy variables from source to target.
 

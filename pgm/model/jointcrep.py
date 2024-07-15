@@ -29,12 +29,13 @@ class JointCRep(
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
 
-    def __init__(self,  # pylint: disable=too-many-arguments
-                 inf: float = 1e10,  # initial value of the log-likelihood
-                 err_max: float = 1e-12,  # minimum value for the parameters
-                 err: float = 0.1,  # noise for the initialization
-                 num_realizations: int = 3,  # number of iterations with different random initialization
-                 convergence_tol: float = 0.0001,  # tolerance for convergence
+    def __init__(
+        self,  # pylint: disable=too-many-arguments
+        inf: float = 1e10,  # initial value of the log-likelihood
+        err_max: float = 1e-12,  # minimum value for the parameters
+        err: float = 0.1,  # noise for the initialization
+        num_realizations: int = 3,  # number of iterations with different random initialization
+        convergence_tol: float = 0.0001,  # tolerance for convergence
         decision: int = 10,  # convergence parameter
         max_iter: int = 500,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
@@ -245,7 +246,9 @@ class JointCRep(
                     best_loglik_values = list(loglik_values)
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            self._log_realization_info(r, loglik, self.final_it, self.time_start, convergence)
+            self._log_realization_info(
+                r, loglik, self.final_it, self.time_start, convergence
+            )
 
         # End cycle over realizations
 
@@ -427,7 +430,7 @@ class JointCRep(
             if self.use_approximation:
                 d_u = self._update_U_approx(self.subs_nz)
             else:
-                d_u = self._update_U(self.subs_nz)
+                d_u = self._update_U()
             self._update_cache(self.data, self.subs_nz)
         else:
             d_u = 0.0
@@ -442,7 +445,7 @@ class JointCRep(
                 if self.use_approximation:
                     d_v = self._update_V_approx(self.subs_nz)
                 else:
-                    d_v = self._update_V(self.subs_nz)
+                    d_v = self._update_V()
                 self._update_cache(self.data, self.subs_nz)
             else:
                 d_v = 0.0
@@ -450,14 +453,14 @@ class JointCRep(
         if not self.fix_w:
             if not self.assortative:
                 if self.use_approximation:
-                    d_w = self._update_W_approx(self.subs_nz)
+                    d_w = self._update_W_approx()
                 else:
-                    d_w = self._update_W(self.subs_nz)
+                    d_w = self._update_W()
             else:
                 if self.use_approximation:
-                    d_w = self._update_W_assortative_approx(self.subs_nz)
+                    d_w = self._update_W_assortative_approx()
                 else:
-                    d_w = self._update_W_assortative(self.subs_nz)
+                    d_w = self._update_W_assortative()
             self._update_cache(self.data, self.subs_nz)
         else:
             d_w = 0.0
@@ -511,9 +514,9 @@ class JointCRep(
 
         return dist_u
 
-    def _specific_update_U(self, subs_nz: tuple, subs_X_nz: tuple = None):
+    def _specific_update_U(self):
 
-        self.u *= self._update_membership(subs_nz, 1)
+        self.u *= self._update_membership(self.subs_nz, 1)
 
         if not self.assortative:
             VW = np.einsum("jq,akq->ajk", self.v, self.w)
@@ -526,7 +529,7 @@ class JointCRep(
         self.u[den == 0] = 0.0
         self.u[non_zeros] /= den[non_zeros]
 
-    def _update_V_approx(self, subs_nz: tuple) -> float:
+    def _update_V_approx(self) -> float:
         """
         Update in-coming membership matrix by using an approximation.
         Same as _update_U but with:
@@ -545,7 +548,7 @@ class JointCRep(
                  Maximum distance between the old and the new membership matrix v.
         """
 
-        self.v *= self._update_membership(subs_nz, 2)
+        self.v *= self._update_membership(self.subs_nz, 2)
 
         if not self.assortative:
             UW = np.einsum("jq,aqk->ajk", self.u, self.w)
@@ -565,8 +568,8 @@ class JointCRep(
 
         return dist_v
 
-    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None):
-        self.v *= self._update_membership(subs_nz, 2)
+    def _specific_update_V(self):
+        self.v *= self._update_membership(self.subs_nz, 2)
 
         if not self.assortative:
             UW = np.einsum("jq,aqk->ajk", self.u, self.w)
@@ -579,16 +582,18 @@ class JointCRep(
         self.v[den == 0] = 0.0
         self.v[non_zeros] /= den[non_zeros]
 
-    def _specific_update_W(self, subs_nz: tuple):
+    def _specific_update_W(self):
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Iq->Ikq", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
                 uttkrp_DKQ[:, k, q] += np.bincount(
-                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                    self.subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
                 )
 
         self.w = self.w_old * uttkrp_DKQ
@@ -601,14 +606,16 @@ class JointCRep(
         self.w[den == 0] = 0.0
         self.w[non_zeros] /= den[non_zeros]
 
-    def _specific_update_W_assortative(self, subs_nz: tuple):
+    def _specific_update_W_assortative(self):
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Ik->Ik", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
         for k in range(self.K):
             uttkrp_DKQ[:, k] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+                self.subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
             )
 
         self.w = self.w_old * uttkrp_DKQ
@@ -621,7 +628,7 @@ class JointCRep(
         self.w[den == 0] = 0.0
         self.w[non_zeros] /= den[non_zeros]
 
-    def _update_W_approx(self, subs_nz: tuple) -> float:
+    def _update_W_approx(self) -> float:
         """
         Update affinity tensor.
 
@@ -638,12 +645,14 @@ class JointCRep(
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Iq->Ikq", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis, np.newaxis] * UV
         for k in range(self.K):
             for q in range(self.K):
                 uttkrp_DKQ[:, k, q] += np.bincount(
-                    subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                    self.subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
                 )
 
         self.w = self.w_old * uttkrp_DKQ
@@ -663,7 +672,7 @@ class JointCRep(
 
         return dist_w
 
-    def _update_W_assortative_approx(self, subs_nz: tuple) -> float:
+    def _update_W_assortative_approx(self) -> float:
         """
         Update affinity tensor (assuming assortativity).
 
@@ -680,11 +689,13 @@ class JointCRep(
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Ik->Ik", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Ik->Ik", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz[:, np.newaxis] * UV
         for k in range(self.K):
             uttkrp_DKQ[:, k] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
+                self.subs_nz[0], weights=uttkrp_I[:, k], minlength=self.L
             )
 
         self.w = self.w_old * uttkrp_DKQ
@@ -832,9 +843,7 @@ class JointCRep(
 
         return loglik
 
-    def _copy_variables(
-        self, source_suffix: str, target_suffix: str
-    ) -> None:
+    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
         """
         Copy variables from source to target.
 

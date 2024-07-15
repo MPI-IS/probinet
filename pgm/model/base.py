@@ -91,8 +91,7 @@ class ModelBase(ModelBaseParameters):
             "maxPSL",
             "beta_f",
             "nodes",
-
-]
+        ]
 
         # Define attributes
         self.use_unit_uniform = False
@@ -214,9 +213,9 @@ class ModelBase(ModelBaseParameters):
 
         if self.undirected and not (self.fix_eta and self.eta0 == 1):
             message = (
-                    "If undirected=True, the parameter eta has to be fixed equal to 1"
-                    " (s.t. log(eta)=0)."
-                )
+                "If undirected=True, the parameter eta has to be fixed equal to 1"
+                " (s.t. log(eta)=0)."
+            )
             log_and_raise_error(ValueError, message)
 
     def _initialize(self) -> None:
@@ -474,7 +473,10 @@ class ModelBase(ModelBaseParameters):
         Update values of the parameters after convergence.
         """
         self._copy_variables(source_suffix="", target_suffix="_f")
-        if "DynCRep" in type(self).__name__ and not self.fix_beta:
+        if (
+            "DynCRep" in type(self).__name__ and not self.fix_beta
+        ):  # TODO: change this, it should
+            # not depend on derived classes
             self.beta_f = np.copy(self.beta_hat[-1])
 
     def _lambda_nz(self, subs_nz: tuple, temporal: bool = True) -> np.ndarray:
@@ -585,8 +587,7 @@ class ModelBase(ModelBaseParameters):
         # Check for convergence
         if it % 10 == 0:
             old_L = loglik
-            loglik = self.compute_likelihood(
-            )
+            loglik = self.compute_likelihood()
             if abs(loglik - old_L) < self.convergence_tol:
                 coincide += 1
             else:
@@ -719,7 +720,9 @@ class ModelBase(ModelBaseParameters):
         )
 
         # Check if the fitting process has converged
-        if np.logical_and(self.final_it == self.max_iter, not conv): # TODO: if the number of
+        if np.logical_and(
+            self.final_it == self.max_iter, not conv
+        ):  # TODO: if the number of
             # realizations is equal to the maximum number of iterations and the fitting process
             # has converged, then ask user to increase the number of realizations
             # If the fitting process has not converged, log a warning
@@ -731,12 +734,18 @@ class ModelBase(ModelBaseParameters):
             # If the fitting process has converged and out_inference is True, output the results
             if self.out_inference:
                 self._output_results()
+            else:
+                logging.debug(
+                    "Parameters won't be saved! If you want to save them, set out_inference=True."
+                )
 
         # If plot_loglik and flag_conv are both True, plot the best log-likelihood values
         if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
             plot_L(best_loglik_values, int_ticks=True)
 
-    def _log_realization_info(self, r, loglik, final_it, time_start, convergence) -> None:
+    def _log_realization_info(
+        self, r, loglik, final_it, time_start, convergence
+    ) -> None:
         """
         Log the current realization number, log-likelihood, number of iterations, and elapsed time.
 
@@ -758,7 +767,7 @@ class ModelBase(ModelBaseParameters):
             loglik,
             final_it,
             np.round(time.time() - time_start, 2),
-            convergence
+            convergence,
         )
 
     @abstractmethod
@@ -789,9 +798,9 @@ class ModelUpdateMixin(ABC):
 
         return dist, matrix, matrix_old
 
-    def _update_U(self, subs_nz: tuple, subs_X_nz: tuple = None) -> float:
+    def _update_U(self) -> float:
         # A generic function here that will do what each class needs
-        self._specific_update_U(subs_nz, subs_X_nz)
+        self._specific_update_U()
 
         # Finalize the update of the membership matrix U
         dist, self.u, self.u_old = self._finalize_update(self.u, self.u_old)
@@ -804,25 +813,25 @@ class ModelUpdateMixin(ABC):
         Update the membership matrix U.
         """
 
-    def _update_V(self, subs_nz: tuple, subs_X_nz: tuple = None) -> float:
+    def _update_V(self) -> float:
         # a generic function here that will do what each class needs
-        self._specific_update_V(subs_nz, subs_X_nz)
+        self._specific_update_V()  # subs_nz, subs_X_nz, mask, subs_nz_mask)
 
         dist, self.v, self.v_old = self._finalize_update(self.v, self.v_old)
 
         return dist
 
     @abstractmethod
-    def _specific_update_V(self, subs_nz: tuple, subs_X_nz: tuple = None):
+    def _specific_update_V(self, *args, **kwargs):
         """
         Update the membership matrix V.
 
         This is an abstract method that must be implemented in each derived class.
         """
 
-    def _update_W(self, subs_nz: tuple) -> float:
+    def _update_W(self) -> float:
         # a generic function here that will do what each class needs
-        self._specific_update_W(subs_nz)
+        self._specific_update_W()
 
         dist, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
 
@@ -836,17 +845,22 @@ class ModelUpdateMixin(ABC):
         This is an abstract method that must be implemented in each derived class.
         """
 
-    def _update_W_assortative(self, subs_nz: tuple) -> float:
+    def _update_W_assortative(self) -> float:
         # a generic function here that will do what each class needs
 
-        self._specific_update_W_assortative(subs_nz)
+        self._specific_update_W_assortative()
 
         dist, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
 
         return dist
 
-    def _specific_update_W_assortative(self, subs_nz: tuple):
-        raise NotImplementedError(self.not_implemented_message)
+    @abstractmethod
+    def _specific_update_W_assortative(self):
+        """
+        Update the membership matrix.
+
+        This is an abstract method that must be implemented in each derived class.
+        """
 
     @abstractmethod
     def _update_membership(self, *args, **kwargs):
@@ -875,8 +889,6 @@ class ModelUpdateMixin(ABC):
         Update values of the parameters after convergence.
         """
         self._copy_variables(source_suffix="", target_suffix="_f")
-        if "DynCRep" in type(self).__name__ and not self.fix_beta:
-            self.beta_f = np.copy(self.beta_hat[-1])  # TODO: Fix this
 
     def _update_realization(
         self,
@@ -930,7 +942,7 @@ class ModelUpdateMixin(ABC):
 
         # It enters a while loop that continues until either convergence is achieved or the
         # maximum number of iterations (self.max_iter) is reached.
-        while np.logical_and(not convergence, it < self.max_iter):
+        while not convergence and it < self.max_iter:
             # It performs the main EM update (self._update_em()
             # which updates the memberships and calculates the maximum difference
             # between new and old parameters.
@@ -991,9 +1003,7 @@ class ModelUpdateMixin(ABC):
         This is an abstract method that must be implemented in each derived class.
         """
 
-    def _copy_variables(
-        self, source_suffix: str, target_suffix: str
-    ) -> None:
+    def _copy_variables(self, source_suffix: str, target_suffix: str) -> None:
         # of derived classes
         """
         Copy variables from source to target.
@@ -1008,4 +1018,3 @@ class ModelUpdateMixin(ABC):
         for var in ["u", "v", "w"]:
             source_var = getattr(self, f"{var}{source_suffix}")
             setattr(self, f"{var}{target_suffix}", np.copy(source_var))
-

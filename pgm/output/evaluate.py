@@ -9,7 +9,7 @@ import numpy as np
 from sklearn import metrics
 from sktensor import dtensor, sptensor
 
-from ..input.tools import check_symmetric, transpose_ij2, transpose_ij3
+from ..input.tools import check_symmetric, log_and_raise_error, transpose_ij2, transpose_ij3
 from ..model.constants import EPS_
 
 # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
@@ -302,6 +302,7 @@ def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
 
     return Z
 
+
 def expected_Aija(U, V, W):
     """
     Compute the expected value of the adjacency tensor.
@@ -313,6 +314,7 @@ def expected_Aija(U, V, W):
         M = np.einsum("ik,jq->ijkq", U, V)
         M = np.einsum("ijkq,kq->ij", M, W)
     return M
+
 
 def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> list:
     """
@@ -521,8 +523,7 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
     sub_nz_and = np.logical_and(data_tm1 > 0, (1 - data) > 0)
     l += np.log(beta + EPS) * ((1 - data)[sub_nz_and] * data_tm1[sub_nz_and]).sum()
     if np.isnan(l):
-        print("Likelihood is NaN!!!!")
-        sys.exit(1)
+        log_and_raise_error(ValueError, "Likelihood is NaN!")
     else:
         return l
 
@@ -540,7 +541,7 @@ def CalculatePermutation(U_infer, U0):
     for t in range(RANK):
         # Find the max element in the remaining submatrix,
         # the one with rows and columns removed from previous iterations
-        max_entry = 0.
+        max_entry = 0.0
         c_index = 1
         r_index = 1
         for i in range(RANK):

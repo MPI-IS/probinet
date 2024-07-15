@@ -59,7 +59,7 @@ def plot_hard_membership(
             arrowsize=5,
             connectionstyle="arc3,rad=0.2",
         )
-        plt.title(rf'${k}$', fontsize=17)
+        plt.title(rf"${k}$", fontsize=17)
         plt.axis("off")
     plt.tight_layout()
 
@@ -153,7 +153,7 @@ def plot_soft_membership(
                     radius=(node_size[i]) * 0.0005,
                 )
                 ax.axis("equal")
-        plt.title(rf'${k}$', fontsize=17)
+        plt.title(rf"${k}$", fontsize=17)
         plt.axis("off")
     plt.tight_layout()
 
@@ -430,7 +430,7 @@ def plot_precision_recall(conf_matrix: np.ndarray, cm: str = "Blues") -> plt.Fig
     axes = plt.subplot(gs[0, 2])
     plt.colorbar(im, cax=axes)
 
-    #plt.tight_layout()
+    # plt.tight_layout()
 
     return fig
 
@@ -525,9 +525,10 @@ def plot_A(A: List, cmap="Blues") -> List[plt.Figure]:
 def plot_L(
     values: List,
     indices: Optional[List] = None,
-    k_i: int = 0,
+    k_i: int = 0,  # 5 for ACD
     xlab: str = "Iterations",
-    figsize: tuple = (10, 5),
+    ylabel: str = "Log-likelihood values",
+    figsize: tuple = (10, 5),  # (7, 7) for ACD
     int_ticks: bool = False,
 ) -> plt.Figure:
     """
@@ -542,6 +543,8 @@ def plot_L(
             Number of initial iterations to be ignored.
     xlab : str
              Label of the x-axis.
+    ylabel : str
+
     figsize : tuple
               Figure size.
     int_ticks : bool
@@ -559,7 +562,7 @@ def plot_L(
     else:
         ax.plot(indices[k_i:], values[k_i:])
     ax.set_xlabel(xlab)
-    ax.set_ylabel("Log-likelihood values")
+    ax.set_ylabel(ylabel)
     if int_ticks:
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.grid()
