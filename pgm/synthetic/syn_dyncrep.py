@@ -482,7 +482,7 @@ class SyntheticDynCRep:
             nodes=nodes,
         )
 
-        logging.debug("Parameters saved in: %s.npz",output_parameters)
+        logging.debug("Parameters saved in: %s.npz", output_parameters)
         logging.debug("To load: theta=np.load(filename), then e.g. theta['u']")
 
     def _output_adjacency(

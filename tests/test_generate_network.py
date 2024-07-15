@@ -7,11 +7,9 @@ import unittest
 import networkx as nx
 import numpy as np
 
-# from pgm.input.generate_network import (
-# affinity_matrix, BaseSyntheticNetwork, GM_reciprocity, ReciprocityMMSBM_joints)
 from pgm.synthetic.syn_dyncrep import SyntheticDynCRep
 from pgm.synthetic.syn_rep import affinity_matrix, GM_reciprocity
-from pgm.synthetic.syn_sbm import BaseSyntheticNetwork
+from pgm.synthetic.syn_sbm import BaseSyntheticNetwork, ReciprocityMMSBM_joints
 
 from .fixtures import RTOL
 

@@ -144,15 +144,12 @@ class ACDTestCase(BaseTest):
         self.assertAlmostEqual(f1_u, 0.9031, places=4)
         self.assertAlmostEqual(f1_v, 0.9111, places=4)
 
-
-
     def test_running_algorithm_from_random_init_2(self):
 
         # The next section is taken from the original code like this. This is a temporary
         # validation test. In the future, a test built from fixture will be added.
 
         self.prepare_data()
-
 
         model = AnomalyDetection(
             plot_loglik=True, num_realizations=1, convergence_tol=0.1

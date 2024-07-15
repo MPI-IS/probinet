@@ -3,8 +3,6 @@ Class definition of ACD, the algorithm to perform inference in networks with ano
 The latent variables are related to community memberships and anomaly parameters.
 """
 
-from __future__ import print_function
-
 import logging
 import time
 from typing import List, Tuple, Union
@@ -23,6 +21,7 @@ from pgm.model.base import ModelBase, ModelFitParameters, ModelUpdateMixin
 from pgm.output.evaluate import lambda_full
 
 EPS = 1e-12
+
 
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def __init__(
@@ -174,36 +173,59 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         **extra_params,
     ):
         """
-        Model  networks by using a probabilistic generative model that assume community parameters and
-        anomaly parameters. The inference is performed via EM algorithm.
+        Fit the AnomalyDetection model to the provided data.
 
         Parameters
         ----------
         data : ndarray/sptensor
                Graph adjacency tensor.
-        data_T: None/sptensor
-                Graph adjacency tensor (transpose).
         nodes : list
                 List of nodes IDs.
-        mask : ndarray
+        K : int
+            Number of communities.
+        undirected : bool
+                     If True, the graph is considered undirected.
+        initialization : int
+                         Indicator for choosing how to initialize u, v and w.
+        assortative : bool
+                      If True, the network is considered assortative.
+        constrained : bool
+                      If True, constraints are applied on the updates.
+        ag : float
+             Shape of gamma prior.
+        bg : float
+             Rate of gamma prior.
+        pibr0 : float
+                Initial value for the anomaly parameter pi.
+        mupr0 : float
+                Initial value for the prior mu parameter.
+        flag_anomaly : bool
+                       If True, the anomaly detection is enabled.
+        fix_pibr : bool
+                   If True, the anomaly parameter pi is fixed.
+        fix_mupr : bool
+                   If True, the prior mu parameter is fixed.
+        mask : ndarray, optional
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        rseed : int, optional
+                Random seed for initialization. Default is 10.
+        **extra_params : dict, optional
+                         Additional parameters.
 
         Returns
         -------
         u_f : ndarray
-              Out-going membership matrix.
+              Final out-going membership matrix.
         v_f : ndarray
-              In-coming membership matrix.
+              Final in-coming membership matrix.
         w_f : ndarray
-              Affinity tensor.
+              Final affinity tensor.
         pibr_f : float
-                Bernolie parameter.
+                Final anomaly parameter pi.
         mupr_f : float
-                prior .
+                Final prior mu parameter.
         maxL : float
-               Maximum  log-likelihood.
-        final_it : int
-                   Total number of iterations.
+               Maximum log-likelihood.
         """
         self.check_fit_params(
             K,
@@ -313,7 +335,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         return coincide, convergence, it, loglik, loglik_values
 
     def _preprocess_data_for_fit(self, data, mask):
-        # if data_T is None:
+
         logging.debug("Preprocessing the data for fitting the model.")
         logging.debug("Data looks like: %s", data)
         data_T = np.einsum("aij->aji", data)
@@ -483,6 +505,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             nz_recon_Id = nz_recon_I + (1 - self.mupr) * poisson.pmf(
                 data.vals, self.lambda0_nz
             ) * poisson.pmf(data_T_vals, self.lambda0_nzT)
+
             non_zeros = nz_recon_Id > 0
             nz_recon_I[non_zeros] /= nz_recon_Id[non_zeros]
 
@@ -536,18 +559,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _update_em(
         self,
-    ):  # , data, data_T_vals, subs_nz, mask=None, subs_nz_mask=None):
+    ):
         """
         Update parameters via EM procedure.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T_vals : ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
 
         Returns
         -------
@@ -615,17 +629,25 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _update_pibr(self, data, data_T_vals, subs_nz, mask=None, subs_nz_mask=None):
         """
-        Update  anomaly parameter pi.
+        Update the anomaly parameter pi.
 
         Parameters
         ----------
         data : sptensor/dtensor
                Graph adjacency tensor.
+        data_T_vals : ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        mask : ndarray, optional
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        subs_nz_mask : tuple, optional
+                       Indices of elements of data that are non-zero in the mask.
 
         Returns
         -------
         dist_pibr : float
-                   Maximum distance between the old and the new anomaly parameter pi.
+                    Maximum distance between the old and the new anomaly parameter pi.
         """
         if isinstance(data, skt.dtensor):
             Adata = (data[subs_nz] * self.Qij_nz).sum()
@@ -643,17 +665,25 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _update_mupr(self, data, data_T_vals, subs_nz, mask=None, subs_nz_mask=None):
         """
-        Update prior eta.
+        Update the prior mu parameter.
 
         Parameters
         ----------
         data : sptensor/dtensor
                Graph adjacency tensor.
+        data_T_vals : ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+        mask : ndarray, optional
+               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        subs_nz_mask : tuple, optional
+                       Indices of elements of data that are non-zero in the mask.
 
         Returns
         -------
         dist_mupr : float
-                   Maximum distance between the old and the new rprior mu.
+                    Maximum distance between the old and the new prior mu.
         """
         if mask is None:
             self.mupr = self.Qij_dense.sum() / (self.N * (self.N - 1))
@@ -714,7 +744,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             row_sums = self.u.sum(axis=1)
             self.u[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-    def _specific_update_V(self):  # , subs_nz, mask=None):
+    def _specific_update_V(self):
         """
         Specific logic for updating V in the DynCRep class.
         """
@@ -763,37 +793,29 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-    def _specific_update_W(self, subs_nz, mask=None, subs_nz_mask=None):
+    def _specific_update_W_assortative(self):
         """
-        Update affinity tensor.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
+        Update affinity tensor in the assortative case.
         """
         sub_w_nz = self.w.nonzero()
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
+        UV = np.einsum(
+            "Ik,Iq->Ikq", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
+        )
         uttkrp_I = self.data_M_nz_Q[:, np.newaxis, np.newaxis] * UV
         for a, k, q in zip(*sub_w_nz):
             uttkrp_DKQ[:, k, q] += np.bincount(
-                subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                self.subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
             )
 
         self.w = self.ag - 1 + self.w * uttkrp_DKQ
 
         if self.flag_anomaly == True:
-            if mask is None:
+            if self.mask is None:
                 UQk = np.einsum("aij,ik->ajk", (1 - self.Qij_dense), self.u)
             else:
-                UQk = np.einsum("aij,ik->ajk", mask * (1 - self.Qij_dense), self.u)
+                UQk = np.einsum("aij,ik->ajk", self.mask * (1 - self.Qij_dense), self.u)
             Z = np.einsum("ajk,jq->akq", UQk, self.v)
         else:  # flag_anomaly == False
             # Z = np.einsum('ik,jq->kq',self.u,self.v)
@@ -809,18 +831,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def _specific_update_W_assortative(self):
         """
         Update affinity tensor (assuming assortativity).
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-
-        Returns
-        -------
-        dist_w : float
-                 Maximum distance between the old and the new affinity tensor w.
         """
-        # Let's make some changes!
 
         uttkrp_DKQ = np.zeros_like(self.w)
 
@@ -926,21 +937,23 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _ELBO(self, data, data_T, mask=None, subs_nz_mask=None):
         """
-        Compute the  ELBO of the data.
+        Compute the Evidence Lower BOund (ELBO) of the data.
 
         Parameters
         ----------
         data : sptensor/dtensor
                Graph adjacency tensor.
         data_T : sptensor/dtensor
-                 Graph adjacency tensor (transpose).
-        mask : ndarray
+                 Transpose of the graph adjacency tensor.
+        mask : ndarray, optional
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        subs_nz_mask : tuple, optional
+                       Indices of elements of data that are non-zero in the mask.
 
         Returns
         -------
         l : float
-            ELBO value.
+            The computed ELBO value.
         """
 
         self.lambda0_ija = lambda_full(self.u, self.v, self.w)

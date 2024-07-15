@@ -77,8 +77,13 @@ def parse_args():
         help="Flag to use data_T. "
         "It is recommended to use 0, but in case it does not work, try 1.",
     )
-    parser.add_argument("-no_anomaly","--flag_anomaly", action='store_false', default=True,
-                        help="Flag to detect anomalies")
+    parser.add_argument(
+        "-no_anomaly",
+        "--flag_anomaly",
+        action="store_false",
+        default=True,
+        help="Flag to detect anomalies",
+    )
     # TODO: Improve these model specific arguments
     parser.add_argument("-ag", type=float, default=1.1, help="Parameter ag")
     parser.add_argument("-bg", type=float, default=0.5, help="Parameter bg")
@@ -118,8 +123,10 @@ def parse_args():
     parser.add_argument(
         "-out_inference",
         "--out_inference",
-        action='store_true', default=False,
-        help="Flag to save the inference results")
+        action="store_true",
+        default=False,
+        help="Flag to save the inference results",
+    )
 
     # Network related arguments
     parser.add_argument(
@@ -220,12 +227,10 @@ def parse_args():
         args.adj_name = default_adj_names[args.algorithm]
 
     if args.num_realizations is None:
-        if args.algorithm == "JointCRep":
-            args.num_realizations = 3
-        elif args.algorithm == "ACD":
-            args.num_realizations = 1
-        else:
-            args.num_realizations = 5
+        num_realizations_dict = {"JointCRep": 3, "ACD": 1, "default": 5}
+        args.num_realizations = num_realizations_dict.get(
+            args.algorithm, num_realizations_dict["default"]
+        )
 
     if args.K is None:
         if args.algorithm in ("MTCOV", "JointCRep", "DynCRep"):
@@ -253,7 +258,6 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     logging.debug("Arguments used:")
     for arg in sorted(vars(args)):
         logging.debug("%s: %s", arg, getattr(args, arg))
-
 
     # Step 2: Import the data
 

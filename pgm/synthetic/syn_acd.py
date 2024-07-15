@@ -1,6 +1,7 @@
 """
 Class for generation and management of synthetic networks with anomalies
 """
+
 import logging
 
 import matplotlib.pyplot as plt
@@ -14,10 +15,10 @@ from pgm.input.tools import flt
 from pgm.synthetic.syn_dyncrep import eq_c, membership_vectors
 from pgm.synthetic.syn_rep import affinity_matrix
 
-EPS = 1e-12
+EPS = 1e-12  # Small value to avoid division by zero
 
 
-class SyntNetAnomaly(object):
+class SyntNetAnomaly:
 
     def __init__(
         self,
@@ -80,15 +81,11 @@ class SyntNetAnomaly(object):
             )
         self.verbose = verbose
 
-        # Set Bernoullis parameters
-        # if mu < 0 or mu > 1:
-        # raise ValueError('The Binomial parameter mu has to be in [0, 1]!')
-
         if pi < 0 or pi > 1:
             raise ValueError("The Binomial parameter pi has to be in [0, 1]!")
-        if pi == 1:
+        if np.isclose(pi, 1, atol=EPS):
             pi = 1 - EPS
-        if pi == 0:
+        if np.isclose(pi, 0, atol=EPS):
             pi = EPS
         self.pi = pi
 
@@ -110,20 +107,20 @@ class SyntNetAnomaly(object):
 
         ### Set MT inputs
         # Set the affinity matrix structure
-        if structure not in [
+        allowed_structures = [
             "assortative",
             "disassortative",
             "core-periphery",
             "directed-biased",
-        ]:
+        ]
+        if structure not in allowed_structures:
             raise ValueError(
-                "The available structures for the affinity matrix w "
-                "are: assortative, disassortative, core-periphery "
-                "and directed-biased!"
+                f"The available structures for the affinity matrix w"
+                f"are: {allowed_structures}."
             )
         self.structure = structure
 
-        # Set eta parameter of the  Dirichlet distribution
+        # Set eta parameter of the Dirichlet distribution
         if eta <= 0 and L1:
             raise ValueError("The Dirichlet parameter eta has to be positive!")
         self.eta = eta
@@ -166,12 +163,8 @@ class SyntNetAnomaly(object):
         prng = np.random.RandomState(self.prng)
 
         ### Latent variables
-        if parameters is None:
-            # Generate latent variables
-            self.z, self.u, self.v, self.w = self._generate_lv(prng)
-        else:
-            # Set latent variables
-            self.z, self.u, self.v, self.w = parameters
+        parameters = parameters if parameters else self._generate_lv(prng)
+        self.z, self.u, self.v, self.w = parameters
 
         ### Network generation
         G = nx.DiGraph()
@@ -217,12 +210,12 @@ class SyntNetAnomaly(object):
         self.N = len(nodes)
 
         G0 = G0.subgraph(nodes)
-        A = nx.to_scipy_sparse_matrix(G, nodelist=nodes, weight="weight")  #
-        A0 = nx.to_scipy_sparse_matrix(G0, nodelist=nodes, weight="weight")  #
+        A = nx.to_scipy_sparse_matrix(G, nodelist=nodes, weight="weight")
+        A0 = nx.to_scipy_sparse_matrix(G0, nodelist=nodes, weight="weight")
         try:
             self.z = np.take(self.z, nodes, 1)
             self.z = np.take(self.z, nodes, 0)
-        except:
+        except IndexError:
             self.z = self.z[:, nodes]
             self.z = self.z[nodes]
 
@@ -233,10 +226,16 @@ class SyntNetAnomaly(object):
 
         if self.verbose > 0:
             ave_deg = np.round(2 * G.number_of_edges() / float(G.number_of_nodes()), 3)
-            logging.debug("Number of nodes: %s \nNumber of edges: %s", G.number_of_nodes(),
-            G.number_of_edges())
-            logging.debug("Average degree (2E/N): %s",ave_deg)
-            print("rho_anomaly: %s", A[self.z.nonzero()].sum() / float(G.number_of_edges()))
+            logging.debug(
+                "Number of nodes: %s \nNumber of edges: %s",
+                G.number_of_nodes(),
+                G.number_of_edges(),
+            )
+            logging.debug("Average degree (2E/N): %s", ave_deg)
+            print(
+                "rho_anomaly: %s",
+                A[self.z.nonzero()].sum() / float(G.number_of_edges()),
+            )
 
         if self.output_parameters:
             self._output_results(nodes)
@@ -279,11 +278,7 @@ class SyntNetAnomaly(object):
             of group k to nodes of group h.
         """
         # Generate z through binomial distribution
-
-        if self.mu < 0:
-            density = EPS
-        else:
-            density = self.mu
+        density = self.mu if self.mu >= 0 else EPS
         z = sparse.random(self.N, self.N, density=density, data_rvs=np.ones)
         upper_z = sparse.triu(z)
         z = upper_z + upper_z.T
@@ -326,7 +321,6 @@ class SyntNetAnomaly(object):
 
         logging.debug("Parameters saved in: %s.npz", output_parameters)
         logging.debug("To load: theta=np.load(filename), then e.g. theta['u']")
-
 
     def _output_adjacency(self, G, outfile=None):
         """#TODO: fix docstrings

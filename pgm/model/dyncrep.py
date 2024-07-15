@@ -880,22 +880,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-    # def _specific_update_W_assortative_dyn(self, subs_nz: tuple):
-    #     uttkrp_DKQ = np.zeros_like(self.w)
-    #
-    #     for idx, (a, i, j) in enumerate(zip(*subs_nz)):
-    #         uttkrp_DKQ[a, :] += self.data_M_nz[idx] * self.u[i] * self.v[j]
-    #
-    #     self.w = (self.ag - 1) + self.w * uttkrp_DKQ
-    #
-    #     Z = (self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0))
-    #     Z = np.einsum("a,k->ak", self.beta_hat, Z)
-    #     Z += self.bg
-    #
-    #     non_zeros = Z > 0
-    #
-    #     self.w[non_zeros] /= Z[non_zeros]
-
     def _update_W_assortative_dyn(self, subs_nz):
         """
         Update affinity tensor (assuming assortativity).

@@ -735,7 +735,9 @@ class ModelBase(ModelBaseParameters):
             if self.out_inference:
                 self._output_results()
             else:
-                logging.debug("Parameters won't be saved! If you want to save them, set out_inference=True.")
+                logging.debug(
+                    "Parameters won't be saved! If you want to save them, set out_inference=True."
+                )
 
         # If plot_loglik and flag_conv are both True, plot the best log-likelihood values
         if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
@@ -940,7 +942,7 @@ class ModelUpdateMixin(ABC):
 
         # It enters a while loop that continues until either convergence is achieved or the
         # maximum number of iterations (self.max_iter) is reached.
-        while np.logical_and(not convergence, it < self.max_iter):
+        while not convergence and it < self.max_iter:
             # It performs the main EM update (self._update_em()
             # which updates the memberships and calculates the maximum difference
             # between new and old parameters.

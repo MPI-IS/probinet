@@ -18,7 +18,14 @@ class TestMain(BaseTest):
         self.K_values = {}
 
     def main_with_no_parameters(self, algorithm, mock_fit, main_function):
-        sys.argv = ["main_" + algorithm, "-a", algorithm, "-o", str(self.folder), "-out_inference"]
+        sys.argv = [
+            "main_" + algorithm,
+            "-a",
+            algorithm,
+            "-o",
+            str(self.folder),
+            "-out_inference",
+        ]
         main_function()
         mock_fit.assert_called_once()
         config_file_path = self.folder + "/setting_" + algorithm + ".yaml"
@@ -49,7 +56,7 @@ class TestMain(BaseTest):
             "custom_network.dat",
             "--rseed",
             "0",
-            "-out_inference"
+            "-out_inference",
         ]
         main_function()
         mock_import_data.assert_called_once()
