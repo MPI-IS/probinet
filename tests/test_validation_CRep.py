@@ -63,7 +63,7 @@ class BaseTestCase(BaseTest, ModelTestMixin):
 
         self.conf = conf
 
-        self.model = CRep()
+        self.model = CRep() # type: ignore
 
     # test case function to check the crep.set_name function
     def test_import_data(self):
@@ -147,3 +147,4 @@ class BaseTestCase(BaseTest, ModelTestMixin):
 
         # Check if psloglikelihood_result is a number
         self.assertIsInstance(psloglikelihood_result, float)
+

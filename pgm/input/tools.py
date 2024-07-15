@@ -484,18 +484,14 @@ def sp_uttkrp(
             if temporal:
                 if m == 1:  # we are updating u
                     tmp *= (
-                        w[subs[0], k, :].astype(tmp.dtype)
-                        * v[subs[2], :].astype(tmp.dtype)
-                    ).sum(
-                        axis=1
-                    )  # type: ignore
+                        w[subs[0], k, :].astype(tmp.dtype)  # type: ignore
+                        * v[subs[2], :].astype(tmp.dtype)  # type: ignore
+                    ).sum(axis=1)
                 elif m == 2:  # we are updating v
                     tmp *= (
-                        w[subs[0], :, k].astype(tmp.dtype)
-                        * u[subs[1], :].astype(tmp.dtype)
-                    ).sum(
-                        axis=1
-                    )  # type: ignore
+                        w[subs[0], :, k].astype(tmp.dtype)  # type: ignore
+                        * u[subs[1], :].astype(tmp.dtype)  # type: ignore
+                    ).sum(axis=1)
             else:
                 if m == 1:  # we are updating u
                     w_I = w[0, k, :]
@@ -507,10 +503,8 @@ def sp_uttkrp(
                     w_I = w[0, :, k]
                     tmp *= (
                         w_I[np.newaxis, :].astype(tmp.dtype)
-                        * u[subs[1], :].astype(tmp.dtype)
-                    ).sum(
-                        axis=1
-                    )  # type: ignore
+                        * u[subs[1], :].astype(tmp.dtype)  # type: ignore
+                    ).sum(axis=1)
 
             out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
@@ -569,23 +563,23 @@ def sp_uttkrp_assortative(
         tmp = vals.copy()
         if m == 1:  # we are updating u
             if temporal:
-                tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(
+                tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(  # type: ignore
                     tmp.dtype
-                )  # type: ignore
+                )
             else:
-                tmp *= w[0, k].astype(tmp.dtype) * v[subs[2], k].astype(
+                tmp *= w[0, k].astype(tmp.dtype) * v[subs[2], k].astype(  # type: ignore
                     tmp.dtype
-                )  # type: ignore
+                )
 
         elif m == 2:  # we are updating v
             if temporal:
-                tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(
+                tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(  # type: ignore
                     tmp.dtype
-                )  # type: ignore
+                )
             else:
-                tmp *= w[0, k].astype(tmp.dtype) * u[subs[1], k].astype(
+                tmp *= w[0, k].astype(tmp.dtype) * u[subs[1], k].astype(  # type: ignore
                     tmp.dtype
-                )  # type: ignore
+                )
         out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
 
     return out

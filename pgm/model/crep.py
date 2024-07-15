@@ -238,7 +238,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         """
 
         # Log the current state of the random number generator
-        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])  # type: ignore
 
         # Initialize the parameters for the current realization
         super()._initialize()
@@ -255,7 +255,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         coincide, it = 0, 0
         convergence = False
         loglik = self.inf
-        loglik_values = []
+        loglik_values: List[float] = []
 
         # Record the start time of the realization
         self.time_start = time.time()
@@ -305,7 +305,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         elif isinstance(data, skt.sptensor):
             subs_nz = data.subs
 
-        return E, data, data_T, data_T_vals, subs_nz
+        return E, data, data_T, data_T_vals, subs_nz # type: ignore
 
     def compute_likelihood(self):
         """

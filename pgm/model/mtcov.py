@@ -121,7 +121,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         Optional[np.ndarray],
         Optional[Tuple[np.ndarray]],
         Optional[Tuple[np.ndarray]],
-        float,
     ]:
         """
         Preprocesses the input data for fitting the model.
@@ -155,8 +154,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             The list of tuples representing the non-zero entries in the data. None if no subset is selected.
         SubsX : Optional[Tuple[np.ndarray]]
             The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
-        batch_size : float
-            The final batch size used for processing.
         """
 
         # Pre-processing of the data to handle the sparsity
@@ -195,7 +192,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 SubsX = None
         logging.debug("batch_size: %s", batch_size)
 
-        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX
+        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX # type: ignore
 
     def fit(
         self,
@@ -375,9 +372,9 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                  Pseudo log-likelihood value.
         """
         if not self.batch_size:
-            return self.__Likelihood(self.data, self.data_X)
+            return self._Likelihood()
         else:
-            return self.__Likelihood_batch(
+            return self._Likelihood_batch(
                 self.data, self.data_X, self.subset_N, self.Subs, self.SubsX
             )
 
@@ -593,7 +590,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         low_values_indices = self.beta < self.err_max  # values are too low
         self.beta[low_values_indices] = 0.0  # and set to 0.
 
-        dist_beta = np.amax(abs(self.beta - self.beta_old))
+        dist_beta = np.amax(abs(self.beta - self.beta_old)) # type: ignore
         self.beta_old = np.copy(self.beta)
 
         return dist_beta
@@ -668,24 +665,15 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         else:
             uttkrp_Xh *= u[subs_X_nz[0]] + v[subs_X_nz[0]]
 
-        uttkrp_DK *= 1 - self.gamma
+        uttkrp_DK *= 1 - self.gamma  # type: ignore
         out = uttkrp_DK.copy()
         out[subs_X_nz[0]] += self.gamma * uttkrp_Xh
 
         return out
 
-    def __Likelihood(
-        self, data: Union[skt.dtensor, skt.sptensor], data_X: np.ndarray
-    ) -> float:
+    def _Likelihood(self) -> float:
         """
         Compute the log-likelihood of the data.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_X : ndarray
-                 Object representing the one-hot encoding version of the design matrix.
 
         Returns
         -------
@@ -696,24 +684,24 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         self.lambda0_ija = lambda_full(self.u, self.v, self.w)
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
-        if isinstance(data, skt.dtensor):
-            Alog = data[data.nonzero()] * logM
-        elif isinstance(data, skt.sptensor):
-            Alog = data.vals * logM
+        if isinstance(self.data, skt.dtensor):
+            Alog = self.data[self.data.nonzero()] * logM
+        elif isinstance(self.data, skt.sptensor):
+            Alog = self.data.vals * logM
         lG += Alog.sum()
 
         if self.undirected:
             logP = np.log(self.pi0_nz)
         else:
             logP = np.log(0.5 * self.pi0_nz)
-        if not scipy.sparse.issparse(data_X):
-            ind_logP_nz = (np.arange(len(logP)), data_X.nonzero()[1])
-            Xlog = data_X[data_X.nonzero()] * logP[ind_logP_nz]
+        if not scipy.sparse.issparse(self.data_X):
+            ind_logP_nz = (np.arange(len(logP)), self.data_X.nonzero()[1])
+            Xlog = self.data_X[self.data_X.nonzero()] * logP[ind_logP_nz]
         else:
-            Xlog = data_X.data * logP
+            Xlog = self.data_X.data * logP
         lX = Xlog.sum()
 
-        loglik = (1.0 - self.gamma) * lG + self.gamma * lX
+        loglik = (1.0 - self.gamma) * lG + self.gamma * lX  # type: ignore
 
         if np.isnan(loglik):
             raise ValueError("Likelihood is NaN!!!!")
@@ -773,7 +761,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         Xlog = X_attr.data[IDXs] * logP[(IDXs, X_attr.nonzero()[1][IDXs])]
         lX = Xlog.sum()
 
-        loglik = (1.0 - self.gamma) * lG + self.gamma * lX
+        loglik = (1.0 - self.gamma) * lG + self.gamma * lX  # type: ignore
 
         if np.isnan(loglik):
             logging.error("Likelihood is NaN!!!!")

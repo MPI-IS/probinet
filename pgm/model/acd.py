@@ -5,7 +5,7 @@ The latent variables are related to community memberships and anomaly parameters
 
 import logging
 import time
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -26,16 +26,16 @@ EPS = 1e-12
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def __init__(
         self,
-        inf=1e10,
-        err_max=1e-8,
-        err=0.01,
-        num_realizations=1,
-        convergence_tol=0.1,
-        decision=2,
-        max_iter=500,
-        plot_loglik=False,
+        inf: float = 1e10,
+        err_max: float = 1e-8,
+        err: float = 0.01,
+        num_realizations: int = 1,
+        convergence_tol: float = 0.1,
+        decision: int = 2,
+        max_iter: int = 500,
+        plot_loglik: bool = False,
         flag_conv: str = "log",
-    ):
+    ) -> None:
         super().__init__(
             inf,
             err_max,
@@ -55,6 +55,11 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.max_iter = max_iter  # maximum number of EM steps before aborting
         self.plot_loglik = plot_loglik
         self.flag_conv = flag_conv
+
+        # Initialize the attributes
+        self.u_f: np.ndarray = np.array([])
+        self.v_f: np.ndarray = np.array([])
+        self.w_f: np.ndarray = np.array([])
 
     def check_fit_params(
         self,
@@ -154,24 +159,24 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data,
-        nodes,
-        K,
-        undirected,
-        initialization,
-        assortative,
-        constrained,
-        ag,
-        bg,
-        pibr0,
-        mupr0,
-        flag_anomaly,
-        fix_pibr,
-        fix_mupr,
-        mask=None,
-        rseed=10,
-        **extra_params,
-    ):
+        data: Union[skt.sptensor, skt.dtensor],
+        nodes: List[int],
+        K: int,
+        undirected: bool,
+        initialization: int,
+        assortative: bool,
+        constrained: bool,
+        ag: float,
+        bg: float,
+        pibr0: float,
+        mupr0: float,
+        flag_anomaly: bool,
+        fix_pibr: bool,
+        fix_mupr: bool,
+        mask: Optional[np.ndarray] = None,
+        rseed: int = 10,
+        **extra_params: Unpack[ModelFitParameters],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float]:
         """
         Fit the AnomalyDetection model to the provided data.
 
@@ -179,6 +184,8 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         ----------
         data : ndarray/sptensor
                Graph adjacency tensor.
+        data_T: None/sptensor
+                Graph adjacency tensor (transpose).
         nodes : list
                 List of nodes IDs.
         K : int
@@ -326,7 +333,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         coincide, it = 0, 0
         convergence = False
         loglik = self.inf
-        loglik_values = []
+        loglik_values: List[float] = []
 
         # Record the start time of the realization
         self.time_start = time.time()
@@ -334,8 +341,16 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         # Return the initial state of the realization
         return coincide, convergence, it, loglik, loglik_values
 
-    def _preprocess_data_for_fit(self, data, mask):
-
+    def _preprocess_data_for_fit(
+        self, data: Union[skt.sptensor, skt.dtensor], mask: Optional[np.ndarray]
+    ) -> Tuple[
+        Union[skt.sptensor, skt.dtensor],
+        Union[skt.sptensor, skt.dtensor],
+        np.ndarray,
+        Tuple[int, int, int],
+        Optional[Tuple[int, int, int]],
+    ]:
+        # if data_T is None:
         logging.debug("Preprocessing the data for fitting the model.")
         logging.debug("Data looks like: %s", data)
         data_T = np.einsum("aij->aji", data)
@@ -352,7 +367,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             subs_nz_mask = mask.nonzero()
         else:
             subs_nz_mask = None
-        return data, data_T, data_T_vals, subs_nz, subs_nz_mask
+        return data, data_T, data_T_vals, subs_nz, subs_nz_mask # type: ignore
 
     def _initialize(self):
         """
@@ -395,10 +410,10 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
         self.mupr = self.rng.random_sample(1)[0]
 
-    def _initialize_w(
-        self, infile_name
-    ):  # TODO: Is this method needed? It seems like it should
-        # but it is not used anywhere
+    def _initialize_w( # type: ignore
+        self, infile_name: str
+    ) -> None:  # TODO: Is this method needed? It seems
+        # like it should but it is not used anywhere
         """
         Initialize affinity tensor w from file.
 
@@ -409,7 +424,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
 
         with open(infile_name, "rb") as f:
-            dfW = pd.read_csv(f, sep="\s+", header=None)
+            dfW = pd.read_csv(f, sep="\\s+", header=None)
             if self.assortative:
                 self.w = np.diag(dfW)[np.newaxis, :].copy()
             else:
@@ -437,7 +452,12 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             source_var = getattr(self, f"{var_name}{source_suffix}")
             setattr(self, f"{var_name}{target_suffix}", float(source_var))
 
-    def _update_cache(self, data, data_T_vals, subs_nz):
+    def _update_cache(
+        self,
+        data: Union[skt.sptensor, skt.dtensor],
+        data_T_vals: np.ndarray,
+        subs_nz: Tuple[int, int, int],
+    ) -> None:
         """
         Update the cache used in the em_update.
 
@@ -472,7 +492,12 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             else:
                 self.data_M_nz_Q = data.vals / self.M_nz
 
-    def _QIJ(self, data, data_T_vals, subs_nz):
+    def _QIJ(
+        self,
+        data: Union[skt.sptensor, skt.dtensor],
+        data_T_vals: np.ndarray,
+        subs_nz: Tuple[int, int, int],
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the mean lambda0_ij for only non-zero entries.
 
@@ -528,7 +553,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         assert (Q_ij_dense > 1).sum() == 0
         return Q_ij_dense, Q_ij_dense[subs_nz]
 
-    def _lambda0_nz(self, subs_nz, u, v, w):
+    def _lambda0_nz(
+        self, subs_nz: Tuple[int, int, int], u: np.ndarray, v: np.ndarray, w: np.ndarray
+    ) -> np.ndarray:
         """
         Compute the mean lambda0_ij for only non-zero entries.
 
@@ -562,6 +589,15 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     ):
         """
         Update parameters via EM procedure.
+
+        Parameters
+        ----------
+        data : sptensor/dtensor
+               Graph adjacency tensor.
+        data_T_vals : ndarray
+                      Array with values of entries A[j, i] given non-zero entry (i, j).
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
 
         Returns
         -------
@@ -627,7 +663,13 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         return d_u, d_v, d_w, d_pibr, d_mupr
 
-    def _update_pibr(self, data, data_T_vals, subs_nz, mask=None, subs_nz_mask=None):
+    def _update_pibr(
+        self,
+        data: Union[skt.sptensor, skt.dtensor],
+        subs_nz: Tuple[int, int, int],
+        mask: Optional[np.ndarray] = None,
+        subs_nz_mask: Optional[Tuple[int, int, int]] = None,
+    ) -> float:
         """
         Update the anomaly parameter pi.
 
@@ -635,8 +677,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         ----------
         data : sptensor/dtensor
                Graph adjacency tensor.
-        data_T_vals : ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
         subs_nz : tuple
                   Indices of elements of data that are non-zero.
         mask : ndarray, optional
@@ -659,11 +699,15 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.pibr = Adata / self.Qij_dense[subs_nz_mask].sum()
 
         dist_pibr = abs(self.pibr - self.pibr_old)
-        self.pibr_old = np.copy(self.pibr)
+        self.pibr_old = np.copy(self.pibr) # type: ignore
 
         return dist_pibr
 
-    def _update_mupr(self, data, data_T_vals, subs_nz, mask=None, subs_nz_mask=None):
+    def _update_mupr(
+        self,
+        mask: Optional[np.ndarray] = None,
+        subs_nz_mask: Optional[Tuple[int, int, int]] = None,
+    ) -> float:
         """
         Update the prior mu parameter.
 
@@ -683,7 +727,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         Returns
         -------
         dist_mupr : float
-                    Maximum distance between the old and the new prior mu.
+                   Maximum distance between the old and the new rprior mu.
         """
         if mask is None:
             self.mupr = self.Qij_dense.sum() / (self.N * (self.N - 1))
@@ -691,13 +735,13 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.mupr = self.Qij_dense[subs_nz_mask].sum() / (self.N * (self.N - 1))
 
         dist_mupr = abs(self.pibr - self.mupr_old)
-        self.mupr_old = np.copy(self.mupr)
+        self.mupr_old = np.copy(self.mupr) # type: ignore
 
         return dist_mupr
 
     def _specific_update_U(self):
         """
-        Specific logic for updating U in the DynCRep class.
+        Specific logic for updating U in the AnomalyDetection class.
         """
 
         self.u = (
@@ -793,29 +837,34 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-    def _specific_update_W_assortative(self):
+    def _specific_update_W(
+        self, subs_nz: Tuple[int, int, int], mask: Optional[np.ndarray] = None
+    ):
         """
-        Update affinity tensor in the assortative case.
+        Update affinity tensor.
+
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
         """
         sub_w_nz = self.w.nonzero()
         uttkrp_DKQ = np.zeros_like(self.w)
 
-        UV = np.einsum(
-            "Ik,Iq->Ikq", self.u[self.subs_nz[1], :], self.v[self.subs_nz[2], :]
-        )
+        UV = np.einsum("Ik,Iq->Ikq", self.u[subs_nz[1], :], self.v[subs_nz[2], :])
         uttkrp_I = self.data_M_nz_Q[:, np.newaxis, np.newaxis] * UV
-        for a, k, q in zip(*sub_w_nz):
+        for _, k, q in zip(*sub_w_nz):
             uttkrp_DKQ[:, k, q] += np.bincount(
-                self.subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
+                subs_nz[0], weights=uttkrp_I[:, k, q], minlength=self.L
             )
 
         self.w = self.ag - 1 + self.w * uttkrp_DKQ
 
         if self.flag_anomaly == True:
-            if self.mask is None:
+            if mask is None:
                 UQk = np.einsum("aij,ik->ajk", (1 - self.Qij_dense), self.u)
             else:
-                UQk = np.einsum("aij,ik->ajk", self.mask * (1 - self.Qij_dense), self.u)
+                UQk = np.einsum("aij,ik->ajk", mask * (1 - self.Qij_dense), self.u)
             Z = np.einsum("ajk,jq->akq", UQk, self.v)
         else:  # flag_anomaly == False
             # Z = np.einsum('ik,jq->kq',self.u,self.v)
@@ -831,8 +880,18 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def _specific_update_W_assortative(self):
         """
         Update affinity tensor (assuming assortativity).
-        """
 
+
+        Parameters
+        ----------
+        subs_nz : tuple
+                  Indices of elements of data that are non-zero.
+
+        Returns
+        -------
+        dist_w : float
+                 Maximum distance between the old and the new affinity tensor w.
+        """
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum(
@@ -866,7 +925,14 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.w[Zk == 0] = 0
         self.w[non_zeros] /= Zk[non_zeros]
 
-    def _update_membership_Qd(self, subs_nz, u, v, w, m):
+    def _update_membership_Qd(
+        self,
+        subs_nz: Tuple[np.ndarray],
+        u: np.ndarray,
+        v: np.ndarray,
+        w: np.ndarray,
+        m: int,
+    ) -> np.ndarray:
         """
         Return the Khatri-Rao product (sparse version) used in the update of the membership matrices.
 
@@ -892,13 +958,22 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
 
         if not self.assortative:
-            uttkrp_DK = sp_uttkrp((1 - self.Qij), subs_nz, m, u, v, w)
+            uttkrp_DK = sp_uttkrp((1 - self.Qij), subs_nz, m, u, v, w) # type: ignore # TODO: Ask
+            # Hadiseh about the existence of this
         else:
-            uttkrp_DK = sp_uttkrp_assortative((1 - self.Qij), subs_nz, m, u, v, w)
+            uttkrp_DK = sp_uttkrp_assortative((1 - self.Qij), subs_nz, m, u, v, w) # type: ignore # TODO: Ask
+            # Hadiseh about the existence of this
 
         return uttkrp_DK
 
-    def _update_membership(self, subs_nz, u, v, w, m):
+    def _update_membership(
+        self,
+        subs_nz: Tuple[np.ndarray],
+        u: np.ndarray,
+        v: np.ndarray,
+        w: np.ndarray,
+        m: int,
+    ) -> np.ndarray:
         """
         (Formerly called 'update_membership_Q')
 
@@ -933,9 +1008,14 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         return uttkrp_DK
 
     def compute_likelihood(self):
-        return self._ELBO(self.data, self.data_T, self.mask, self.subs_nz_mask)
+        return self._ELBO(self.data, self.mask, self.subs_nz_mask)
 
-    def _ELBO(self, data, data_T, mask=None, subs_nz_mask=None):
+    def _ELBO(
+        self,
+        data: Union[skt.sptensor, skt.dtensor],
+        mask: Optional[np.ndarray] = None,
+        subs_nz_mask: Optional[Tuple[int, int, int]] = None,
+    ) -> float:
         """
         Compute the Evidence Lower BOund (ELBO) of the data.
 
@@ -963,10 +1043,11 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         if self.flag_anomaly == False:
             l = (data.vals * np.log(self.lambda0_ija[data.subs] + EPS)).sum()
-            if mask is None:
-                l -= self.lambda0_ija.sum()
-            else:
-                l -= self.lambda0_ija[subs_nz_mask].sum()
+            l -= (
+                self.lambda0_ija.sum()
+                if mask is None
+                else self.lambda0_ija[subs_nz_mask].sum()
+            )
             return l
         else:
             l = 0.0
@@ -1049,11 +1130,18 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
             if np.isnan(l):
                 log_and_raise_error(ValueError, "ELBO is NaN!")
+                return float('nan')  # return NaN if l is NaN
             else:
                 return l
 
     def _log_realization_info(
-        self, r, loglik, maxL, final_it, time_start, convergence
+        self,
+        r: int,
+        loglik: float,
+        maxL: float,
+        final_it: int,
+        time_start: float,
+        convergence: bool,
     ) -> None:
         """
         Log the current realization number, log-likelihood, number of iterations, and elapsed time.
@@ -1094,36 +1182,3 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.Q_ij_dense_f = np.copy(self.Qij_dense)
         else:
             self.Q_ij_dense_f = np.zeros((1, self.N, self.N))
-
-    # def output_results(self, nodes): #TODO: keep until the tests for the outputs is created in
-    #  a future ticket
-    #     """
-    #     Output results.
-    #
-    #     Parameters
-    #     ----------
-    #     nodes : list
-    #             List of nodes IDs.
-    #     """
-    #
-    #     outfile = (
-    #         self.out_folder
-    #         + "theta_inf_"
-    #         + str(self.flag_anomaly)
-    #         + "_"
-    #         + self.end_file
-    #     )
-    #     np.savez_compressed(
-    #         outfile + ".npz",
-    #         u=self.u_f,
-    #         v=self.v_f,
-    #         w=self.w_f,
-    #         pibr=self.pibr_f,
-    #         mupr=self.mupr_f,
-    #         max_it=self.final_it,
-    #         Q=self.Q_ij_dense_f,
-    #         maxL=self.maxL,
-    #         nodes=nodes,
-    #     )
-    #     print(f'\nInferred parameters saved in: {outfile + ".npz"}')
-    #     print('To load: theta=np.load(filename), then e.g. theta["u"]')

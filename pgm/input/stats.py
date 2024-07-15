@@ -36,8 +36,8 @@ def print_graph_stat(
     L = len(G)
     N = G[0].number_of_nodes()
 
-    logging.info(f"Number of nodes = {N}")
-    logging.info(f"Number of layers = {L}")
+    logging.info("Number of nodes = %s", N)
+    logging.info("Number of layers = %s", L)
 
     logging.info("Number of edges and average degree in each layer:")
     for layer in range(L):

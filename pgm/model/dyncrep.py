@@ -404,7 +404,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self.sum_data_hat = data_AtAtm1[1:].sum()
 
         # Calculate the denominator containing Aji(t)
-        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())
+        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero()) # type: ignore
 
         # Preprocess the data to handle the sparsity
         data_AtAtm1 = preprocess(data_AtAtm1)
@@ -414,7 +414,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         subs_nzp = (
             data_AtAtm1.nonzero()
             if isinstance(data_AtAtm1, skt.dtensor)
-            else data_AtAtm1.subs
+            else data_AtAtm1.subs # type: ignore
         )
 
         # Initialize the beta hat
@@ -452,7 +452,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             self.data_Tm1,
             self.data_T_vals,
             self.subs_nzp,
-            self.T,
             self.mask,
         )
 
@@ -880,6 +879,22 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
+    # def _specific_update_W_assortative_dyn(self, subs_nz: tuple):
+    #     uttkrp_DKQ = np.zeros_like(self.w)
+    #
+    #     for idx, (a, i, j) in enumerate(zip(*subs_nz)):
+    #         uttkrp_DKQ[a, :] += self.data_M_nz[idx] * self.u[i] * self.v[j]
+    #
+    #     self.w = (self.ag - 1) + self.w * uttkrp_DKQ
+    #
+    #     Z = (self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0))
+    #     Z = np.einsum("a,k->ak", self.beta_hat, Z)
+    #     Z += self.bg
+    #
+    #     non_zeros = Z > 0
+    #
+    #     self.w[non_zeros] /= Z[non_zeros]
+
     def _update_W_assortative_dyn(self, subs_nz):
         """
         Update affinity tensor (assuming assortativity).
@@ -957,16 +972,15 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         super()._update_optimal_parameters()
         self.beta_f = np.copy(self.beta_hat[-1])
 
-    def _Likelihood(
+    def _Likelihood( # type: ignore
         self,
         data: Union[dtensor, sptensor],
         data_T: Union[dtensor, sptensor],
         data_T_vals: np.ndarray,
         subs_nz: Tuple[np.ndarray],
-        T: int,
         mask: Optional[np.ndarray] = None,
-        EPS: float = EPS_,
-    ) -> float:
+    ) -> float:  # The inputs do change sometimes, so keeping it like this to avoid
+        # conflicts during the execution.
         """
         Compute the pseudo log-likelihood of the data.
 
@@ -1006,13 +1020,15 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             sub_mask_nz = mask.nonzero()
             if isinstance(data, skt.dtensor):
                 loglik = (
-                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
+                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore #
+                    # TODO: Ask Hadiseh why this is not defined
                     - self.eta
                     * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
                 )
             elif isinstance(data, skt.sptensor):
                 loglik = (
-                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
+                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore #
+                    # TODO: Ask Hadiseh why this is not defined
                     - self.eta
                     * (
                         data_T.toarray()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]
@@ -1020,8 +1036,10 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 )
         else:
             if isinstance(data, skt.dtensor):
-                loglik = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (
-                    data_T[0].sum() + self.beta0 * data_T[1:].sum()
+                loglik = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (  # type: ignore
+                    # TODO: Ask Hadiseh why this is not defined
+                    data_T[0].sum()
+                    + self.beta0 * data_T[1:].sum()
                 )
             elif isinstance(data, skt.sptensor):
                 loglik = (
@@ -1036,15 +1054,15 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             Alog = (data.vals * logM).sum()
         loglik += Alog
 
-        loglik += (np.log(self.beta_hat[subs_nz[0]] + EPS) * data.vals).sum()
+        loglik += (np.log(self.beta_hat[subs_nz[0]] + EPS_) * data.vals).sum()
         if self.T > 0:
-            loglik += (np.log(1 - self.beta_hat[-1] + EPS) * self.bAtAtm1).sum()
-            loglik += (np.log(self.beta_hat[-1] + EPS) * self.Atm11At).sum()
+            loglik += (np.log(1 - self.beta_hat[-1] + EPS_) * self.bAtAtm1).sum()
+            loglik += (np.log(self.beta_hat[-1] + EPS_) * self.Atm11At).sum()
 
         if not self.constraintU:
             if self.ag >= 1.0:
-                loglik += (self.ag - 1) * np.log(self.u + EPS).sum()
-                loglik += (self.ag - 1) * np.log(self.v + EPS).sum()
+                loglik += (self.ag - 1) * np.log(self.u + EPS_).sum()
+                loglik += (self.ag - 1) * np.log(self.v + EPS_).sum()
             if self.bg >= 0.0:
                 loglik -= self.bg * self.u.sum()
                 loglik -= self.bg * self.v.sum()

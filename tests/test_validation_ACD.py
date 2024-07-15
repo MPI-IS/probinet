@@ -8,7 +8,8 @@ from tests.fixtures import BaseTest
 from pgm.input.loader import import_data
 from pgm.input.tools import normalize_nonzero_membership
 from pgm.model.acd import AnomalyDetection
-from pgm.model.cv import cosine_similarity, evalu, extract_mask_kfold, shuffle_indices_all_matrix
+from pgm.model.cv import evalu, extract_mask_kfold, shuffle_indices_all_matrix
+from pgm.output.evaluate import cosine_similarity
 
 
 class ACDTestCase(BaseTest):
@@ -24,6 +25,8 @@ class ACDTestCase(BaseTest):
             (self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
             allow_pickle=True,
         )
+        self.keys_in_thetaGT = list(self.theta.keys()) # They should be ['z', 'u', 'v', 'w', 'mu',
+        # 'pi', 'nodes']
         self.adj = "synthetic_data_for_ACD.dat"
         self.K = self.theta["u"].shape[1]
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
@@ -68,6 +71,46 @@ class ACDTestCase(BaseTest):
         # Redefine the random seed to this fixed value (10)
         self.rseed = 10
 
+
+    def assert_model_results(self, u, v, w, pi, mu, maxL, theta, sum_u_val, sum_v_val, sum_w_val,
+                             pi_val, mu_val, maxL_val, cs_u_val, cs_v_val, f1_u_val, f1_v_val):
+        # Assertions for u
+        self.assertEqual(u.shape, (500, 3))
+        self.assertAlmostEqual(np.sum(u), sum_u_val, places=3)
+
+        # Assertions for v
+        self.assertEqual(v.shape, (500, 3))
+        self.assertAlmostEqual(np.sum(v), sum_v_val, places=3)
+
+        # Assertions for w
+        self.assertEqual(w.shape, (1, 3))
+        self.assertAlmostEqual(np.sum(w), sum_w_val, places=3)
+
+        # Assertions for pi and mu
+        self.assertAlmostEqual(pi, pi_val, places=8)
+        self.assertAlmostEqual(mu, mu_val, places=20)
+
+        # Assertions for Loglikelihood
+        self.assertAlmostEqual(maxL, maxL_val, places=3)
+
+        _, cs_u = cosine_similarity(u, theta["u"])
+        _, cs_v = cosine_similarity(v, theta["v"])
+
+        # Assertions for cosine similarity
+        self.assertAlmostEqual(cs_u, cs_u_val, places=4)
+        self.assertAlmostEqual(cs_v, cs_v_val, places=4)
+
+        u1 = normalize_nonzero_membership(u)
+        v1 = normalize_nonzero_membership(v)
+
+        f1_u = evalu(u1, theta["u"], "f1")
+        f1_v = evalu(v1, theta["v"], "f1")
+
+        # Assertions for f1 score
+        self.assertAlmostEqual(f1_u, f1_u_val, places=4)
+        self.assertAlmostEqual(f1_v, f1_v_val, places=4)
+
+
     def test_running_algorithm_from_random_init(self):
 
         # The next section is taken from the original code like this. This is a temporary
@@ -84,8 +127,11 @@ class ACDTestCase(BaseTest):
         extra_params = {
             "fix_communities": False,
             "files": (self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
-            "out_inference": False,
-            "end_file": self.label,
+            "out_inference": True,
+            "out_folder": self.folder,
+            "end_file": (
+            "_OUT_" + self.algorithm
+        ) ,
             "verbose": 1,
         }
 
@@ -124,25 +170,36 @@ class ACDTestCase(BaseTest):
         self.assertAlmostEqual(pi, 0.0252523, places=8)
         self.assertAlmostEqual(mu, 1.57966724e-20, places=20)
 
-        # Assertions for Loglikelihood
-        self.assertAlmostEqual(maxL, -25659.543216198774, places=3)
+        # Check results
+        self.assert_model_results(
+            u=u,
+            v=v,
+            w=w,
+            pi=pi,
+            mu=mu,
+            maxL=maxL,
+            theta=self.theta,
+            sum_u_val=81.99922051723053,
+            sum_v_val=81.9992483376804,
+            sum_w_val=7.149161532674793,
+            pi_val=0.0252523,
+            mu_val=1.57966724e-20,
+            maxL_val=-25659.543216198774,
+            cs_u_val=0.90726359534683,
+            cs_v_val=0.9129321051470717,
+            f1_u_val=0.9031,
+            f1_v_val=0.9111
+        )
 
-        _, cs_u = cosine_similarity(u, self.theta["u"])
-        _, cs_v = cosine_similarity(v, self.theta["v"])
-
-        # Assertions for cosine similarity
-        self.assertAlmostEqual(cs_u, 0.90726359534683, places=4)
-        self.assertAlmostEqual(cs_v, 0.9129321051470717, places=4)
-
-        u1 = normalize_nonzero_membership(u)
-        v1 = normalize_nonzero_membership(v)
-
-        f1_u = evalu(u1, self.theta["u"], "f1")
-        f1_v = evalu(v1, self.theta["v"], "f1")
-
-        # Assertions for f1 score
-        self.assertAlmostEqual(f1_u, 0.9031, places=4)
-        self.assertAlmostEqual(f1_v, 0.9111, places=4)
+        # Load the data from the file
+        path = Path(self.folder) / str("theta" + extra_params['end_file'])
+        theta = np.load(path.with_suffix(".npz"))
+        assert all(key in theta for key in self.keys_in_thetaGT[1:]), ("Some keys are missing in "
+                                                                      "the "
+                                                                   "theta dictionary")
+        # TODO: fix the previous assert (it should not be done from 1 onwards, but using all the
+        #  list. To fix it, I first need to talk to Hadiseh to see why there is a z in theta if
+        #  the model does not have it
 
     def test_running_algorithm_from_random_init_2(self):
 
@@ -211,12 +268,26 @@ class ACDTestCase(BaseTest):
         u1 = normalize_nonzero_membership(u)
         v1 = normalize_nonzero_membership(v)
 
-        f1_u = evalu(u1, self.theta["u"], "f1")
-        f1_v = evalu(v1, self.theta["v"], "f1")
-
-        # Assertions for f1 score
-        self.assertAlmostEqual(f1_u, 0.8907, places=4)
-        self.assertAlmostEqual(f1_v, 0.9116, places=4)
+        # Check results
+        self.assert_model_results(
+            u=u,
+            v=v,
+            w=w,
+            pi=pi,
+            mu=mu,
+            maxL=maxL,
+            theta=self.theta,
+            sum_u_val=82.05276217051801,
+            sum_v_val=82.05286433562603,
+            sum_w_val=7.202797500074351,
+            pi_val=0.02514133,
+            mu_val=1.19778552e-15,
+            maxL_val=-25779.334028903784,
+            cs_u_val=0.9037260632199504,
+            cs_v_val=0.9117428253476657,
+            f1_u_val=0.8907,
+            f1_v_val=0.9116
+        )
 
         # TODO: Add a check for the parameters stored in theta
 
@@ -260,34 +331,26 @@ class ACDTestCase(BaseTest):
             **extra_params,
         )
 
-        # Assertions for u
-        self.assertEqual(u.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(u), 82.05343619478171, places=3)
-
-        # Assertions for v
-        self.assertEqual(v.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(v), 82.0529474647653, places=3)
-
-        # Assertions for w
-        self.assertEqual(w.shape, (1, 3))
-        self.assertAlmostEqual(np.sum(w), 7.202722450342012, places=3)
-
-        # Assertions for pi and mu
-        self.assertAlmostEqual(pi, self.pibr0, places=8)
-        self.assertAlmostEqual(mu, self.mupr0, places=20)
-
-        # Assertions for Loglikelihood
-        self.assertAlmostEqual(maxL, -25779.6679, places=3)
-
-        _, cs_u = cosine_similarity(u, self.theta["u"])
-        _, cs_v = cosine_similarity(v, self.theta["v"])
-
-        # Assertions for cosine similarity
-        self.assertAlmostEqual(cs_u, 0.90407, places=4)
-        self.assertAlmostEqual(cs_v, 0.91213, places=4)
-
-        u1 = normalize_nonzero_membership(u)
-        v1 = normalize_nonzero_membership(v)
+        # Check results
+        self.assert_model_results(
+            u=u,
+            v=v,
+            w=w,
+            pi=pi,
+            mu=mu,
+            maxL=maxL,
+            theta=self.theta,
+            sum_u_val=82.05343619478171,
+            sum_v_val=82.0529474647653,
+            sum_w_val=7.202722450342012,
+            pi_val=self.pibr0,
+            mu_val=self.mupr0,
+            maxL_val=-25779.6679,
+            cs_u_val=0.90407,
+            cs_v_val=0.91213,
+            f1_u_val=0.8918,
+            f1_v_val=0.9106
+        )
 
         f1_u = evalu(u1, self.theta["u"], "f1")
         f1_v = evalu(v1, self.theta["v"], "f1")

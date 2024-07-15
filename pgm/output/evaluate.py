@@ -443,55 +443,6 @@ def expected_computation(
     return M_marginal, M_conditional
 
 
-def func_lagrange_multiplier(lambda_i: float, num: float, den: float) -> float:
-    """
-    Function to calculate the value of the Lagrange multiplier.
-
-    Parameters
-    ----------
-    lambda_i : float
-        The current value of the Lagrange multiplier.
-    num : float
-        The numerator of the function.
-    den : float
-        The denominator of the function.
-
-    Returns
-    -------
-    float
-        The calculated value of the function.
-    """
-    f = num / (lambda_i + den)
-    return np.sum(f) - 1
-
-
-def u_with_lagrange_multiplier(
-    u: np.ndarray, x: np.ndarray, y: np.ndarray
-) -> np.ndarray:
-    """
-    Function to update the membership matrix 'u' using the Lagrange multiplier.
-
-    Parameters
-    ----------
-    u : ndarray
-        The current membership matrix 'u'.
-    x : ndarray
-        The first operand in the calculation.
-    y : ndarray
-        The second operand in the calculation.
-
-    Returns
-    -------
-    ndarray
-        The updated membership matrix 'u'.
-    """
-    denominator = x.sum() - (y * u).sum()
-    f_ui = x / (y + denominator)
-    if (u < 0).sum() > 0:
-        return 100.0 * np.ones(u.shape)
-    return f_ui - u
-
-
 def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
     """
     Return the marginal and conditional expected value.

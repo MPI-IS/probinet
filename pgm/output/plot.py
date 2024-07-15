@@ -569,3 +569,35 @@ def plot_L(
 
     plt.tight_layout()
     return fig
+
+
+def plot_M(
+    M: np.ndarray,
+    cmap: str = "PuBuGn",
+    figsize: Tuple[int, int] = (7, 7),
+    fontsize: int = 15,
+) -> None:
+    """
+    Plot the M matrix produced by the generative algorithm. Each entry is the
+    Poisson mean associated with each pair of nodes in the graph.
+
+    Parameters
+    ----------
+    M : np.ndarray
+        NxN M matrix associated with the graph. Contains all the means used
+        for generating edges.
+    cmap : str, optional
+        Colormap used for the plot.
+    figsize : Tuple[int, int], optional
+        Size of the figure to be plotted.
+    fontsize : int, optional
+        Font size to be used in the plot title.
+    """
+
+    _, ax = plt.subplots(figsize=figsize)
+    ax.matshow(M, cmap=plt.get_cmap(cmap))
+    ax.set_title("MT means matrix", fontsize=fontsize)
+    for PCM in ax.get_children():
+        if isinstance(PCM, plt.cm.ScalarMappable):
+            break
+    plt.colorbar(PCM, ax=ax)
