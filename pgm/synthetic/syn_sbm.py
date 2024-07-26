@@ -56,7 +56,7 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         output_net: bool = DEFAULT_OUTPUT_NET,
         show_details: bool = DEFAULT_SHOW_DETAILS,
         show_plots: bool = DEFAULT_SHOW_PLOTS,
-        **kwargs,  # this is needed later on
+        **kwargs,  # these kwargs are needed later on
     ):
         self.N = N  # number of nodes
         self.L = L  # number of layers
@@ -171,7 +171,7 @@ class StandardMMSBM(BaseSyntheticNetwork):
             ):  # fraction of nodes with mixed membership
                 log_and_raise_error(
                     ValueError,
-                    "The percentage of overlapping nodes has to be in  " "[0, 1]!",
+                    "The percentage of overlapping nodes has to be in  [0, 1]!",
                 )
         else:
             message = (
@@ -219,12 +219,12 @@ class StandardMMSBM(BaseSyntheticNetwork):
                 alpha = [alpha] * self.K
             elif len(alpha) != self.K:
                 log_and_raise_error(
-                    ValueError, "The parameter alpha should be a list of " "length K."
+                    ValueError, "The parameter alpha should be a list of length K."
                 )
             if not all(alpha):
                 log_and_raise_error(
                     ValueError,
-                    "Each entry of the Dirichlet parameter has to be " "positive!",
+                    "Each entry of the Dirichlet parameter has to be positive!",
                 )
             self.alpha = alpha
 

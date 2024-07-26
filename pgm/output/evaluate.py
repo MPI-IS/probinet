@@ -10,11 +10,6 @@ from sklearn import metrics
 from sktensor import dtensor, sptensor
 
 from ..input.tools import check_symmetric, log_and_raise_error, transpose_ij2, transpose_ij3
-from ..model.constants import EPS_
-
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-locals, too-many-branches,
-# too-many-statements
-# pylint: disable=fixme
 
 
 def calculate_AUC(
@@ -103,7 +98,7 @@ def calculate_conditional_expectation_dyncrep(
 
     Parameters
     ----------
-    B : ndarray
+    B_to_T : ndarray
         Graph adjacency tensor.
     u : ndarray
         Out-going membership matrix.
@@ -115,8 +110,6 @@ def calculate_conditional_expectation_dyncrep(
           Reciprocity coefficient.
     beta : float
           rate of edge removal.
-    mean : ndarray
-           Matrix with mean entries.
 
     Returns
     -------
@@ -443,76 +436,28 @@ def expected_computation(
     return M_marginal, M_conditional
 
 
-def func_lagrange_multiplier(lambda_i: float, num: float, den: float) -> float:
+def likelihood_conditional(M: np.ndarray, beta: float, data: np.ndarray, data_tm1: np.ndarray,
+                           EPS: Optional[float] = 1e-10) -> float:
     """
-    Function to calculate the value of the Lagrange multiplier.
+    Compute the log-likelihood of the data given the parameters.
 
     Parameters
     ----------
-    lambda_i : float
-        The current value of the Lagrange multiplier.
-    num : float
-        The numerator of the function.
-    den : float
-        The denominator of the function.
+    M : np.ndarray
+        Matrix of expected values.
+    beta : float
+        Rate of edge removal.
+    data : np.ndarray
+        Current adjacency tensor.
+    data_tm1 : np.ndarray
+        Previous adjacency tensor.
+    EPS : float, optional
+        Small constant to prevent division by zero and log of zero.
 
     Returns
     -------
     float
-        The calculated value of the function.
-    """
-    f = num / (lambda_i + den)
-    return np.sum(f) - 1
-
-
-def u_with_lagrange_multiplier(
-    u: np.ndarray, x: np.ndarray, y: np.ndarray
-) -> np.ndarray:
-    """
-    Function to update the membership matrix 'u' using the Lagrange multiplier.
-
-    Parameters
-    ----------
-    u : ndarray
-        The current membership matrix 'u'.
-    x : ndarray
-        The first operand in the calculation.
-    y : ndarray
-        The second operand in the calculation.
-
-    Returns
-    -------
-    ndarray
-        The updated membership matrix 'u'.
-    """
-    denominator = x.sum() - (y * u).sum()
-    f_ui = x / (y + denominator)
-    if (u < 0).sum() > 0:
-        return 100.0 * np.ones(u.shape)
-    return f_ui - u
-
-
-def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
-    """
-    Return the marginal and conditional expected value.
-
-    Parameters
-    ----------
-    B : ndarray
-        Graph adjacency tensor.
-    U : ndarray
-        Out-going membership matrix.
-    V : ndarray
-        In-coming membership matrix.
-    W : ndarray
-        Affinity tensor.
-    eta : float
-          Pair interaction coefficient.
-
-        Returns
-        -------
-        l : float
-             log-likelihood value.
+        Log-likelihood value.
     """
     l = -M.sum()
     sub_nz_and = np.logical_and(data > 0, (1 - data_tm1) > 0)
@@ -528,17 +473,28 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=EPS_):
         return l
 
 
-def CalculatePermutation(U_infer, U0):
+def CalculatePermutation(U_infer: np.ndarray, U0: np.ndarray) -> np.ndarray:
     """
-    Permuting the overlap matrix so that the groups from the two partitions correspond
-    U0 has dimension NxK, reference memebership
+    Permute the overlap matrix so that the groups from the two partitions correspond.
+
+    Parameters
+    ----------
+    U_infer : np.ndarray
+        Inferred membership matrix.
+    U0 : np.ndarray
+        Reference membership matrix with dimensions NxK.
+
+    Returns
+    -------
+    np.ndarray
+        Permutation matrix.
     """
     N, RANK = U0.shape
     M = np.dot(np.transpose(U_infer), U0) / float(N)  # dim=RANKxRANK
     rows = np.zeros(RANK)
     columns = np.zeros(RANK)
     P = np.zeros((RANK, RANK))  # Permutation matrix
-    for t in range(RANK):
+    for _ in range(RANK):
         # Find the max element in the remaining submatrix,
         # the one with rows and columns removed from previous iterations
         max_entry = 0.0

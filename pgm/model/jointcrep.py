@@ -8,7 +8,7 @@ from __future__ import print_function
 import logging
 from pathlib import Path
 import time
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import numpy as np
 import sktensor as skt
@@ -52,6 +52,11 @@ class JointCRep(
             plot_loglik,
             flag_conv,
         )
+
+        # Initialize the attributes
+        self.u_f: np.ndarray = np.array([])
+        self.v_f: np.ndarray = np.array([])
+        self.w_f: np.ndarray = np.array([])
 
     def check_fit_params(
         self,
@@ -114,7 +119,7 @@ class JointCRep(
             self.use_approximation = False
 
         if self.fix_eta:
-            self.eta = self.eta_old = self.eta_f = self.eta0
+            self.eta = self.eta_old = self.eta_f = self.eta0 # type: ignore
 
     def fit(
         self,
@@ -167,8 +172,6 @@ class JointCRep(
                      Flag to call the undirected network.
         assortative : bool
                       Flag to call the assortative network.
-        use_approximation : bool
-                            Flag to use the approximation in the updates.
         extra_params : dict
                         Dictionary of extra parameters.
 
@@ -259,7 +262,7 @@ class JointCRep(
         self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
 
         # Return the final parameters and the maximum log-likelihood
-        return self.u_f, self.v_f, self.w_f, self.eta_f, maxL
+        return self.u_f, self.v_f, self.w_f, self.eta_f, maxL # type: ignore
 
     def _initialize_realization(self, data, subs_nz):
         """
@@ -330,23 +333,18 @@ class JointCRep(
         elif isinstance(data, skt.sptensor):
             subs_nz = data.subs
 
-        return data, data_T_vals, subs_nz
+        return data, data_T_vals, subs_nz # type: ignore
 
     def compute_likelihood(self) -> float:
         """
         Compute the log-likelihood of the data.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
 
         Returns
         -------
         l : float
             Log-likelihood value.
         """
-        return self._Likelihood(self.data)
+        return self._likelihood()
 
     def _update_cache(
         self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple
@@ -428,7 +426,7 @@ class JointCRep(
 
         if not self.fix_communities:
             if self.use_approximation:
-                d_u = self._update_U_approx(self.subs_nz)
+                d_u = self._update_U_approx()
             else:
                 d_u = self._update_U()
             self._update_cache(self.data, self.subs_nz)
@@ -443,7 +441,7 @@ class JointCRep(
         else:
             if not self.fix_communities:
                 if self.use_approximation:
-                    d_v = self._update_V_approx(self.subs_nz)
+                    d_v = self._update_V_approx()
                 else:
                     d_v = self._update_V()
                 self._update_cache(self.data, self.subs_nz)
@@ -479,14 +477,9 @@ class JointCRep(
 
         return d_u, d_v, d_w, d_eta
 
-    def _update_U_approx(self, subs_nz: tuple) -> float:
+    def _update_U_approx(self) -> float:
         """
         Update out-going membership matrix by using an approximation.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
 
         Returns
         -------
@@ -494,7 +487,7 @@ class JointCRep(
                  Maximum distance between the old and the new membership matrix u.
         """
 
-        self.u *= self._update_membership(subs_nz, 1)
+        self.u *= self._update_membership(self.subs_nz, 1)
 
         if not self.assortative:
             VW = np.einsum("jq,akq->ajk", self.v, self.w)
@@ -536,11 +529,6 @@ class JointCRep(
         data <-> data_T
         w <-> w_T
         u <-> v
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
 
         Returns
         -------
@@ -734,7 +722,7 @@ class JointCRep(
         if self.eta < self.err_max:  # value is too low
             self.eta = 0.0  # and set to 0.
 
-        dist_eta = abs(self.eta - self.eta_old)
+        dist_eta = abs(self.eta - self.eta_old)  # type: ignore
         self.eta_old = np.copy(self.eta)  # type: ignore
 
         return dist_eta
@@ -768,7 +756,7 @@ class JointCRep(
         if self.eta < self.err_max:  # value is too low
             self.eta = 0.0  # and set to 0.
 
-        dist_eta = abs(self.eta - self.eta_old)
+        dist_eta = abs(self.eta - self.eta_old)  # type: ignore
         self.eta_old = np.copy(self.eta)  # type: ignore
 
         return dist_eta
@@ -802,14 +790,8 @@ class JointCRep(
 
         return uttkrp_DK
 
-    def _Likelihood(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
-        data_T_vals: np.ndarray = None,
-        subs_nz: tuple[np.ndarray] = None,
-        T: int = None,
-        mask: np.ndarray = None,
+    def _likelihood(
+        self
     ) -> float:
         """
         Compute the log-likelihood of the data.
@@ -830,7 +812,7 @@ class JointCRep(
         )  # to use in Z and eta
         self.Z = self._calculate_Z()
 
-        ft = (data.vals * np.log(self.lambda_nz)).sum()
+        ft = (self.data.vals * np.log(self.lambda_nz)).sum()
 
         st = 0.5 * np.log(self.eta) * self.AAtSum
 

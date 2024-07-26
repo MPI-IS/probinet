@@ -1,9 +1,8 @@
 """
 It provides functions for cross-validation.
 """
-
-import sys
-from typing import List, Optional
+import contextlib
+from typing import List
 
 import numpy as np
 
@@ -102,63 +101,7 @@ def shuffle_indices_all_matrix(N: int, L: int, rseed: int = 10) -> List[np.ndarr
 # not sure if it would be needed at some point; if so, then probably in cv functions
 
 
-def cosine_similarity(U_infer, U0):
-    """
-    It is assumed that matrices are row-normalized
-    """
-    P = CalculatePermutation(U_infer, U0)
-    U_infer = np.dot(U_infer, P)  # Permute infered matrix
-    N, K = U0.shape
-    U_infer0 = U_infer.copy()
-    U0tmp = U0.copy()
-    cosine_sim = 0.0
-    norm_inf = np.linalg.norm(U_infer, axis=1)
-    norm0 = np.linalg.norm(U0, axis=1)
-    for i in range(N):
-        if norm_inf[i] > 0.0:
-            U_infer[i, :] = U_infer[i, :] / norm_inf[i]
-        if norm0[i] > 0.0:
-            U0[i, :] = U0[i, :] / norm0[i]
-
-    for k in range(K):
-        cosine_sim += np.dot(np.transpose(U_infer[:, k]), U0[:, k])
-    U0 = U0tmp.copy()
-    return U_infer0, cosine_sim / float(N)
-
-
-def CalculatePermutation(U_infer, U0):
-    """
-    Permuting the overlap matrix so that the groups from the two partitions correspond
-    U0 has dimension NxK, reference memebership
-    """
-    N, RANK = U0.shape
-    M = np.dot(np.transpose(U_infer), U0) / float(N)  # dim=RANKxRANK
-    rows = np.zeros(RANK)
-    columns = np.zeros(RANK)
-    P = np.zeros((RANK, RANK))  # Permutation matrix
-    for t in range(RANK):
-        # Find the max element in the remaining submatrix,
-        # the one with rows and columns removed from previous iterations
-        max_entry = 0.0
-        c_index = 1
-        r_index = 1
-        for i in range(RANK):
-            if columns[i] == 0:
-                for j in range(RANK):
-                    if rows[j] == 0:
-                        if M[j, i] > max_entry:
-                            max_entry = M[j, i]
-                            c_index = i
-                            r_index = j
-
-        P[r_index, c_index] = 1
-        columns[c_index] = 1
-        rows[r_index] = 1
-
-    return P
-
-
-def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
+def likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
     """
     Compute the log-likelihood of the data conditioned in the previous time step
 
@@ -186,63 +129,92 @@ def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
     l += np.log(beta + EPS) * ((1 - data)[sub_nz_and] * data_tm1[sub_nz_and]).sum()
     if np.isnan(l):
         log_and_raise_error(ValueError, "Likelihood is NaN!")
-    else:
-        return l
+    return l
 
 
-def probabilities(
-    structure: str,
-    sizes: List[int],
-    N: int = 100,
-    K: int = 2,
-    avg_degree: float = 4.0,
-    alpha: float = 0.1,
-    beta: Optional[float] = None,
-) -> np.ndarray:
+def evalu(U_infer, U0, metric="f1", com=False):
     """
-    Return the CxC array with probabilities between and within groups.
+    Compute an evaluation metric.
+
+    Compare a set of ground-truth communities to a set of detected communities. It matches every detected
+    community with its most similar ground-truth community and given this matching, it computes the performance;
+    then every ground-truth community is matched with a detected community and again computes the performance.
+    The final performance is the average of these two metrics.
 
     Parameters
     ----------
-    structure : str
-                Structure of the layer, e.g. assortative, disassortative, core-periphery or directed-biased.
-    sizes : List[int]
-            List with the sizes of blocks.
-    N : int
-        Number of nodes.
-    K : int
-        Number of communities.
-    avg_degree : float
-                 Average degree over the nodes.
-    alpha : float
-            Alpha value. Default is 0.1.
-    beta : float
-           Beta value. Default is 0.3 * alpha.
+    U_infer : ndarray
+              Inferred membership matrix (detected communities).
+    U0 : ndarray
+         Ground-truth membership matrix (ground-truth communities).
+    metric : str
+             Similarity measure between the true community and the detected one. If 'f1', it used the F1-score,
+             if 'jaccard', it uses the Jaccard similarity.
+    com : bool
+          Flag to indicate if U_infer contains the communities (True) or if they have to be inferred from the
+          membership matrix (False).
 
     Returns
     -------
-    p : np.ndarray
-        Ar
+    Evaluation metric.
     """
-    if beta is None:
-        beta = alpha * 0.3
-    p1 = avg_degree * K / N
-    if structure == "assortative":
-        p = p1 * alpha * np.ones((len(sizes), len(sizes)))  # secondary-probabilities
-        np.fill_diagonal(p, p1)  # primary-probabilities
-    elif structure == "disassortative":
-        p = p1 * np.ones((len(sizes), len(sizes)))
-        np.fill_diagonal(p, alpha * p1)
-    elif structure == "core-periphery":
-        p = p1 * np.ones((len(sizes), len(sizes)))
-        np.fill_diagonal(np.fliplr(p), alpha * p1)
-        p[1, 1] = beta * p1
-    elif structure == "directed-biased":
-        p = alpha * p1 * np.ones((len(sizes), len(sizes)))
-        p[0, 1] = p1
-        p[1, 0] = beta * p1
 
-    return p
+    if metric not in {"f1", "jaccard"}:
+        raise ValueError(
+            'The similarity measure can be either "f1" to use the F1-score, or "jaccard" to use the '
+            "Jaccard similarity!"
+        )
+
+    K = U0.shape[1]
+
+    gt = {}
+    d = {}
+    threshold = 1 / U0.shape[1]
+    for i in range(K):
+        gt[i] = list(np.argwhere(U0[:, i] > threshold).flatten())
+        if com:
+            with contextlib.suppress(IndexError):
+                d[i] = U_infer[i] # TODO: ask Martina what we should do with the case where d[i] is not defined
+        else:
+            d[i] = list(np.argwhere(U_infer[:, i] > threshold).flatten())
+    # First term
+    R = 0
+    for i in np.arange(K):
+        ground_truth = set(gt[i])
+        _max = -1
+        M = 0
+        for j in d.keys():
+            detected = set(d[j])
+            if len(ground_truth & detected) != 0:
+                precision = len(ground_truth & detected) / len(detected)
+                recall = len(ground_truth & detected) / len(ground_truth)
+                if metric == "f1":
+                    M = 2 * (precision * recall) / (precision + recall)
+                elif metric == "jaccard":
+                    M = len(ground_truth & detected) / len(ground_truth.union(detected))
+            if M > _max:
+                _max = M
+        R += _max
+    # Second term
+    S = 0
+    for j in d.keys():
+        detected = set(d[j])
+        _max = -1
+        M = 0
+        for i in np.arange(K):
+            ground_truth = set(gt[i])
+            if len(ground_truth & detected) != 0:
+                precision = len(ground_truth & detected) / len(detected)
+                recall = len(ground_truth & detected) / len(ground_truth)
+                if metric == "f1":
+                    M = 2 * (precision * recall) / (precision + recall)
+                elif metric == "jaccard":
+                    M = len(ground_truth & detected) / len(ground_truth.union(detected))
+            if M > _max:
+                _max = M
+        S += _max
+
+    return np.round(R / (2 * len(gt)) + S / (2 * len(d)), 4)
 
 
 def evalu(U_infer, U0, metric="f1", com=False):

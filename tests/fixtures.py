@@ -9,13 +9,11 @@ import unittest
 import numpy as np
 import yaml
 
-RTOL = 1e-2
-DECIMAL = 5
-TOLERANCE_1 = 1e-3
-TOLERANCE_2 = 1e-3
+from .constants import INIT_STR
+
 current_file_path = Path(__file__)
 PATH_FOR_INIT = current_file_path.parent / "inputs/"
-INIT_STR = "_for_initialization"
+
 
 
 class BaseTest(unittest.TestCase):
@@ -64,10 +62,8 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(np.allclose(self.model.beta_f, theta["beta"]))
 
     def _assert_dictionary_keys(self, theta):
-        assert (
-            all(key in theta for key in self.keys_in_thetaGT),
-            "Some keys are missing in the theta dictionary",
-        )
+        assert all(key in theta for key in self.keys_in_thetaGT),("Some keys are missing in the "
+                                                                  "theta dictionary")
 
     def _assert_ground_truth_information(self, theta, thetaGT):
         self.assertTrue(np.allclose(thetaGT["u"], theta["u"]))

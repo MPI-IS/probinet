@@ -75,6 +75,7 @@ src_paths = ["pgm"]
 # Pylint
 [tool.pylint.MASTER]
 disable = ["attribute-defined-outside-init"]
+load-plugins = "pylint.extensions.docparams"
 
 [tool.pylint.FORMAT]
 max-line-length = 100

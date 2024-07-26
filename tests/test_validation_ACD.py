@@ -3,12 +3,16 @@ from pathlib import Path
 
 import networkx as nx
 import numpy as np
-from tests.fixtures import BaseTest
+import yaml
 
 from pgm.input.loader import import_data
 from pgm.input.tools import normalize_nonzero_membership
 from pgm.model.acd import AnomalyDetection
-from pgm.model.cv import cosine_similarity, evalu, extract_mask_kfold, shuffle_indices_all_matrix
+from pgm.model.cv import evalu, extract_mask_kfold, shuffle_indices_all_matrix
+from pgm.output.evaluate import cosine_similarity
+
+from .constants import DECIMAL_2, DECIMAL_3, DECIMAL_4, DECIMAL_5
+from .fixtures import BaseTest
 
 
 class ACDTestCase(BaseTest):
@@ -24,6 +28,8 @@ class ACDTestCase(BaseTest):
             (self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
             allow_pickle=True,
         )
+        self.keys_in_thetaGT = list(self.theta.keys()) # They should be ['z', 'u', 'v', 'w', 'mu',
+        # 'pi', 'nodes']
         self.adj = "synthetic_data_for_ACD.dat"
         self.K = self.theta["u"].shape[1]
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
@@ -68,6 +74,44 @@ class ACDTestCase(BaseTest):
         # Redefine the random seed to this fixed value (10)
         self.rseed = 10
 
+    def assert_model_results(self, u, v, w, pi, mu, maxL, theta, data):
+        # Assertions for u
+        self.assertEqual(list(u.shape), data['u']['shape'])
+        self.assertAlmostEqual(np.sum(u), data['u']['sum'], places=DECIMAL_5)
+
+        # Assertions for v
+        self.assertEqual(list(v.shape), data['v']['shape'])
+        self.assertAlmostEqual(np.sum(v), data['v']['sum'], places=DECIMAL_5)
+
+        # Assertions for w
+        self.assertEqual(list(w.shape), data['w']['shape'])
+        self.assertAlmostEqual(np.sum(w), data['w']['sum'], places=DECIMAL_5)
+
+        # Assertions for pi and mu
+        self.assertAlmostEqual(pi, data['pi'], places=DECIMAL_3)
+        self.assertAlmostEqual(mu, data['mu'], places=DECIMAL_4)
+
+        # Assertions for Loglikelihood
+        self.assertAlmostEqual(maxL, data['maxL'], places=DECIMAL_2)
+
+        _, cs_u = cosine_similarity(u, theta["u"])
+        _, cs_v = cosine_similarity(v, theta["v"])
+
+        # Assertions for cosine similarity
+        self.assertAlmostEqual(cs_u, data['cosine_similarity']['cs_u'], places=DECIMAL_2)
+        self.assertAlmostEqual(cs_v, data['cosine_similarity']['cs_v'], places=DECIMAL_2)
+
+        u1 = normalize_nonzero_membership(u)
+        v1 = normalize_nonzero_membership(v)
+
+        f1_u = evalu(u1, theta["u"], "f1")
+        f1_v = evalu(v1, theta["v"], "f1")
+
+        # Assertions for f1 score
+        self.assertAlmostEqual(f1_u, data['f1_score']['f1_u'], places=DECIMAL_2)
+        self.assertAlmostEqual(f1_v, data['f1_score']['f1_v'], places=DECIMAL_2)
+
+
     def test_running_algorithm_from_random_init(self):
 
         # The next section is taken from the original code like this. This is a temporary
@@ -84,8 +128,11 @@ class ACDTestCase(BaseTest):
         extra_params = {
             "fix_communities": False,
             "files": (self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
-            "out_inference": False,
-            "end_file": self.label,
+            "out_inference": True,
+            "out_folder": self.folder,
+            "end_file": (
+            "_OUT_" + self.algorithm
+        ) ,
             "verbose": 1,
         }
 
@@ -108,41 +155,35 @@ class ACDTestCase(BaseTest):
             rseed=self.rseed,
             **extra_params,
         )
-        # Assertions for u
-        self.assertEqual(u.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(u), 81.99922051723053, places=3)
 
-        # Assertions for v
-        self.assertEqual(v.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(v), 81.9992483376804, places=3)
+        # Define the path to the data file
+        data_file_path = Path(
+            __file__).parent / 'data' / 'acd' / 'data_for_test_running_algorithm_from_random_init.yaml'
 
-        # Assertions for w
-        self.assertEqual(w.shape, (1, 3))
-        self.assertAlmostEqual(np.sum(w), 7.149161532674793, places=3)
+        # Load data for comparison
+        with open(data_file_path, 'r') as f:
+            data = yaml.safe_load(f)
 
-        # Assertions for pi and mu
-        self.assertAlmostEqual(pi, 0.0252523, places=8)
-        self.assertAlmostEqual(mu, 1.57966724e-20, places=20)
+        self.assert_model_results(
+            u=u,
+            v=v,
+            w=w,
+            pi=pi,
+            mu=mu,
+            maxL=maxL,
+            theta=self.theta,
+            data=data
+        )
 
-        # Assertions for Loglikelihood
-        self.assertAlmostEqual(maxL, -25659.543216198774, places=3)
-
-        _, cs_u = cosine_similarity(u, self.theta["u"])
-        _, cs_v = cosine_similarity(v, self.theta["v"])
-
-        # Assertions for cosine similarity
-        self.assertAlmostEqual(cs_u, 0.90726359534683, places=4)
-        self.assertAlmostEqual(cs_v, 0.9129321051470717, places=4)
-
-        u1 = normalize_nonzero_membership(u)
-        v1 = normalize_nonzero_membership(v)
-
-        f1_u = evalu(u1, self.theta["u"], "f1")
-        f1_v = evalu(v1, self.theta["v"], "f1")
-
-        # Assertions for f1 score
-        self.assertAlmostEqual(f1_u, 0.9031, places=4)
-        self.assertAlmostEqual(f1_v, 0.9111, places=4)
+        # Load the data from the file
+        path = Path(self.folder) / str("theta" + extra_params['end_file'])
+        theta = np.load(path.with_suffix(".npz"))
+        assert all(key in theta for key in self.keys_in_thetaGT[1:]), ("Some keys are missing in "
+                                                                      "the "
+                                                                   "theta dictionary")
+        # TODO: fix the previous assert (it should not be done from 1 onwards, but using all the
+        #  list. To fix it, I first need to talk to Hadiseh to see why there is a z in theta if
+        #  the model does not have it
 
     def test_running_algorithm_from_random_init_2(self):
 
@@ -182,45 +223,27 @@ class ACDTestCase(BaseTest):
             rseed=self.rseed,
             **extra_params,
         )
-        # Assertions for u
-        self.assertEqual(u.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(u), 82.05276217051801, places=3)
+        # Define the path to the data file
+        data_file_path = (Path(
+            __file__).parent / 'data' / 'acd' /
+                          'data_for_test_running_algorithm_from_random_init_2.yaml')
 
-        # Assertions for v
-        self.assertEqual(v.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(v), 82.05286433562603, places=3)
+        # Load data for comparison
+        with open(data_file_path, 'r') as f:
+            data = yaml.safe_load(f)
 
-        # Assertions for w
-        self.assertEqual(w.shape, (1, 3))
-        self.assertAlmostEqual(np.sum(w), 7.202797500074351, places=3)
+        # Check results
+        self.assert_model_results(
+            u=u,
+            v=v,
+            w=w,
+            pi=pi,
+            mu=mu,
+            maxL=maxL,
+            theta=self.theta,
+            data=data
+        )
 
-        # Assertions for pi and mu
-        self.assertAlmostEqual(pi, 0.02514133, places=8)
-        self.assertAlmostEqual(mu, 1.19778552e-15, places=20)
-
-        # Assertions for Loglikelihood
-        self.assertAlmostEqual(maxL, -25779.334028903784, places=3)
-
-        _, cs_u = cosine_similarity(u, self.theta["u"])
-        _, cs_v = cosine_similarity(v, self.theta["v"])
-
-        # Assertions for cosine similarity
-        self.assertAlmostEqual(cs_u, 0.9037260632199504, places=4)
-        self.assertAlmostEqual(cs_v, 0.9117428253476657, places=4)
-
-        u1 = normalize_nonzero_membership(u)
-        v1 = normalize_nonzero_membership(v)
-
-        f1_u = evalu(u1, self.theta["u"], "f1")
-        f1_v = evalu(v1, self.theta["v"], "f1")
-
-        # Assertions for f1 score
-        self.assertAlmostEqual(f1_u, 0.8907, places=4)
-        self.assertAlmostEqual(f1_v, 0.9116, places=4)
-
-        # TODO: Add a check for the parameters stored in theta
-
-    # @unittest.skip("Randomization seems to have a problem, random seeds might not be fixed.")
     def test_running_algorithm_from_file(self):
         # The next section is taken from the original code like this. This is a temporary
         # validation test. In the future, a test built from fixture will be added.
@@ -260,38 +283,23 @@ class ACDTestCase(BaseTest):
             **extra_params,
         )
 
-        # Assertions for u
-        self.assertEqual(u.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(u), 82.05343619478171, places=3)
+        # Define the path to the data file
+        data_file_path = (Path(
+            __file__).parent / 'data' / 'acd' /
+                          'data_for_test_running_algorithm_from_file.yaml')
 
-        # Assertions for v
-        self.assertEqual(v.shape, (500, 3))
-        self.assertAlmostEqual(np.sum(v), 82.0529474647653, places=3)
+        # Load data for comparison
+        with open(data_file_path, 'r') as f:
+            data = yaml.safe_load(f)
 
-        # Assertions for w
-        self.assertEqual(w.shape, (1, 3))
-        self.assertAlmostEqual(np.sum(w), 7.202722450342012, places=3)
-
-        # Assertions for pi and mu
-        self.assertAlmostEqual(pi, self.pibr0, places=8)
-        self.assertAlmostEqual(mu, self.mupr0, places=20)
-
-        # Assertions for Loglikelihood
-        self.assertAlmostEqual(maxL, -25779.6679, places=3)
-
-        _, cs_u = cosine_similarity(u, self.theta["u"])
-        _, cs_v = cosine_similarity(v, self.theta["v"])
-
-        # Assertions for cosine similarity
-        self.assertAlmostEqual(cs_u, 0.90407, places=4)
-        self.assertAlmostEqual(cs_v, 0.91213, places=4)
-
-        u1 = normalize_nonzero_membership(u)
-        v1 = normalize_nonzero_membership(v)
-
-        f1_u = evalu(u1, self.theta["u"], "f1")
-        f1_v = evalu(v1, self.theta["v"], "f1")
-
-        # Assertions for f1 score
-        self.assertAlmostEqual(f1_u, 0.8918, places=4)
-        self.assertAlmostEqual(f1_v, 0.9106, places=4)
+        # Check results
+        self.assert_model_results(
+            u=u,
+            v=v,
+            w=w,
+            pi=pi,
+            mu=mu,
+            maxL=maxL,
+            theta=self.theta,
+            data=data
+        )

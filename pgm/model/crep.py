@@ -138,13 +138,24 @@ class CRep(ModelBase, ModelUpdateMixin):
                        ndarray.
         nodes : list
                 List of nodes IDs.
-        flag_conv : str
-                    If 'log' the convergence is based on the log-likelihood values; if 'deltas'
-                    convergence is based on the differences in the parameters values. The
-                    latter is suggested when the dataset is big (N > 1000 ca.).
+        rseed : int
+                Random seed.
+        K : int
+            Number of communities.
+        initialization : int
+                        Initialization method for the model parameters.
+        eta0 : float
+                Initial value of the reciprocity coefficient.
+        undirected : bool
+                    Flag to indicate if the graph is undirected.
+        assortative : bool
+                    Flag to indicate if the graph is assortative.   
+        constrained : bool
+                    Flag to indicate if the model is constrained.
         mask : ndarray
                Mask for selecting the held out set in the adjacency tensor in case of
                cross-validation.
+        extra_params : dict
 
         Returns
         -------
@@ -238,7 +249,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         """
 
         # Log the current state of the random number generator
-        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])  # type: ignore
 
         # Initialize the parameters for the current realization
         super()._initialize()
@@ -255,7 +266,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         coincide, it = 0, 0
         convergence = False
         loglik = self.inf
-        loglik_values = []
+        loglik_values: List[float] = []
 
         # Record the start time of the realization
         self.time_start = time.time()
@@ -305,27 +316,18 @@ class CRep(ModelBase, ModelUpdateMixin):
         elif isinstance(data, skt.sptensor):
             subs_nz = data.subs
 
-        return E, data, data_T, data_T_vals, subs_nz
+        return E, data, data_T, data_T_vals, subs_nz # type: ignore
 
-    def compute_likelihood(self):
+    def compute_likelihood(self) -> float:
         """
         Compute the pseudo log-likelihood of the data.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T : sptensor/dtensor, optional
-                 Graph adjacency tensor (transpose).
-        mask : ndarray, optional
-               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
 
         Returns
         -------
         loglik : float
                  Pseudo log-likelihood value.
         """
-        return self._PSLikelihood(self.data, self.data_T, self.mask)
+        return self._ps_likelihood(self.data, self.data_T, self.mask)
 
     def _update_cache(
         self,
@@ -565,7 +567,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         return uttkrp_DK
 
-    def _PSLikelihood(
+    def _ps_likelihood(
         self,
         data: Union[skt.dtensor, skt.sptensor],
         data_T: skt.sptensor,

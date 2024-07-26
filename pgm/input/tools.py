@@ -469,50 +469,33 @@ def sp_uttkrp(
     D, K = 0, None
     out: np.ndarray = np.array([])
 
-    if m == 1:
-        D, K = u.shape
-        out = np.zeros_like(u)
-    elif m == 2:
-        D, K = v.shape
-        out = np.zeros_like(v)
+    if m < 3:
+        D, K = u.shape if m == 1 else v.shape
+        out = np.zeros((D, K))
     else:
         log_and_raise_error(ValueError, "m should be 1 or 2.")
 
     if K is not None:
         for k in range(K):
-            tmp = vals.copy()
-            if temporal:
-                if m == 1:  # we are updating u
-                    tmp *= (
-                        w[subs[0], k, :].astype(tmp.dtype)
-                        * v[subs[2], :].astype(tmp.dtype)
-                    ).sum(
-                        axis=1
-                    )  # type: ignore
-                elif m == 2:  # we are updating v
-                    tmp *= (
-                        w[subs[0], :, k].astype(tmp.dtype)
-                        * u[subs[1], :].astype(tmp.dtype)
-                    ).sum(
-                        axis=1
-                    )  # type: ignore
-            else:
-                if m == 1:  # we are updating u
-                    w_I = w[0, k, :]
-                    tmp *= (
-                        w_I[np.newaxis, :].astype(tmp.dtype)
-                        * v[subs[2], :].astype(tmp.dtype)  # type: ignore
-                    ).sum(axis=1)
-                elif m == 2:  # we are updating v
-                    w_I = w[0, :, k]
-                    tmp *= (
-                        w_I[np.newaxis, :].astype(tmp.dtype)
-                        * u[subs[1], :].astype(tmp.dtype)
-                    ).sum(
-                        axis=1
-                    )  # type: ignore
-
-            out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
+            # Select the appropriate indices
+            indices = subs[0] if temporal else 0
+            # Copy the values to avoid modifying the original array
+            copied_vals = vals.copy()
+            # Select the appropriate slice of the affinity tensor
+            w_I = w[indices, k, :] if m == 1 else w[indices, :, k]
+            # Ensure that the affinity tensor slice has the same data type as the values
+            w_I = (w_I if temporal else w_I[np.newaxis, :]).astype(copied_vals.dtype)
+            # Select the appropriate slice of the membership matrix
+            multiplier_u_v = v[subs[2], :] if m == 1 else u[subs[1], :]
+            # Ensure that the membership matrix slice has the same data type as the values
+            multiplier_u_v = (multiplier_u_v.astype(
+                        copied_vals.dtype
+                    ) if temporal else multiplier_u_v)
+            # Multiply the values by the affinity tensor slice and the membership matrix slice
+            copied_vals *= (w_I * multiplier_u_v
+            ).sum(axis=1)
+            # Update the output matrix with the weighted sum of the values
+            out[:, k] += np.bincount(subs[m], weights=copied_vals, minlength=D)
 
     return out
 
@@ -545,7 +528,7 @@ def sp_uttkrp_assortative(
         In-coming membership matrix.
     w : ndarray
         Affinity tensor.
-    dynamic : bool
+    temporal : bool
         If True, use the static version of the function.
 
     Returns
@@ -558,35 +541,25 @@ def sp_uttkrp_assortative(
     if len(subs) < 3:
         log_and_raise_error(ValueError, "subs_nz should have at least 3 elements.")
 
-    if m == 1:
-        D, K = u.shape
-        out = np.zeros_like(u)
-    elif m == 2:
-        D, K = v.shape
-        out = np.zeros_like(v)
+    # Determine the shape of the output array
+    D, K = u.shape if m == 1 else v.shape
+    out = np.zeros((D, K))
 
     for k in range(K):
-        tmp = vals.copy()
-        if m == 1:  # we are updating u
-            if temporal:
-                tmp *= w[subs[0], k].astype(tmp.dtype) * v[subs[2], k].astype(
-                    tmp.dtype
-                )  # type: ignore
-            else:
-                tmp *= w[0, k].astype(tmp.dtype) * v[subs[2], k].astype(
-                    tmp.dtype
-                )  # type: ignore
-
-        elif m == 2:  # we are updating v
-            if temporal:
-                tmp *= w[subs[0], k].astype(tmp.dtype) * u[subs[1], k].astype(
-                    tmp.dtype
-                )  # type: ignore
-            else:
-                tmp *= w[0, k].astype(tmp.dtype) * u[subs[1], k].astype(
-                    tmp.dtype
-                )  # type: ignore
-        out[:, k] += np.bincount(subs[m], weights=tmp, minlength=D)
+        # Copy the values to avoid modifying the original array
+        copied_vals = vals.copy()
+        # Select the appropriate indices
+        indices = subs[0] if temporal else 0
+        # Select the appropriate slice of the affinity tensor
+        w_I = w[indices, k].astype(copied_vals.dtype)
+        # Select the appropriate slice of the membership matrix
+        multiplier_u_v = v[subs[2], k] if m == 1 else u[subs[1], k]
+        # Transform the multiplier to the same data type as the values
+        multiplier_u_v = multiplier_u_v.astype(copied_vals.dtype)
+        # Multiply the values by the affinity tensor slice and the membership matrix slice
+        copied_vals *= w_I * multiplier_u_v
+        # Update the output matrix with the weighted sum of the values
+        out[:, k] += np.bincount(subs[m], weights=copied_vals, minlength=D)
 
     return out
 

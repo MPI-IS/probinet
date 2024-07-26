@@ -7,11 +7,12 @@ import unittest
 import networkx as nx
 import numpy as np
 
+from pgm.synthetic.syn_acd import SyntNetAnomaly
 from pgm.synthetic.syn_dyncrep import SyntheticDynCRep
 from pgm.synthetic.syn_rep import affinity_matrix, GM_reciprocity
 from pgm.synthetic.syn_sbm import BaseSyntheticNetwork, ReciprocityMMSBM_joints
 
-from .fixtures import RTOL
+from .constants import RTOL
 
 # pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 
@@ -296,3 +297,96 @@ class TestReciprocityMMSBM_joints(unittest.TestCase):
     def test_nothing(self):
         self.mmsbm.build_Y()
         pass
+
+class TestSyntNetAnomaly(unittest.TestCase):
+    def setUp(self):
+        self.N = 10
+        self.syn_acd = SyntNetAnomaly(N=self.N)
+
+    def test_anomaly_network_PB(self):
+        G, G0 = self.syn_acd.anomaly_network_PB()
+
+        # Check the attributes of the SyntNetAnomaly instance
+        self.assertEqual(self.syn_acd.N, 10)
+        self.assertEqual(self.syn_acd.K, 2)
+        self.assertEqual(self.syn_acd.m, 1)
+        self.assertEqual(self.syn_acd.rseed, 10)
+        self.assertEqual(self.syn_acd.label, '10_2_4.0_0.1')
+        self.assertEqual(self.syn_acd.folder, '../../data/input')
+        self.assertEqual(self.syn_acd.output_parameters, False)
+        self.assertEqual(self.syn_acd.output_adj, False)
+        self.assertEqual(self.syn_acd.outfile_adj, None)
+        self.assertEqual(self.syn_acd.avg_degree, 4.0)
+        self.assertEqual(self.syn_acd.rho_anomaly, 0.1)
+        self.assertEqual(self.syn_acd.verbose, 0)
+        self.assertEqual(self.syn_acd.pi, 0.8)
+        self.assertEqual(self.syn_acd.ExpM, 20.0)
+        self.assertEqual(self.syn_acd.mu, 0.04035480490924654)
+        self.assertEqual(self.syn_acd.structure, 'assortative')
+        self.assertEqual(self.syn_acd.eta, 0.5)
+        self.assertEqual(self.syn_acd.ag, 0.6)
+        self.assertEqual(self.syn_acd.bg, 1.0)
+        self.assertEqual(self.syn_acd.L1, False)
+        self.assertEqual(self.syn_acd.corr, 0.0)
+        self.assertEqual(self.syn_acd.over, 0.0)
+
+        # Check the nodes of the generated graphs
+        self.assertEqual(list(G.nodes()), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        self.assertEqual(list(G0.nodes()), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+        # Check the membership matrices u, v and w
+        expected_uv = np.array([[1., 0.], [1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.], [0., 1.], [0., 1.], [0., 1.], [0., 1.]])
+        expected_w = np.array([[0.1450191, 0.58007641], [0.58007641, 0.1450191]])
+
+        np.testing.assert_array_equal(self.syn_acd.u, expected_uv)
+        np.testing.assert_array_equal(self.syn_acd.v, expected_uv)
+        np.testing.assert_array_almost_equal(self.syn_acd.w, expected_w)
+
+    def test_anomaly_network_PB_with_parameters(self):
+        syn_acd = SyntNetAnomaly(N=200, K=3, corr=0.9, over=0.5, structure="disassortative", L1=True)
+        G, G0 = syn_acd.anomaly_network_PB()
+
+        # Check the attributes of the SyntNetAnomaly instance
+        self.assertEqual(syn_acd.N, 197)
+        self.assertEqual(syn_acd.K, 3)
+        self.assertEqual(syn_acd.m, 1)
+        self.assertEqual(syn_acd.rseed, 10)
+        self.assertEqual(syn_acd.label, '200_3_4.0_0.1')
+        self.assertEqual(syn_acd.folder, '../../data/input')
+        self.assertEqual(syn_acd.output_parameters, False)
+        self.assertEqual(syn_acd.output_adj, False)
+        self.assertEqual(syn_acd.outfile_adj, None)
+        self.assertEqual(syn_acd.avg_degree, 4.0)
+        self.assertEqual(syn_acd.rho_anomaly, 0.1)
+        self.assertEqual(syn_acd.verbose, 0)
+        self.assertEqual(syn_acd.pi, 0.8)
+        self.assertEqual(syn_acd.ExpM, 400.0)
+        self.assertEqual(syn_acd.mu, 0.0018250916793126574)
+        self.assertEqual(syn_acd.structure, 'disassortative')
+        self.assertEqual(syn_acd.eta, 0.5)
+        self.assertEqual(syn_acd.ag, 0.6)
+        self.assertEqual(syn_acd.bg, 1.0)
+        self.assertEqual(syn_acd.L1, True)
+        self.assertEqual(syn_acd.corr, 0.9)
+        self.assertEqual(syn_acd.over, 0.5)
+
+        # Check the edges of the generated main graph
+        self.assertEqual(G.number_of_edges(), 594)
+
+        # Check the nodes of the generated graphs
+        self.assertEqual(np.sort(G.nodes())[0], 0)
+        self.assertEqual(np.sort(G.nodes())[-1], 199)
+        self.assertEqual(np.sort(G0.nodes())[0], 0)
+        self.assertEqual(np.sort(G0.nodes())[-1], 199)
+
+        # Check the sum of the attributes of the nodes
+        self.assertEqual(np.sum(syn_acd.z), 76.0)
+        self.assertEqual(np.sum(syn_acd.u), 197.0)
+        self.assertEqual(np.sum(syn_acd.v), 197.0)
+        self.assertAlmostEqual(np.sum(syn_acd.w), 0.12728954750328017)
+
+        # Check the membership matrices w
+        expected_w = np.array([[0.02828657, 0.00707164, 0.00707164],
+              [0.00707164, 0.02828657, 0.00707164],
+              [0.00707164, 0.00707164, 0.02828657]])
+        np.testing.assert_array_almost_equal(syn_acd.w, expected_w)

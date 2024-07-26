@@ -8,10 +8,11 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
+from scipy import sparse
 from scipy.optimize import brentq
-import scipy.sparse as sparse
 
 from pgm.input.tools import flt
+from pgm.output.plot import plot_M
 from pgm.synthetic.syn_dyncrep import eq_c, membership_vectors
 from pgm.synthetic.syn_rep import affinity_matrix
 
@@ -25,15 +26,15 @@ class SyntNetAnomaly:
         m=1,
         N=100,
         K=2,
-        prng=10,
+        rseed=10,
         avg_degree=4.0,
         rho_anomaly=0.1,
         structure="assortative",
         label=None,
-        mu=None,
+        #mu=None, # TODO: why are these parameters unused? Talk to Hadiseh
         pi=0.8,
-        rho_node=0.9,
-        gamma=0.5,
+        #rho_node=0.9,
+        #gamma=0.5,
         eta=0.5,
         L1=False,
         ag=0.6,
@@ -53,8 +54,10 @@ class SyntNetAnomaly:
         self.K = K
         # Set number of networks to be generated
         self.m = m
+        # Set random seed
+        self.rseed = rseed
         # Set seed random number generator
-        self.prng = prng
+        self.prng = np.random.RandomState(self.rseed)
         # Set label (associated uniquely with the set of inputs)
         if label is not None:
             self.label = label
@@ -81,28 +84,47 @@ class SyntNetAnomaly:
             )
         self.verbose = verbose
 
+        # Check if the value of pi is within the valid range [0, 1]
         if pi < 0 or pi > 1:
+            # If not, raise a ValueError with a descriptive message
             raise ValueError("The Binomial parameter pi has to be in [0, 1]!")
+        # If pi is exactly 1, subtract a very small value to avoid issues with calculations
         if np.isclose(pi, 1, atol=EPS):
             pi = 1 - EPS
+        # If pi is exactly 0, add a very small value to avoid issues with calculations
         if np.isclose(pi, 0, atol=EPS):
             pi = EPS
+
+        # Assign the adjusted value of pi to the instance variable self.pi
         self.pi = pi
 
+        # Check if the value of rho_anomaly is within the valid range [0, 1]
         if rho_anomaly < 0 or rho_anomaly > 1:
+            # If not, raise a ValueError with a descriptive message
             raise ValueError("The rho anomaly has to be in [0, 1]!")
 
+        # Calculate the expected number of edges in the network
         self.ExpM = self.avg_degree * self.N * 0.5
+
+        # Calculate the proportion of reciprocal edges in the network
         mu = (
             self.rho_anomaly
             * self.ExpM
             / ((1 - np.exp(-self.pi)) * (self.N**2 - self.N))
         )
+
+        # If mu is exactly 1, subtract a very small value to avoid issues with calculations
         if mu == 1:
             mu = 1 - EPS
+
+        # If mu is exactly 0, add a very small value to avoid issues with calculations
         if mu == 0:
             mu = EPS
-        assert mu > 0.0 and mu < 1.0
+
+        # Assert that mu is within the valid range (0, 1)
+        assert 1.0 > mu > 0.0, "mu has to be in (0, 1)!"
+
+        # Assign the adjusted value of mu to the instance variable self.mu
         self.mu = mu
 
         ### Set MT inputs
@@ -160,13 +182,13 @@ class SyntNetAnomaly:
         """
 
         # Set seed random number generator
-        prng = np.random.RandomState(self.prng)
+        #prng = np.random.RandomState(self.prng)
 
         ### Latent variables
-        parameters = parameters if parameters else self._generate_lv(prng)
+        parameters = parameters if parameters else self._generate_lv()
         self.z, self.u, self.v, self.w = parameters
 
-        ### Network generation
+        # Network generation
         G = nx.DiGraph()
         for i in range(self.N):
             G.add_node(i)
@@ -183,14 +205,13 @@ class SyntNetAnomaly:
         self.w *= c
 
         # Build network
-
-        A = prng.poisson(c * M)
+        A = self.prng.poisson(c * M)
         A[A > 0] = 1  # binarize the adjacency matrix
         np.fill_diagonal(A, 0)
         G0 = nx.to_networkx_graph(A, create_using=nx.DiGraph)
 
         # weighted anomaly
-        A[self.z.nonzero()] = prng.poisson(self.pi * self.z.count_nonzero())
+        A[self.z.nonzero()] = self.prng.poisson(self.pi * self.z.count_nonzero())
         A[A > 0] = 1  # binarize the adjacency matrix
         np.fill_diagonal(A, 0)
 
@@ -199,19 +220,22 @@ class SyntNetAnomaly:
         # Network post-processing
 
         nodes = list(G.nodes())
-        A = nx.to_scipy_sparse_matrix(G, nodelist=nodes, weight="weight")
+        A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight="weight")
 
         # Keep largest connected component
         Gc = max(nx.weakly_connected_components(G), key=len)
         nodes_to_remove = set(G.nodes()).difference(Gc)
         G.remove_nodes_from(list(nodes_to_remove))
-
+        # Define the nodes list again
         nodes = list(G.nodes())
+        # Define the number of nodes
         self.N = len(nodes)
-
+        # Redefine G0 as the subgraph defined by the nodes
         G0 = G0.subgraph(nodes)
-        A = nx.to_scipy_sparse_matrix(G, nodelist=nodes, weight="weight")
-        A0 = nx.to_scipy_sparse_matrix(G0, nodelist=nodes, weight="weight")
+        # Redefine the adjacency matrix A as the submatrix defined by the nodes
+        A = nx.to_scipy_sparse_array(G, nodelist=nodes, weight="weight")
+        # Similar to A but this time from the subgraph G0
+        A0 = nx.to_scipy_sparse_array(G0, nodelist=nodes, weight="weight")
         try:
             self.z = np.take(self.z, nodes, 1)
             self.z = np.take(self.z, nodes, 0)
@@ -232,7 +256,7 @@ class SyntNetAnomaly:
                 G.number_of_edges(),
             )
             logging.debug("Average degree (2E/N): %s", ave_deg)
-            print(
+            logging.debug(
                 "rho_anomaly: %s",
                 A[self.z.nonzero()].sum() / float(G.number_of_edges()),
             )
@@ -248,11 +272,11 @@ class SyntNetAnomaly:
             self._plot_A(A0, title="A before anomaly")
             self._plot_A(self.z, title="Anomaly matrix Z")
             if M is not None:
-                self._plot_M(M)
+                plot_M(M)
 
         return G, G0
 
-    def _generate_lv(self, prng=42):
+    def _generate_lv(self):
         """#TODO: fix docstrings
         Generate z, u, v, w latent variables.
         INPUT
@@ -278,14 +302,20 @@ class SyntNetAnomaly:
             of group k to nodes of group h.
         """
         # Generate z through binomial distribution
-        density = self.mu if self.mu >= 0 else EPS
-        z = sparse.random(self.N, self.N, density=density, data_rvs=np.ones)
+
+        if self.mu < 0:
+            density = EPS
+        else:
+            density = self.mu
+        z = sparse.random(
+            self.N, self.N, density=density, data_rvs=np.ones, random_state=self.rseed
+        )
         upper_z = sparse.triu(z)
         z = upper_z + upper_z.T
 
         # Generate u, v for overlapping communities
         u, v = membership_vectors(
-            prng,
+            self.prng,
             self.L1,
             self.eta,
             self.ag,
@@ -297,6 +327,7 @@ class SyntNetAnomaly:
         )
         # Generate w
         w = affinity_matrix(self.structure, self.N, self.K, self.avg_degree)
+
         return z, u, v, w
 
     def _output_results(self, nodes):
@@ -339,7 +370,7 @@ class SyntNetAnomaly:
         edges = list(G.edges(data=True))
         try:
             data = [[u, v, d["weight"]] for u, v, d in edges]
-        except:
+        except KeyError:
             data = [[u, v, 1] for u, v, d in edges]
 
         df = pd.DataFrame(data, columns=["source", "target", "w"], index=None)
@@ -357,7 +388,7 @@ class SyntNetAnomaly:
             Colormap used for the plot.
         """
         Ad = A.todense()
-        fig, ax = plt.subplots(figsize=(7, 7))
+        _, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(Ad, cmap=plt.get_cmap(cmap))
         ax.set_title(title, fontsize=15)
         for PCM in ax.get_children():
@@ -374,7 +405,7 @@ class SyntNetAnomaly:
         cmap : Matplotlib object
             Colormap used for the plot.
         """
-        fig, ax = plt.subplots(figsize=(7, 7))
+        _, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(self.z, cmap=plt.get_cmap(cmap))
         ax.set_title("Anomaly matrix", fontsize=15)
         for PCM in ax.get_children():

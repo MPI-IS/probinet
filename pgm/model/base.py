@@ -91,6 +91,8 @@ class ModelBase(ModelBaseParameters):
             "maxPSL",
             "beta_f",
             "nodes",
+            "pibr",
+            "mupr",
         ]
 
         # Define attributes
@@ -100,6 +102,8 @@ class ModelBase(ModelBaseParameters):
         self.nodes: List[Any] = []
         self.rng = np.random.RandomState()
         self.beta_hat: np.ndarray = np.array([])
+        self.best_r: int = 0
+        self.final_it: int = 0
 
     def _check_fit_params(
         self,
@@ -246,12 +250,12 @@ class ModelBase(ModelBaseParameters):
             logging.debug("eta is initialized randomly.")
             self._randomize_eta(use_unit_uniform=self.use_unit_uniform)
 
+    @abstractmethod
     def _initialize_beta(self) -> None:
         """
         Placeholder function for initializing beta.
         Intentionally left empty for subclasses to override if necessary.
         """
-        pass
 
     def _initialize_beta_from_file(self) -> None:
         # Assign the beta matrix from the input file to the beta attribute
@@ -466,18 +470,14 @@ class ModelBase(ModelBaseParameters):
         """
         Update values of the parameters in the previous iteration.
         """
-        self._copy_variables(source_suffix="", target_suffix="_old")
+        self._copy_variables(source_suffix="", target_suffix="_old")  # type: ignore
 
     def _update_optimal_parameters(self) -> None:
         """
         Update values of the parameters after convergence.
         """
-        self._copy_variables(source_suffix="", target_suffix="_f")
-        if (
-            "DynCRep" in type(self).__name__ and not self.fix_beta
-        ):  # TODO: change this, it should
-            # not depend on derived classes
-            self.beta_f = np.copy(self.beta_hat[-1])
+        self._copy_variables(source_suffix="", target_suffix="_f")  # type: ignore
+
 
     def _lambda_nz(self, subs_nz: tuple, temporal: bool = True) -> np.ndarray:
         """
@@ -515,7 +515,7 @@ class ModelBase(ModelBaseParameters):
 
         return nz_recon_I
 
-    def _PSLikelihood(
+    def _ps_likelihood(
         self,
         data: Union[dtensor, sptensor],
         data_T: skt.sptensor,
@@ -525,15 +525,8 @@ class ModelBase(ModelBaseParameters):
         Compute the pseudo-log-likelihood.
         """
 
-    def _Likelihood(
-        self,
-        data: Union[dtensor, sptensor],
-        data_T: Optional[Union[dtensor, sptensor]],
-        data_T_vals: Optional[np.ndarray],
-        subs_nz: Optional[Tuple[np.ndarray]],
-        T: Optional[int],
-        mask: Optional[np.ndarray] = None,
-        EPS: Optional[float] = 1e-12,
+    def _likelihood(
+        self
     ):
         """
         Compute the log-likelihood.
@@ -685,6 +678,9 @@ class ModelBase(ModelBaseParameters):
             if attr_name in self.attributes_to_save_names:
                 # Remove the '_f' suffix from the attribute name if it exists
                 attr_name_clean = attr_name.removesuffix("_f")
+                # Remove the 'pr' or 'br' suffix if it exists
+                attr_name_clean = attr_name_clean.removesuffix("pr")
+                attr_name_clean = attr_name_clean.removesuffix("br")
                 # Add the attribute to the dictionary with the cleaned name
                 attributes_to_save[attr_name_clean] = attr_value
 
@@ -695,7 +691,7 @@ class ModelBase(ModelBaseParameters):
         logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
 
     def _evaluate_fit_results(
-        self, maxL: float, conv: bool, best_loglik_values: Optional[List[float]] = None
+        self, maxL: float, conv: bool, best_loglik_values: List[float]
     ) -> None:
         """
         Evaluate the results of the fitting process and log the results.
@@ -744,8 +740,13 @@ class ModelBase(ModelBaseParameters):
             plot_L(best_loglik_values, int_ticks=True)
 
     def _log_realization_info(
-        self, r, loglik, final_it, time_start, convergence
-    ) -> None:
+        self,
+        r,
+        loglik,
+        final_it,
+        time_start,
+        convergence,
+    ) -> None:  # type: ignore
         """
         Log the current realization number, log-likelihood, number of iterations, and elapsed time.
 
@@ -771,7 +772,7 @@ class ModelBase(ModelBaseParameters):
         )
 
     @abstractmethod
-    def compute_likelihood(self, *args, **kwargs) -> float:
+    def compute_likelihood(self) -> float:
         """
         Compute the log-likelihood of the data.
 
@@ -808,7 +809,7 @@ class ModelUpdateMixin(ABC):
         return dist
 
     @abstractmethod
-    def _specific_update_U(self, *args, **kwargs):
+    def _specific_update_U(self):
         """
         Update the membership matrix U.
         """
@@ -822,7 +823,7 @@ class ModelUpdateMixin(ABC):
         return dist
 
     @abstractmethod
-    def _specific_update_V(self, *args, **kwargs):
+    def _specific_update_V(self):
         """
         Update the membership matrix V.
 
@@ -837,7 +838,6 @@ class ModelUpdateMixin(ABC):
 
         return dist
 
-    # @abstractmethod
     def _specific_update_W(self, *args, **kwargs):
         """
         Update the affinity tensor W.

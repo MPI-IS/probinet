@@ -1,0 +1,9 @@
+RTOL = 1e-2
+DECIMAL = 5
+DECIMAL_2 = 4
+DECIMAL_3 = 8
+DECIMAL_4 = 20
+DECIMAL_5 = 3
+TOLERANCE_1 = 1e-3
+TOLERANCE_2 = 1e-3
+INIT_STR = "_for_initialization"

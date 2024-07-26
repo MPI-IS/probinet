@@ -42,6 +42,12 @@ def import_data(
             Name of the column to consider as the target of the edge.
     force_dense : bool
                   If set to True, the algorithm is forced to consider a dense adjacency tensor.
+    undirected : bool
+                    If set to True, the algorithm considers an undirected graph.
+    noselfloop : bool
+                If set to True, the algorithm removes the self-loops.   
+    binary : bool
+                If set to True, the algorithm reads the graph with binary edges.
     header : int
              Row number to use as the column names, and the start of the data.
 
@@ -226,6 +232,8 @@ def read_graph(
                 If set to True, the algorithm removes the self-loops.
     binary: bool
             If set to True, read the graph with binary edges.
+    label: str
+             Name of the column to consider as the edge weight.
 
     Returns
     -------

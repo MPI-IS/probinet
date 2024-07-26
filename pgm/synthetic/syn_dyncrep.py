@@ -4,7 +4,7 @@ Class definition of the reciprocity generative model with the member functions r
 
 import logging
 import math
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -16,6 +16,7 @@ from scipy.sparse import coo_matrix
 
 from ..input.tools import normalize_nonzero_membership
 from ..model.constants import EPS_
+from ..output.plot import plot_M
 
 
 class SyntheticDynCRep:
@@ -31,7 +32,7 @@ class SyntheticDynCRep:
         eta: float = 0.0,  # reciprocity parameter
         L: int = 1,
         avg_degree: float = 5.0,
-        prng: Union[int, np.random.RandomState] = 0,  # TODO: change this by seed
+        rseed: int = 0,
         verbose: int = 0,
         beta: float = 0.2,  # edge disappearance rate β(t)
         ag: float = 1.0,  # shape of gamma prior
@@ -108,18 +109,28 @@ class SyntheticDynCRep:
         ExpM : np.ndarray, optional
             Expected number of edges in the network.
         """
+        # Set network size (node number)
         self.N = N
+        # Set number of communities
         self.K = K
+        # Set number of time steps
         self.T = T
+        # Set number of layers
         self.L = L
+        # Set average degree
         self.avg_degree = avg_degree
-        self.prng = prng
+        # Set random seed
+        self.rseed = rseed
+        # Set seed random number generator
+        self.prng = np.random.RandomState(self.rseed)
         self.end_file = end_file
         # self.undirected = undirected # TODO: let Hadiseh know that this is not used
         self.folder = folder
+        # Set output flags
         self.output_parameters = output_parameters
         self.output_adj = output_adj
         self.outfile_adj = outfile_adj
+        # Set plot parameters
         self.figsize = figsize
         self.fontsize = fontsize
 
@@ -234,13 +245,10 @@ class SyntheticDynCRep:
             NetworkX DiGraph object. Self-loops allowed.
         """
 
-        # Set seed random number generator
-        prng = np.random.RandomState(self.prng)
-
         # Latent variables
         if parameters is None:
             # Generate latent variables
-            self.u, self.v, self.w = self._generate_lv(prng)
+            self.u, self.v, self.w = self._generate_lv()
         else:
             # Set latent variables
             self.u, self.v, self.w = parameters
@@ -262,7 +270,7 @@ class SyntheticDynCRep:
         for i in range(self.N):
             for j in range(self.N):
                 if i != j:
-                    A_ij = prng.poisson(c * M[i, j], 1)[0]
+                    A_ij = self.prng.poisson(c * M[i, j], 1)[0]
                     if A_ij > 0:
                         G[0].add_edge(i, j, weight=1)  # binarized
 
@@ -285,7 +293,7 @@ class SyntheticDynCRep:
                             q = 1 - self.beta
                         else:
                             q = self.beta * lambda_ij
-                        r = prng.rand()
+                        r = self.prng.rand()
                         if r <= q:
                             G[t + 1].add_edge(i, j, weight=1)  # binarized
 
@@ -308,7 +316,6 @@ class SyntheticDynCRep:
 
         if self.output_adj:
             self._output_adjacency(
-                nodes,
                 A_sum,
                 A,
                 nodes_to_keep=list(G_sum.nodes()),
@@ -356,11 +363,11 @@ class SyntheticDynCRep:
             self._plot_A(A, figsize=self.figsize, fontsize=self.fontsize)
             if self.verbose == 3:
                 if M is not None:
-                    self._plot_M(M, figsize=self.figsize, fontsize=self.fontsize)
+                    plot_M(M, figsize=self.figsize, fontsize=self.fontsize)
 
         return G
 
-    def _generate_lv(self, prng: int = 42) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _generate_lv(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Generate u, v, w latent variables.
 
@@ -387,7 +394,7 @@ class SyntheticDynCRep:
 
         # Generate u, v for overlapping communities
         u, v = membership_vectors(
-            prng,
+            self.prng,
             self.L1,
             self.eta_dir,
             self.ag,
@@ -453,7 +460,7 @@ class SyntheticDynCRep:
         nodes = list(set(df_res.source).union(set(df_res.target)))
 
         # Create a dictionary mapping node IDs to nodes
-        id2node = {i: n for i, n in enumerate(nodes)}
+        id2node = dict(enumerate(nodes))
 
         # Replace the source and target node IDs with the actual nodes
         df_res["source"] = df_res.source.map(id2node)
@@ -487,7 +494,6 @@ class SyntheticDynCRep:
 
     def _output_adjacency(
         self,
-        nodes: List[int],
         A_tot: scipy.sparse.coo_matrix,
         A: List[scipy.sparse.coo_matrix],
         nodes_to_keep: Optional[List[int]] = None,
@@ -686,7 +692,10 @@ def membership_vectors(
     # Generate mixed communities if requested
     if over != 0.0:
         overlapping = int(N * over)  # number of nodes belonging to more communities
-        ind_over = np.random.randint(len(u), size=overlapping)
+        ind_over = prng.randint(
+            len(u), size=overlapping
+        )  # TODO: let Hadiseh know that no seed
+        # was fixed here
         if L1:
             u[ind_over] = prng.dirichlet(
                 eta_dir * np.ones(K), overlapping
