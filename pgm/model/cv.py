@@ -1,7 +1,7 @@
 """
 It provides functions for cross-validation.
 """
-
+import contextlib
 from typing import List
 
 import numpy as np
@@ -101,7 +101,7 @@ def shuffle_indices_all_matrix(N: int, L: int, rseed: int = 10) -> List[np.ndarr
 # not sure if it would be needed at some point; if so, then probably in cv functions
 
 
-def Likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
+def likelihood_conditional(M, beta, data, data_tm1, EPS=1e-12):
     """
     Compute the log-likelihood of the data conditioned in the previous time step
 
@@ -138,7 +138,7 @@ def evalu(U_infer, U0, metric="f1", com=False):
 
     Compare a set of ground-truth communities to a set of detected communities. It matches every detected
     community with its most similar ground-truth community and given this matching, it computes the performance;
-    then every ground-truth community is matched with a detected community and again computed the performance.
+    then every ground-truth community is matched with a detected community and again computes the performance.
     The final performance is the average of these two metrics.
 
     Parameters
@@ -173,10 +173,8 @@ def evalu(U_infer, U0, metric="f1", com=False):
     for i in range(K):
         gt[i] = list(np.argwhere(U0[:, i] > threshold).flatten())
         if com:
-            try:
-                d[i] = U_infer[i]
-            except IndexError:
-                pass
+            with contextlib.suppress(IndexError):
+                d[i] = U_infer[i] # TODO: ask Martina what we should do with the case where d[i] is not defined
         else:
             d[i] = list(np.argwhere(U_infer[:, i] > threshold).flatten())
     # First term

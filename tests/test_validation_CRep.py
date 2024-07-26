@@ -11,7 +11,8 @@ from pgm.input.loader import import_data
 from pgm.model.crep import CRep
 from pgm.output.evaluate import calculate_opt_func, PSloglikelihood
 
-from .fixtures import BaseTest, DECIMAL, ModelTestMixin
+from .constants import DECIMAL
+from .fixtures import BaseTest, ModelTestMixin
 
 
 class BaseTestCase(BaseTest, ModelTestMixin):

@@ -8,7 +8,7 @@ from __future__ import print_function
 import logging
 from pathlib import Path
 import time
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import numpy as np
 import sktensor as skt
@@ -172,8 +172,6 @@ class JointCRep(
                      Flag to call the undirected network.
         assortative : bool
                       Flag to call the assortative network.
-        use_approximation : bool
-                            Flag to use the approximation in the updates.
         extra_params : dict
                         Dictionary of extra parameters.
 
@@ -341,17 +339,12 @@ class JointCRep(
         """
         Compute the log-likelihood of the data.
 
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-
         Returns
         -------
         l : float
             Log-likelihood value.
         """
-        return self._Likelihood()
+        return self._likelihood()
 
     def _update_cache(
         self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple
@@ -797,14 +790,8 @@ class JointCRep(
 
         return uttkrp_DK
 
-    def _Likelihood(
-        self,
-        # data: Union[skt.dtensor, skt.sptensor],
-        # data_T: Optional[Union[skt.dtensor, skt.sptensor]] = None,
-        # data_T_vals: np.ndarray = None,
-        # subs_nz: tuple[np.ndarray] = None,
-        # T: int = None,
-        # mask: np.ndarray = None,
+    def _likelihood(
+        self
     ) -> float:
         """
         Compute the log-likelihood of the data.

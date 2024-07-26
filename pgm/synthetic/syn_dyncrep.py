@@ -4,7 +4,7 @@ Class definition of the reciprocity generative model with the member functions r
 
 import logging
 import math
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -245,9 +245,6 @@ class SyntheticDynCRep:
             NetworkX DiGraph object. Self-loops allowed.
         """
 
-        # Set seed random number generator
-        # prng = np.random.RandomState(self.prng)
-
         # Latent variables
         if parameters is None:
             # Generate latent variables
@@ -319,7 +316,6 @@ class SyntheticDynCRep:
 
         if self.output_adj:
             self._output_adjacency(
-                nodes,
                 A_sum,
                 A,
                 nodes_to_keep=list(G_sum.nodes()),
@@ -464,7 +460,7 @@ class SyntheticDynCRep:
         nodes = list(set(df_res.source).union(set(df_res.target)))
 
         # Create a dictionary mapping node IDs to nodes
-        id2node = {i: n for i, n in enumerate(nodes)}
+        id2node = dict(enumerate(nodes))
 
         # Replace the source and target node IDs with the actual nodes
         df_res["source"] = df_res.source.map(id2node)
@@ -498,7 +494,6 @@ class SyntheticDynCRep:
 
     def _output_adjacency(
         self,
-        nodes: List[int],
         A_tot: scipy.sparse.coo_matrix,
         A: List[scipy.sparse.coo_matrix],
         nodes_to_keep: Optional[List[int]] = None,

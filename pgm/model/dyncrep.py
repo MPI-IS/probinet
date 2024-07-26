@@ -192,6 +192,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                       Flag to determine which log-likelihood function to use.
         temporal : bool, default True
                    Flag to determine if the function should behave in a temporal manner.
+        extra_params : dict
+                        Additional parameters for fitting the model.
 
         Returns
         -------
@@ -424,30 +426,17 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         return T, data, data_AtAtm1, data_T, data_T_vals, data_Tm1, subs_nzp
 
-    def compute_likelihood(self):
+    def compute_likelihood(self) -> float:
         """
         Compute the likelihood of the model.
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T : sptensor/dtensor
-                 Transposed graph adjacency tensor.
-        data_T_vals : ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
-        subs_nz : tuple
-                    Indices of elements of data that are non-zero.
-        T : int
-            Number of time steps.
-        mask : ndarray, optional
-               Mask for selecting the held-out set in the adjacency tensor in case of cross-validation.
+
         Returns
         -------
         loglik : float
                  Log-likelihood of the model.
 
         """
-        return self._Likelihood(
+        return self._likelihood(
             self.data_AtAtm1,
             self.data_Tm1,
             self.data_T_vals,
@@ -879,21 +868,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-    # def _specific_update_W_assortative_dyn(self, subs_nz: tuple):
-    #     uttkrp_DKQ = np.zeros_like(self.w)
-    #
-    #     for idx, (a, i, j) in enumerate(zip(*subs_nz)):
-    #         uttkrp_DKQ[a, :] += self.data_M_nz[idx] * self.u[i] * self.v[j]
-    #
-    #     self.w = (self.ag - 1) + self.w * uttkrp_DKQ
-    #
-    #     Z = (self.u_old.sum(axis=0)) * (self.v_old.sum(axis=0))
-    #     Z = np.einsum("a,k->ak", self.beta_hat, Z)
-    #     Z += self.bg
-    #
-    #     non_zeros = Z > 0
-    #
-    #     self.w[non_zeros] /= Z[non_zeros]
 
     def _update_W_assortative_dyn(self, subs_nz):
         """
@@ -972,7 +946,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         super()._update_optimal_parameters()
         self.beta_f = np.copy(self.beta_hat[-1])
 
-    def _Likelihood( # type: ignore
+    def _likelihood( # type: ignore
         self,
         data: Union[dtensor, sptensor],
         data_T: Union[dtensor, sptensor],

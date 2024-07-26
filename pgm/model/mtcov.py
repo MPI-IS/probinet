@@ -234,7 +234,21 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 List of nodes IDs.
         batch_size : int/None
                      Size of the subset of nodes to compute the likelihood with.
-
+        gamma : float
+                Weight of the node attributes.
+        rseed : int
+                Random seed.
+        K : int
+            Number of communities.
+        initialization : int
+                        If 0, the membership matrices u and v and the affinity matrix w are generated randomly;
+                        if 1, they are uploaded from file.
+        undirected : bool
+                        If True, the model is undirected.
+        assortative : bool
+                        If True, the model is assortative.
+        extra_params : dict
+                        Additional parameters.
         Returns
         -------
         u_f : ndarray
@@ -357,24 +371,15 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         """
         Compute the pseudo log-likelihood of the data.
 
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T : sptensor/dtensor, optional
-                 Graph adjacency tensor (transpose).
-        mask : ndarray, optional
-               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
-
         Returns
         -------
         loglik : float
                  Pseudo log-likelihood value.
         """
         if not self.batch_size:
-            return self._Likelihood()
+            return self._likelihood()
         else:
-            return self._Likelihood_batch(
+            return self._likelihood_batch(
                 self.data, self.data_X, self.subset_N, self.Subs, self.SubsX
             )
 
@@ -671,7 +676,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         return out
 
-    def _Likelihood(self) -> float:
+    def _likelihood(self) -> float:
         """
         Compute the log-likelihood of the data.
 
@@ -708,7 +713,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         return loglik
 
-    def _Likelihood_batch(
+    def _likelihood_batch(
         self,
         data: Union[skt.dtensor, skt.sptensor],
         data_X: np.ndarray,

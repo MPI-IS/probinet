@@ -165,7 +165,7 @@ def plot_adjacency(
     M_marginal: np.ndarray,
     M_conditional: np.ndarray,
     nodes: List,
-    cm="Blues",
+    cm: str = "Blues",
 ) -> plt.Figure:
     """
     Plot the adjacency matrix and its reconstruction given by the marginal and the conditional
@@ -435,7 +435,9 @@ def plot_precision_recall(conf_matrix: np.ndarray, cm: str = "Blues") -> plt.Fig
     return fig
 
 
-def plot_adjacency_samples(Bdata: List, Bsampled: List, cm="Blues") -> plt.Figure:
+def plot_adjacency_samples(
+    Bdata: List, Bsampled: List, cm: str = "Blues"
+) -> plt.Figure:
     """
     Plot the adjacency matrix and five sampled networks.
 
@@ -490,7 +492,7 @@ def plot_adjacency_samples(Bdata: List, Bsampled: List, cm="Blues") -> plt.Figur
     return fig
 
 
-def plot_A(A: List, cmap="Blues") -> List[plt.Figure]:
+def plot_A(A: List, cmap: str = "Blues") -> List[plt.Figure]:
     """
     Plot the adjacency tensor produced by the generative algorithm.
 

@@ -184,8 +184,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         ----------
         data : ndarray/sptensor
                Graph adjacency tensor.
-        data_T: None/sptensor
-                Graph adjacency tensor (transpose).
         nodes : list
                 List of nodes IDs.
         K : int
@@ -639,7 +637,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         if self.fix_pibr == False:
             d_pibr = self._update_pibr(
                 self.data,
-                self.data_T_vals,
                 self.subs_nz,
                 mask=self.mask,
                 subs_nz_mask=self.subs_nz_mask,
@@ -651,9 +648,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         if self.fix_mupr == False:
             d_mupr = self._update_mupr(
-                self.data,
-                self.data_T_vals,
-                self.subs_nz,
                 mask=self.mask,
                 subs_nz_mask=self.subs_nz_mask,
             )
@@ -861,7 +855,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.w = self.ag - 1 + self.w * uttkrp_DKQ
 
         if self.flag_anomaly == True:
-            if mask is None:
+            if not mask:
                 UQk = np.einsum("aij,ik->ajk", (1 - self.Qij_dense), self.u)
             else:
                 UQk = np.einsum("aij,ik->ajk", mask * (1 - self.Qij_dense), self.u)
@@ -1130,7 +1124,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
             if np.isnan(l):
                 log_and_raise_error(ValueError, "ELBO is NaN!")
-                return float('nan')  # return NaN if l is NaN
             else:
                 return l
 

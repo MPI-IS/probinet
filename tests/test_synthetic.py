@@ -7,11 +7,12 @@ import unittest
 import networkx as nx
 import numpy as np
 
+from pgm.synthetic.syn_acd import SyntNetAnomaly
 from pgm.synthetic.syn_dyncrep import SyntheticDynCRep
 from pgm.synthetic.syn_rep import affinity_matrix, GM_reciprocity
 from pgm.synthetic.syn_sbm import BaseSyntheticNetwork, ReciprocityMMSBM_joints
 
-from .fixtures import RTOL
+from .constants import RTOL
 
 # pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 

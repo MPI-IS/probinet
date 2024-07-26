@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 from scipy.optimize import brentq
-import scipy.sparse as sparse
 
 from pgm.input.tools import flt
 from pgm.output.plot import plot_M
@@ -32,10 +31,10 @@ class SyntNetAnomaly:
         rho_anomaly=0.1,
         structure="assortative",
         label=None,
-        mu=None,
+        #mu=None, # TODO: why are these parameters unused? Talk to Hadiseh
         pi=0.8,
-        rho_node=0.9,
-        gamma=0.5,
+        #rho_node=0.9,
+        #gamma=0.5,
         eta=0.5,
         L1=False,
         ag=0.6,
@@ -85,10 +84,6 @@ class SyntNetAnomaly:
             )
         self.verbose = verbose
 
-        # Set Bernoullis parameters
-        # if mu < 0 or mu > 1:
-        # raise ValueError('The Binomial parameter mu has to be in [0, 1]!')
-
         # Check if the value of pi is within the valid range [0, 1]
         if pi < 0 or pi > 1:
             # If not, raise a ValueError with a descriptive message
@@ -127,7 +122,7 @@ class SyntNetAnomaly:
             mu = EPS
 
         # Assert that mu is within the valid range (0, 1)
-        assert 1.0 > mu > 0.0
+        assert 1.0 > mu > 0.0, "mu has to be in (0, 1)!"
 
         # Assign the adjusted value of mu to the instance variable self.mu
         self.mu = mu
@@ -187,10 +182,10 @@ class SyntNetAnomaly:
         """
 
         # Set seed random number generator
-        prng = np.random.RandomState(self.prng)
+        #prng = np.random.RandomState(self.prng)
 
         ### Latent variables
-        parameters = parameters if parameters else self._generate_lv(prng)
+        parameters = parameters if parameters else self._generate_lv()
         self.z, self.u, self.v, self.w = parameters
 
         # Network generation

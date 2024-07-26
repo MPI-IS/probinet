@@ -8,7 +8,6 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy import sparse
 from scipy.sparse import coo_matrix
 import sktensor as skt
 
@@ -17,7 +16,8 @@ from pgm.input.tools import (
     normalize_nonzero_membership, output_adjacency, sp_uttkrp, sp_uttkrp_assortative,
     sptensor_from_dense_array, transpose_ij2, transpose_ij3, write_adjacency, write_design_Matrix)
 
-from .fixtures import BaseTest, DECIMAL, RTOL
+from .constants import DECIMAL, RTOL
+from .fixtures import BaseTest
 
 
 class TestTensors(unittest.TestCase):

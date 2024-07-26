@@ -477,11 +477,7 @@ class ModelBase(ModelBaseParameters):
         Update values of the parameters after convergence.
         """
         self._copy_variables(source_suffix="", target_suffix="_f")  # type: ignore
-        if (
-            "DynCRep" in type(self).__name__ and not self.fix_beta
-        ):  # TODO: change this, it should
-            # not depend on derived classes
-            self.beta_f = np.copy(self.beta_hat[-1])
+
 
     def _lambda_nz(self, subs_nz: tuple, temporal: bool = True) -> np.ndarray:
         """
@@ -519,7 +515,7 @@ class ModelBase(ModelBaseParameters):
 
         return nz_recon_I
 
-    def _PSLikelihood(
+    def _ps_likelihood(
         self,
         data: Union[dtensor, sptensor],
         data_T: skt.sptensor,
@@ -529,15 +525,8 @@ class ModelBase(ModelBaseParameters):
         Compute the pseudo-log-likelihood.
         """
 
-    def _Likelihood(
-        self,
-        # data: Union[dtensor, sptensor],
-        # data_T: Optional[Union[dtensor, sptensor]],
-        # data_T_vals: Optional[np.ndarray],
-        # subs_nz: Optional[Tuple[np.ndarray]],
-        # T: Optional[int],
-        # mask: Optional[np.ndarray] = None,
-        # EPS: Optional[float] = 1e-12,
+    def _likelihood(
+        self
     ):
         """
         Compute the log-likelihood.
@@ -797,25 +786,6 @@ class ModelUpdateMixin(ABC):
     from this class.
     """
 
-    def __init__(self):
-        self.max_iter = None
-        self.err_max = None
-        self.flag_conv = None
-        self._check_for_convergence = None
-        self._check_for_convergence_delta = None
-        self.time_start = None
-        self.u = None
-        self.v = None
-        self.w = None
-        self.u_old = None
-        self.v_old = None
-        self.w_old = None
-        self.delta_u = None
-        self.delta_v = None
-        self.delta_w = None
-        self.delta_eta = None
-        self.compute_likelihood = None
-
     not_implemented_message = "This method should be overridden in the derived class"
 
     def _finalize_update(
@@ -868,7 +838,6 @@ class ModelUpdateMixin(ABC):
 
         return dist
 
-    # @abstractmethod
     def _specific_update_W(self, *args, **kwargs):
         """
         Update the affinity tensor W.

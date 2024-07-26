@@ -33,6 +33,8 @@ def build_B_from_A(
             List of nodes IDs. If not provided, use all nodes in the first graph as the default.
     calculate_reciprocity : bool, optional
                             Whether to calculate reciprocity or not. Default is True.
+    label : str, optional
+            The edge attribute key used to determine the weight of the edges. Default is 'weight'.
 
     Returns
     -------
