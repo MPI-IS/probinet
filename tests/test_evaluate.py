@@ -7,8 +7,7 @@ import unittest
 import numpy as np
 
 from pgm.output.evaluate import (
-    calculate_AUC, calculate_conditional_expectation, calculate_expectation, lambda_full,
-    PSloglikelihood)
+    calculate_AUC, calculate_conditional_expectation, calculate_expectation, lambda_full)
 
 
 class TestEvaluateFunctions(unittest.TestCase):

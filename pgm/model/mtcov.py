@@ -171,7 +171,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         if batch_size:
             if batch_size > self.N:
                 batch_size = min(5000, self.N)
-            np.random.seed(10)
+            np.random.seed(10) # TODO: ask Martina why this seed
             subset_N = np.random.choice(
                 np.arange(self.N), size=batch_size, replace=False
             )

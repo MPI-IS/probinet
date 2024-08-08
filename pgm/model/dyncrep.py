@@ -28,17 +28,17 @@ class DynCRep(ModelBase, ModelUpdateMixin):
     """
 
     def __init__(
-        self,
-        inf=10000000000.0,
-        err_max=0.000000000001,
-        err=0.01,
-        num_realizations=1,
-        convergence_tol=0.0001,
-        decision=10,
-        max_iter=1000,
-        plot_loglik=False,
-        flag_conv="log",
-    ):
+            self,
+            inf: float = 10000000000.0,
+            err_max: float = 0.000000000001,
+            err: float = 0.01,
+            num_realizations: int = 1,
+            convergence_tol: float = 0.0001,
+            decision: int = 10,
+            max_iter: int = 1000,
+            plot_loglik: bool = False,
+            flag_conv: str = "log",
+    ) -> None:
 
         super().__init__(
             inf,
@@ -223,6 +223,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         # Set the random seed
         logging.debug("Fixing random seed to: %s", rseed)
+        self.rseed = rseed
         self.rng = np.random.RandomState(rseed)
 
         # Initialize the fit parameters
@@ -1001,7 +1002,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 )
             elif isinstance(data, skt.sptensor):
                 loglik = (
-                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore #
+                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
                     # TODO: Ask Hadiseh why this is not defined
                     - self.eta
                     * (

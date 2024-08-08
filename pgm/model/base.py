@@ -128,11 +128,10 @@ class ModelBase(ModelBaseParameters):
             log_and_raise_error(ValueError, message)
         self.initialization = initialization
 
-        if (eta0 is not None) and (eta0 <= 0.0):
-            message = "If not None, the eta0 parameter has to be greater than 0.!"
-            log_and_raise_error(ValueError, message)
-
-        if gamma is None:
+        if gamma is None: # TODO: rethink this, gamma is only for MTCOV
+            if (eta0 is not None) and (eta0 <= 0.0):
+                message = "If not None, the eta0 parameter has to be greater than 0.!"
+                log_and_raise_error(ValueError, message)
             self.eta0 = eta0
         self.undirected = undirected
         self.assortative = assortative
@@ -194,13 +193,13 @@ class ModelBase(ModelBaseParameters):
 
         if "files" in extra_params:
             self.files = extra_params["files"]
-
-        if self.undirected and not (self.fix_eta and self.eta0 == 1):
-            message = (
-                "If undirected=True, the parameter eta has to be fixed equal to 1 "
-                "(s.t. log(eta)=0)."
-            )
-            log_and_raise_error(ValueError, message)
+        if gamma is None: #TODO: rethink this, gamma is only for MTCOV
+            if self.undirected and not (self.fix_eta and self.eta0 == 1):
+                message = (
+                    "If undirected=True, the parameter eta has to be fixed equal to 1 "
+                    "(s.t. log(eta)=0)."
+                )
+                log_and_raise_error(ValueError, message)
         if "out_inference" in extra_params:
             self.out_inference = extra_params["out_inference"]
         else:
@@ -214,13 +213,6 @@ class ModelBase(ModelBaseParameters):
             self.end_file = extra_params["end_file"]
         else:
             self.end_file = ""
-
-        if self.undirected and not (self.fix_eta and self.eta0 == 1):
-            message = (
-                "If undirected=True, the parameter eta has to be fixed equal to 1"
-                " (s.t. log(eta)=0)."
-            )
-            log_and_raise_error(ValueError, message)
 
     def _initialize(self) -> None:
         """
@@ -785,6 +777,25 @@ class ModelUpdateMixin(ABC):
     Mixin class for the update methods of the model classes. It is not a requirement to inherit
     from this class.
     """
+
+    def __init__(self):
+        self.max_iter = None
+        self.err_max = None
+        self.flag_conv = None
+        self._check_for_convergence = None
+        self._check_for_convergence_delta = None
+        self.time_start = None
+        self.u = None
+        self.v = None
+        self.w = None
+        self.u_old = None
+        self.v_old = None
+        self.w_old = None
+        self.delta_u = None
+        self.delta_v = None
+        self.delta_w = None
+        self.delta_eta = None
+        self.compute_likelihood = None
 
     not_implemented_message = "This method should be overridden in the derived class"
 

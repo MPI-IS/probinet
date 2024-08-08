@@ -7,3 +7,4 @@ DECIMAL_5 = 3
 TOLERANCE_1 = 1e-3
 TOLERANCE_2 = 1e-3
 INIT_STR = "_for_initialization"
+PATH_TO_GT = "tests/inputs/cross_validation/"

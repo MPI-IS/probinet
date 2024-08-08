@@ -593,3 +593,18 @@ def flt(x, d=3):
     Round a number to a specified number of decimal places.
     """
     return round(x, d)
+
+def transpose_ij(M):
+    """
+    Compute the transpose of a matrix.
+
+    Parameters
+    ----------
+    M : ndarray
+        Numpy matrix.
+
+    Returns
+    -------
+    Transpose of the matrix.
+    """
+    return np.einsum("aij->aji", M)

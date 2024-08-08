@@ -389,7 +389,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         with open(output_config_path, "w", encoding="utf-8") as f:
             yaml.dump(conf, f)
 
-    def fit_model(model, algorithm, conf):  #
+    def fit_model(model, algorithm, conf):
         """
         Fit the model to the data.
         """
