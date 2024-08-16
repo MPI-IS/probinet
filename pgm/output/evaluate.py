@@ -1,15 +1,16 @@
 """
 It provides essential functions for model assessment like AUC for link prediction, conditional
-and marginal expectations and the pseudo log-likelihood of the data.
+and marginal expectations.
 """
 
 from typing import Optional, Union
 
 import numpy as np
+from scipy.stats import poisson
 from sklearn import metrics
 from sktensor import dtensor, sptensor
 
-from ..input.tools import check_symmetric, log_and_raise_error, transpose_ij2, transpose_ij3
+from ..input.tools import check_symmetric, transpose_ij, transpose_ij2, transpose_ij3
 
 
 def calculate_AUC(
@@ -42,6 +43,83 @@ def calculate_AUC(
         fpr, tpr, _ = metrics.roc_curve(data[mask > 0], pred[mask > 0])
 
     return metrics.auc(fpr, tpr)
+
+
+def calculate_AUC_mtcov(
+    B: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+) -> float:
+    """
+    Return the AUC of the link prediction. It represents the probability that a randomly chosen missing connection
+    (true positive) is given a higher score by our method than a randomly chosen pair of unconnected vertices
+    (true negative).
+
+    Parameters
+    ----------
+    B : ndarray
+        Graph adjacency tensor.
+    u : ndarray
+        Membership matrix (out-degree).
+    v : ndarray
+        Membership matrix (in-degree).
+    w : ndarray
+        Affinity tensor.
+    mask : ndarray
+           Mask for selecting a subset of the adjacency tensor.
+
+    Returns
+    -------
+    AUC : float
+          AUC value.
+    """
+
+    M = expected_Aija_mtcov(u, v, w)
+
+    if mask is None:
+        R = list(zip(M.flatten(), B.flatten()))
+        Pos = B.sum()
+    else:
+        R = list(zip(M[mask > 0], B[mask > 0]))
+        Pos = B[mask > 0].sum()
+
+    R.sort(key=lambda x: x[0], reverse=False)
+    R_length = len(R)
+    Neg = R_length - Pos
+
+    return fAUC(R, Pos, Neg)
+
+
+def fAUC(R: list, Pos: float, Neg: float) -> float:
+    """
+    Compute the Area Under the Curve (AUC) for the given ranked list of predictions.
+
+    Parameters
+    ----------
+    R : list
+        List of tuples containing the predicted scores and actual labels.
+    Pos : float
+        Number of positive samples.
+    Neg : float
+        Number of negative samples.
+
+    Returns
+    -------
+    float
+        The calculated AUC value.
+    """
+    y = 0.0
+    bad = 0.0
+    for m, a in R:
+        if a > 0:
+            y += 1
+        else:
+            bad += y
+
+    AUC = 1.0 - (bad / (Pos * Neg))
+    return AUC
 
 
 def calculate_conditional_expectation(
@@ -115,7 +193,9 @@ def calculate_conditional_expectation_dyncrep(
     -------
     Matrix whose elements are lambda_{ij}.
     """
-    conditional_expectation = lambda_full(u, v, w) + eta * transpose_ij2(B_to_T)
+    conditional_expectation = _lambda0_full_dyncrep(u, v, w) + eta * transpose_ij2(
+        B_to_T
+    )
     M = (beta * conditional_expectation) / (1.0 + beta * conditional_expectation)
     return M
 
@@ -150,12 +230,9 @@ def calculate_expectation(
     return M
 
 
-# same as Exp_ija_matrix(u, v, w)
-
-
 def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
-    Compute the mean lambda for all entries.
+    Compute the mean lambda for all entries (former Exp_ija_matrix(u, v, w)).
 
     Parameters
     ----------
@@ -182,96 +259,33 @@ def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     return M
 
 
-def PSloglikelihood(
-    B: np.ndarray,
-    u: np.ndarray,
-    v: np.ndarray,
-    w: np.ndarray,
-    eta: float,
-    mask: Optional[np.ndarray] = None,
-) -> float:
+def _lambda0_full_dyncrep(u, v, w):
     """
-    Compute the pseudo log-likelihood of the data.
+    Compute the mean lambda0 for all entries.
 
     Parameters
     ----------
-    B : ndarray
-        Graph adjacency tensor.
     u : ndarray
         Out-going membership matrix.
     v : ndarray
         In-coming membership matrix.
     w : ndarray
         Affinity tensor.
-    eta : float
-          Reciprocity coefficient.
-    mask : ndarray
-           Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
 
     Returns
     -------
-    Pseudo log-likelihood value.
+    M : ndarray
+        Mean lambda0 for all entries.
     """
 
-    if mask is None:
-        M = lambda_full(u, v, w)
-        M += (eta * B[0, :, :].T)[np.newaxis, :, :]
-        logM = np.zeros(M.shape)
-        logM[M > 0] = np.log(M[M > 0])
-        return (B * logM).sum() - M.sum()
+    if w.ndim == 2:
+        M = np.einsum("ik,jk->ijk", u, v)
+        M = np.einsum("ijk,ak->ij", M, w)
+    else:
+        M = np.einsum("ik,jq->ijkq", u, v)
+        M = np.einsum("ijkq,akq->ij", M, w)
 
-    M = lambda_full(u, v, w)[mask > 0]
-    M += (eta * B[0, :, :].T)[np.newaxis, :, :][mask > 0]
-    logM = np.zeros(M.shape)
-    logM[M > 0] = np.log(M[M > 0])
-    return (B[mask > 0] * logM).sum() - M.sum()
-
-
-# TODO: make it model agnostic
-
-
-def calculate_opt_func(
-    B: np.ndarray,
-    algo_obj,
-    mask: Optional[np.ndarray] = None,
-    assortative: bool = False,
-) -> float:
-    """
-    Compute the optimal value for the pseudo log-likelihood with the inferred parameters.
-
-    Parameters
-    ----------
-    B : ndarray
-        Graph adjacency tensor.
-    algo_obj : obj
-               The CRep object.
-    mask : ndarray
-           Mask for selecting a subset of the adjacency tensor.
-    assortative : bool
-                  Flag to use an assortative mode.
-
-    Returns
-    -------
-    Maximum pseudo log-likelihood value
-    """
-
-    B_test = B.copy()
-    if mask is not None:
-        B_test[np.logical_not(mask)] = 0.0
-
-    if not assortative:
-        return PSloglikelihood(
-            B, algo_obj.u_f, algo_obj.v_f, algo_obj.w_f, algo_obj.eta_f, mask=mask
-        )
-
-    L = B.shape[0]
-    K = algo_obj.w_f.shape[-1]
-    w = np.zeros((L, K, K))
-    for l in range(L):
-        w1 = np.zeros((K, K))
-        np.fill_diagonal(w1, algo_obj.w_f[l])
-        w[l, :, :] = w1.copy()
-    return PSloglikelihood(B, algo_obj.u_f, algo_obj.v_f, w, algo_obj.eta_f, mask=mask)
+    return M
 
 
 def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
@@ -296,9 +310,23 @@ def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
     return Z
 
 
-def expected_Aija(U, V, W):
+def expected_Aija(U: np.ndarray, V: np.ndarray, W: np.ndarray) -> np.ndarray:
     """
     Compute the expected value of the adjacency tensor.
+
+    Parameters
+    ----------
+    U : np.ndarray
+        Out-going membership matrix.
+    V : np.ndarray
+        In-coming membership matrix.
+    W : np.ndarray
+        Affinity tensor.
+
+    Returns
+    -------
+    np.ndarray
+        The expected value of the adjacency tensor.
     """
     if W.ndim == 1:
         M = np.einsum("ik,jk->ijk", U, V)
@@ -306,6 +334,29 @@ def expected_Aija(U, V, W):
     else:
         M = np.einsum("ik,jq->ijkq", U, V)
         M = np.einsum("ijkq,kq->ij", M, W)
+    return M
+
+
+def expected_Aija_mtcov(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """
+    Compute the expected value of the adjacency tensor for multi-covariate data.
+
+    Parameters
+    ----------
+    u : np.ndarray
+        Out-going membership matrix.
+    v : np.ndarray
+        In-coming membership matrix.
+    w : np.ndarray
+        Affinity tensor.
+
+    Returns
+    -------
+    np.ndarray
+        The expected value of the adjacency tensor.
+    """
+    M = np.einsum("ik,jq->ijkq", u, v)
+    M = np.einsum("ijkq,akq->aij", M, w)
     return M
 
 
@@ -436,43 +487,6 @@ def expected_computation(
     return M_marginal, M_conditional
 
 
-def likelihood_conditional(M: np.ndarray, beta: float, data: np.ndarray, data_tm1: np.ndarray,
-                           EPS: Optional[float] = 1e-10) -> float:
-    """
-    Compute the log-likelihood of the data given the parameters.
-
-    Parameters
-    ----------
-    M : np.ndarray
-        Matrix of expected values.
-    beta : float
-        Rate of edge removal.
-    data : np.ndarray
-        Current adjacency tensor.
-    data_tm1 : np.ndarray
-        Previous adjacency tensor.
-    EPS : float, optional
-        Small constant to prevent division by zero and log of zero.
-
-    Returns
-    -------
-    float
-        Log-likelihood value.
-    """
-    l = -M.sum()
-    sub_nz_and = np.logical_and(data > 0, (1 - data_tm1) > 0)
-    Alog = data[sub_nz_and] * (1 - data_tm1)[sub_nz_and] * np.log(M[sub_nz_and] + EPS)
-    l += Alog.sum()
-    sub_nz_and = np.logical_and(data > 0, data_tm1 > 0)
-    l += np.log(1 - beta + EPS) * (data[sub_nz_and] * data_tm1[sub_nz_and]).sum()
-    sub_nz_and = np.logical_and(data_tm1 > 0, (1 - data) > 0)
-    l += np.log(beta + EPS) * ((1 - data)[sub_nz_and] * data_tm1[sub_nz_and]).sum()
-    if np.isnan(l):
-        log_and_raise_error(ValueError, "Likelihood is NaN!")
-    else:
-        return l
-
-
 def CalculatePermutation(U_infer: np.ndarray, U0: np.ndarray) -> np.ndarray:
     """
     Permute the overlap matrix so that the groups from the two partitions correspond.
@@ -516,9 +530,21 @@ def CalculatePermutation(U_infer: np.ndarray, U0: np.ndarray) -> np.ndarray:
     return P
 
 
-def cosine_similarity(U_infer, U0):
+def cosine_similarity(U_infer: np.ndarray, U0: np.ndarray) -> tuple:
     """
-    It is assumed that matrices are row-normalized
+    Compute the cosine similarity between two row-normalized matrices.
+
+    Parameters
+    ----------
+    U_infer : np.ndarray
+        Inferred membership matrix.
+    U0 : np.ndarray
+        Reference membership matrix with dimensions NxK.
+
+    Returns
+    -------
+    tuple
+        Permuted inferred matrix and cosine similarity value.
     """
     P = CalculatePermutation(U_infer, U0)
     U_infer = np.dot(U_infer, P)  # Permute inferred matrix
@@ -538,3 +564,109 @@ def cosine_similarity(U_infer, U0):
         cosine_sim += np.dot(np.transpose(U_infer[:, k]), U0[:, k])
     U0 = U0tmp.copy()
     return U_infer0, cosine_sim / float(N)
+
+
+def calculate_Q_dense(
+    A: np.ndarray,
+    M: np.ndarray,
+    pi: float,
+    mu: float,
+    mask: Optional[np.ndarray] = None,
+    EPS: float = 1e-12,
+) -> np.ndarray:
+    """
+    Compute the dense Q matrix for the given adjacency tensor and parameters.
+
+    Parameters
+    ----------
+    A : np.ndarray
+        Adjacency tensor.
+    M : np.ndarray
+        Mean adjacency tensor.
+    pi : float
+        Poisson parameter.
+    mu : float
+        Mixing parameter.
+    mask : Optional[np.ndarray]
+        Mask for selecting a subset of the adjacency tensor.
+    EPS : float
+        Small constant to avoid division by zero.
+
+    Returns
+    -------
+    np.ndarray
+        Dense Q matrix.
+    """
+    AT = transpose_ij(A)
+    MT = transpose_ij(M)
+    num = (mu + EPS) * poisson.pmf(A, (pi + EPS)) * poisson.pmf(AT, (pi + EPS))
+    # num = poisson.pmf(A,pi) * poisson.pmf(AT,pi)* (mu+EPS)
+    den = num + poisson.pmf(A, M) * poisson.pmf(AT, MT) * (1 - mu + EPS)
+    if mask is None:
+        return num / den
+    else:
+        return num[mask.nonzero()] / den[mask.nonzero()]
+
+
+def calculate_f1_score(
+    pred: np.ndarray,
+    data0: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+    threshold: float = 0.1,
+) -> float:
+    """
+    Calculate the F1 score for the given predictions and data.
+
+    Parameters
+    ----------
+    pred : np.ndarray
+        Predicted values.
+    data0 : np.ndarray
+        True values.
+    mask : Optional[np.ndarray]
+        Mask for selecting a subset of the data.
+    threshold : float
+        Threshold for binarizing the predictions.
+
+    Returns
+    -------
+    float
+        The F1 score.
+    """
+    Z_pred = np.copy(pred[0])
+    Z_pred[Z_pred < threshold] = 0
+    Z_pred[Z_pred >= threshold] = 1
+
+    data = (data0 > 0).astype("int")
+    if mask is None:
+        return metrics.f1_score(data.flatten(), Z_pred.flatten())
+    else:
+        return metrics.f1_score(data[mask], Z_pred[mask])
+
+
+def calculate_expectation_acd(
+    U: np.ndarray, V: np.ndarray, W: np.ndarray, Q: np.ndarray, pi: float = 1
+) -> np.ndarray:
+    """
+    Calculate the expectation for the adjacency tensor with an additional covariate.
+
+    Parameters
+    ----------
+    U : np.ndarray
+        Out-going membership matrix.
+    V : np.ndarray
+        In-coming membership matrix.
+    W : np.ndarray
+        Affinity tensor.
+    Q : np.ndarray
+        Covariate matrix.
+    pi : float, optional
+        Poisson parameter, by default 1.
+
+    Returns
+    -------
+    np.ndarray
+        The calculated expectation.
+    """
+    lambda0 = lambda_full(U, V, W)
+    return (1 - Q) * lambda0 + Q * pi

@@ -1,0 +1,29 @@
+N: 197
+K: 3
+m: 1
+rseed: 10
+label: "200_3_4.0_0.1"
+folder: ""
+output_parameters: false
+output_adj: false
+outfile_adj: null
+avg_degree: 4.0
+rho_anomaly: 0.1
+verbose: 0
+pi: 0.8
+ExpM: 400.0
+mu: 0.0018250916793126574
+structure: "disassortative"
+eta: 0.5
+ag: 0.6
+bg: 1.0
+L1: true
+corr: 0.9
+over: 0.5
+number_of_edges: 594
+nodes: [0, 1, 2, 3, ..., 199]
+sum_z: 76.0
+sum_u: 197.0
+sum_v: 197.0
+sum_w: 0.12728954750328017
+expected_w: [[0.02828657, 0.00707164, 0.00707164], [0.00707164, 0.02828657, 0.00707164], [0.00707164, 0.00707164, 0.02828657]]

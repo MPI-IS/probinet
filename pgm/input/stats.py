@@ -104,7 +104,7 @@ def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
         logging.info(
             "Average degree over all layers (weighted): %.2f", avg_densityW / L
         )
-        logging.info("Total number of edges (weighted):", avg_M)
+        logging.info("Total number of edges (weighted): %.3f", avg_M)
     logging.info("Sparsity = %.3f", avg_edges / (N * N * L))
 
 

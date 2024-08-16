@@ -1,0 +1,25 @@
+N: 10
+K: 2
+m: 1
+rseed: 10
+label: "10_2_4.0_0.1"
+folder: ""
+output_parameters: false
+output_adj: false
+outfile_adj: null
+avg_degree: 4.0
+rho_anomaly: 0.1
+verbose: 0
+pi: 0.8
+ExpM: 20.0
+mu: 0.04035480490924654
+structure: "assortative"
+eta: 0.5
+ag: 0.6
+bg: 1.0
+L1: false
+corr: 0.0
+over: 0.0
+nodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+expected_uv: [[1.0, 0.0], [1.0, 0.0], [1.0, 0.0], [1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
+expected_w: [[0.1450191, 0.58007641], [0.58007641, 0.1450191]]

@@ -17,6 +17,7 @@ from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import lambda_full
 from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, INF_
 
 
 class MTCOV(ModelBase, ModelUpdateMixin):
@@ -27,12 +28,12 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def __init__(
         self,
-        inf: float = 1e10,  # initial value of the log-likelihood
+        inf: float = INF_,  # initial value of the log-likelihood
         err_max: float = 0.0000001,  # minimum value for the parameters
-        err: float = 0.1,  # noise for the initialization
+        err: float = ERR_,  # noise for the initialization
         num_realizations: int = 1,  # number of iterations with different random initialization
-        convergence_tol: float = 0.0001,  # tolerance for convergence
-        decision: int = 10,  # convergence parameter
+        convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
+        decision: int = DECISION_,  # convergence parameter
         max_iter: int = 500,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
         flag_conv: str = "log",  # flag to choose the convergence criterion
@@ -171,7 +172,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         if batch_size:
             if batch_size > self.N:
                 batch_size = min(5000, self.N)
-            np.random.seed(10)
+            np.random.seed(10)  # TODO: ask Martina why this seed
             subset_N = np.random.choice(
                 np.arange(self.N), size=batch_size, replace=False
             )
@@ -192,7 +193,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 SubsX = None
         logging.debug("batch_size: %s", batch_size)
 
-        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX # type: ignore
+        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX  # type: ignore
 
     def fit(
         self,
@@ -595,7 +596,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         low_values_indices = self.beta < self.err_max  # values are too low
         self.beta[low_values_indices] = 0.0  # and set to 0.
 
-        dist_beta = np.amax(abs(self.beta - self.beta_old)) # type: ignore
+        dist_beta = np.amax(abs(self.beta - self.beta_old))  # type: ignore
         self.beta_old = np.copy(self.beta)
 
         return dist_beta

@@ -18,6 +18,7 @@ from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import lambda_full
 from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 
 
 class CRep(ModelBase, ModelUpdateMixin):
@@ -27,12 +28,12 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def __init__(
         self,
-        inf: float = 1e10,  # initial value of the pseudo log-likelihood, aka, infinity
-        err_max: float = 1e-12,  # minimum value for the parameters
-        err: float = 0.1,  # noise for the initialization
+        inf: float = INF_,  # initial value of the pseudo log-likelihood, aka, infinity
+        err_max: float = ERR_MAX_,  # minimum value for the parameters
+        err: float = ERR_,  # noise for the initialization
         num_realizations: int = 5,  # number of iterations with different random initialization
-        convergence_tol: float = 1e-4,  # tolerance for convergence
-        decision: int = 10,  # convergence parameter
+        convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
+        decision: int = DECISION_,  # convergence parameter
         max_iter: int = 1000,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
         flag_conv: str = "log",  # flag to choose the convergence criterion
@@ -149,7 +150,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         undirected : bool
                     Flag to indicate if the graph is undirected.
         assortative : bool
-                    Flag to indicate if the graph is assortative.   
+                    Flag to indicate if the graph is assortative.
         constrained : bool
                     Flag to indicate if the model is constrained.
         mask : ndarray
@@ -316,7 +317,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         elif isinstance(data, skt.sptensor):
             subs_nz = data.subs
 
-        return E, data, data_T, data_T_vals, subs_nz # type: ignore
+        return E, data, data_T, data_T_vals, subs_nz  # type: ignore
 
     def compute_likelihood(self) -> float:
         """

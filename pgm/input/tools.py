@@ -488,12 +488,11 @@ def sp_uttkrp(
             # Select the appropriate slice of the membership matrix
             multiplier_u_v = v[subs[2], :] if m == 1 else u[subs[1], :]
             # Ensure that the membership matrix slice has the same data type as the values
-            multiplier_u_v = (multiplier_u_v.astype(
-                        copied_vals.dtype
-                    ) if temporal else multiplier_u_v)
+            multiplier_u_v = (
+                multiplier_u_v.astype(copied_vals.dtype) if temporal else multiplier_u_v
+            )
             # Multiply the values by the affinity tensor slice and the membership matrix slice
-            copied_vals *= (w_I * multiplier_u_v
-            ).sum(axis=1)
+            copied_vals *= (w_I * multiplier_u_v).sum(axis=1)
             # Update the output matrix with the weighted sum of the values
             out[:, k] += np.bincount(subs[m], weights=copied_vals, minlength=D)
 
@@ -588,8 +587,35 @@ def log_and_raise_error(error_type: Type[BaseException], message: str) -> None:
     raise error_type(message)
 
 
-def flt(x, d=3):
+def flt(x: float, d: int = 3) -> float:
     """
     Round a number to a specified number of decimal places.
+
+    Parameters
+    ----------
+    x : float
+        Number to be rounded.
+    d : int
+        Number of decimal places to round to.
+    Returns
+    -------
+    float
+        The input number rounded to the specified number of decimal places.
     """
     return round(x, d)
+
+
+def transpose_ij(M: np.ndarray) -> np.ndarray:
+    """
+    Compute the transpose of a matrix.
+
+    Parameters
+    ----------
+    M : ndarray
+        Numpy matrix.
+
+    Returns
+    -------
+    Transpose of the matrix.
+    """
+    return np.einsum("aij->aji", M)

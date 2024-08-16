@@ -124,7 +124,6 @@ class SyntheticDynCRep:
         # Set seed random number generator
         self.prng = np.random.RandomState(self.rseed)
         self.end_file = end_file
-        # self.undirected = undirected # TODO: let Hadiseh know that this is not used
         self.folder = folder
         # Set output flags
         self.output_parameters = output_parameters
@@ -244,7 +243,6 @@ class SyntheticDynCRep:
         G : networkx.classes.digraph.DiGraph
             NetworkX DiGraph object. Self-loops allowed.
         """
-
         # Latent variables
         if parameters is None:
             # Generate latent variables
@@ -631,7 +629,7 @@ def membership_vectors(
     prng: RandomState = RandomState(10),
     # TODO: change this to use random seeds instead of prng
     L1: bool = False,
-    eta_dir: float = 0.5,
+    eta: float = 0.5,
     alpha: float = 0.6,
     beta: float = 1,
     K: int = 2,
@@ -648,7 +646,7 @@ def membership_vectors(
         Random number generator container.
     L1 : bool
         Flag for parameter generation method. True for Dirichlet, False for Gamma.
-    eta_dir : float
+    eta : float
         Parameter for Dirichlet.
     alpha : float
         Parameter (alpha) for Gamma.
@@ -692,16 +690,11 @@ def membership_vectors(
     # Generate mixed communities if requested
     if over != 0.0:
         overlapping = int(N * over)  # number of nodes belonging to more communities
-        ind_over = prng.randint(
-            len(u), size=overlapping
-        )  # TODO: let Hadiseh know that no seed
-        # was fixed here
+        ind_over = prng.randint(len(u), size=overlapping)
         if L1:
-            u[ind_over] = prng.dirichlet(
-                eta_dir * np.ones(K), overlapping
-            )  # TODO: Ask Hadiseh  why eta is not defined. Answer: its probably eta_dir
+            u[ind_over] = prng.dirichlet(eta * np.ones(K), overlapping)
             v[ind_over] = corr * u[ind_over] + (1.0 - corr) * prng.dirichlet(
-                eta_dir * np.ones(K), overlapping  # pylint: disable=undefined-variable
+                eta * np.ones(K), overlapping  # pylint: disable=undefined-variable
             )
             if corr == 1.0:
                 assert np.allclose(u, v)

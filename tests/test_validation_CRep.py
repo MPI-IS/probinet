@@ -9,7 +9,7 @@ import yaml
 
 from pgm.input.loader import import_data
 from pgm.model.crep import CRep
-from pgm.output.evaluate import calculate_opt_func, PSloglikelihood
+from pgm.output.likelihood import calculate_opt_func, PSloglikelihood
 
 from .constants import DECIMAL
 from .fixtures import BaseTest, ModelTestMixin
@@ -64,7 +64,7 @@ class BaseTestCase(BaseTest, ModelTestMixin):
 
         self.conf = conf
 
-        self.model = CRep() # type: ignore
+        self.model = CRep()  # type: ignore
 
     # test case function to check the crep.set_name function
     def test_import_data(self):
@@ -148,4 +148,3 @@ class BaseTestCase(BaseTest, ModelTestMixin):
 
         # Check if psloglikelihood_result is a number
         self.assertIsInstance(psloglikelihood_result, float)
-

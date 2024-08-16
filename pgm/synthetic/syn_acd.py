@@ -20,33 +20,33 @@ EPS = 1e-12  # Small value to avoid division by zero
 
 
 class SyntNetAnomaly:
+    """
+    Class for generation and management of synthetic networks with anomalies.
+    """
 
     def __init__(
         self,
-        m=1,
-        N=100,
-        K=2,
-        rseed=10,
-        avg_degree=4.0,
-        rho_anomaly=0.1,
-        structure="assortative",
-        label=None,
-        #mu=None, # TODO: why are these parameters unused? Talk to Hadiseh
-        pi=0.8,
-        #rho_node=0.9,
-        #gamma=0.5,
-        eta=0.5,
-        L1=False,
-        ag=0.6,
-        bg=1.0,
-        corr=0.0,
-        over=0.0,
-        verbose=0,
-        folder="../../data/input",
-        output_parameters=False,
-        output_adj=False,
-        outfile_adj=None,
-    ):
+        m: int = 1,
+        N: int = 100,
+        K: int = 2,
+        rseed: int = 10,
+        avg_degree: float = 4.0,
+        rho_anomaly: float = 0.1,
+        structure: str = "assortative",
+        label: str = None,
+        pi: float = 0.8,
+        eta: float = 0.5,
+        L1: bool = False,
+        ag: float = 0.6,
+        bg: float = 1.0,
+        corr: float = 0.0,
+        over: float = 0.0,
+        verbose: int = 0,
+        folder: str = "",
+        output_parameters: bool = False,
+        output_adj: bool = False,
+        outfile_adj: str = None,
+    ) -> None:
 
         # Set network size (node number)
         self.N = N
@@ -88,9 +88,11 @@ class SyntNetAnomaly:
         if pi < 0 or pi > 1:
             # If not, raise a ValueError with a descriptive message
             raise ValueError("The Binomial parameter pi has to be in [0, 1]!")
+
         # If pi is exactly 1, subtract a very small value to avoid issues with calculations
         if np.isclose(pi, 1, atol=EPS):
             pi = 1 - EPS
+
         # If pi is exactly 0, add a very small value to avoid issues with calculations
         if np.isclose(pi, 0, atol=EPS):
             pi = EPS
@@ -180,10 +182,6 @@ class SyntNetAnomaly:
         G : Digraph
             DiGraph NetworkX object. Self-loops allowed.
         """
-
-        # Set seed random number generator
-        #prng = np.random.RandomState(self.prng)
-
         ### Latent variables
         parameters = parameters if parameters else self._generate_lv()
         self.z, self.u, self.v, self.w = parameters

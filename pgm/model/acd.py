@@ -18,6 +18,7 @@ from pgm.input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative,
     transpose_tensor)
 from pgm.model.base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from pgm.model.constants import INF_
 from pgm.output.evaluate import lambda_full
 
 EPS = 1e-12
@@ -26,7 +27,7 @@ EPS = 1e-12
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def __init__(
         self,
-        inf: float = 1e10,
+        inf: float = INF_,
         err_max: float = 1e-8,
         err: float = 0.01,
         num_realizations: int = 1,
@@ -161,18 +162,18 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self,
         data: Union[skt.sptensor, skt.dtensor],
         nodes: List[int],
-        K: int,
-        undirected: bool,
-        initialization: int,
-        assortative: bool,
-        constrained: bool,
-        ag: float,
-        bg: float,
-        pibr0: float,
-        mupr0: float,
-        flag_anomaly: bool,
-        fix_pibr: bool,
-        fix_mupr: bool,
+        ag: float = 1.5,
+        bg: float = 10.0,
+        pibr0: Optional[float] = None,
+        mupr0: Optional[float] = None,
+        flag_anomaly: bool = True,
+        fix_pibr: bool = False,
+        fix_mupr: bool = False,
+        K: int = 3,
+        undirected: bool = False,
+        initialization: int = 0,
+        assortative: bool = True,
+        constrained: bool = False,
         mask: Optional[np.ndarray] = None,
         rseed: int = 10,
         **extra_params: Unpack[ModelFitParameters],
@@ -184,6 +185,8 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         ----------
         data : ndarray/sptensor
                Graph adjacency tensor.
+        data_T: None/sptensor
+                Graph adjacency tensor (transpose).
         nodes : list
                 List of nodes IDs.
         K : int
@@ -365,7 +368,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             subs_nz_mask = mask.nonzero()
         else:
             subs_nz_mask = None
-        return data, data_T, data_T_vals, subs_nz, subs_nz_mask # type: ignore
+        return data, data_T, data_T_vals, subs_nz, subs_nz_mask  # type: ignore
 
     def _initialize(self):
         """
@@ -393,8 +396,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.theta = np.load(self.files, allow_pickle=True)
             super()._initialize_u()
             super()._initialize_v()
-            self._randomize_w()  # TODO: Check with Hadiseh why this is not using the
-            # input file
+            self._randomize_w()
 
     def _randomize_pibr(self):
         """
@@ -408,7 +410,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
         self.mupr = self.rng.random_sample(1)[0]
 
-    def _initialize_w( # type: ignore
+    def _initialize_w(  # type: ignore
         self, infile_name: str
     ) -> None:  # TODO: Is this method needed? It seems
         # like it should but it is not used anywhere
@@ -693,7 +695,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.pibr = Adata / self.Qij_dense[subs_nz_mask].sum()
 
         dist_pibr = abs(self.pibr - self.pibr_old)
-        self.pibr_old = np.copy(self.pibr) # type: ignore
+        self.pibr_old = np.copy(self.pibr)  # type: ignore
 
         return dist_pibr
 
@@ -729,7 +731,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.mupr = self.Qij_dense[subs_nz_mask].sum() / (self.N * (self.N - 1))
 
         dist_mupr = abs(self.pibr - self.mupr_old)
-        self.mupr_old = np.copy(self.mupr) # type: ignore
+        self.mupr_old = np.copy(self.mupr)  # type: ignore
 
         return dist_mupr
 
@@ -919,47 +921,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.w[Zk == 0] = 0
         self.w[non_zeros] /= Zk[non_zeros]
 
-    def _update_membership_Qd(
-        self,
-        subs_nz: Tuple[np.ndarray],
-        u: np.ndarray,
-        v: np.ndarray,
-        w: np.ndarray,
-        m: int,
-    ) -> np.ndarray:
-        """
-        Return the Khatri-Rao product (sparse version) used in the update of the membership matrices.
-
-        Parameters
-        ----------
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
-        m : int
-            Mode in which the Khatri-Rao product of the membership matrix is multiplied with the tensor: if 1 it
-            works with the matrix u; if 2 it works with v.
-
-        Returns
-        -------
-        uttkrp_DK : ndarray
-                    Matrix which is the result of the matrix product of the unfolding of the tensor and the
-                    Khatri-Rao product of the membership matrix.
-        """
-
-        if not self.assortative:
-            uttkrp_DK = sp_uttkrp((1 - self.Qij), subs_nz, m, u, v, w) # type: ignore # TODO: Ask
-            # Hadiseh about the existence of this
-        else:
-            uttkrp_DK = sp_uttkrp_assortative((1 - self.Qij), subs_nz, m, u, v, w) # type: ignore # TODO: Ask
-            # Hadiseh about the existence of this
-
-        return uttkrp_DK
-
     def _update_membership(
         self,
         subs_nz: Tuple[np.ndarray],
@@ -1124,8 +1085,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
             if np.isnan(l):
                 log_and_raise_error(ValueError, "ELBO is NaN!")
-            else:
-                return l
+            return l
 
     def _log_realization_info(
         self,

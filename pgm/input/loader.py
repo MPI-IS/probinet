@@ -24,6 +24,7 @@ def import_data(
     force_dense: bool = True,
     undirected=False,
     noselfloop=True,
+    sep="\\s+",
     binary=True,
     header: Optional[int] = None,
 ) -> Tuple[List, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
@@ -45,7 +46,9 @@ def import_data(
     undirected : bool
                     If set to True, the algorithm considers an undirected graph.
     noselfloop : bool
-                If set to True, the algorithm removes the self-loops.   
+                If set to True, the algorithm removes the self-loops.
+    sep : str
+            Separator to use when reading the dataset.
     binary : bool
                 If set to True, the algorithm reads the graph with binary edges.
     header : int
@@ -64,7 +67,7 @@ def import_data(
     """
 
     # Read adjacency file
-    df_adj = pd.read_csv(dataset, sep="\\s+", header=header)
+    df_adj = pd.read_csv(dataset, sep=sep, header=header)
     logging.debug(
         "Read adjacency file from %s. The shape of the data is %s.",
         dataset,
@@ -156,7 +159,7 @@ def import_data_mtcov(
         try:
             # Try to treat in_folder as a package data path
             return files(in_folder)
-        except (ModuleNotFoundError, FileNotFoundError):
+        except (ModuleNotFoundError, FileNotFoundError, TypeError):
             # If that fails, treat in_folder as a file path
             return Path(in_folder)
 

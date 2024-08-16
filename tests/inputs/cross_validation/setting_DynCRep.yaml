@@ -1,0 +1,34 @@
+parameters:
+  K: [4]
+  T: [5]
+  ag: [1.1]
+  bg: [0.5]
+  eta0: [0.2]
+  flag_data_T: [0]
+  beta0: [0.2]
+  rseed: [100]
+  fix_eta: [False]
+  fix_beta: [False]
+  fix_communities: [False]
+  fix_w: [False]
+  assortative: [False]
+  constrained: [False]
+  constraintU: [False]
+  undirected: [False]
+  temporal: [True]
+  initialization: [0]
+  out_inference: [False]
+  out_folder: ""
+  end_file: ["_DynCRep"]
+  files: ["config/data/input/theta_gt111.npz"]
+input_params:
+  in_folder: "pgm/data/input/"
+  adj: "email-Eu-core.csv"
+  ego: "source"
+  alter: "target"
+  sep: ","
+  NFold: 2
+  out_results: True
+  out_mask: False
+output_file: "email-Eu-core_cv.csv"
+ground_truth_file: "email-Eu-core_cv_GT_DynCRep.csv"
