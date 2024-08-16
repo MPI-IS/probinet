@@ -44,6 +44,58 @@ def calculate_AUC(
 
     return metrics.auc(fpr, tpr)
 
+def calculate_AUC_mtcov(B, u, v, w, mask=None):
+    """
+        Return the AUC of the link prediction. It represents the probability that a randomly chosen missing connection
+        (true positive) is given a higher score by our method than a randomly chosen pair of unconnected vertices
+        (true negative).
+
+        Parameters
+        ----------
+        B : ndarray
+            Graph adjacency tensor.
+        u : ndarray
+            Membership matrix (out-degree).
+        v : ndarray
+            Membership matrix (in-degree).
+        w : ndarray
+            Affinity tensor.
+        mask : ndarray
+               Mask for selecting a subset of the adjacency tensor.
+
+        Returns
+        -------
+        AUC : float
+              AUC value.
+    """
+
+    M = expected_Aija_mtcov(u, v, w)
+
+    if mask is None:
+        R = list(zip(M.flatten(), B.flatten()))
+        Pos = B.sum()
+    else:
+        R = list(zip(M[mask > 0], B[mask > 0]))
+        Pos = B[mask > 0].sum()
+
+    R.sort(key=lambda x: x[0], reverse=False)
+    R_length = len(R)
+    Neg = R_length - Pos
+
+    return fAUC(R, Pos, Neg)
+
+def fAUC(R, Pos, Neg):
+    y = 0.
+    bad = 0.
+    for m, a in R:
+        if (a > 0):
+            y += 1
+        else:
+            bad += y
+
+    AUC = 1. - (bad / (Pos * Neg))
+    return AUC
+
 
 def calculate_AUC_mtcov(
     B: np.ndarray,
@@ -261,21 +313,21 @@ def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
 
 def _lambda0_full_dyncrep(u, v, w):
     """
-    Compute the mean lambda0 for all entries.
+        Compute the mean lambda0 for all entries.
 
-    Parameters
-    ----------
-    u : ndarray
-        Out-going membership matrix.
-    v : ndarray
-        In-coming membership matrix.
-    w : ndarray
-        Affinity tensor.
+        Parameters
+        ----------
+        u : ndarray
+            Out-going membership matrix.
+        v : ndarray
+            In-coming membership matrix.
+        w : ndarray
+            Affinity tensor.
 
-    Returns
-    -------
-    M : ndarray
-        Mean lambda0 for all entries.
+        Returns
+        -------
+        M : ndarray
+            Mean lambda0 for all entries.
     """
 
     if w.ndim == 2:
@@ -359,6 +411,10 @@ def expected_Aija_mtcov(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarr
     M = np.einsum("ijkq,akq->aij", M, w)
     return M
 
+def expected_Aija_mtcov(u, v, w):
+    M = np.einsum('ik,jq->ijkq', u, v)
+    M = np.einsum('ijkq,akq->aij', M, w)
+    return M
 
 def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> list:
     """
@@ -485,7 +541,6 @@ def expected_computation(
         np.fill_diagonal(M_conditional[layer], 0.0)
 
     return M_marginal, M_conditional
-
 
 def CalculatePermutation(U_infer: np.ndarray, U0: np.ndarray) -> np.ndarray:
     """

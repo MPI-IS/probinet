@@ -1,7 +1,3 @@
-K: 2
-gamma: 0.5
-rseed: 107261
-initialization: 0
 out_inference: True
 out_folder: "outputs/"
 end_file: "_MTCOV"

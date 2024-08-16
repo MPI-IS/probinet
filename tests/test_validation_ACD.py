@@ -131,15 +131,6 @@ class ACDTestCase(BaseTest):
             plot_loglik=True, num_realizations=1, convergence_tol=0.1
         )
 
-        extra_params = {
-            "fix_communities": False,
-            "files": (self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
-            "out_inference": True,
-            "out_folder": self.folder,
-            "end_file": ("_OUT_" + self.algorithm),
-            "verbose": 1,
-        }
-
         u, v, w, pi, mu, maxL = model.fit(
             data=self.B_train,
             nodes=self.nodes,
@@ -157,7 +148,11 @@ class ACDTestCase(BaseTest):
             fix_mupr=False,
             mask=self.mask_input,
             rseed=self.rseed,
-            **extra_params,
+            fix_communities=False,
+            out_inference=True,
+            out_folder=  self.folder,
+            end_file =  ("_OUT_" + self.algorithm),
+            files = (self.data_path / str("theta_" + self.label)).with_suffix(".npz")
         )
 
         # Define the path to the data file
@@ -177,7 +172,7 @@ class ACDTestCase(BaseTest):
         )
 
         # Load the data from the file
-        path = Path(self.folder) / str("theta" + extra_params["end_file"])
+        path = Path(self.folder) / str("theta_OUT_" + self.algorithm)
         theta = np.load(path.with_suffix(".npz"))
         self.assertTrue(
             all(key in theta for key in self.keys_in_thetaGT[1:]),
@@ -197,15 +192,7 @@ class ACDTestCase(BaseTest):
         model = AnomalyDetection(
             plot_loglik=True, num_realizations=1, convergence_tol=0.1
         )
-        extra_params = {
-            "fix_communities": False,
-            "in_parameters": (self.data_path / str("theta_" + self.label)).with_suffix(
-                ".npz"
-            ),
-            "out_inference": False,
-            "end_file": self.label,
-            "verbose": 1,
-        }
+
         u, v, w, pi, mu, maxL = model.fit(
             data=self.B_train,
             nodes=self.nodes,
@@ -223,7 +210,11 @@ class ACDTestCase(BaseTest):
             fix_mupr=False,
             mask=self.mask_input,
             rseed=self.rseed,
-            **extra_params,
+            fix_communities=False,
+            out_inference=True,
+            out_folder=self.folder,
+            end_file=("_OUT_" + self.algorithm),
+            files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz")
         )
         # Define the path to the data file
         data_file_path = (
@@ -255,15 +246,7 @@ class ACDTestCase(BaseTest):
         model = AnomalyDetection(
             plot_loglik=True, num_realizations=1, convergence_tol=0.1
         )
-        extra_params = {
-            "fix_communities": False,
-            "files": (self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
-            # "fix_pibr": False,
-            # "fix_mupr": False,
-            "out_inference": False,
-            "end_file": self.label,
-            "verbose": 1,
-        }
+
         u, v, w, pi, mu, maxL = model.fit(
             data=self.B_train,
             nodes=self.nodes,
@@ -281,7 +264,10 @@ class ACDTestCase(BaseTest):
             fix_mupr=True,
             mask=self.mask_input,
             rseed=self.rseed,
-            **extra_params,
+            fix_communities=False,
+            out_inference=False,
+            end_file=self.label,
+            files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
         )
 
         # Define the path to the data file

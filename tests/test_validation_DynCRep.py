@@ -10,7 +10,7 @@ from pgm.input.tools import flt, transpose_tensor
 from pgm.model.dyncrep import DynCRep
 from pgm.output.evaluate import calculate_AUC, expected_Aija
 
-from .constants import TOLERANCE_2
+from .constants import PATH_FOR_INIT, TOLERANCE_2
 from .fixtures import BaseTest
 
 
@@ -40,22 +40,46 @@ class DynCRepTestCase(BaseTest):
         self.N = len(self.nodes)
         self.T = self.B.shape[0] - 1
 
-    def test_running_temporal_version(self):
+    def assert_model_results_from_yaml(self, u, v, w, eta, beta, Loglikelihood, M_inf, B,
+                                       yaml_file):
+        with open(yaml_file, "r") as f:
+            expected_values = yaml.safe_load(f)
 
+        # Assertions for u
+        self.assertEqual(list(u.shape), expected_values["u"]["shape"])
+        self.assertAlmostEqual(np.sum(u), expected_values["u"]["sum"], places=3)
+
+        # Assertions for v
+        self.assertEqual(list(v.shape), expected_values["v"]["shape"])
+        self.assertAlmostEqual(np.sum(v), expected_values["v"]["sum"], places=3)
+
+        # Assertions for w
+        self.assertEqual(list(w.shape), expected_values["w"]["shape"])
+        self.assertAlmostEqual(np.sum(w), expected_values["w"]["sum"], places=3)
+
+        # Assertions for eta and beta
+        self.assertAlmostEqual(eta, expected_values["eta"], places=3)
+        self.assertAlmostEqual(beta, expected_values["beta"], places=3)
+
+        # Assertions for Loglikelihood
+        self.assertAlmostEqual(Loglikelihood, expected_values["Loglikelihood"], places=3)
+
+        # Assertions for AUC
+        expected_aucs = expected_values["AUC"]
+        for l in range(len(expected_aucs)):
+            auc = flt(calculate_AUC(M_inf[l], B[l].astype("int")))
+            self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
+
+    def test_running_temporal_version(self):
         # Setting to run the algorithm
-        with (
-            files("pgm.data.model")
-            .joinpath("setting_" + self.algorithm + ".yaml")
-            .open("rb") as fp
-        ):
+        with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
             conf = yaml.safe_load(fp)
 
         # Update the configuration with the specific parameters for this test
         conf["K"] = self.K
         conf["initialization"] = 1
-        # Saving the outputs of the tests into the temp folder created in the BaseTest
         conf["out_folder"] = self.folder
-        conf["end_file"] = "_OUT_DynCRep"  # Adding a suffix to the output files
+        conf["end_file"] = "_OUT_DynCRep"
         conf["files"] = self.data_path / ("theta_" + self.label)
         conf["constrained"] = False
         conf["undirected"] = False
@@ -64,11 +88,7 @@ class DynCRepTestCase(BaseTest):
         self.conf = conf
 
         # Create an instance of the DynCRep model
-        model = DynCRep(
-            max_iter=800,
-            num_realizations=1,
-            plot_loglik=True,
-        )
+        model = DynCRep(max_iter=800, num_realizations=1, plot_loglik=True)
 
         # Fit the model to the data
         u, v, w, eta, beta, Loglikelihood = model.fit(
@@ -81,33 +101,11 @@ class DynCRepTestCase(BaseTest):
             **self.conf,
         )
 
-        # Add your assertions here
-        self.assertEqual(u.shape, (100, 2))
-        self.assertAlmostEqual(np.sum(u), 40.00025694829692, places=3)
-
-        # Assertions for v
-        self.assertEqual(v.shape, (100, 2))
-        self.assertAlmostEqual(np.sum(v), 40.001933007145794, places=3)
-
-        # Assertions for w
-        self.assertEqual(w.shape, (5, 2, 2))
-        self.assertAlmostEqual(np.sum(w), 3.0039155951245258, places=3)
-
-        # Assertions for eta and beta
-        self.assertAlmostEqual(eta, 0.21687084165382248, places=3)
-        self.assertAlmostEqual(beta, 0.20967743180393628, places=3)
-
-        # Assertions for Loglikelihood
-        self.assertAlmostEqual(Loglikelihood, -2872.6923935067616, places=3)
-
-        # Assertions for AUC
-        expected_aucs = [0.811, 0.829, 0.841, 0.842, 0.843]
-
         # Calculate the lambda_inf and M_inf
         lambda_inf = expected_Aija(u, v, w[0])
         M_inf = lambda_inf + eta * transpose_tensor(self.B)
 
-        # Calculate the AUC for each layer
-        for l in range(model.T + 1):
-            auc = flt(calculate_AUC(M_inf[l], self.B[l].astype("int")))
-            self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
+        # Load expected values from YAML and assert results
+        yaml_file = Path(__file__).parent / "data" / "dyncrep" / "data_for_test_running_temporal_version.yaml"
+        self.assert_model_results_from_yaml(u, v, w, eta, beta, Loglikelihood, M_inf, self.B,
+                                            yaml_file)

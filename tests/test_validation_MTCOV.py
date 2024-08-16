@@ -1,4 +1,3 @@
-from importlib.resources import files
 from pathlib import Path
 
 import numpy as np
@@ -51,11 +50,7 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
 
         self.Xs = np.array(self.X)
 
-        with (
-            files("pgm.data.model")
-            .joinpath("setting_" + self.algorithm + ".yaml")
-            .open("rb") as fp
-        ):
+        with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
             self.conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
@@ -64,6 +59,8 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         self.conf["end_file"] = (
             "_OUT_" + self.algorithm
         )  # Adding a suffix to the output files
+
+        self.files = PATH_FOR_INIT / "theta_GT_MTCOV_for_initialization.npz"
 
         self.model = MTCOV()
 
@@ -82,7 +79,6 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         _ = self.model.fit(
             data=self.B,
             data_X=self.Xs,
-            flag_conv=self.flag_conv,
             nodes=self.nodes,
             batch_size=self.batch_size,
             **conf,

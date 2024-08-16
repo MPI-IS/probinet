@@ -11,13 +11,12 @@ import numpy as np
 from scipy.optimize import brentq, root
 from sktensor import dtensor, sptensor
 import sktensor as skt
-from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import func_lagrange_multiplier, lambda_full, u_with_lagrange_multiplier
-from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .base import ModelBase, ModelUpdateMixin
 from .constants import CONVERGENCE_TOL_, DECISION_, EPS_, ERR_MAX_, INF_
 
 
@@ -70,8 +69,16 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         beta0: float,
         ag: float,
         bg: float,
+        temporal: bool,
         flag_data_T: int,
-        **extra_params: Unpack[ModelFitParameters],
+        fix_communities: bool,
+        fix_w: bool,
+        fix_eta: bool,
+        fix_beta: bool,
+        out_inference: bool,
+        out_folder: str,
+        end_file: str,
+        files: str,
     ) -> None:
         message = (
             "The initialization parameter can be either 0, or 1.  It is used as an "
@@ -79,16 +86,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             "matrix w. If it is 0, they will be generated randomly, otherwise they will  "
             "upload from file."
         )  # TODO: Update this message
-        available_extra_params = [
-            "fix_eta",
-            "fix_beta",
-            "fix_w",
-            "fix_communities",
-            "files",
-            "out_inference",
-            "out_folder",
-            "end_file",
-        ]
 
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
@@ -97,13 +94,19 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             assortative,
             data,
             K,
-            available_extra_params,
             data_X=None,
             gamma=None,
             beta0=beta0,
             eta0=eta0,
             message=message,
-            **extra_params,
+            fix_eta=fix_eta,
+            fix_beta=fix_beta,
+            fix_w=fix_w,
+            fix_communities=fix_communities,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            files=files
         )
 
         self.constrained = constrained  # if True, use the configuration with constraints on the updates
@@ -111,6 +114,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self.ag = ag  # shape of gamma prior
         self.bg = bg  # rate of gamma prior
         self.beta0 = beta0
+        self.temporal = temporal
 
         if flag_data_T not in [0, 1]:
             log_and_raise_error(ValueError, "flag_data_T has to be either 0 or 1!")
@@ -146,24 +150,38 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
     def fit(
-        self,
-        data: Union[np.ndarray, skt.sptensor],
-        T: int,
-        nodes: List[int],
-        mask: Optional[np.ndarray] = None,
-        K: int = 2,
-        rseed: int = 0,
-        ag: float = 1.0,
-        bg: float = 0.5,
-        flag_data_T: int = 0,
-        temporal: bool = True,
-        **extra_params: Unpack[ModelFitParameters],
+            self,
+            data: Union[np.ndarray, skt.sptensor],
+            T: int,
+            nodes: List[int],
+            mask: Optional[np.ndarray] = None,
+            K: int = 2,
+            rseed: int = 0,
+            ag: float = 1.0,
+            bg: float = 0.5,
+            eta0: Optional[float] = None,
+            beta0: float = 0.25,
+            flag_data_T: int = 0,
+            temporal: bool = True,
+            initialization: int = 0,
+            assortative: bool = False,
+            constrained: bool = False,
+            constraintU: bool = False,
+            fix_eta: bool = False,
+            fix_beta: bool = False,
+            fix_communities: bool = False,
+            fix_w: bool = False,
+            undirected: bool = False,
+            out_inference: bool = True,
+            out_folder: str = "outputs/",
+            end_file: str = "_DynCRep",
+            files: str = ""
     ) -> Tuple[
-        np.ndarray[Any, np.dtype[np.float64]],
-        np.ndarray[Any, np.dtype[np.float64]],
-        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
         float,
-        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray,
         float,
     ]:
         """
@@ -172,43 +190,73 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : ndarray or sptensor
-               Graph adjacency tensor.
+        data : Union[np.ndarray, skt.sptensor]
+            Graph adjacency tensor.
         T : int
             Number of time steps.
-        nodes : list of int
-                List of node IDs.
-        mask : ndarray, optional
-               Mask for selecting the held-out set in the adjacency tensor in case of cross-validation.
-        K : int, default 2
-            Number of communities.
-        rseed : int, default 0
-                Random seed.
-        ag : float, default 1.0
-             Shape of gamma prior.
-        bg : float, default 0.5
-             Rate of gamma prior.
-        flag_data_T : int, default 0
-                      Flag to determine which log-likelihood function to use.
-        temporal : bool, default True
-                   Flag to determine if the function should behave in a temporal manner.
-        extra_params : dict
-                        Additional parameters for fitting the model.
+        nodes : List[int]
+            List of node IDs.
+        mask : Optional[np.ndarray], optional
+            Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
+        K : int, optional
+            Number of communities, by default 2.
+        rseed : int, optional
+            Random seed, by default 0.
+        ag : float, optional
+            Shape of gamma prior, by default 1.0.
+        bg : float, optional
+            Rate of gamma prior, by default 0.5.
+        eta0 : Optional[float], optional
+            Initial value of the reciprocity coefficient, by default None.
+        beta0 : float, optional
+            Initial value of the beta parameter, by default 0.25.
+        flag_data_T : int, optional
+            Flag to determine which log-likelihood function to use, by default 0.
+        temporal : bool, optional
+            Flag to determine if the function should behave in a temporal manner, by default True.
+        initialization : int, optional
+            Initialization method for the model parameters, by default 0.
+        assortative : bool, optional
+            Flag to indicate if the graph is assortative, by default False.
+        constrained : bool, optional
+            Flag to indicate if the model is constrained, by default False.
+        constraintU : bool, optional
+            Flag to indicate if there is a constraint on U, by default False.
+        fix_eta : bool, optional
+            Flag to indicate if the eta parameter should be fixed, by default False.
+        fix_beta : bool, optional
+            Flag to indicate if the beta parameter should be fixed, by default False.
+        fix_communities : bool, optional
+            Flag to indicate if the communities should be fixed, by default False.
+        fix_w : bool, optional
+            Flag to indicate if the w parameter should be fixed, by default False.
+        undirected : bool, optional
+            Flag to indicate if the graph is undirected, by default False.
+        out_inference : bool, optional
+            Flag to indicate if inference results should be output, by default True.
+        out_folder : str, optional
+            Output folder for inference results, by default "outputs/".
+        end_file : str, optional
+            Suffix for the output file, by default "_DynCRep".
+        files : str, optional
+            Path to the file for initialization, by default "".
 
         Returns
         -------
-        u_f : ndarray
-              Out-going membership matrix.
-        v_f : ndarray
-              In-coming membership matrix.
-        w_f : ndarray
-              Affinity tensor.
-        eta_f : float
+        Tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray, float]
+            A tuple containing:
+            - u_f : np.ndarray
+                Out-going membership matrix.
+            - v_f : np.ndarray
+                In-coming membership matrix.
+            - w_f : np.ndarray
+                Affinity tensor.
+            - eta_f : float
                 Reciprocity coefficient.
-        maxL : float
-               Maximum pseudo log-likelihood.
-        final_it : int
-                   Total number of iterations.
+            - beta_f : np.ndarray
+                Beta parameter.
+            - maxL : float
+                Maximum pseudo log-likelihood.
         """
         # Check the parameters for fitting the model
         self.check_fit_params(
@@ -217,9 +265,23 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             ag=ag,
             bg=bg,
             flag_data_T=flag_data_T,
-            **extra_params,
-        )  # TODO: fix missing positional arguments after
-        # change in extra_params
+            eta0=eta0,
+            beta0=beta0,
+            temporal = temporal,
+            initialization = initialization,
+            assortative = assortative,
+            constrained = constrained,
+            constraintU = constraintU,
+            fix_eta = fix_eta,
+            fix_beta = fix_beta,
+            fix_communities = fix_communities,
+            fix_w = fix_w,
+            undirected = undirected,
+            out_inference = out_inference,
+            out_folder = out_folder,
+            end_file = end_file,
+            files = files
+        )
 
         # Set the random seed
         logging.debug("Fixing random seed to: %s", rseed)

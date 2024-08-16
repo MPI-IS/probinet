@@ -161,6 +161,9 @@ class DynCRepCrossValidation(CrossValidation):
         """
         Run the cross-validation procedure.
         """
+        # Set up logging
+        logging.basicConfig(level=logging.DEBUG)
+
         # Set up output directory
         self.prepare_output_directory()
 

@@ -11,12 +11,11 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 import scipy.sparse
 import sktensor as skt
-from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import lambda_full
-from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .base import ModelBase, ModelUpdateMixin
 from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, INF_
 
 
@@ -37,8 +36,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         max_iter: int = 500,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
         flag_conv: str = "log",  # flag to choose the convergence criterion
-    ) -> None:
-
+        ):
         super().__init__(
             inf,
             err_max,
@@ -65,7 +63,10 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         data: Union[skt.dtensor, skt.sptensor, np.ndarray],
         data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
         K: int,
-        **extra_params: Unpack[ModelFitParameters],
+        out_inference: bool,
+        out_folder: str,
+        end_file: str,
+        files: str,
     ) -> None:
 
         message = (
@@ -73,12 +74,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             "initialize the membership matrices u and v and the affinity matrix w. If it is 0, they "
             "will be generated randomly, otherwise they will upload from file."
         )
-        available_extra_params = [
-            "files",
-            "out_inference",
-            "out_folder",
-            "end_file",
-        ]
+
 
         super()._check_fit_params(
             initialization,
@@ -86,13 +82,15 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             assortative,
             data,
             K,
-            available_extra_params,
             data_X,
             eta0=None,
             beta0=None,
             gamma=gamma,
             message=message,
-            **extra_params,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            files=files,
         )
 
         # Parameters for the initialization of the model
@@ -108,6 +106,158 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             dfB = self.theta["beta"]
             self.Z = dfB.shape[1]
             assert self.K == dfU.shape[1] == dfB.shape[0]
+
+
+
+    def fit(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_X: np.ndarray,
+        nodes: List[Any],
+        batch_size: Optional[int] = None,
+        gamma: float = 0.5,
+        rseed: int = 107261,#0,
+        K: int = 2,#3
+        initialization: int = 0,
+        undirected: bool = False,
+        assortative: bool = False,
+        out_inference: bool = True,
+        out_folder: str = "outputs/",
+        end_file: str = "_JointCRep",
+        files: str = ""
+
+    ) -> tuple[
+        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray[Any, np.dtype[np.float64]],
+        np.ndarray[Any, np.dtype[np.float64]],
+        float,
+    ]:
+        """
+        Perform community detection in multilayer networks considering both the topology of interactions and node
+        attributes via EM updates. Save the membership matrices U and V, the affinity tensor W, and the beta matrix.
+
+        Parameters
+        ----------
+        data : Union[skt.dtensor, skt.sptensor]
+            Graph adjacency tensor.
+        data_X : np.ndarray
+            Object representing the one-hot encoding version of the design matrix.
+        nodes : List[Any]
+            List of node IDs.
+        batch_size : Optional[int], optional
+            Size of the subset of nodes to compute the likelihood with, by default None.
+        gamma : float, optional
+            Weight of the node attributes, by default 0.5.
+        rseed : int, optional
+            Random seed, by default 107261.
+        K : int, optional
+            Number of communities, by default 2.
+        initialization : int, optional
+            If 0, the membership matrices u and v and the affinity matrix w are generated randomly; if 1, they are uploaded from file, by default 0.
+        undirected : bool, optional
+            If True, the model is undirected, by default False.
+        assortative : bool, optional
+            If True, the model is assortative, by default False.
+        out_inference : bool, optional
+            If True, output inference results, by default True.
+        out_folder : str, optional
+            Output folder for inference results, by default "outputs/".
+        end_file : str, optional
+            Suffix for the output file, by default "_JointCRep".
+        files : str, optional
+            Path to the file for initialization, by default "".
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]
+            A tuple containing:
+            - u_f : np.ndarray
+                Membership matrix (out-degree).
+            - v_f : np.ndarray
+                Membership matrix (in-degree).
+            - w_f : np.ndarray
+                Affinity tensor.
+            - beta_f : np.ndarray
+                Beta parameter matrix.
+            - maxL : float
+                Maximum log-likelihood value.
+        """
+        # Check the parameters for fitting the model
+        self.check_fit_params(
+            data=data,
+            data_X=data_X,
+            K=K,
+            initialization=initialization,
+            gamma=gamma,
+            undirected=undirected,
+            assortative=assortative,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            files=files,
+        )
+        # Set the random seed
+        self.rseed = rseed
+        logging.debug("Fixing random seed to: %s", self.rseed)
+        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
+
+        # Initialize the fit parameters
+        self.initialization = initialization
+        maxL = -self.inf  # initialization of the maximum log-likelihood
+        self.nodes = nodes
+
+        # Preprocess the data for fitting the model
+        data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX = (
+            self.preprocess_data_for_fit(data, data_X, batch_size)
+        )
+
+        # Set the preprocessed data and other related variables as attributes of the class instance
+        self.data = data
+        self.data_X = data_X
+        self.subs_nz = subs_nz
+        self.subs_X_nz = subs_X_nz
+        self.batch_size = batch_size
+        self.subset_N = subset_N
+        self.Subs = Subs
+        self.SubsX = SubsX
+
+        # The following part of the code is responsible for running the Expectation-Maximization
+        # (EM)  algorithm for a specified number of realizations (self.num_realizations):
+        for r in range(self.num_realizations):
+
+            # Initialize the parameters for the current realization
+            coincide, convergence, it, loglik, loglik_values = (
+                self._initialize_realization()
+            )
+
+            # Update the parameters for the current realization
+            it, loglik, coincide, convergence, loglik_values = self._update_realization(
+                r, it, loglik, coincide, convergence, loglik_values
+            )
+
+            # If the current log-likelihood is greater than the maximum log-likelihood so far,
+            # update the optimal parameters and the maximum log-likelihood
+            if maxL < loglik:
+                super()._update_optimal_parameters()
+                self.maxL = loglik
+                self.final_it = it
+                conv = convergence
+                self.best_r = r
+                if self.flag_conv == "log":
+                    best_loglik_values = list(loglik_values)
+            # Log the current realization number, log-likelihood, number of iterations, and elapsed time
+            self._log_realization_info(
+                r, loglik, self.final_it, self.time_start, convergence
+            )
+
+        # End cycle over realizations
+
+        # Evaluate the results of the fitting process
+        self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
+
+        # Return the final parameters and the maximum log-likelihood
+        return self.u_f, self.v_f, self.w_f, self.beta_f, self.maxL
 
     def preprocess_data_for_fit(
         self,
@@ -172,7 +322,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         if batch_size:
             if batch_size > self.N:
                 batch_size = min(5000, self.N)
-            np.random.seed(10)  # TODO: ask Martina why this seed
+            np.random.seed(10) # TODO: ask Martina why this seed
             subset_N = np.random.choice(
                 np.arange(self.N), size=batch_size, replace=False
             )
@@ -193,147 +343,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 SubsX = None
         logging.debug("batch_size: %s", batch_size)
 
-        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX  # type: ignore
-
-    def fit(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_X: np.ndarray,
-        nodes: List[Any],
-        flag_conv: str = "log",
-        batch_size: Optional[int] = None,
-        gamma: float = 0.5,
-        rseed: int = 0,
-        K: int = 3,
-        initialization: int = 0,
-        undirected: bool = False,
-        assortative: bool = True,
-        **extra_params: Unpack[ModelFitParameters],
-    ) -> tuple[
-        np.ndarray[Any, np.dtype[np.float64]],
-        np.ndarray[Any, np.dtype[np.float64]],
-        np.ndarray[Any, np.dtype[np.float64]],
-        np.ndarray[Any, np.dtype[np.float64]],
-        float,
-    ]:
-        """
-        Performing community detection in multilayer networks considering both the topology of interactions and node
-        attributes via EM updates.
-        Save the membership matrices U and V, the affinity tensor W and the beta matrix.
-
-        Parameters
-        ----------
-        data : ndarray/sptensor
-               Graph adjacency tensor.
-        data_X : ndarray
-                 Object representing the one-hot encoding version of the design matrix.
-        flag_conv : str
-                    If 'log' the convergence is based on the loglikelihood values; if 'deltas' the convergence is
-                    based on the differences in the parameters values. The latter is suggested when the dataset
-                    is big (N > 1000 ca.).
-        nodes : list
-                List of nodes IDs.
-        batch_size : int/None
-                     Size of the subset of nodes to compute the likelihood with.
-        gamma : float
-                Weight of the node attributes.
-        rseed : int
-                Random seed.
-        K : int
-            Number of communities.
-        initialization : int
-                        If 0, the membership matrices u and v and the affinity matrix w are generated randomly;
-                        if 1, they are uploaded from file.
-        undirected : bool
-                        If True, the model is undirected.
-        assortative : bool
-                        If True, the model is assortative.
-        extra_params : dict
-                        Additional parameters.
-        Returns
-        -------
-        u_f : ndarray
-              Membership matrix (out-degree).
-        v_f : ndarray
-              Membership matrix (in-degree).
-        w_f : ndarray
-              Affinity tensor.
-        beta_f : ndarray
-                 Beta parameter matrix.
-        maxL : float
-               Maximum log-likelihood value.
-        """
-        # Check the parameters for fitting the model
-        self.check_fit_params(
-            data=data,
-            data_X=data_X,
-            K=K,
-            initialization=initialization,
-            gamma=gamma,
-            undirected=undirected,
-            assortative=assortative,
-            **extra_params,
-        )
-        # Set the random seed
-        logging.debug("Fixing random seed to: %s", rseed)
-        self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
-
-        # Initialize the fit parameters
-        self.initialization = initialization
-        maxL = -self.inf  # initialization of the maximum log-likelihood
-        self.nodes = nodes
-
-        # Preprocess the data for fitting the model
-        data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX = (
-            self.preprocess_data_for_fit(data, data_X, batch_size)
-        )
-
-        # Set the preprocessed data and other related variables as attributes of the class instance
-        self.data = data
-        self.data_X = data_X
-        self.subs_nz = subs_nz
-        self.subs_X_nz = subs_X_nz
-        self.batch_size = batch_size
-        self.subset_N = subset_N
-        self.Subs = Subs
-        self.SubsX = SubsX
-
-        # The following part of the code is responsible for running the Expectation-Maximization
-        # (EM)  algorithm for a specified number of realizations (self.num_realizations):
-        for r in range(self.num_realizations):
-
-            # Initialize the parameters for the current realization
-            coincide, convergence, it, loglik, loglik_values = (
-                self._initialize_realization()
-            )
-
-            # Update the parameters for the current realization
-            it, loglik, coincide, convergence, loglik_values = self._update_realization(
-                r, it, loglik, coincide, convergence, loglik_values
-            )
-
-            # If the current log-likelihood is greater than the maximum log-likelihood so far,
-            # update the optimal parameters and the maximum log-likelihood
-            if maxL < loglik:
-                super()._update_optimal_parameters()
-                self.maxL = loglik
-                self.final_it = it
-                conv = convergence
-                self.best_r = r
-                if flag_conv == "log":
-                    best_loglik_values = list(loglik_values)
-            # Log the current realization number, log-likelihood, number of iterations, and elapsed time
-            self._log_realization_info(
-                r, loglik, self.final_it, self.time_start, convergence
-            )
-
-        # End cycle over realizations
-
-        # Evaluate the results of the fitting process
-        self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
-
-        # Return the final parameters and the maximum log-likelihood
-        return self.u_f, self.v_f, self.w_f, self.beta_f, self.maxL
+        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX # type: ignore
 
     def _initialize_realization(self):
         """

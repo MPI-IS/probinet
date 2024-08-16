@@ -3,14 +3,12 @@ Implementation of CRep, JointCRep, and MTCOV algorithm.
 """
 
 import argparse
-from importlib.resources import files
 import logging
 from pathlib import Path
 import time
 
 import numpy as np
 import sktensor as skt
-import yaml
 
 from .input.loader import import_data, import_data_mtcov
 from .input.tools import log_and_raise_error
@@ -51,7 +49,7 @@ def parse_args():
         default=0.5,
         help="Scaling hyper parameter in MTCOV",
     )
-    parser.add_argument("--rseed", type=int, default=None, help="Random seed")
+    parser.add_argument("--rseed", type=int, default=0, help="Random seed")
     parser.add_argument(
         "-nr",
         "--num_realizations",
@@ -206,6 +204,56 @@ def parse_args():
         help="Enable debug mode",
     )
 
+    # Additional parameters
+    parser.add_argument(
+        "--mask", type=str, default=None, help="Mask for the data"
+    ) # TODO: Rethink this. Not sure if the mask can be passed as CLI arg.
+    parser.add_argument(
+        "--initialization", type=int, default=0, help="Initialization method"
+    )
+    parser.add_argument(
+        "--eta0", type=float, default=None, help="Initial eta value"
+    )
+    parser.add_argument(
+        "--constrained", type=bool, default=False, help="Flag for constrained optimization"
+    )
+    parser.add_argument(
+        "--assortative", type=bool, default=False, help="Flag for assortative mixing"
+    )
+    parser.add_argument(
+        "--use_approximation", type=bool, default=False, help="Flag to use approximation"
+    )
+    parser.add_argument(
+        "--end_file", type=str, default="_CRep", help="Suffix for the output file"
+    )
+    parser.add_argument(
+        "--fix_eta", type=bool, default=False, help="Flag to fix eta"
+    )
+    parser.add_argument(
+        "--fix_w", type=bool, default=False, help="Flag to fix w"
+    )
+    parser.add_argument(
+        "--fix_communities", type=bool, default=False, help="Flag to fix communities"
+    )
+    parser.add_argument(
+        "--files", type=str, default="", help="Path to the input files"
+    )
+    parser.add_argument(
+        "--beta0", type=float, default=0.25, help="Initial beta value"
+    )
+    parser.add_argument(
+        "--constraintU", type=bool, default=False, help="Flag for constraint U"
+    )
+    parser.add_argument(
+        "--fix_beta", type=bool, default=False, help="Flag to fix beta"
+    )
+    parser.add_argument(
+        "--fix_pibr", type=bool, default=False, help="Flag to fix pibr"
+    )
+    parser.add_argument(
+        "--fix_mupr", type=bool, default=False, help="Flag to fix mupr"
+    )
+
     # Parse the command line arguments
     args = parser.parse_args()
 
@@ -226,6 +274,16 @@ def parse_args():
     if args.adj_name == "syn111.dat" and args.algorithm in default_adj_names:
         args.adj_name = default_adj_names[args.algorithm]
 
+    end_file_suffixes = {
+        "JointCRep": "_JointCRep",
+        "MTCOV": "_MTCOV",
+        "DynCRep": "_DynCRep",
+        "ACD": "_ACD"
+    }
+
+    if args.end_file == "_CRep" and args.algorithm in end_file_suffixes:
+        args.end_file = end_file_suffixes[args.algorithm]
+
     if args.num_realizations is None:
         num_realizations_dict = {"JointCRep": 3, "ACD": 1, "default": 5}
         args.num_realizations = num_realizations_dict.get(
@@ -241,7 +299,7 @@ def parse_args():
     return args
 
 
-def main():  # pylint: disable=too-many-branches, too-many-statements
+def main():
     """
     Main function for CRep/JointCRep/MTCOV.
     """
@@ -330,114 +388,126 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
         valid_types = [np.ndarray, skt.dtensor, skt.sptensor]
         assert any(isinstance(B, vt) for vt in valid_types)
         logging.debug("Data loaded successfully from %s", in_folder)
-    # Step 3: Load the configuration settings
-    if args.algorithm == "ACD":
-        logging.debug("Building configuration file for ACD.")
-        conf = {
-            "K": args.K,
-            "fix_communities": False,
-            "files": args.in_folder,
-            "out_inference": args.out_inference,
-            "end_file": "_ACD",
-            # "end_file": self.label,
-            "verbose": 1,
-        }
-    else:
-        logging.debug("Loading the configuration file: setting_%s.yaml", args.algorithm)
-        config_path = "setting_" + args.algorithm + ".yaml"
-        with files("pgm.data.model").joinpath(config_path).open("rb") as fp:
-            conf = yaml.safe_load(fp)
 
-    def set_config(args, conf):
-        """
-        Set the configuration file based on the command line arguments.
-        """
-        # Change K if given
-        if args.K is not None:
-            conf["K"] = args.K
-        if args.rseed is not None:  # if it has a value, then update the configuration
-            conf["rseed"] = args.rseed
-        # Change the output inference flag
-        conf["out_inference"] = args.out_inference
-        # Change the output folder
-        conf["out_folder"] = args.out_folder
-
-        # Algorithm specific settings
-        algorithm_settings = {"MTCOV": {"gamma": args.gamma}}
-
-        if args.algorithm in algorithm_settings:
-            conf.update(algorithm_settings[args.algorithm])
-
-        return conf
-
-    # Use the function to set the configuration. We need to update the config
-    # file based on the command line arguments.
-    conf = set_config(args, conf)
-
-    # Print the configuration file
-    logging.debug("The configuration file is: %s", yaml.dump(conf))
-
-    # Step 4 (Optional): Create the output directory and store the configuration file
-    if conf["out_inference"]:
-
-        # Create the output directory
-        out_folder_path = Path(conf["out_folder"])
-        out_folder_path.mkdir(parents=True, exist_ok=True)
-
-        # Save the configuration file
-        output_config_path = conf["out_folder"] + "/setting_" + args.algorithm + ".yaml"
-        with open(output_config_path, "w", encoding="utf-8") as f:
-            yaml.dump(conf, f)
-
-    def fit_model(model, algorithm, conf):
+    def fit_model(model, algorithm):
         """
         Fit the model to the data.
         """
-        if algorithm in {"CRep", "JointCRep"}:
-            model.fit(data=B, data_T=B_T, data_T_vals=data_T_vals, nodes=nodes, **conf)
+        if algorithm=='CRep':
+            model.fit(data=B,
+                      data_T=B_T,
+                      data_T_vals=data_T_vals,
+                      nodes=nodes,
+                      rseed=args.rseed,
+                      K=args.K,
+                      mask=args.mask,
+                      initialization=args.initialization,
+                      eta0=args.eta0,
+                      undirected=args.undirected,
+                      assortative=args.assortative,
+                      constrained=args.constrained,
+                      out_inference=args.out_inference,
+                      out_folder=args.out_folder,
+                      end_file=args.end_file,
+                      fix_eta=args.fix_eta,
+                      files=args.files
+                      )
+        elif algorithm == "JointCRep":
+            model.fit(
+                data=B,
+                data_T=B_T,
+                data_T_vals=data_T_vals,
+                nodes=nodes,
+                rseed=args.rseed,
+                K=args.K,
+                initialization=args.initialization,
+                eta0=args.eta0,
+                undirected=args.undirected,
+                assortative=args.assortative,
+                use_approximation=args.use_approximation,
+                out_inference=args.out_inference,
+                out_folder=args.out_folder,
+                end_file=args.end_file,
+                fix_eta=args.fix_eta,
+                fix_w=args.fix_w,
+                fix_communities=args.fix_communities,
+                files=args.files
+            )
         elif algorithm == "DynCRep":
             model.fit(
                 data=B,
                 T=args.T,
                 nodes=nodes,
-                flag_data_T=args.flag_data_T,
+                mask=args.mask,
+                K=args.K,
+                rseed=args.rseed,
                 ag=args.ag,
                 bg=args.bg,
+                eta0=args.eta0,
+                beta0=args.beta0,
+                flag_data_T=args.flag_data_T,
                 temporal=args.temporal,
-                **conf,
+                initialization=args.initialization,
+                assortative=args.assortative,
+                constrained=args.constrained,
+                constraintU=args.constraintU,
+                fix_eta=args.fix_eta,
+                fix_beta= args.fix_beta,
+                fix_communities=args.fix_communities,
+                fix_w=args.fix_w,
+                undirected=args.undirected,
+                out_inference=args.out_inference,
+                out_folder=args.out_folder,
+                end_file=args.end_file,
+                files=args.files,
             )
         elif algorithm == "ACD":
             model.fit(
                 data=B,
                 nodes=nodes,
-                undirected=False,
-                initialization=0,
-                assortative=True,
-                constrained=False,
+                K=args.K,
+                undirected=args.undirected,#False,
+                initialization=args.initialization,#0,
+                rseed=args.rseed,
+                assortative=args.assortative,#True,
+                constrained=args.constrained,#False,
                 ag=args.ag,  # 1.5
                 bg=args.bg,  # 10.0
                 pibr0=args.pibr0,
                 mupr0=args.mupr0,
                 flag_anomaly=args.flag_anomaly,
-                fix_pibr=False,
-                fix_mupr=False,
-                **conf,
+                fix_communities=args.fix_communities,
+                fix_pibr=args.fix_pibr,
+                fix_mupr=args.fix_mupr,
+                out_inference=args.out_inference,
+                out_folder=args.out_folder,
+                end_file=args.end_file,
+                files=args.files,
+                verbose=0
             )
-        else:
+        elif algorithm == "MTCOV":
             model.fit(
                 data=B,
                 data_X=Xs,
-                flag_conv=args.flag_conv,
                 nodes=nodes,
                 batch_size=args.batch_size,
-                **conf,
+                gamma=args.gamma,
+                rseed=args.rseed,
+                K=args.K,
+                initialization=args.initialization,
+                undirected=args.undirected,
+                assortative=args.assortative,
+                out_inference=args.out_inference,
+                out_folder=args.out_folder,
+                end_file=args.end_file,
+                files=args.files,
             )
 
     # Step 5: Run the algorithm
 
-    logging.info("Setting: K = %s", conf["K"])
+    logging.info("Setting: K = %s", args.K)
     if args.algorithm == "MTCOV":
-        logging.info("gamma = %s", conf["gamma"])
+        logging.info("gamma = %s", args.gamma)
     logging.info("### Running %s ###", args.algorithm)
     if "DynCRep" in args.algorithm:
         logging.info("### Version: %s ###", "w-DYN" if args.temporal else "w-STATIC")
@@ -464,7 +534,7 @@ def main():  # pylint: disable=too-many-branches, too-many-statements
     time_start = time.time()
 
     # Fit the model to the data
-    fit_model(model, args.algorithm, conf)
+    fit_model(model, args.algorithm)
 
     # Print the time elapsed
     logging.info("Time elapsed: %.2f seconds.", time.time() - time_start)

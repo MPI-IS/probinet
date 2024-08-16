@@ -62,6 +62,7 @@ def shuffle_indicesG(N: int, L: int, rseed: int = 10) -> List[List[Tuple[int, in
     """
     # Create a random number generator with the specified random seed
     rng = np.random.RandomState(rseed)
+    idxG = []
 
     # Generate indices for each layer using list comprehension
     idxG = [[(i, j) for i in range(N) for j in range(N)] for _ in range(L)]
@@ -163,6 +164,14 @@ def extract_masks(
         rng = np.random.RandomState(rseed)  # Mersenne-Twister random number generator
         maskG = rng.binomial(1, 1.0 / float(NFold), size=(L, N, N))
         maskX = rng.binomial(1, 1.0 / float(NFold), size=N)
+
+    if out_mask:  # output the masks into files
+        outmask = "../data/input/mask_f" + str(fold)
+        np.savez_compressed(
+            outmask + ".npz", maskG=np.where(maskG > 0.0), maskX=np.where(maskX > 0.0)
+        )
+        # To load: mask = np.load('mask_f0.npz'), e.g. print(np.array_equal(maskG, mask['maskG']))
+        print("Masks saved in:", outmask)
 
     return maskG, maskX
 

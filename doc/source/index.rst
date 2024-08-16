@@ -8,6 +8,7 @@
    Tutorial: A beginner's guide to the Probabilistic Generative Models package by using the MTCOV algorithm <tutorials/MTCOV.ipynb>
    Tutorial: Generation of synthetic networks using the CRep algorithm <tutorials/CRep.ipynb>
    Tutorial: Analysis of a real-world dataset using the JointCRep algorithm <tutorials/JointCRep.ipynb>
+   Tutorial: Tutorial: Decoding Temporal Relationships with DynCRep <tutorials/DynCRep.ipynb>
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_

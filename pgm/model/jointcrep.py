@@ -10,14 +10,13 @@ from typing import Any, List, Tuple, Union
 
 import numpy as np
 import sktensor as skt
-from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
     check_symmetric, get_item_array_from_subs, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
 from ..output.evaluate import lambda_full
-from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .base import ModelBase, ModelUpdateMixin
 from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 
 
@@ -31,12 +30,11 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         inf: float = INF_,  # initial value of the log-likelihood
         err_max: float = ERR_MAX_,  # minimum value for the parameters
         err: float = ERR_,  # noise for the initialization
-        num_realizations: int = 3,  # number of iterations with different random initialization
         convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
         decision: int = DECISION_,  # convergence parameter
         max_iter: int = 500,  # maximum number of EM steps before aborting
+        num_realizations: int = 3,  # number of iterations with different random initialization
         plot_loglik: bool = False,  # flag to plot the log-likelihood
-        flag_conv: str = "log",  # flag to choose the convergence criterion
     ):
         super().__init__(
             inf,
@@ -63,7 +61,14 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         assortative: bool,
         data: Union[skt.dtensor, skt.sptensor],
         K: int,
-        **extra_params: Unpack[ModelFitParameters],
+        fix_communities: bool,
+        fix_w: bool,
+        fix_eta: bool,
+        use_approximation: bool,
+        out_inference:bool,
+        out_folder: str,
+        end_file: str,
+        files: str,
     ) -> None:
 
         message = (
@@ -74,16 +79,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             "membership matrices u and v will be uploaded from file and 3 all u, "
             "v and w will be initialized through an input file."
         )
-        available_extra_params = [
-            "fix_eta",
-            "fix_w",
-            "fix_communities",
-            "files",
-            "out_inference",
-            "out_folder",
-            "end_file",
-            "use_approximation",
-        ]
+
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
             initialization,
@@ -91,14 +87,19 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             assortative,
             data,
             K,
-            available_extra_params,
             data_X=None,
             gamma=None,
             eta0=eta0,
             beta0=None,
             message=message,
-            **extra_params,
-        )
+            fix_communities=fix_communities,
+            fix_w= fix_w,
+            fix_eta=fix_eta,
+            use_approximation= use_approximation,
+            out_inference = out_inference,
+            out_folder = out_folder,
+            end_file = end_file,
+            files = files)
 
         # Parameters for the initialization of the model
         self.normalize_rows = False
@@ -109,11 +110,6 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             dfW = self.theta["w"]
             self.L = dfW.shape[0]
             self.K = dfW.shape[1]
-
-        if "use_approximation" in extra_params:
-            self.use_approximation = extra_params["use_approximation"]
-        else:
-            self.use_approximation = False
 
         if self.fix_eta:
             self.eta = self.eta_old = self.eta_f = self.eta0  # type: ignore
@@ -130,7 +126,14 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         eta0: Union[float, None] = None,
         undirected: bool = False,
         assortative: bool = True,
-        **extra_params: Unpack[ModelFitParameters],
+        fix_eta: bool = False,
+        fix_communities: bool = False,
+        fix_w: bool = False,
+        use_approximation: bool = False,
+        out_inference: bool = True,
+        out_folder: str = "outputs/",
+        end_file: str = "_JointCRep",
+        files: str = ""
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -145,45 +148,60 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T : sptensor
-                 Graph adjacency tensor (transpose).
-        data_T_vals : ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
-        nodes : list
-                List of nodes IDs.
-        rseed : int
-                Random seed.
-        K : int
-            Number of communities.
-        initialization : int
-                         Indicator for choosing how to initialize u, v and w.
-                         If 0, they will be generated randomly; 1 means only the affinity matrix
-                         w will be uploaded from file; 2 implies the membership matrices u and
-                         v will be uploaded from file and 3 all u, v and w will be initialized
-                         through an input file.
-        eta0 : float
-             Initial value for the reciprocity coefficient.
-        undirected : bool
-                     Flag to call the undirected network.
-        assortative : bool
-                      Flag to call the assortative network.
-        extra_params : dict
-                        Dictionary of extra parameters.
+        data : Union[skt.dtensor, skt.sptensor]
+            Graph adjacency tensor.
+        data_T : skt.sptensor
+            Graph adjacency tensor (transpose).
+        data_T_vals : np.ndarray
+            Array with values of entries A[j, i] given non-zero entry (i, j).
+        nodes : List[Any]
+            List of nodes IDs.
+        rseed : int, optional
+            Random seed, by default 0.
+        K : int, optional
+            Number of communities, by default 3.
+        initialization : int, optional
+            Indicator for choosing how to initialize u, v and w. If 0, they will be generated randomly;
+            1 means only the affinity matrix w will be uploaded from file; 2 implies the membership
+            matrices u and v will be uploaded from file and 3 all u, v and w will be initialized
+            through an input file, by default 0.
+        eta0 : Union[float, None], optional
+            Initial value for the reciprocity coefficient, by default None.
+        undirected : bool, optional
+            Flag to call the undirected network, by default False.
+        assortative : bool, optional
+            Flag to call the assortative network, by default True.
+        fix_eta : bool, optional
+            Flag to fix the eta parameter, by default False.
+        fix_communities : bool, optional
+            Flag to fix the community memberships, by default False.
+        fix_w : bool, optional
+            Flag to fix the affinity tensor, by default False.
+        use_approximation : bool, optional
+            Flag to use approximation in updates, by default False.
+        out_inference : bool, optional
+            Flag to output inference results, by default True.
+        out_folder : str, optional
+            Output folder for inference results, by default "outputs/".
+        end_file : str, optional
+            Suffix for the output file, by default "_JointCRep".
+        files : str, optional
+            Path to the file for initialization, by default "".
 
         Returns
         -------
-        u_f : ndarray
-              Out-going membership matrix.
-        v_f : ndarray
-              In-coming membership matrix.
-        w_f : ndarray
-              Affinity tensor.
-        eta_f : float
+        Tuple[np.ndarray, np.ndarray, np.ndarray, float, float]
+            A tuple containing:
+            - u_f : np.ndarray
+                Out-going membership matrix.
+            - v_f : np.ndarray
+                In-coming membership matrix.
+            - w_f : np.ndarray
+                Affinity tensor.
+            - eta_f : float
                 Pair interaction coefficient.
-        maxL : float
-               Maximum log-likelihood.
+            - maxL : float
+                Maximum log-likelihood.
         """
 
         # Check the parameters for fitting the model
@@ -194,13 +212,20 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             eta0=eta0,
             undirected=undirected,
             assortative=assortative,
-            **extra_params,
+            use_approximation=use_approximation,
+            fix_eta=fix_eta,
+            fix_communities=fix_communities,
+            fix_w = fix_w,
+            files=files,
+            out_inference = out_inference,
+            out_folder = out_folder,
+            end_file = end_file
         )
 
         # Fix the random seed
-
-        logging.debug("Fixing random seed to: %s", rseed)
-        self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
+        self.rseed = rseed
+        logging.debug("Fixing random seed to: %s", self.rseed)
+        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
 
         # Initialize the fit parameters
         self.initialization = initialization

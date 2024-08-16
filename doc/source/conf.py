@@ -68,7 +68,7 @@ exclude_patterns: List[Any] = []
 pygments_style = "sphinx"
 
 # -- Options for myst_nb -----------------------------------------------------
-execution_timeout = 150     # This is the timeout for executing a notebook cell
+execution_timeout = 250     # This is the timeout for executing a notebook cell
 
 # -- Options for HTML output -------------------------------------------------
 

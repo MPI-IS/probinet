@@ -11,13 +11,12 @@ from typing import Any, List, Optional, Tuple, Union
 from numpy import dtype, ndarray
 import numpy as np
 import sktensor as skt
-from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import lambda_full
-from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .base import ModelBase, ModelUpdateMixin
 from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 
 
@@ -31,12 +30,11 @@ class CRep(ModelBase, ModelUpdateMixin):
         inf: float = INF_,  # initial value of the pseudo log-likelihood, aka, infinity
         err_max: float = ERR_MAX_,  # minimum value for the parameters
         err: float = ERR_,  # noise for the initialization
-        num_realizations: int = 5,  # number of iterations with different random initialization
         convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
         decision: int = DECISION_,  # convergence parameter
         max_iter: int = 1000,  # maximum number of EM steps before aborting
+        num_realizations: int = 5,  # number of iterations with different random initialization
         plot_loglik: bool = False,  # flag to plot the log-likelihood
-        flag_conv: str = "log",  # flag to choose the convergence criterion
     ) -> None:
         super().__init__(
             inf,
@@ -65,32 +63,31 @@ class CRep(ModelBase, ModelUpdateMixin):
         data: Union[skt.dtensor, skt.sptensor],
         K: int,
         constrained: bool,
-        **extra_params: Unpack[ModelFitParameters],
+        out_inference: bool,
+        out_folder: str,
+        end_file: str,
+        fix_eta: bool,
+        files: str
     ) -> None:
 
         message = "The initialization parameter can be either 0, 1, 2 or 3."
-        available_extra_params = [
-            "fix_eta",
-            "fix_w",
-            "fix_communities",
-            "files",
-            "out_inference",
-            "out_folder",
-            "end_file",
-        ]
+
         super()._check_fit_params(
             initialization,
             undirected,
             assortative,
             data,
             K,
-            available_extra_params,
             data_X=None,
             gamma=None,
             eta0=eta0,
             beta0=None,
             message=message,
-            **extra_params,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            fix_eta=fix_eta,
+            files=files
         )
 
         self.constrained = constrained
@@ -116,8 +113,12 @@ class CRep(ModelBase, ModelUpdateMixin):
         undirected: bool = False,
         assortative: bool = True,
         constrained: bool = True,
-        **extra_params: Unpack[ModelFitParameters],
-    ) -> tuple[
+        out_inference: bool = True,
+        out_folder: str = "outputs/",
+        end_file: str = "_CRep",
+        fix_eta: bool = False,
+        files: str = ""
+    )-> tuple[
         ndarray[Any, dtype[np.float64]],
         ndarray[Any, dtype[np.float64]],
         ndarray[Any, dtype[np.float64]],
@@ -125,51 +126,59 @@ class CRep(ModelBase, ModelUpdateMixin):
         float,
     ]:
         """
-        Model directed networks by using a probabilistic generative model that assume community
-        parameters and reciprocity coefficient. The inference is performed via EM algorithm.
+        Fit the CRep model to the given data using the EM algorithm.
 
         Parameters
         ----------
-        data : ndarray/sptensor
-               Graph adjacency tensor.
-        data_T: None/sptensor
-                Graph adjacency tensor (transpose) - if sptensor.
-        data_T_vals : None/ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j) - if
-                       ndarray.
-        nodes : list
-                List of nodes IDs.
-        rseed : int
-                Random seed.
-        K : int
-            Number of communities.
-        initialization : int
-                        Initialization method for the model parameters.
-        eta0 : float
-                Initial value of the reciprocity coefficient.
-        undirected : bool
-                    Flag to indicate if the graph is undirected.
-        assortative : bool
-                    Flag to indicate if the graph is assortative.
-        constrained : bool
-                    Flag to indicate if the model is constrained.
-        mask : ndarray
-               Mask for selecting the held out set in the adjacency tensor in case of
-               cross-validation.
-        extra_params : dict
+        data : Union[skt.dtensor, skt.sptensor]
+            Graph adjacency tensor.
+        data_T : skt.sptensor
+            Transposed graph adjacency tensor.
+        data_T_vals : np.ndarray
+            Array with values of entries A[j, i] given non-zero entry (i, j).
+        nodes : List[Any]
+            List of node IDs.
+        rseed : int, optional
+            Random seed, by default 0.
+        K : int, optional
+            Number of communities, by default 3.
+        mask : Optional[np.ndarray], optional
+            Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
+        initialization : int, optional
+            Initialization method for the model parameters, by default 0.
+        eta0 : Union[float, None], optional
+            Initial value of the reciprocity coefficient, by default None.
+        undirected : bool, optional
+            Flag to indicate if the graph is undirected, by default False.
+        assortative : bool, optional
+            Flag to indicate if the graph is assortative, by default True.
+        constrained : bool, optional
+            Flag to indicate if the model is constrained, by default True.
+        out_inference : bool, optional
+            Flag to indicate if inference results should be output, by default True.
+        out_folder : str, optional
+            Output folder for inference results, by default "outputs/".
+        end_file : str, optional
+            Suffix for the output file, by default "_CRep".
+        fix_eta : bool, optional
+            Flag to indicate if the eta parameter should be fixed, by default False.
+        files : str, optional
+            Path to the file for initialization, by default "".
 
         Returns
         -------
-        u_f : ndarray
-              Out-going membership matrix.
-        v_f : ndarray
-              In-coming membership matrix.
-        w_f : ndarray
-              Affinity tensor.
-        eta_f : float
+        tuple
+            A tuple containing:
+            - u_f : ndarray
+                Out-going membership matrix.
+            - v_f : ndarray
+                In-coming membership matrix.
+            - w_f : ndarray
+                Affinity tensor.
+            - eta_f : float
                 Reciprocity coefficient.
-        maxL : float
-               Maximum pseudo log-likelihood.
+            - maxL : float
+                Maximum pseudo log-likelihood.
         """
 
         self.check_fit_params(
@@ -180,11 +189,16 @@ class CRep(ModelBase, ModelUpdateMixin):
             undirected=undirected,
             assortative=assortative,
             constrained=constrained,
-            **extra_params,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            fix_eta=fix_eta,
+            files=files
         )
-
-        logging.debug("Fixing random seed to: %s", rseed)
-        self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
+        # Set the random seed
+        self.rseed = rseed
+        logging.debug("Fixing random seed to: %s", self.rseed)
+        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
 
         # Initialize the fit parameters
         self.initialization = initialization

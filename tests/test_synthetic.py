@@ -300,7 +300,7 @@ class TestReciprocityMMSBM_joints(unittest.TestCase):
         self.mmsbm.build_Y()
         pass
 
-    
+
 class TestSyntNetAnomaly(unittest.TestCase):
     def setUp(self):
         self.N = 10

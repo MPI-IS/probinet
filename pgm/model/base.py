@@ -9,26 +9,9 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 import numpy as np
 from sktensor import dtensor, sptensor
 import sktensor as skt
-from typing_extensions import Unpack
 
 from pgm.input.tools import log_and_raise_error
 from pgm.output.plot import plot_L
-
-
-class ModelFitParameters(TypedDict):
-    """
-    Type hint for the fit method parameters.
-    """
-
-    out_inference: bool
-    out_folder: str
-    end_file: str
-    files: str
-    fix_eta: bool
-    fix_communities: bool
-    fix_w: bool
-    fix_beta: bool
-    use_approximation: bool
 
 
 @dataclasses.dataclass
@@ -112,13 +95,24 @@ class ModelBase(ModelBaseParameters):
         assortative: bool,
         data: Union[skt.dtensor, skt.sptensor],
         K: int,
-        available_extra_params: List[str],
         data_X: Union[skt.dtensor, skt.sptensor, np.ndarray, None],
         eta0: Union[float, None],
         beta0: Union[float, None],
         gamma: Union[float, None],
         message: str = "Invalid initialization parameter.",
-        **extra_params: Unpack[ModelFitParameters],
+        use_approximation = False,
+        temporal = True,
+        fix_eta = False,
+        fix_w = False,
+        fix_communities = False,
+        fix_beta = None,
+        files = " ", # TODO: fix this path?,
+        fix_pibr=None,
+        fix_mupr=None,
+        out_inference = False,
+        out_folder = Path("outputs"),
+        end_file = " ",
+        verbose = 0
     ) -> None:
         """
         Check the parameters of the fit method.
@@ -128,13 +122,28 @@ class ModelBase(ModelBaseParameters):
             log_and_raise_error(ValueError, message)
         self.initialization = initialization
 
-        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
+        if gamma is None: # TODO: rethink this, gamma is only for MTCOV
             if (eta0 is not None) and (eta0 <= 0.0):
                 message = "If not None, the eta0 parameter has to be greater than 0.!"
                 log_and_raise_error(ValueError, message)
             self.eta0 = eta0
         self.undirected = undirected
         self.assortative = assortative
+        self.use_approximation = use_approximation
+        self.temporal = temporal
+
+        self.fix_eta = fix_eta
+        self.fix_beta = fix_beta
+        self.fix_w = fix_w
+        self.fix_communities = fix_communities
+        self.fix_pibr = fix_pibr
+        self.fix_mupr = fix_mupr
+
+        self.files = files
+        self.out_inference = out_inference
+        self.out_folder = out_folder
+        self.end_file = end_file
+        self.verbose = verbose
 
         self.N = data.shape[1]
         self.L = data.shape[0]
@@ -145,74 +154,44 @@ class ModelBase(ModelBaseParameters):
                 1
             ]  # number of categories of the categorical attribute
 
-        for extra_param in extra_params:
-            if extra_param not in available_extra_params:
-                msg = f"Ignoring extra parameter {extra_param}."
-                logging.warning(msg)
 
-        if "fix_eta" in extra_params:
-            self.fix_eta = extra_params["fix_eta"]
-            if self.fix_eta:
-                if self.eta0 is None:
-                    log_and_raise_error(
-                        ValueError, "If fix_eta=True, provide a value for eta0."
-                    )
-        else:
-            self.fix_eta = False
+        if self.fix_eta:
+            if self.eta0 is None:
+                log_and_raise_error(
+                    ValueError, "If fix_eta=True, provide a value for eta0."
+                )
 
-        if "fix_beta" in extra_params:
-            self.fix_beta = extra_params["fix_beta"]
+        if self.fix_beta:
+            if beta0 is None:
+                log_and_raise_error(
+                    ValueError, "If fix_beta=True, provide a value for beta0."
+                )
+            else:
+                self.beta0 = beta0
 
-            if self.fix_beta:
-                if beta0 is None:
-                    log_and_raise_error(
-                        ValueError, "If fix_beta=True, provide a value for beta0."
-                    )
-                else:
-                    self.beta0 = beta0
 
-        if "fix_w" in extra_params:
-            self.fix_w = extra_params["fix_w"]
-            if self.fix_w:
-                if self.initialization not in {1, 3}:
-                    message = (
-                        "If fix_w=True, the initialization has to be either 1 or 3."
-                    )
-                    log_and_raise_error(ValueError, message)
-        else:
-            self.fix_w = False
+        if self.fix_w:
+            if self.initialization not in {1, 3}:
+                message = (
+                    "If fix_w=True, the initialization has to be either 1 or 3."
+                )
+                log_and_raise_error(ValueError, message)
 
-        if "fix_communities" in extra_params:
-            self.fix_communities = extra_params["fix_communities"]
-            if self.fix_communities:
-                if self.initialization not in {2, 3}:
-                    message = "If fix_communities=True, the initialization has to be either 2 or 3."
-                    log_and_raise_error(ValueError, message)
-        else:
-            self.fix_communities = False
+        if self.fix_communities:
+            if self.initialization not in {2, 3}: # TODO: At the moment, init is between 0 and 1.
+                # Fix this when the implementation suggested by Caterina about getting
+                # initialize_v, init_w, init_u instead of initialization
+                message = "If fix_communities=True, the initialization has to be either 2 or 3."
+                log_and_raise_error(ValueError, message)
 
-        if "files" in extra_params:
-            self.files = extra_params["files"]
-        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
+        if gamma is None: #TODO: rethink this, gamma is only for MTCOV
             if self.undirected and not (self.fix_eta and self.eta0 == 1):
                 message = (
                     "If undirected=True, the parameter eta has to be fixed equal to 1 "
                     "(s.t. log(eta)=0)."
                 )
                 log_and_raise_error(ValueError, message)
-        if "out_inference" in extra_params:
-            self.out_inference = extra_params["out_inference"]
-        else:
-            self.out_inference = True
-        if "out_folder" in extra_params:
-            self.out_folder = extra_params["out_folder"]
-        else:
-            self.out_folder = Path("outputs")
 
-        if "end_file" in extra_params:
-            self.end_file = extra_params["end_file"]
-        else:
-            self.end_file = ""
 
     def _initialize(self) -> None:
         """
