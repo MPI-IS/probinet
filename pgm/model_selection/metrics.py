@@ -2,6 +2,7 @@
 This module provides functions for evaluating the accuracy of attribute predictions and computing evaluation metrics for community detection.
 """
 
+from contextlib import suppress
 from typing import Optional
 
 import numpy as np
@@ -99,10 +100,8 @@ def evalu(
     for i in range(K):
         gt[i] = list(np.argwhere(U0[:, i] > threshold).flatten())
         if com:
-            try:
+            with suppress(IndexError):
                 d[i] = U_infer[i]
-            except:
-                pass
         else:
             d[i] = list(np.argwhere(U_infer[:, i] > threshold).flatten())
 

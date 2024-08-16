@@ -9,7 +9,7 @@ Main function to implement cross-validation given a number of communities.
 from abc import ABC, abstractmethod
 from itertools import product
 import logging
-import os
+from pathlib import Path
 import pickle
 import time
 
@@ -22,18 +22,16 @@ from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_
 
 
 class CrossValidation(ABC):
-    def __init__(self, algorithm, model_parameters, cv_parameters, numerical_parameters = {}):
+    def __init__(
+        self, algorithm, model_parameters, cv_parameters, numerical_parameters={}
+    ):
         self.algorithm = algorithm
-        for key, value in model_parameters.items():
-            setattr(self, key, value)
-        for key, value in cv_parameters.items():
-            setattr(self, key, value)
-        for key, value in numerical_parameters.items():
-            setattr(self, key, value)
+        for d in [model_parameters, cv_parameters, numerical_parameters]:
+            for key, value in d.items():
+                setattr(self, key, value)
 
     def prepare_output_directory(self):
-        if not os.path.exists(self.out_folder):
-            os.makedirs(self.out_folder)
+        Path(self.out_folder).mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
     def extract_mask(self, fold):
@@ -56,7 +54,8 @@ class CrossValidation(ABC):
 
         return mask
 
-    def define_grid(self, **kwargs):
+    @staticmethod
+    def define_grid(**kwargs):
         """
         Define the grid of parameters to be tested.
         """
@@ -117,8 +116,6 @@ class CrossValidation(ABC):
         """
         Run the cross-validation procedure.
         """
-        # Set up logging
-        logging.basicConfig(level=logging.DEBUG)
 
         # Prepare cv parameters
         self.prng = np.random.RandomState(seed=self.parameters["rseed"])
@@ -174,14 +171,16 @@ class CrossValidation(ABC):
         print(f"\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.")
 
     def prepare_file_name(self):
-        if ".dat" in self.adj:
-            adjacency = self.adj.split(".dat")[0]
-        elif ".csv" in self.adj:
-            adjacency = self.adj.split(".csv")[0]
-        else:
-            adjacency = self.adj
-            # Warning: adjacency is not csv nor dat
+        # Get the adjacency name
+        adjacency_path = Path(self.adj)
+        # Adjacency name
+        adjacency = adjacency_path.stem
+        # Adjacency suffix
+        suffix = adjacency_path.suffix
+        # Check if the adjacency is a csv or dat file
+        if suffix not in [".dat", ".csv"]:
             logging.warning("Adjacency name not recognized.")
+
         return adjacency
 
     def run_cross_validation(self, **kwargs):

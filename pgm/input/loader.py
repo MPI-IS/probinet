@@ -24,7 +24,7 @@ def import_data(
     force_dense: bool = True,
     undirected=False,
     noselfloop=True,
-    sep = "\\s+",
+    sep="\\s+",
     binary=True,
     header: Optional[int] = None,
 ) -> Tuple[List, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
@@ -46,7 +46,7 @@ def import_data(
     undirected : bool
                     If set to True, the algorithm considers an undirected graph.
     noselfloop : bool
-                If set to True, the algorithm removes the self-loops.   
+                If set to True, the algorithm removes the self-loops.
     sep : str
             Separator to use when reading the dataset.
     binary : bool

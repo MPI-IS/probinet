@@ -18,7 +18,7 @@ from ..input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
 from ..output.evaluate import func_lagrange_multiplier, lambda_full, u_with_lagrange_multiplier
 from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
-from .constants import EPS_
+from .constants import CONVERGENCE_TOL_, DECISION_, EPS_, ERR_MAX_, INF_
 
 
 class DynCRep(ModelBase, ModelUpdateMixin):
@@ -28,16 +28,16 @@ class DynCRep(ModelBase, ModelUpdateMixin):
     """
 
     def __init__(
-            self,
-            inf: float = 10000000000.0,
-            err_max: float = 0.000000000001,
-            err: float = 0.01,
-            num_realizations: int = 1,
-            convergence_tol: float = 0.0001,
-            decision: int = 10,
-            max_iter: int = 1000,
-            plot_loglik: bool = False,
-            flag_conv: str = "log",
+        self,
+        inf: float = INF_,
+        err_max: float = ERR_MAX_,
+        err: float = 0.01,
+        num_realizations: int = 1,
+        convergence_tol: float = CONVERGENCE_TOL_,
+        decision: int = DECISION_,
+        max_iter: int = 1000,
+        plot_loglik: bool = False,
+        flag_conv: str = "log",
     ) -> None:
 
         super().__init__(
@@ -407,7 +407,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self.sum_data_hat = data_AtAtm1[1:].sum()
 
         # Calculate the denominator containing Aji(t)
-        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero()) # type: ignore
+        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())  # type: ignore
 
         # Preprocess the data to handle the sparsity
         data_AtAtm1 = preprocess(data_AtAtm1)
@@ -417,7 +417,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         subs_nzp = (
             data_AtAtm1.nonzero()
             if isinstance(data_AtAtm1, skt.dtensor)
-            else data_AtAtm1.subs # type: ignore
+            else data_AtAtm1.subs  # type: ignore
         )
 
         # Initialize the beta hat
@@ -869,7 +869,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-
     def _update_W_assortative_dyn(self, subs_nz):
         """
         Update affinity tensor (assuming assortativity).
@@ -947,7 +946,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         super()._update_optimal_parameters()
         self.beta_f = np.copy(self.beta_hat[-1])
 
-    def _likelihood( # type: ignore
+    def _likelihood(  # type: ignore
         self,
         data: Union[dtensor, sptensor],
         data_T: Union[dtensor, sptensor],

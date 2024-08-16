@@ -44,29 +44,36 @@ def calculate_AUC(
 
     return metrics.auc(fpr, tpr)
 
-def calculate_AUC_mtcov(B, u, v, w, mask=None):
+
+def calculate_AUC_mtcov(
+    B: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+) -> float:
     """
-        Return the AUC of the link prediction. It represents the probability that a randomly chosen missing connection
-        (true positive) is given a higher score by our method than a randomly chosen pair of unconnected vertices
-        (true negative).
+    Return the AUC of the link prediction. It represents the probability that a randomly chosen missing connection
+    (true positive) is given a higher score by our method than a randomly chosen pair of unconnected vertices
+    (true negative).
 
-        Parameters
-        ----------
-        B : ndarray
-            Graph adjacency tensor.
-        u : ndarray
-            Membership matrix (out-degree).
-        v : ndarray
-            Membership matrix (in-degree).
-        w : ndarray
-            Affinity tensor.
-        mask : ndarray
-               Mask for selecting a subset of the adjacency tensor.
+    Parameters
+    ----------
+    B : ndarray
+        Graph adjacency tensor.
+    u : ndarray
+        Membership matrix (out-degree).
+    v : ndarray
+        Membership matrix (in-degree).
+    w : ndarray
+        Affinity tensor.
+    mask : ndarray
+           Mask for selecting a subset of the adjacency tensor.
 
-        Returns
-        -------
-        AUC : float
-              AUC value.
+    Returns
+    -------
+    AUC : float
+          AUC value.
     """
 
     M = expected_Aija_mtcov(u, v, w)
@@ -84,16 +91,34 @@ def calculate_AUC_mtcov(B, u, v, w, mask=None):
 
     return fAUC(R, Pos, Neg)
 
-def fAUC(R, Pos, Neg):
-    y = 0.
-    bad = 0.
+
+def fAUC(R: list, Pos: float, Neg: float) -> float:
+    """
+    Compute the Area Under the Curve (AUC) for the given ranked list of predictions.
+
+    Parameters
+    ----------
+    R : list
+        List of tuples containing the predicted scores and actual labels.
+    Pos : float
+        Number of positive samples.
+    Neg : float
+        Number of negative samples.
+
+    Returns
+    -------
+    float
+        The calculated AUC value.
+    """
+    y = 0.0
+    bad = 0.0
     for m, a in R:
-        if (a > 0):
+        if a > 0:
             y += 1
         else:
             bad += y
 
-    AUC = 1. - (bad / (Pos * Neg))
+    AUC = 1.0 - (bad / (Pos * Neg))
     return AUC
 
 
@@ -168,7 +193,9 @@ def calculate_conditional_expectation_dyncrep(
     -------
     Matrix whose elements are lambda_{ij}.
     """
-    conditional_expectation = _lambda0_full_dyncrep(u, v, w) + eta * transpose_ij2(B_to_T)
+    conditional_expectation = _lambda0_full_dyncrep(u, v, w) + eta * transpose_ij2(
+        B_to_T
+    )
     M = (beta * conditional_expectation) / (1.0 + beta * conditional_expectation)
     return M
 
@@ -203,12 +230,9 @@ def calculate_expectation(
     return M
 
 
-# same as Exp_ija_matrix(u, v, w)
-
-
 def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
-    Compute the mean lambda for all entries.
+    Compute the mean lambda for all entries (former Exp_ija_matrix(u, v, w)).
 
     Parameters
     ----------
@@ -237,37 +261,31 @@ def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
 
 def _lambda0_full_dyncrep(u, v, w):
     """
-        Compute the mean lambda0 for all entries.
+    Compute the mean lambda0 for all entries.
 
-        Parameters
-        ----------
-        u : ndarray
-            Out-going membership matrix.
-        v : ndarray
-            In-coming membership matrix.
-        w : ndarray
-            Affinity tensor.
+    Parameters
+    ----------
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity tensor.
 
-        Returns
-        -------
-        M : ndarray
-            Mean lambda0 for all entries.
+    Returns
+    -------
+    M : ndarray
+        Mean lambda0 for all entries.
     """
 
     if w.ndim == 2:
-        M = np.einsum('ik,jk->ijk', u, v)
-        M = np.einsum('ijk,ak->ij', M, w)
+        M = np.einsum("ik,jk->ijk", u, v)
+        M = np.einsum("ijk,ak->ij", M, w)
     else:
-        M = np.einsum('ik,jq->ijkq', u, v)
-        M = np.einsum('ijkq,akq->ij', M, w)
+        M = np.einsum("ik,jq->ijkq", u, v)
+        M = np.einsum("ijkq,akq->ij", M, w)
 
     return M
-
-
-
-
-# TODO: make it model agnostic
-
 
 
 def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
@@ -292,9 +310,23 @@ def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
     return Z
 
 
-def expected_Aija(U, V, W):
+def expected_Aija(U: np.ndarray, V: np.ndarray, W: np.ndarray) -> np.ndarray:
     """
     Compute the expected value of the adjacency tensor.
+
+    Parameters
+    ----------
+    U : np.ndarray
+        Out-going membership matrix.
+    V : np.ndarray
+        In-coming membership matrix.
+    W : np.ndarray
+        Affinity tensor.
+
+    Returns
+    -------
+    np.ndarray
+        The expected value of the adjacency tensor.
     """
     if W.ndim == 1:
         M = np.einsum("ik,jk->ijk", U, V)
@@ -304,10 +336,29 @@ def expected_Aija(U, V, W):
         M = np.einsum("ijkq,kq->ij", M, W)
     return M
 
-def expected_Aija_mtcov(u, v, w):
-    M = np.einsum('ik,jq->ijkq', u, v)
-    M = np.einsum('ijkq,akq->aij', M, w)
+
+def expected_Aija_mtcov(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """
+    Compute the expected value of the adjacency tensor for multi-covariate data.
+
+    Parameters
+    ----------
+    u : np.ndarray
+        Out-going membership matrix.
+    v : np.ndarray
+        In-coming membership matrix.
+    w : np.ndarray
+        Affinity tensor.
+
+    Returns
+    -------
+    np.ndarray
+        The expected value of the adjacency tensor.
+    """
+    M = np.einsum("ik,jq->ijkq", u, v)
+    M = np.einsum("ijkq,akq->aij", M, w)
     return M
+
 
 def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> list:
     """
@@ -435,6 +486,7 @@ def expected_computation(
 
     return M_marginal, M_conditional
 
+
 def CalculatePermutation(U_infer: np.ndarray, U0: np.ndarray) -> np.ndarray:
     """
     Permute the overlap matrix so that the groups from the two partitions correspond.
@@ -478,9 +530,21 @@ def CalculatePermutation(U_infer: np.ndarray, U0: np.ndarray) -> np.ndarray:
     return P
 
 
-def cosine_similarity(U_infer, U0):
+def cosine_similarity(U_infer: np.ndarray, U0: np.ndarray) -> tuple:
     """
-    It is assumed that matrices are row-normalized
+    Compute the cosine similarity between two row-normalized matrices.
+
+    Parameters
+    ----------
+    U_infer : np.ndarray
+        Inferred membership matrix.
+    U0 : np.ndarray
+        Reference membership matrix with dimensions NxK.
+
+    Returns
+    -------
+    tuple
+        Permuted inferred matrix and cosine similarity value.
     """
     P = CalculatePermutation(U_infer, U0)
     U_infer = np.dot(U_infer, P)  # Permute inferred matrix
@@ -502,8 +566,37 @@ def cosine_similarity(U_infer, U0):
     return U_infer0, cosine_sim / float(N)
 
 
+def calculate_Q_dense(
+    A: np.ndarray,
+    M: np.ndarray,
+    pi: float,
+    mu: float,
+    mask: Optional[np.ndarray] = None,
+    EPS: float = 1e-12,
+) -> np.ndarray:
+    """
+    Compute the dense Q matrix for the given adjacency tensor and parameters.
 
-def calculate_Q_dense(A, M, pi, mu, mask=None, EPS=1e-12):
+    Parameters
+    ----------
+    A : np.ndarray
+        Adjacency tensor.
+    M : np.ndarray
+        Mean adjacency tensor.
+    pi : float
+        Poisson parameter.
+    mu : float
+        Mixing parameter.
+    mask : Optional[np.ndarray]
+        Mask for selecting a subset of the adjacency tensor.
+    EPS : float
+        Small constant to avoid division by zero.
+
+    Returns
+    -------
+    np.ndarray
+        Dense Q matrix.
+    """
     AT = transpose_ij(A)
     MT = transpose_ij(M)
     num = (mu + EPS) * poisson.pmf(A, (pi + EPS)) * poisson.pmf(AT, (pi + EPS))
@@ -515,7 +608,31 @@ def calculate_Q_dense(A, M, pi, mu, mask=None, EPS=1e-12):
         return num[mask.nonzero()] / den[mask.nonzero()]
 
 
-def calculate_f1_score(pred, data0, mask=None, threshold=0.1):
+def calculate_f1_score(
+    pred: np.ndarray,
+    data0: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+    threshold: float = 0.1,
+) -> float:
+    """
+    Calculate the F1 score for the given predictions and data.
+
+    Parameters
+    ----------
+    pred : np.ndarray
+        Predicted values.
+    data0 : np.ndarray
+        True values.
+    mask : Optional[np.ndarray]
+        Mask for selecting a subset of the data.
+    threshold : float
+        Threshold for binarizing the predictions.
+
+    Returns
+    -------
+    float
+        The F1 score.
+    """
     Z_pred = np.copy(pred[0])
     Z_pred[Z_pred < threshold] = 0
     Z_pred[Z_pred >= threshold] = 1
@@ -527,12 +644,29 @@ def calculate_f1_score(pred, data0, mask=None, threshold=0.1):
         return metrics.f1_score(data[mask], Z_pred[mask])
 
 
+def calculate_expectation_acd(
+    U: np.ndarray, V: np.ndarray, W: np.ndarray, Q: np.ndarray, pi: float = 1
+) -> np.ndarray:
+    """
+    Calculate the expectation for the adjacency tensor with an additional covariate.
 
-def calculate_expectation_acd(U, V, W, Q, pi=1):
+    Parameters
+    ----------
+    U : np.ndarray
+        Out-going membership matrix.
+    V : np.ndarray
+        In-coming membership matrix.
+    W : np.ndarray
+        Affinity tensor.
+    Q : np.ndarray
+        Covariate matrix.
+    pi : float, optional
+        Poisson parameter, by default 1.
+
+    Returns
+    -------
+    np.ndarray
+        The calculated expectation.
+    """
     lambda0 = lambda_full(U, V, W)
     return (1 - Q) * lambda0 + Q * pi
-
-
-
-
-

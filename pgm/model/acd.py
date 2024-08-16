@@ -18,6 +18,7 @@ from pgm.input.tools import (
     get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative,
     transpose_tensor)
 from pgm.model.base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from pgm.model.constants import INF_
 from pgm.output.evaluate import lambda_full
 
 EPS = 1e-12
@@ -26,7 +27,7 @@ EPS = 1e-12
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def __init__(
         self,
-        inf: float = 1e10,
+        inf: float = INF_,
         err_max: float = 1e-8,
         err: float = 0.01,
         num_realizations: int = 1,
@@ -161,8 +162,8 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self,
         data: Union[skt.sptensor, skt.dtensor],
         nodes: List[int],
-        ag: float =1.5,
-        bg: float=10.,
+        ag: float = 1.5,
+        bg: float = 10.0,
         pibr0: Optional[float] = None,
         mupr0: Optional[float] = None,
         flag_anomaly: bool = True,
@@ -170,9 +171,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         fix_mupr: bool = False,
         K: int = 3,
         undirected: bool = False,
-        initialization: int =0,
-        assortative: bool =True,
-        constrained:bool =False,
+        initialization: int = 0,
+        assortative: bool = True,
+        constrained: bool = False,
         mask: Optional[np.ndarray] = None,
         rseed: int = 10,
         **extra_params: Unpack[ModelFitParameters],
@@ -367,7 +368,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             subs_nz_mask = mask.nonzero()
         else:
             subs_nz_mask = None
-        return data, data_T, data_T_vals, subs_nz, subs_nz_mask # type: ignore
+        return data, data_T, data_T_vals, subs_nz, subs_nz_mask  # type: ignore
 
     def _initialize(self):
         """
@@ -409,7 +410,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
         self.mupr = self.rng.random_sample(1)[0]
 
-    def _initialize_w( # type: ignore
+    def _initialize_w(  # type: ignore
         self, infile_name: str
     ) -> None:  # TODO: Is this method needed? It seems
         # like it should but it is not used anywhere
@@ -694,7 +695,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.pibr = Adata / self.Qij_dense[subs_nz_mask].sum()
 
         dist_pibr = abs(self.pibr - self.pibr_old)
-        self.pibr_old = np.copy(self.pibr) # type: ignore
+        self.pibr_old = np.copy(self.pibr)  # type: ignore
 
         return dist_pibr
 
@@ -730,7 +731,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             self.mupr = self.Qij_dense[subs_nz_mask].sum() / (self.N * (self.N - 1))
 
         dist_mupr = abs(self.pibr - self.mupr_old)
-        self.mupr_old = np.copy(self.mupr) # type: ignore
+        self.mupr_old = np.copy(self.mupr)  # type: ignore
 
         return dist_mupr
 
@@ -1084,9 +1085,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
             if np.isnan(l):
                 log_and_raise_error(ValueError, "ELBO is NaN!")
-                return float('nan')  # return NaN if l is NaN
-            else:
-                return l
+            return l
 
     def _log_realization_info(
         self,

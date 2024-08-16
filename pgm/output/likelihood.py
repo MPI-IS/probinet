@@ -11,9 +11,17 @@ from pgm.input.tools import log_and_raise_error
 from pgm.output.evaluate import expected_Aija, expected_Aija_mtcov, lambda_full
 
 
-def loglikelihood(B: np.ndarray, X: pd.DataFrame, u: np.ndarray, v: np.ndarray, w: np.ndarray,
-                  beta: np.ndarray, gamma: float, maskG: Optional[np.ndarray] = None,
-                  maskX: Optional[np.ndarray] = None) -> float:
+def loglikelihood(
+    B: np.ndarray,
+    X: pd.DataFrame,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    beta: np.ndarray,
+    gamma: float,
+    maskG: Optional[np.ndarray] = None,
+    maskX: Optional[np.ndarray] = None,
+) -> float:
     """
     Return the log-likelihood of the model.
 
@@ -55,8 +63,13 @@ def loglikelihood(B: np.ndarray, X: pd.DataFrame, u: np.ndarray, v: np.ndarray, 
     return loglik
 
 
-def loglikelihood_network(B: np.ndarray, u: np.ndarray, v: np.ndarray, w: np.ndarray,
-                          mask: Optional[np.ndarray] = None) -> float:
+def loglikelihood_network(
+    B: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+) -> float:
     """
     Compute the log-likelihood for the network structure.
 
@@ -92,8 +105,13 @@ def loglikelihood_network(B: np.ndarray, u: np.ndarray, v: np.ndarray, w: np.nda
         return (B[mask > 0] * logM).sum() - M.sum()
 
 
-def loglikelihood_attributes(X: pd.DataFrame, u: np.ndarray, v: np.ndarray, beta: np.ndarray,
-                             mask: Optional[np.ndarray] = None) -> float:
+def loglikelihood_attributes(
+    X: pd.DataFrame,
+    u: np.ndarray,
+    v: np.ndarray,
+    beta: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+) -> float:
     """
     Compute the log-likelihood for the attributes.
 
@@ -118,19 +136,24 @@ def loglikelihood_attributes(X: pd.DataFrame, u: np.ndarray, v: np.ndarray, beta
     if mask is None:
         # Compute the expected attribute matrix
         p = np.dot(u + v, beta) / 2
-        nonzeros = p > 0.
-        p[nonzeros] = np.log(p[nonzeros] / 2.)
+        nonzeros = p > 0.0
+        p[nonzeros] = np.log(p[nonzeros] / 2.0)
         return (X * p).sum().sum()
     else:
         # Compute the expected attribute matrix for the masked elements
         p = np.dot(u[mask > 0] + v[mask > 0], beta) / 2
-        nonzeros = p > 0.
-        p[nonzeros] = np.log(p[nonzeros] / 2.)
+        nonzeros = p > 0.0
+        p[nonzeros] = np.log(p[nonzeros] / 2.0)
         return (X.iloc[mask > 0] * p).sum().sum()
 
 
-def likelihood_conditional(M: np.ndarray, beta: float, data: np.ndarray, data_tm1: np.ndarray,
-                           EPS: Optional[float] = 1e-10) -> float:
+def likelihood_conditional(
+    M: np.ndarray,
+    beta: float,
+    data: np.ndarray,
+    data_tm1: np.ndarray,
+    EPS: Optional[float] = 1e-10,
+) -> float:
     """
     Compute the log-likelihood of the data given the parameters.
 
@@ -175,8 +198,14 @@ def likelihood_conditional(M: np.ndarray, beta: float, data: np.ndarray, data_tm
         return l
 
 
-def PSloglikelihood(B: np.ndarray, u: np.ndarray, v: np.ndarray, w: np.ndarray, eta: float,
-                    mask: Optional[np.ndarray] = None) -> float:
+def PSloglikelihood(
+    B: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    eta: float,
+    mask: Optional[np.ndarray] = None,
+) -> float:
     """
     Compute the pseudo log-likelihood of the data.
 
@@ -216,8 +245,12 @@ def PSloglikelihood(B: np.ndarray, u: np.ndarray, v: np.ndarray, w: np.ndarray, 
     return (B[mask > 0] * logM).sum() - M.sum()
 
 
-def calculate_opt_func(B: np.ndarray, algo_obj, mask: Optional[np.ndarray] = None,
-                       assortative: bool = False) -> float:
+def calculate_opt_func(
+    B: np.ndarray,
+    algo_obj,
+    mask: Optional[np.ndarray] = None,
+    assortative: bool = False,
+) -> float:
     """
     Compute the optimal value for the pseudo log-likelihood with the inferred parameters.
 
@@ -243,8 +276,9 @@ def calculate_opt_func(B: np.ndarray, algo_obj, mask: Optional[np.ndarray] = Non
         B_test[np.logical_not(mask)] = 0.0
 
     if not assortative:
-        return PSloglikelihood(B, algo_obj.u_f, algo_obj.v_f, algo_obj.w_f, algo_obj.eta_f,
-                               mask=mask)
+        return PSloglikelihood(
+            B, algo_obj.u_f, algo_obj.v_f, algo_obj.w_f, algo_obj.eta_f, mask=mask
+        )
 
     # Compute the pseudo log-likelihood in assortative mode
     L = B.shape[0]

@@ -3,172 +3,46 @@ import unittest
 import numpy as np
 import pandas as pd
 from tests.constants import PATH_TO_GT
-from tests.fixtures import BaseTest, ConcreteCrossValidation
+from tests.fixtures import BaseTest
+import yaml
 
+from pgm.model_selection.cross_validation import CrossValidation
 from pgm.model_selection.labeling import predict_label
 from pgm.model_selection.main import cross_validation
 
 
 class TestCrossValidationModels(BaseTest):
     def setUp(self):
-        self.models = {
-            "DynCRep": {
-                "parameters": {
-                    "K": [4],
-                    "T": [5],
-                    "ag": [1.1],
-                    "bg": [0.5],
-                    "eta0": [0.2],
-                    "flag_data_T": [0],
-                    "beta0": [0.2],
-                    "rseed": [100],
-                    "fix_eta": [False],
-                    "fix_beta": [False],
-                    "fix_communities": [False],
-                    "fix_w": [False],
-                    "assortative": [False],
-                    "constrained": [False],
-                    "constraintU": [False],
-                    "undirected": [False],
-                    "temporal": [True],
-                    "initialization": [0],
-                    "out_inference": [False],
-                    "out_folder": [self.folder],
-                    "end_file": ["_DynCRep"],
-                },
-                "input_params": {
-                    "in_folder": "pgm/data/input/",
-                    "adj": "email-Eu-core.csv",
-                    "ego": "source",
-                    "alter": "target",
-                    "sep": ",",
-                    "NFold": 2,
-                    "out_results": True,
-                    "out_mask": False,
-                },
-                "output_file": self.folder + "email-Eu-core_cv.csv",
-                "ground_truth_file": PATH_TO_GT + "email-Eu-core_cv_GT_DynCRep" ".csv",
-            },
-            "MTCOV": {
-                "parameters": {
-                    "K": [2],
-                    "gamma": [0.5, 0.75],
-                    "rseed": [107261],
-                    "initialization": [0],
-                    "out_inference": [False],
-                    "out_folder": [self.folder],
-                    "end_file": ["_MTCOV"],
-                    "assortative": [False],
-                    "undirected": [True],
-                    "flag_conv": ["log"],
-                    "batch_size": [None],
-                    "files": ["../data/input/theta.npz"],
-                },
-                "input_params": {
-                    "in_folder": "pgm/data/input/",
-                    "adj": "adj_cv.csv",
-                    "cov": "X_cv.csv",
-                    "ego": "source",
-                    "alter": "target",
-                    "egoX": "Name",
-                    "attr_name": "Metadata",
-                    "NFold": 5,
-                    "out_results": True,
-                    "out_mask": False,
-                },
-                "output_file": self.folder + "adj_cv_cv.csv",
-                "ground_truth_file": PATH_TO_GT + "/adj_cv_GT_MTCOV.csv",
-            },
-            "ACD": {
-                "parameters": {
-                    "K": [3],
-                    "flag_anomaly": [True],
-                    "rseed": [10],
-                    "initialization": [0],
-                    "out_inference": [False],
-                    "out_folder": [self.folder + "2-fold_cv/"],
-                    "end_file": ["_ACD"],
-                    "assortative": [True],
-                    "undirected": [False],
-                    "files": ["../data/input/theta.npz"],
-                },
-                "input_params": {
-                    "in_folder": "pgm/data/input/",
-                    "adj": "synthetic_data_for_ACD.dat",
-                    "ego": "source",
-                    "alter": "target",
-                    "NFold": 2,
-                    "out_results": True,
-                    "out_mask": False,
-                },
-                "output_file": self.folder + "2-fold_cv/synthetic_data_for_ACD_cv.csv",
-                "ground_truth_file": PATH_TO_GT + "synthetic_data_for_ACD_cv_GT.csv",
-            },
-            "CRep": {
-                "parameters": {
-                    "K": [2, 3, 4],
-                    "rseed": [623],
-                    "initialization": [0],
-                    "undirected": [False],
-                    "end_file": ["_CRep"],
-                    "assortative": [True],
-                    "eta0": [None],
-                    "fix_eta": [False],
-                    "constrained": [True],
-                    "out_inference": [False],
-                    "out_folder": [self.folder],
-                    "files": ["config/data/input/theta_gt111.npz"],
-                },
-                "input_params": {
-                    "in_folder": "pgm/data/input/",
-                    "adj": "syn111.dat",
-                    "ego": "source",
-                    "alter": "target",
-                    "NFold": 2,
-                    "out_results": True,
-                    "out_mask": False,
-                },
-                "output_file": self.folder + "syn111_cv.csv",
-                "ground_truth_file": PATH_TO_GT + "syn111_cv_GT_CRep.csv",
-            },
-            "JointCRep": {
-                "parameters": {
-                    "K": [2],
-                    "rseed": [10],
-                    "initialization": [0],
-                    "out_inference": [False],
-                    "out_folder": [self.folder],
-                    "end_file": ["_JointCRep"],
-                    "assortative": [False],
-                    "eta0": [None],
-                    "fix_eta": [False],
-                    "undirected": [False],
-                    "fix_communities": [False],
-                    "fix_w": [False],
-                    "use_approximation": [False],
-                    "files": ["../data/input/theta.npz"],
-                },
-                "input_params": {
-                    "in_folder": "pgm/data/input/",
-                    "adj": "synthetic_data.dat",
-                    "ego": "source",
-                    "alter": "target",
-                    "NFold": 2,
-                    "out_results": True,
-                    "out_mask": False,
-                },
-                "output_file": self.folder + "synthetic_data_cv.csv",
-                "ground_truth_file": PATH_TO_GT + "synthetic_data_cv_GT_JointCRep.csv",
-            },
-        }
+        self.models = {}
+        model_files = [
+            "setting_DynCRep.yaml",
+            "setting_MTCOV.yaml",
+            "setting_ACD.yaml",
+            "setting_CRep.yaml",
+            "setting_JointCRep.yaml",
+        ]
+        for model_file in model_files:
+            with open(PATH_TO_GT + f"{model_file}", "r") as file:
+                model_name = model_file.split(".")[0].split("_")[1]
+                self.models[model_name] = yaml.safe_load(file)
 
     def run_cv_and_check_results(self, model_name):
+        # Load the model settings
         model = self.models[model_name]
+        # Change the output folder to the current temporary folder
+        model["parameters"]["out_folder"] = [self.folder]
+        # Change the output file to the current temporary folder
+        model["output_file"] = self.folder + model["output_file"]
+        # Change the path of the ground truth file
+        model["ground_truth_file"] = (
+            PATH_TO_GT + self.models[model_name]["ground_truth_file"]
+        )
+        # Run the cross-validation
         cross_validation(model_name, model["parameters"], model["input_params"])
-
+        # Load the generated and ground truth dataframes
         generated_df = pd.read_csv(model["output_file"])
         ground_truth_df = pd.read_csv(model["ground_truth_file"])
-
+        # Check that the generated dataframe is equal to the ground truth dataframe
         for column in generated_df.columns:
             pd.testing.assert_series_equal(
                 generated_df[column],
@@ -195,8 +69,8 @@ class TestCrossValidationModels(BaseTest):
 
 class TestCrossValidation(unittest.TestCase):
     def test_define_grid(self):
-        cv = ConcreteCrossValidation()
-        param_grid = cv.define_grid(param1=[1, 2], param2=["a", "b"])
+        # Use the define_grid method to create a parameter grid
+        param_grid = CrossValidation.define_grid(param1=[1, 2], param2=["a", "b"])
 
         expected_grid = [
             {"param1": 1, "param2": "a"},

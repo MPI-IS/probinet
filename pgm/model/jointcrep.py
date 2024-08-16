@@ -3,8 +3,6 @@ Class definition of JointCRep, the algorithm to perform inference in networks wi
 The latent variables are related to community memberships and a pair interaction value.
 """
 
-from __future__ import print_function
-
 import logging
 from pathlib import Path
 import time
@@ -20,23 +18,22 @@ from ..input.tools import (
     sp_uttkrp_assortative, transpose_tensor)
 from ..output.evaluate import lambda_full
 from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
+from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 
 
-class JointCRep(
-    ModelBase, ModelUpdateMixin
-):  # pylint: disable=too-many-instance-attributes
+class JointCRep(ModelBase, ModelUpdateMixin):
     """
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
 
     def __init__(
         self,  # pylint: disable=too-many-arguments
-        inf: float = 1e10,  # initial value of the log-likelihood
-        err_max: float = 1e-12,  # minimum value for the parameters
-        err: float = 0.1,  # noise for the initialization
+        inf: float = INF_,  # initial value of the log-likelihood
+        err_max: float = ERR_MAX_,  # minimum value for the parameters
+        err: float = ERR_,  # noise for the initialization
         num_realizations: int = 3,  # number of iterations with different random initialization
-        convergence_tol: float = 0.0001,  # tolerance for convergence
-        decision: int = 10,  # convergence parameter
+        convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
+        decision: int = DECISION_,  # convergence parameter
         max_iter: int = 500,  # maximum number of EM steps before aborting
         plot_loglik: bool = False,  # flag to plot the log-likelihood
         flag_conv: str = "log",  # flag to choose the convergence criterion
@@ -119,7 +116,7 @@ class JointCRep(
             self.use_approximation = False
 
         if self.fix_eta:
-            self.eta = self.eta_old = self.eta_f = self.eta0 # type: ignore
+            self.eta = self.eta_old = self.eta_f = self.eta0  # type: ignore
 
     def fit(
         self,
@@ -262,7 +259,7 @@ class JointCRep(
         self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
 
         # Return the final parameters and the maximum log-likelihood
-        return self.u_f, self.v_f, self.w_f, self.eta_f, maxL # type: ignore
+        return self.u_f, self.v_f, self.w_f, self.eta_f, maxL  # type: ignore
 
     def _initialize_realization(self, data, subs_nz):
         """
@@ -333,7 +330,7 @@ class JointCRep(
         elif isinstance(data, skt.sptensor):
             subs_nz = data.subs
 
-        return data, data_T_vals, subs_nz # type: ignore
+        return data, data_T_vals, subs_nz  # type: ignore
 
     def compute_likelihood(self) -> float:
         """
@@ -790,9 +787,7 @@ class JointCRep(
 
         return uttkrp_DK
 
-    def _likelihood(
-        self
-    ) -> float:
+    def _likelihood(self) -> float:
         """
         Compute the log-likelihood of the data.
 

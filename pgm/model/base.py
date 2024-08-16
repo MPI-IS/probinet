@@ -128,7 +128,7 @@ class ModelBase(ModelBaseParameters):
             log_and_raise_error(ValueError, message)
         self.initialization = initialization
 
-        if gamma is None: # TODO: rethink this, gamma is only for MTCOV
+        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
             if (eta0 is not None) and (eta0 <= 0.0):
                 message = "If not None, the eta0 parameter has to be greater than 0.!"
                 log_and_raise_error(ValueError, message)
@@ -193,7 +193,7 @@ class ModelBase(ModelBaseParameters):
 
         if "files" in extra_params:
             self.files = extra_params["files"]
-        if gamma is None: #TODO: rethink this, gamma is only for MTCOV
+        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
             if self.undirected and not (self.fix_eta and self.eta0 == 1):
                 message = (
                     "If undirected=True, the parameter eta has to be fixed equal to 1 "
@@ -470,7 +470,6 @@ class ModelBase(ModelBaseParameters):
         """
         self._copy_variables(source_suffix="", target_suffix="_f")  # type: ignore
 
-
     def _lambda_nz(self, subs_nz: tuple, temporal: bool = True) -> np.ndarray:
         """
         Compute the mean lambda_ij for only non-zero entries.
@@ -517,9 +516,7 @@ class ModelBase(ModelBaseParameters):
         Compute the pseudo-log-likelihood.
         """
 
-    def _likelihood(
-        self
-    ):
+    def _likelihood(self):
         """
         Compute the log-likelihood.
         """

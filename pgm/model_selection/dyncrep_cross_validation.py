@@ -21,7 +21,7 @@ class DynCRepCrossValidation(CrossValidation):
     - Calculate performance measures in the hidden set (AUC).
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params,numerical_parameters={}):
+    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters={}):
         """
         Constructor for the DynCRepCrossValidation class.
         Parameters
@@ -36,8 +36,17 @@ class DynCRepCrossValidation(CrossValidation):
         self.parameters = parameters
         self.num_parameters = numerical_parameters
 
-    def extract_mask(self, fold):
-        pass
+    def extract_mask(self, fold: int):
+        """
+        Extract the mask for the current fold. It is not used in this class.
+        Parameters
+        ----------
+        fold : int
+            Fold index.
+
+        Returns
+        -------
+        """
 
     def load_data(self):
         """
@@ -78,9 +87,7 @@ class DynCRepCrossValidation(CrossValidation):
         # Initialize the comparison list with 16 elements
         comparison = [0 for _ in range(16)]
 
-        comparison[0] = (
-            "DynCRep_temporal" if self.parameters["temporal"] else "DynCRep"
-        )
+        comparison[0] = "DynCRep_temporal" if self.parameters["temporal"] else "DynCRep"
 
         comparison[1] = self.parameters["constrained"]
         comparison[2] = self.parameters["flag_data_T"]
@@ -154,9 +161,6 @@ class DynCRepCrossValidation(CrossValidation):
         """
         Run the cross-validation procedure.
         """
-        # Set up logging
-        logging.basicConfig(level=logging.DEBUG)
-
         # Set up output directory
         self.prepare_output_directory()
 

@@ -179,8 +179,9 @@ class ACDTestCase(BaseTest):
         # Load the data from the file
         path = Path(self.folder) / str("theta" + extra_params["end_file"])
         theta = np.load(path.with_suffix(".npz"))
-        assert all(key in theta for key in self.keys_in_thetaGT[1:]), (
-            "Some keys are missing in " "the " "theta dictionary"
+        self.assertTrue(
+            all(key in theta for key in self.keys_in_thetaGT[1:]),
+            "Some keys are missing in the theta dictionary",
         )
         # TODO: fix the previous assert (it should not be done from 1 onwards, but using all the
         #  list. To fix it, I first need to talk to Hadiseh to see why there is a z in theta if

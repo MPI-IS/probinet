@@ -243,10 +243,6 @@ class SyntheticDynCRep:
         G : networkx.classes.digraph.DiGraph
             NetworkX DiGraph object. Self-loops allowed.
         """
-
-        # Set seed random number generator
-        # prng = np.random.RandomState(self.prng)
-
         # Latent variables
         if parameters is None:
             # Generate latent variables
@@ -694,13 +690,9 @@ def membership_vectors(
     # Generate mixed communities if requested
     if over != 0.0:
         overlapping = int(N * over)  # number of nodes belonging to more communities
-        ind_over = prng.randint(
-            len(u), size=overlapping
-        )
+        ind_over = prng.randint(len(u), size=overlapping)
         if L1:
-            u[ind_over] = prng.dirichlet(
-                eta * np.ones(K), overlapping
-            )
+            u[ind_over] = prng.dirichlet(eta * np.ones(K), overlapping)
             v[ind_over] = corr * u[ind_over] + (1.0 - corr) * prng.dirichlet(
                 eta * np.ones(K), overlapping  # pylint: disable=undefined-variable
             )

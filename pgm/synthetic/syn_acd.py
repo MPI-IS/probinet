@@ -20,32 +20,32 @@ EPS = 1e-12  # Small value to avoid division by zero
 
 
 class SyntNetAnomaly:
-    '''
+    """
     Class for generation and management of synthetic networks with anomalies.
-    '''
+    """
 
     def __init__(
-            self,
-            m: int = 1,
-            N: int = 100,
-            K: int = 2,
-            rseed: int = 10,
-            avg_degree: float = 4.0,
-            rho_anomaly: float = 0.1,
-            structure: str = "assortative",
-            label: str = None,
-            pi: float = 0.8,
-            eta: float = 0.5,
-            L1: bool = False,
-            ag: float = 0.6,
-            bg: float = 1.0,
-            corr: float = 0.0,
-            over: float = 0.0,
-            verbose: int = 0,
-            folder: str = "../../data/input",
-            output_parameters: bool = False,
-            output_adj: bool = False,
-            outfile_adj: str = None,
+        self,
+        m: int = 1,
+        N: int = 100,
+        K: int = 2,
+        rseed: int = 10,
+        avg_degree: float = 4.0,
+        rho_anomaly: float = 0.1,
+        structure: str = "assortative",
+        label: str = None,
+        pi: float = 0.8,
+        eta: float = 0.5,
+        L1: bool = False,
+        ag: float = 0.6,
+        bg: float = 1.0,
+        corr: float = 0.0,
+        over: float = 0.0,
+        verbose: int = 0,
+        folder: str = "",
+        output_parameters: bool = False,
+        output_adj: bool = False,
+        outfile_adj: str = None,
     ) -> None:
 
         # Set network size (node number)
@@ -83,10 +83,6 @@ class SyntNetAnomaly:
                 "The verbosity parameter can only assume values in {0,1,2}!"
             )
         self.verbose = verbose
-
-        # Set Bernoullis parameters
-        # if mu < 0 or mu > 1:
-        # raise ValueError('The Binomial parameter mu has to be in [0, 1]!')
 
         # Check if the value of pi is within the valid range [0, 1]
         if pi < 0 or pi > 1:
