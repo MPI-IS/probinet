@@ -9,7 +9,9 @@ import unittest
 import numpy as np
 import yaml
 
-from .constants import INIT_STR, K_NEW, PATH_FOR_INIT, RANDOM_SEED_NEW, TOLERANCE_1
+from pgm.model_selection.cross_validation import CrossValidation
+
+from .constants import INIT_STR, K_NEW, PATH_FOR_INIT, RANDOM_SEED_REPROD, TOLERANCE_1
 
 ALGORITHM = "CRep"
 MODEL_PARAMETERS = {}
@@ -62,9 +64,9 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(np.allclose(self.model.beta_f, theta["beta"]))
 
     def _assert_dictionary_keys(self, theta):
-        self.assertTrue( all(key in theta for key in self.keys_in_thetaGT),
-            "Some keys are missing in the theta dictionary"
-        ,
+        self.assertTrue(
+            all(key in theta for key in self.keys_in_thetaGT),
+            "Some keys are missing in the theta dictionary",
         )
 
     def _assert_ground_truth_information(self, theta, thetaGT):
@@ -121,7 +123,9 @@ class ModelTestMixin:
 
     def test_running_algorithm_initialized_from_file_from_mixin(self):
 
-        with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
+        with open(
+            PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml"), encoding="utf-8"
+        ) as fp:
             self.conf = yaml.safe_load(fp)
         # Saving the outputs of the tests inside the tests dir
         self.conf["out_folder"] = self.folder
@@ -165,7 +169,7 @@ class ModelTestMixin:
         self.conf["K"] = K_NEW
 
         # Change the random seed in the configuration
-        self.conf["rseed"] = RANDOM_SEED_NEW
+        self.conf["rseed"] = RANDOM_SEED_REPROD
 
         # Fit the model to the data using the modified configuration
         self._fit_model_to_data(self.conf)

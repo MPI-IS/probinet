@@ -9,7 +9,7 @@ DECIMAL_5 = 3
 TOLERANCE_1 = 1e-3
 TOLERANCE_2 = 1e-3
 K_NEW = 5
-RANDOM_SEED_NEW = 123
+RANDOM_SEED_REPROD = 123  # Random seed for reproducibility
 
 CURRENT_FILE_PATH = Path(__file__)
 INIT_STR = "_for_initialization"

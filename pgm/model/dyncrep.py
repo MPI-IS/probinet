@@ -14,114 +14,69 @@ import sktensor as skt
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
-    get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
+    get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
+    sp_uttkrp_assortative)
 from ..output.evaluate import func_lagrange_multiplier, lambda_full, u_with_lagrange_multiplier
 from .base import ModelBase, ModelUpdateMixin
-from .constants import CONVERGENCE_TOL_, DECISION_, EPS_, ERR_MAX_, INF_
+from .constants import EPS_
 
 
 class DynCRep(ModelBase, ModelUpdateMixin):
     """
-    Class definition of DynCRep, the algorithm to perform inference in temporal  networks
+    Class definition of DynCRep, the algorithm to perform inference in temporal networks
     with reciprocity.
     """
 
+    @inherit_docstring(ModelBase)
     def __init__(
         self,
-        inf: float = INF_,
-        err_max: float = ERR_MAX_,
-        err: float = 0.01,
-        num_realizations: int = 1,
-        convergence_tol: float = CONVERGENCE_TOL_,
-        decision: int = DECISION_,
-        max_iter: int = 1000,
-        plot_loglik: bool = False,
-        flag_conv: str = "log",
+        err: float = 0.01,  # Overriding the base class default
+        num_realizations: int = 1,  # Overriding the base class default
+        max_iter: int = 1000,  # Overriding the base class default
+        **kwargs,  # Capture all other arguments for ModelBase
     ) -> None:
-
+        # Pass the overridden arguments along with any others to the parent class
         super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
-            flag_conv,
+            err=err,
+            num_realizations=num_realizations,
+            max_iter=max_iter,
+            **kwargs,  # Forward any other arguments to the base class
         )
 
-        # Initialize the attributes
-        self.u_f = None
-        self.v_f = None
-        self.w_f = None
-
-    def check_fit_params(
+    def _check_fit_params(
         self,
-        K: int,
-        data: Union[skt.sptensor, skt.dtensor],
-        undirected: bool,
-        initialization: int,
-        assortative: bool,
-        constrained: bool,
-        constraintU: bool,
-        eta0: Union[float, None],
-        beta0: float,
-        ag: float,
-        bg: float,
-        temporal: bool,
-        flag_data_T: int,
-        fix_communities: bool,
-        fix_w: bool,
-        fix_eta: bool,
-        fix_beta: bool,
-        out_inference: bool,
-        out_folder: str,
-        end_file: str,
-        files: str,
+        **kwargs: Any,
     ) -> None:
         message = (
             "The initialization parameter can be either 0, or 1.  It is used as an "
             "indicator to initialize the membership matrices u and v and the affinity  "
             "matrix w. If it is 0, they will be generated randomly, otherwise they will  "
             "upload from file."
-        )  # TODO: Update this message
+        )
 
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
-            initialization,
-            undirected,
-            assortative,
-            data,
-            K,
             data_X=None,
             gamma=None,
-            beta0=beta0,
-            eta0=eta0,
             message=message,
-            fix_eta=fix_eta,
-            fix_beta=fix_beta,
-            fix_w=fix_w,
-            fix_communities=fix_communities,
-            out_inference=out_inference,
-            out_folder=out_folder,
-            end_file=end_file,
-            files=files
+            **kwargs,
         )
 
-        self.constrained = constrained  # if True, use the configuration with constraints on the updates
-        self.constraintU = constraintU  # if True, use constraint on U
-        self.ag = ag  # shape of gamma prior
-        self.bg = bg  # rate of gamma prior
-        self.beta0 = beta0
-        self.temporal = temporal
+        # Define other parameters for fitting the model
+        self.constrained = kwargs.get("constrained", False)
+        self.constraintU = kwargs.get(
+            "constraintU", False
+        )  # if True, use constraint on U
+        self.ag = kwargs.get("ag", 1.0)  # shape of gamma prior
+        self.bg = kwargs.get("bg", 0.5)  # rate of gamma prior
+        self.beta0 = kwargs.get("beta0", 0.25)  # initial value of beta
+        self.temporal = kwargs.get("temporal", True)  # if True, temporal model
+        self.flag_data_T = kwargs.get(
+            "flag_data_T", 0
+        )  # if 0: previous time step, 1: same time step
 
-        if flag_data_T not in [0, 1]:
+        if self.flag_data_T not in [0, 1]:
             log_and_raise_error(ValueError, "flag_data_T has to be either 0 or 1!")
-        else:
-            self.flag_data_T = (
-                flag_data_T  # if 0: previous time step, 1: same time step
-            )
 
         if self.eta0 is not None:
             if (self.eta0 < 0) or (self.eta0 > 1):
@@ -150,32 +105,32 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
     def fit(
-            self,
-            data: Union[np.ndarray, skt.sptensor],
-            T: int,
-            nodes: List[int],
-            mask: Optional[np.ndarray] = None,
-            K: int = 2,
-            rseed: int = 0,
-            ag: float = 1.0,
-            bg: float = 0.5,
-            eta0: Optional[float] = None,
-            beta0: float = 0.25,
-            flag_data_T: int = 0,
-            temporal: bool = True,
-            initialization: int = 0,
-            assortative: bool = False,
-            constrained: bool = False,
-            constraintU: bool = False,
-            fix_eta: bool = False,
-            fix_beta: bool = False,
-            fix_communities: bool = False,
-            fix_w: bool = False,
-            undirected: bool = False,
-            out_inference: bool = True,
-            out_folder: str = "outputs/",
-            end_file: str = "_DynCRep",
-            files: str = ""
+        self,
+        data: Union[np.ndarray, skt.sptensor],
+        T: int,
+        nodes: List[int],
+        mask: Optional[np.ndarray] = None,
+        K: int = 2,
+        rseed: int = 0,
+        ag: float = 1.0,
+        bg: float = 0.5,
+        eta0: Optional[float] = None,
+        beta0: float = 0.25,
+        flag_data_T: int = 0,
+        temporal: bool = True,
+        initialization: int = 0,
+        assortative: bool = False,
+        constrained: bool = False,
+        constraintU: bool = False,
+        fix_eta: bool = False,
+        fix_beta: bool = False,
+        fix_communities: bool = False,
+        fix_w: bool = False,
+        undirected: bool = False,
+        out_inference: bool = True,
+        out_folder: Path = Path("outputs"),
+        end_file: str = None,
+        files: str = None,
     ) -> Tuple[
         np.ndarray,
         np.ndarray,
@@ -237,9 +192,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default "_DynCRep".
+            Suffix for the output file, by default None.
         files : str, optional
-            Path to the file for initialization, by default "".
+            Path to the file for initialization, by default None.
 
         Returns
         -------
@@ -259,28 +214,28 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 Maximum pseudo log-likelihood.
         """
         # Check the parameters for fitting the model
-        self.check_fit_params(
-            K,  # type: ignore
-            data,
+        self._check_fit_params(
+            K=K,  # type: ignore
+            data=data,
             ag=ag,
             bg=bg,
             flag_data_T=flag_data_T,
             eta0=eta0,
             beta0=beta0,
-            temporal = temporal,
-            initialization = initialization,
-            assortative = assortative,
-            constrained = constrained,
-            constraintU = constraintU,
-            fix_eta = fix_eta,
-            fix_beta = fix_beta,
-            fix_communities = fix_communities,
-            fix_w = fix_w,
-            undirected = undirected,
-            out_inference = out_inference,
-            out_folder = out_folder,
-            end_file = end_file,
-            files = files
+            temporal=temporal,
+            initialization=initialization,
+            assortative=assortative,
+            constrained=constrained,
+            constraintU=constraintU,
+            fix_eta=fix_eta,
+            fix_beta=fix_beta,
+            fix_communities=fix_communities,
+            fix_w=fix_w,
+            undirected=undirected,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            files=files,
         )
 
         # Set the random seed

@@ -12,7 +12,7 @@ from scipy.sparse import coo_matrix
 import sktensor as skt
 
 from pgm.input.tools import (
-    build_edgelist, can_cast, Exp_ija_matrix, get_item_array_from_subs, is_sparse,
+    build_edgelist, can_cast_to_int, Exp_ija_matrix, get_item_array_from_subs, is_sparse,
     normalize_nonzero_membership, output_adjacency, sp_uttkrp, sp_uttkrp_assortative,
     sptensor_from_dense_array, transpose_ij2, transpose_ij3, write_adjacency, write_design_Matrix)
 
@@ -52,10 +52,10 @@ class TestTensors(unittest.TestCase):
         self.w_a = np.array([[0.1, 0.2, 0]])  # lxk #in the other case, this is lxkxk
 
     def test_can_cast(self):
-        self.assertTrue(can_cast("123"))
-        self.assertFalse(can_cast("12.34"))
-        self.assertTrue(can_cast(42))
-        self.assertFalse(can_cast("abc"))
+        self.assertTrue(can_cast_to_int("123"))
+        self.assertFalse(can_cast_to_int("12.34"))
+        self.assertTrue(can_cast_to_int(42))
+        self.assertFalse(can_cast_to_int("abc"))
 
     def test_normalize_nonzero_membership(self):
         # Test when input is a 2x2 matrix

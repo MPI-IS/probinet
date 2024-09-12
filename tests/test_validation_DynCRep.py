@@ -40,8 +40,9 @@ class DynCRepTestCase(BaseTest):
         self.N = len(self.nodes)
         self.T = self.B.shape[0] - 1
 
-    def assert_model_results_from_yaml(self, u, v, w, eta, beta, Loglikelihood, M_inf, B,
-                                       yaml_file):
+    def assert_model_results_from_yaml(
+        self, u, v, w, eta, beta, Loglikelihood, M_inf, B, yaml_file
+    ):
         with open(yaml_file, "r") as f:
             expected_values = yaml.safe_load(f)
 
@@ -62,7 +63,9 @@ class DynCRepTestCase(BaseTest):
         self.assertAlmostEqual(beta, expected_values["beta"], places=3)
 
         # Assertions for Loglikelihood
-        self.assertAlmostEqual(Loglikelihood, expected_values["Loglikelihood"], places=3)
+        self.assertAlmostEqual(
+            Loglikelihood, expected_values["Loglikelihood"], places=3
+        )
 
         # Assertions for AUC
         expected_aucs = expected_values["AUC"]
@@ -106,6 +109,12 @@ class DynCRepTestCase(BaseTest):
         M_inf = lambda_inf + eta * transpose_tensor(self.B)
 
         # Load expected values from YAML and assert results
-        yaml_file = Path(__file__).parent / "data" / "dyncrep" / "data_for_test_running_temporal_version.yaml"
-        self.assert_model_results_from_yaml(u, v, w, eta, beta, Loglikelihood, M_inf, self.B,
-                                            yaml_file)
+        yaml_file = (
+            Path(__file__).parent
+            / "data"
+            / "dyncrep"
+            / "data_for_test_running_temporal_version.yaml"
+        )
+        self.assert_model_results_from_yaml(
+            u, v, w, eta, beta, Loglikelihood, M_inf, self.B, yaml_file
+        )

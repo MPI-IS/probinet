@@ -15,108 +15,57 @@ import sktensor as skt
 
 from pgm.input.preprocessing import preprocess
 from pgm.input.tools import (
-    get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative,
-    transpose_tensor)
+    get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
+    sp_uttkrp_assortative, transpose_tensor)
 from pgm.model.base import ModelBase, ModelUpdateMixin
-from pgm.model.constants import INF_
 from pgm.output.evaluate import lambda_full
 
 EPS = 1e-12
 
 
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
+    """
+    Class definition of AnomalyDetection, the algorithm to perform inference and anomaly
+    detection on networks with reciprocity.
+    """
+
+    @inherit_docstring(ModelBase)
     def __init__(
         self,
-        convergence_tol: float = 0.1, # tolerance for convergence
-        decision: int = 2, # convergence parameter
-        err: float = 0.01, # noise for the initialization
-        err_max: float = 1e-8, # minimum value for the parameters
-        flag_conv: str = "log", # flag to choose the convergence criterion
-        inf: float = INF_, # initial value of the log-likelihood
-        max_iter: int = 500, # maximum number of EM steps before aborting
-        num_realizations: int = 1, # number of iterations with different random initialization
-        plot_loglik: bool = False, # flag to plot the log-likelihood
+        convergence_tol: float = 1e-1,  # Overriding the base class default
+        decision: int = 2,  # Overriding the base class default
+        err: float = 1e-2,  # Overriding the base class default
+        err_max: float = 1e-8,  # Overriding the base class default
+        num_realizations: int = 1,  # Overriding the base class default
+        max_iter: int = 1000,  # Overriding the base class default
+        **kwargs,  # Capture all other arguments for ModelBase
     ) -> None:
+        # Pass the overridden arguments along with any others to the parent class
         super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
+            convergence_tol=convergence_tol,
+            decision=decision,
+            err=err,
+            err_max=err_max,
+            num_realizations=num_realizations,
+            max_iter=max_iter,
+            **kwargs,  # Forward any other arguments to the base class
         )
-        self.inf = inf  # initial value of the log-likelihood
-        self.err_max = err_max  # minimum value for the parameters
-        self.err = err  # noise for the initialization
-        self.num_realizations = num_realizations  # number of iterations with different random initialization
-        self.convergence_tol = convergence_tol  # tolerance parameter for convergence
-        self.decision = decision  # convergence parameter
-        self.max_iter = max_iter  # maximum number of EM steps before aborting
-        self.plot_loglik = plot_loglik
-        self.flag_conv = flag_conv
 
-        # Initialize the attributes
-        self.u_f: np.ndarray = np.array([])
-        self.v_f: np.ndarray = np.array([])
-        self.w_f: np.ndarray = np.array([])
-
-    def check_fit_params(
-        self,
-        K: int,
-        data: Union[skt.sptensor, skt.dtensor],
-        undirected: bool,
-        initialization: int,
-        assortative: bool,
-        constrained: bool,
-        ag: float,
-        bg: float,
-        pibr0: float,
-        mupr0: float,
-        flag_anomaly: bool,
-        fix_pibr: bool,
-        fix_mupr: bool,
-        fix_w: bool,
-        fix_communities: bool,
-        out_inference: bool,
-        out_folder: str,
-        end_file: str,
-        verbose: int,
-        files:str
-    ) -> None:
+    def _check_fit_params(self, **kwargs) -> None:
         message = "Message"  # TODO: update message
 
-        super()._check_fit_params(
-            initialization,
-            undirected,
-            assortative,
-            data,
-            K,
-            message=message,
-            data_X=None,
-            eta0=None,
-            beta0=None,
-            gamma=None,
-            fix_pibr=fix_pibr,
-            fix_mupr=fix_mupr,
-            fix_w=fix_w,
-            fix_communities=fix_communities,
-            files=files,
-            out_inference=out_inference,
-            out_folder=out_folder,
-            end_file=end_file,
-            verbose=verbose,
-        )
+        super()._check_fit_params(message=message, **kwargs)
 
-        self.constrained = constrained  # if True, use the configuration with constraints on the updates
-        self.ag = ag  # shape of gamma prior
-        self.bg = bg  # rate of gamma prior
-        self.pibr = pibr0  # pi: anomaly parameter
-        self.mupr = mupr0  # mu: prior
-        self.flag_anomaly = flag_anomaly
-        self.fix_pibr = fix_pibr
-        self.fix_mupr = fix_mupr
+        self.constrained = kwargs.get(
+            "constrained", False
+        )  # if True, use the configuration with constraints on the updates
+        self.ag = kwargs.get("ag", 1.5)  # shape of gamma prior
+        self.bg = kwargs.get("bg", 10.0)  # rate of gamma prior
+        self.flag_anomaly = kwargs.get("flag_anomaly", True)
+        self.fix_pibr = kwargs.get("fix_pibr", False)
+        self.fix_mupr = kwargs.get("fix_mupr", False)
+        self.pibr = kwargs.get("pibr0", None)  # pi: anomaly parameter
+        self.mupr = kwargs.get("mupr0", None)  # mu: prior
 
         if self.pibr is not None:
             if (self.pibr < 0) or (self.pibr > 1):
@@ -127,9 +76,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                 raise ValueError("The prior mupr0 has to be in [0, 1]!")
 
         if self.fix_pibr == True:
-            self.pibr = self.pibr_old = self.pibr_f = pibr0
+            self.pibr_old = self.pibr_f = self.pibr
         if self.fix_mupr == True:
-            self.mupr = self.mupr_old = self.mupr_f = mupr0
+            self.mupr_old = self.mupr_f = self.mupr
 
         if self.flag_anomaly == False:
             self.pibr = self.pibr_old = self.pibr_f = 1.0
@@ -148,8 +97,8 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self,
         data: Union[skt.sptensor, skt.dtensor],
         nodes: List[int],
-        ag: float =1.5,
-        bg: float=10.,
+        ag: float = 1.5,
+        bg: float = 10.0,
         pibr0: Optional[float] = None,
         mupr0: Optional[float] = None,
         flag_anomaly: bool = True,
@@ -157,17 +106,17 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         fix_mupr: bool = False,
         K: int = 3,
         undirected: bool = False,
-        initialization: int =0,
-        assortative: bool =True,
-        constrained:bool =False,
-        fix_w:bool = False,
-        fix_communities:bool = False,
+        initialization: int = 0,
+        assortative: bool = True,
+        constrained: bool = False,
+        fix_w: bool = False,
+        fix_communities: bool = False,
         mask: Optional[np.ndarray] = None,
         rseed: int = 10,
         out_inference: bool = True,
-        out_folder: str = "outputs/",
-        end_file: str = "_JointCRep",
-        files: Union[str, Path] = ""
+        out_folder: Path = Path("outputs"),
+        end_file: str = None,
+        files: Union[str, Path] = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float]:
         """
         Fit the AnomalyDetection model to the provided data.
@@ -217,9 +166,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default "_JointCRep".
+            Suffix for the output file, by default None.
         files : Union[str, Path], optional
-            Path to the file for initialization, by default "".
+            Path to the file for initialization, by default None.
 
         Returns
         -------
@@ -238,31 +187,30 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             Maximum log-likelihood.
         """
         # Check the input parameters
-        self.check_fit_params(
-            K,
-            data,
-            undirected,
-            initialization,
-            assortative,
-            constrained,
-            ag,
-            bg,
-            pibr0,
-            mupr0,
-            flag_anomaly,
-            fix_pibr,
-            fix_mupr,
+        self._check_fit_params(
+            K=K,
+            data=data,
+            undirected=undirected,
+            initialization=initialization,
+            assortative=assortative,
+            constrained=constrained,
+            ag=ag,
+            bg=bg,
+            pibr0=pibr0,
+            mupr0=mupr0,
+            flag_anomaly=flag_anomaly,
+            fix_pibr=fix_pibr,
+            fix_mupr=fix_mupr,
             fix_communities=fix_communities,
             fix_w=fix_w,
             out_inference=out_inference,
             out_folder=out_folder,
             end_file=end_file,
-            verbose=0,
             files=files,
         )
         self.rseed = rseed  # random seed
         logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
+        self.rng = np.random.RandomState(self.rseed)
 
         # Initialize the fit parameters
         maxL = -self.inf  # initialization of the maximum  log-likelihood

@@ -13,11 +13,10 @@ import sktensor as skt
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
-    check_symmetric, get_item_array_from_subs, log_and_raise_error, sp_uttkrp,
+    check_symmetric, get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
 from ..output.evaluate import lambda_full
 from .base import ModelBase, ModelUpdateMixin
-from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 
 
 class JointCRep(ModelBase, ModelUpdateMixin):
@@ -25,50 +24,16 @@ class JointCRep(ModelBase, ModelUpdateMixin):
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
 
+    @inherit_docstring(ModelBase)
     def __init__(
-        self,  # pylint: disable=too-many-arguments
-        inf: float = INF_,  # initial value of the log-likelihood
-        err_max: float = ERR_MAX_,  # minimum value for the parameters
-        err: float = ERR_,  # noise for the initialization
-        convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
-        decision: int = DECISION_,  # convergence parameter
-        max_iter: int = 500,  # maximum number of EM steps before aborting
-        num_realizations: int = 3,  # number of iterations with different random initialization
-        plot_loglik: bool = False,  # flag to plot the log-likelihood
-    ):
-        super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
-            flag_conv,
-        )
-
-        # Initialize the attributes
-        self.u_f: np.ndarray = np.array([])
-        self.v_f: np.ndarray = np.array([])
-        self.w_f: np.ndarray = np.array([])
-
-    def check_fit_params(
         self,
-        initialization: int,
-        eta0: Union[float, None],
-        undirected: bool,
-        assortative: bool,
-        data: Union[skt.dtensor, skt.sptensor],
-        K: int,
-        fix_communities: bool,
-        fix_w: bool,
-        fix_eta: bool,
-        use_approximation: bool,
-        out_inference:bool,
-        out_folder: str,
-        end_file: str,
-        files: str,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+
+    def _check_fit_params(
+        self,
+        **kwargs: Any,
     ) -> None:
 
         message = (
@@ -77,29 +42,11 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             "matrix w. If it is 0, they will be generated randomly; 1 means only "
             "the affinity matrix w will be uploaded from file; 2 implies the "
             "membership matrices u and v will be uploaded from file and 3 all u, "
-            "v and w will be initialized through an input file."
+            "v and w will be initialized through an input file."  # TODO: fix this
         )
 
         # Call the check_fit_params method from the parent class
-        super()._check_fit_params(
-            initialization,
-            undirected,
-            assortative,
-            data,
-            K,
-            data_X=None,
-            gamma=None,
-            eta0=eta0,
-            beta0=None,
-            message=message,
-            fix_communities=fix_communities,
-            fix_w= fix_w,
-            fix_eta=fix_eta,
-            use_approximation= use_approximation,
-            out_inference = out_inference,
-            out_folder = out_folder,
-            end_file = end_file,
-            files = files)
+        super()._check_fit_params(meesage=message, **kwargs)
 
         # Parameters for the initialization of the model
         self.normalize_rows = False
@@ -131,9 +78,9 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         fix_w: bool = False,
         use_approximation: bool = False,
         out_inference: bool = True,
-        out_folder: str = "outputs/",
-        end_file: str = "_JointCRep",
-        files: str = ""
+        out_folder: Path = Path("outputs"),
+        end_file: str = None,
+        files: str = None,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -184,10 +131,9 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default "_JointCRep".
+            Suffix for the output file, by default None.
         files : str, optional
-            Path to the file for initialization, by default "".
-
+            Path to the file for initialization, by default None.
         Returns
         -------
         Tuple[np.ndarray, np.ndarray, np.ndarray, float, float]
@@ -205,7 +151,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         """
 
         # Check the parameters for fitting the model
-        self.check_fit_params(
+        self._check_fit_params(
             data=data,
             K=K,
             initialization=initialization,
@@ -215,17 +161,17 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             use_approximation=use_approximation,
             fix_eta=fix_eta,
             fix_communities=fix_communities,
-            fix_w = fix_w,
+            fix_w=fix_w,
             files=files,
-            out_inference = out_inference,
-            out_folder = out_folder,
-            end_file = end_file
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
         )
 
         # Fix the random seed
         self.rseed = rseed
         logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
+        self.rng = np.random.RandomState(self.rseed)
 
         # Initialize the fit parameters
         self.initialization = initialization

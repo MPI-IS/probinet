@@ -49,7 +49,7 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
         # Setting to run the algorithm
 
-        with open(PATH_FOR_INIT/("setting_" + self.algorithm + ".yaml")) as fp:
+        with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
@@ -67,12 +67,11 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
         self.N = len(self.nodes)
 
-        self.files = "tests/inputs/theta_GT_JointCRep_for_initialization.npz"
+        self.files = PATH_FOR_INIT / "theta_GT_JointCRep_for_initialization.npz"
 
         # Run model
 
         self.model = JointCRep()
-
 
     # test case function to check the JointCRep.set_name function
     def test_import_data(self):

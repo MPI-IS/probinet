@@ -44,11 +44,11 @@ class GM_reciprocity:
         beta: float = 0.1,
         Normalization: int = 0,
         structure: str = "assortative",
-        end_file: str = "",
-        out_folder: str = "../data/output/real_data/cv/",
+        end_file: str = None,
+        out_folder: str = None,
         output_parameters: bool = False,
         output_adj: bool = False,
-        outfile_adj: str = "None",
+        outfile_adj: str = None,
         ExpM: Optional[float] = None,
     ):
         self.N = N  # number of nodes
@@ -137,7 +137,7 @@ class GM_reciprocity:
         """
 
         # Create a random number generator with a specific seed
-        prng = np.random.RandomState(self.seed)  # pylint: disable=no-member
+        prng = np.random.RandomState(self.seed)
 
         # Check if parameters are provided
         if parameters is not None:
@@ -363,7 +363,7 @@ class GM_reciprocity:
         """
 
         # Create a random number generator with a specific seed
-        prng = np.random.RandomState(self.seed)  # pylint: disable=no-member
+        prng = np.random.RandomState(self.seed)
 
         # Set latent variables u,v,w
         if parameters is not None:
@@ -551,7 +551,7 @@ class GM_reciprocity:
         """
 
         # Create a random number generator with a specific seed
-        prng = np.random.RandomState(self.seed)  # pylint: disable=no-member
+        prng = np.random.RandomState(self.seed)
 
         # If p is not provided, calculate it based on eta, k, and N
         if p is None:

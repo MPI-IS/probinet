@@ -48,7 +48,9 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
-        with open(PATH_FOR_INIT/ ("setting_" + self.algorithm + ".yaml")) as fp:
+        with open(
+            PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml"), encoding="utf-8"
+        ) as fp:
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests into the temp folder created in the BaseTest
@@ -59,7 +61,7 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         )  # Adding a suffix to the output files
 
         self.conf = conf
-        
+
         self.files = PATH_FOR_INIT / "theta_GT_CRep_for_initialization.npz"
 
         self.model = CRep()  # type: ignore

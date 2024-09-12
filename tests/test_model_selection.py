@@ -44,12 +44,12 @@ class TestCrossValidationModels(BaseTest):
         ground_truth_df = pd.read_csv(model["ground_truth_file"])
         # Check that the generated dataframe is equal to the ground truth dataframe
         for column in generated_df.columns:
-            pd.testing.assert_series_equal(
-                generated_df[column],
-                ground_truth_df[column],
-                check_exact=False,
-                rtol=1e-5,
-            )
+            for i in range(len(generated_df)):
+                self.assertAlmostEqual(
+                    generated_df[column][i],
+                    ground_truth_df[column][i],
+                    places=5,
+                )
 
     def test_dyncrep_cross_validation(self):
         self.run_cv_and_check_results("DynCRep")

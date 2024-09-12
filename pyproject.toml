@@ -76,6 +76,7 @@ src_paths = ["pgm"]
 [tool.pylint.MASTER]
 disable = ["attribute-defined-outside-init"]
 load-plugins = "pylint.extensions.docparams"
+extension-pkg-whitelist = "numpy"
 
 [tool.pylint.FORMAT]
 max-line-length = 100

@@ -1,5 +1,5 @@
 """
-Implementation of CRep, JointCRep, and MTCOV algorithm.
+Implementation of CRep, JointCRep, MTCOV, DynCRep and ACD algorithms.
 """
 
 import argparse
@@ -20,182 +20,97 @@ from .model.mtcov import MTCOV
 
 
 def parse_args():
-    """
-    Parse the command-line arguments.
-    """
     parser = argparse.ArgumentParser(
-        description="Script to run the CRep, JointCRep, DynCRep, "
-        "MTCOV and ACD algorithms.",
+        description="Script to run the CRep, JointCRep, DynCRep, MTCOV and ACD algorithms.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    # Add the command line arguments
+    # Shared parser for common arguments
+    shared_parser = argparse.ArgumentParser(add_help=False)
 
-    # Algorithm related arguments
-    parser.add_argument(
-        "-a",
-        "--algorithm",
-        type=str,
-        choices=["CRep", "JointCRep", "MTCOV", "DynCRep", "ACD"],
-        default="CRep",
-        help="Choose the algorithm to run: CRep, JointCRep, MTCOV, ACD",
-    )
-    parser.add_argument(
-        "-K", "--K", type=int, default=None, help="Number of communities"
-    )
-    parser.add_argument(
-        "-g",
-        "--gamma",
-        type=float,
-        default=0.5,
-        help="Scaling hyper parameter in MTCOV",
-    )
-    parser.add_argument("--rseed", type=int, default=0, help="Random seed")
-    parser.add_argument(
-        "-nr",
-        "--num_realizations",
-        type=int,
-        default=None,
-        help=("Number of realizations"),
-    )
-    parser.add_argument(
-        "-tol",
-        "--convergence_tol",
-        type=float,
-        default=None,
-        help=("Tolerance used to determine convergence"),
-    )
-    parser.add_argument(
-        "-T", "--T", type=int, default=None, help="Number of time snapshots"
-    )
-    parser.add_argument(
-        "-fdT",
-        "--flag_data_T",
-        type=str,
-        default=0,
-        help="Flag to use data_T. "
-        "It is recommended to use 0, but in case it does not work, try 1.",
-    )
-    parser.add_argument(
-        "-no_anomaly",
-        "--flag_anomaly",
-        action="store_false",
-        default=True,
-        help="Flag to detect anomalies",
-    )
-    # TODO: Improve these model specific arguments
-    parser.add_argument("-ag", type=float, default=1.1, help="Parameter ag")
-    parser.add_argument("-bg", type=float, default=0.5, help="Parameter bg")
-    parser.add_argument("-pibr0", default=None, help="Anomaly parameter pi")
-    parser.add_argument("-mupr0", default=None, help="Prior mu")
-    parser.add_argument(
-        "-temp",
-        "--temporal",
-        action="store_false",
-        default=True,
-        help="Flag to use non-temporal version of DynCRep. If not set, it will use the temporal "
-        "version.",
+    # Define the subparsers
+    subparsers = parser.add_subparsers(
+        dest="algorithm", help="Choose the algorithm to run"
     )
 
-    # Input/Output related arguments
-    parser.add_argument(
-        "-A", "--adj_name", type=str, default="syn111.dat", help="Name of the network"
-    )
-    parser.add_argument(
-        "-C",
-        "--cov_name",
+    # Common arguments
+    shared_parser.add_argument(
+        "-f",
+        "--files",
         type=str,
-        default="X.csv",
-        help="Name of the design matrix used in MTCOV",
+        default="data/input",
+        help="Path to the input " "files",
     )
-    parser.add_argument(
-        "-f", "--in_folder", type=str, default="", help="Path of the input folder"
-    )
-    parser.add_argument(
-        "-o",
-        "-O",
-        "--out_folder",
-        type=str,
-        default="",
-        help="Path of the output folder",
-    )
-    parser.add_argument(
-        "-out_inference",
-        "--out_inference",
-        action="store_true",
-        default=False,
-        help="Flag to save the inference results",
-    )
-
-    # Network related arguments
-    parser.add_argument(
+    shared_parser.add_argument(
         "-e", "--ego", type=str, default="source", help="Name of the source of the edge"
     )
-    parser.add_argument(
+    shared_parser.add_argument(
         "-t",
         "--alter",
         type=str,
         default="target",
         help="Name of the target of the edge",
     )
-    parser.add_argument(
-        "-x",
-        "--egoX",
-        type=str,
-        default="Name",
-        help="Name of the column with node labels",
+    shared_parser.add_argument(
+        "--noselfloop", type=bool, default=True, help="Flag to remove self-loops"
     )
-    parser.add_argument(
-        "-an",
-        "--attr_name",
-        type=str,
-        default="Metadata",
-        help="Name of the attribute to consider in MTCOV",
+    shared_parser.add_argument(
+        "--binary", type=bool, default=True, help="Flag to make the network binary"
     )
-    parser.add_argument(
+    shared_parser.add_argument(
+        "--force_dense",
+        type=bool,
+        default=False,
+        help="Flag to force a dense transformation in input",
+    )
+    shared_parser.add_argument(
+        "--assortative", type=bool, default=False, help="Flag for assortative mixing"
+    )
+    shared_parser.add_argument(
         "-u",
         "--undirected",
         type=bool,
         default=False,
         help="Flag to treat the network as undirected",
     )
-    parser.add_argument(
-        "--noselfloop", type=bool, default=True, help="Flag to remove self-loops"
+    shared_parser.add_argument(
+        "-tol",
+        "--convergence_tol",
+        type=float,
+        default=None,
+        help=("Tolerance used to determine convergence"),
     )
-    parser.add_argument(
-        "--binary", type=bool, default=True, help="Flag to make the network binary"
-    )
-
-    # Data transformation related arguments
-    parser.add_argument(
-        "-fd",
-        "--force_dense",
-        type=bool,
-        default=False,
-        help="Flag to force a dense transformation in input",
-    )
-    parser.add_argument(
-        "-F",
+    shared_parser.add_argument(
         "--flag_conv",
         type=str,
         choices=["log", "deltas"],
         default="log",
         help="Flag for convergence",
     )
-    parser.add_argument(
+    shared_parser.add_argument(
         "--plot_loglikelihood",
         type=bool,
         default=False,
         help="Flag to plot the log-likelihood",
     )
-    parser.add_argument(
-        "-b",
-        "--batch_size",
-        type=int,
-        default=None,
-        help="Size of the batch to use to compute the likelihood",
+    shared_parser.add_argument(
+        "--initialization", type=int, default=0, help="Initialization method"
     )
-
-    parser.add_argument(
+    shared_parser.add_argument(
+        "--out_inference",
+        action="store_true",
+        help="Flag to save the inference results",
+    )
+    shared_parser.add_argument(
+        "--out_folder",
+        "-o",
+        type=str,
+        default="output",
+        help="Path of the output folder",
+    )
+    shared_parser.add_argument(
+        "--end_file", type=str, default="", help="Suffix for the output file"
+    )
+    shared_parser.add_argument(
         "--debug",
         "-d",
         dest="debug",
@@ -204,104 +119,240 @@ def parse_args():
         help="Enable debug mode",
     )
 
-    # Additional parameters
-    parser.add_argument(
+    # CRep parser
+    crep_parser = subparsers.add_parser(
+        "CRep", help="Run the CRep algorithm", parents=[shared_parser]
+    )
+    crep_parser.add_argument(
+        "-K", "--K", type=int, default=3, help="Number of communities"
+    )
+    crep_parser.add_argument(
+        "-nr", "--num_realizations", type=int, default=5, help="Number of realizations"
+    )
+    crep_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
+    crep_parser.add_argument(
         "--mask", type=str, default=None, help="Mask for the data"
-    ) # TODO: Rethink this. Not sure if the mask can be passed as CLI arg.
-    parser.add_argument(
-        "--initialization", type=int, default=0, help="Initialization method"
+    )  # TODO: Rethink this. Not sure if the mask can be passed as CLI arg.
+    crep_parser.add_argument(
+        "--constrained",
+        type=bool,
+        default=False,
+        help="Flag for constrained optimization",
     )
-    parser.add_argument(
-        "--eta0", type=float, default=None, help="Initial eta value"
-    )
-    parser.add_argument(
-        "--constrained", type=bool, default=False, help="Flag for constrained optimization"
-    )
-    parser.add_argument(
-        "--assortative", type=bool, default=False, help="Flag for assortative mixing"
-    )
-    parser.add_argument(
-        "--use_approximation", type=bool, default=False, help="Flag to use approximation"
-    )
-    parser.add_argument(
-        "--end_file", type=str, default="_CRep", help="Suffix for the output file"
-    )
-    parser.add_argument(
+    crep_parser.add_argument(
         "--fix_eta", type=bool, default=False, help="Flag to fix eta"
     )
-    parser.add_argument(
+    crep_parser.add_argument(
+        "--eta0", type=float, default=None, help="Initial eta value"
+    )
+    crep_parser.add_argument(
+        "-A", "--adj_name", type=str, default="syn111.dat", help="Name of the network"
+    )
+
+    # JointCRep parser
+    jointcrep_parser = subparsers.add_parser(
+        "JointCRep", help="Run the JointCRep algorithm", parents=[shared_parser]
+    )
+    jointcrep_parser.add_argument(
+        "-K", "--K", type=int, default=2, help="Number of communities"
+    )
+    jointcrep_parser.add_argument(
+        "-nr", "--num_realizations", type=int, default=3, help="Number of realizations"
+    )
+    jointcrep_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
+    jointcrep_parser.add_argument(
+        "--use_approximation",
+        type=bool,
+        default=False,
+        help="Flag to use approximation",
+    )
+    jointcrep_parser.add_argument(
+        "--fix_eta", type=bool, default=False, help="Flag to fix eta"
+    )
+    jointcrep_parser.add_argument(
         "--fix_w", type=bool, default=False, help="Flag to fix w"
     )
-    parser.add_argument(
+    jointcrep_parser.add_argument(
         "--fix_communities", type=bool, default=False, help="Flag to fix communities"
     )
-    parser.add_argument(
-        "--files", type=str, default="", help="Path to the input files"
+    jointcrep_parser.add_argument(
+        "--eta0", type=float, default=None, help="Initial eta value"
     )
-    parser.add_argument(
-        "--beta0", type=float, default=0.25, help="Initial beta value"
+    jointcrep_parser.add_argument(
+        "-A",
+        "--adj_name",
+        type=str,
+        default="synthetic_data.dat",
+        help="Name of the network",
     )
-    parser.add_argument(
-        "--constraintU", type=bool, default=False, help="Flag for constraint U"
+
+    # MTCOV parser
+    mtcov_parser = subparsers.add_parser(
+        "MTCOV", help="Run the MTCOV algorithm", parents=[shared_parser]
     )
-    parser.add_argument(
+    mtcov_parser.add_argument(
+        "-K", "--K", type=int, default=2, help="Number of communities"
+    )
+    mtcov_parser.add_argument(
+        "-nr", "--num_realizations", type=int, default=5, help="Number of realizations"
+    )
+    mtcov_parser.add_argument(
+        "-x",
+        "--egoX",
+        type=str,
+        default="Name",
+        help="Name of the column with node labels",
+    )
+    mtcov_parser.add_argument(
+        "-an",
+        "--attr_name",
+        type=str,
+        default="Metadata",
+        help="Name of the attribute to consider in MTCOV",
+    )
+    mtcov_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
+    mtcov_parser.add_argument(
+        "--gamma", type=float, default=0.5, help="Scaling hyper parameter in MTCOV"
+    )
+    mtcov_parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Size of the batch to use to compute the likelihood",
+    )
+    mtcov_parser.add_argument(
+        "-A", "--adj_name", type=str, default="adj.csv", help="Name of the network"
+    )
+    mtcov_parser.add_argument(
+        "-C",
+        "--cov_name",
+        type=str,
+        default="X.csv",
+        help="Name of the design matrix used in MTCOV",
+    )
+
+    # DynCRep parser
+    dyncrep_parser = subparsers.add_parser(
+        "DynCRep", help="Run the DynCRep algorithm", parents=[shared_parser]
+    )
+    dyncrep_parser.add_argument(
+        "-K", "--K", type=int, default=2, help="Number of communities"
+    )
+    dyncrep_parser.add_argument(
+        "-nr", "--num_realizations", type=int, default=5, help="Number of realizations"
+    )
+    dyncrep_parser.add_argument(
+        "-T", "--T", type=int, default=None, help="Number of time snapshots"
+    )
+    dyncrep_parser.add_argument(
+        "--mask", type=str, default=None, help="Mask for the data"
+    )  # TODO: Rethink this. Not sure if the mask can be passed as CLI arg.
+    dyncrep_parser.add_argument(
+        "--fix_eta", type=bool, default=False, help="Flag to fix eta"
+    )
+    dyncrep_parser.add_argument(
         "--fix_beta", type=bool, default=False, help="Flag to fix beta"
     )
-    parser.add_argument(
+    dyncrep_parser.add_argument(
+        "--eta0", type=float, default=None, help="Initial eta value"
+    )
+    dyncrep_parser.add_argument(
+        "--beta0", type=float, default=0.25, help="Initial beta value"
+    )
+    dyncrep_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
+    dyncrep_parser.add_argument("--ag", type=float, default=1.1, help="Parameter ag")
+    dyncrep_parser.add_argument("--bg", type=float, default=0.5, help="Parameter bg")
+    dyncrep_parser.add_argument(
+        "--temporal",
+        type=bool,
+        default=True,
+        help="Flag to use non-temporal version of DynCRep",
+    )
+    dyncrep_parser.add_argument(
+        "--fix_communities", type=bool, default=False, help="Flag to fix communities"
+    )
+    dyncrep_parser.add_argument(
+        "--fix_w", type=bool, default=False, help="Flag to fix w"
+    )
+    dyncrep_parser.add_argument(
+        "-fdT",
+        "--flag_data_T",
+        type=str,
+        default=0,
+        help="Flag to use data_T. "
+        "It is recommended to use 0, but in case it does not work, try 1.",
+    )
+    dyncrep_parser.add_argument(
+        "--constrained",
+        type=bool,
+        default=False,
+        help="Flag for constrained optimization",
+    )
+    dyncrep_parser.add_argument(
+        "--constraintU", type=bool, default=False, help="Flag for " "constraint U"
+    )
+    dyncrep_parser.add_argument(
+        "-A",
+        "--adj_name",
+        type=str,
+        default="synthetic_data_for_DynCRep.dat",
+        help="Name of the network",
+    )
+
+    # ACD parser
+    acd_parser = subparsers.add_parser(
+        "ACD", help="Run the ACD algorithm", parents=[shared_parser]
+    )
+    acd_parser.add_argument(
+        "-K", "--K", type=int, default=3, help="Number of communities"
+    )
+    acd_parser.add_argument(
+        "-nr", "--num_realizations", type=int, default=1, help="Number of realizations"
+    )
+    acd_parser.add_argument(
+        "--mask", type=str, default=None, help="Mask for the data"
+    )  # TODO: Rethink this. Not sure if the mask can be passed as CLI arg.
+    acd_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
+    acd_parser.add_argument("--ag", type=float, default=1.1, help="Parameter ag")
+    acd_parser.add_argument("--bg", type=float, default=0.5, help="Parameter bg")
+    acd_parser.add_argument("--pibr0", default=None, help="Anomaly parameter pi")
+    acd_parser.add_argument("--mupr0", default=None, help="Prior mu")
+    acd_parser.add_argument(
+        "--flag_anomaly",
+        action="store_false",
+        default=True,
+        help="Flag to detect anomalies",
+    )
+    acd_parser.add_argument(
+        "--constrained",
+        type=bool,
+        default=False,
+        help="Flag for constrained optimization",
+    )
+    acd_parser.add_argument(
+        "--fix_communities", type=bool, default=False, help="Flag to fix communities"
+    )
+    acd_parser.add_argument(
         "--fix_pibr", type=bool, default=False, help="Flag to fix pibr"
     )
-    parser.add_argument(
+    acd_parser.add_argument(
         "--fix_mupr", type=bool, default=False, help="Flag to fix mupr"
     )
+    acd_parser.add_argument(
+        "-A",
+        "--adj_name",
+        type=str,
+        default="synthetic_data_for_ACD.dat",
+        help="Name of the network",
+    )
 
-    # Parse the command line arguments
     args = parser.parse_args()
-
-    # Set the output folder based on the algorithm if not provided
-    if args.out_folder == "":
-        args.out_folder = args.algorithm + "_output"
-
-    # Map algorithm names to their default adjacency matrix file names
-    default_adj_names = {
-        "CRep": "syn111.dat",
-        "JointCRep": "synthetic_data.dat",
-        "MTCOV": "adj.csv",
-        "DynCRep": "synthetic_data_for_DynCRep.dat",
-        "ACD": "synthetic_data_for_ACD.dat",
-    }
-
-    # Correcting default values based on the chosen algorithm
-    if args.adj_name == "syn111.dat" and args.algorithm in default_adj_names:
-        args.adj_name = default_adj_names[args.algorithm]
-
-    end_file_suffixes = {
-        "JointCRep": "_JointCRep",
-        "MTCOV": "_MTCOV",
-        "DynCRep": "_DynCRep",
-        "ACD": "_ACD"
-    }
-
-    if args.end_file == "_CRep" and args.algorithm in end_file_suffixes:
-        args.end_file = end_file_suffixes[args.algorithm]
-
-    if args.num_realizations is None:
-        num_realizations_dict = {"JointCRep": 3, "ACD": 1, "default": 5}
-        args.num_realizations = num_realizations_dict.get(
-            args.algorithm, num_realizations_dict["default"]
-        )
-
-    if args.K is None:
-        if args.algorithm in ("MTCOV", "JointCRep", "DynCRep"):
-            args.K = 2
-        else:
-            args.K = 3
-
     return args
 
 
 def main():
     """
-    Main function for CRep/JointCRep/MTCOV.
+    Main function for CRep/JointCRep/MTCOV/DynCRep/ACD algorithms.
     """
     # Step 1: Parse the command-line arguments
     args = parse_args()
@@ -330,18 +381,12 @@ def main():
         noselfloop = args.noselfloop
         undirected = args.undirected
 
-    # Set the input folder path
-    if args.in_folder == "":
-        in_folder = (Path(__file__).parent / "data" / "input").resolve()
-    else:
-        in_folder = args.in_folder
-    in_folder = str(in_folder)
     if args.algorithm != "MTCOV":
         if args.algorithm == "DynCRep":
             binary = True  # exactly this in source
             args.force_dense = True  # exactly this in source
 
-        network = in_folder + "/" + args.adj_name
+        network = args.files + "/" + args.adj_name
         if args.algorithm != "ACD":
             A, B, B_T, data_T_vals = import_data(
                 network,
@@ -370,7 +415,7 @@ def main():
 
     else:
         A, B, X, nodes = import_data_mtcov(
-            in_folder,
+            args.files,
             adj_name=args.adj_name,
             cov_name=args.cov_name,
             ego=args.ego,
@@ -387,121 +432,63 @@ def main():
 
         valid_types = [np.ndarray, skt.dtensor, skt.sptensor]
         assert any(isinstance(B, vt) for vt in valid_types)
-        logging.debug("Data loaded successfully from %s", in_folder)
+        logging.debug("Data loaded successfully from %s", args.files)
 
     def fit_model(model, algorithm):
         """
         Fit the model to the data.
         """
-        if algorithm=='CRep':
-            model.fit(data=B,
-                      data_T=B_T,
-                      data_T_vals=data_T_vals,
-                      nodes=nodes,
-                      rseed=args.rseed,
-                      K=args.K,
-                      mask=args.mask,
-                      initialization=args.initialization,
-                      eta0=args.eta0,
-                      undirected=args.undirected,
-                      assortative=args.assortative,
-                      constrained=args.constrained,
-                      out_inference=args.out_inference,
-                      out_folder=args.out_folder,
-                      end_file=args.end_file,
-                      fix_eta=args.fix_eta,
-                      files=args.files
-                      )
+        # Define main parser arguments
+        main_args = ["algorithm", "debug"]
+        # Define the args that set numerical parameters
+        numerical_args = [
+            "num_realizations",
+            "convergence_tol",
+            "plot_loglikelihood",
+            "flag_conv",
+        ]
+        # Define the args that are related to data loading
+        data_loading_args = [
+            "ego",
+            "egoX",
+            "alter",
+            "attr_name",
+            "cov_name",
+            "force_dense",
+            "noselfloop",
+            "binary",
+            "adj_name",
+        ]
+        filtered_args = {
+            k: v
+            for k, v in vars(args).items()
+            if k not in data_loading_args
+            and k not in numerical_args
+            and k not in main_args
+        }
+
+        if algorithm == "CRep":
+            model.fit(
+                data=B,
+                data_T=B_T,
+                data_T_vals=data_T_vals,
+                nodes=nodes,
+                **filtered_args,
+            )
         elif algorithm == "JointCRep":
             model.fit(
                 data=B,
                 data_T=B_T,
                 data_T_vals=data_T_vals,
                 nodes=nodes,
-                rseed=args.rseed,
-                K=args.K,
-                initialization=args.initialization,
-                eta0=args.eta0,
-                undirected=args.undirected,
-                assortative=args.assortative,
-                use_approximation=args.use_approximation,
-                out_inference=args.out_inference,
-                out_folder=args.out_folder,
-                end_file=args.end_file,
-                fix_eta=args.fix_eta,
-                fix_w=args.fix_w,
-                fix_communities=args.fix_communities,
-                files=args.files
+                **filtered_args,
             )
         elif algorithm == "DynCRep":
-            model.fit(
-                data=B,
-                T=args.T,
-                nodes=nodes,
-                mask=args.mask,
-                K=args.K,
-                rseed=args.rseed,
-                ag=args.ag,
-                bg=args.bg,
-                eta0=args.eta0,
-                beta0=args.beta0,
-                flag_data_T=args.flag_data_T,
-                temporal=args.temporal,
-                initialization=args.initialization,
-                assortative=args.assortative,
-                constrained=args.constrained,
-                constraintU=args.constraintU,
-                fix_eta=args.fix_eta,
-                fix_beta= args.fix_beta,
-                fix_communities=args.fix_communities,
-                fix_w=args.fix_w,
-                undirected=args.undirected,
-                out_inference=args.out_inference,
-                out_folder=args.out_folder,
-                end_file=args.end_file,
-                files=args.files,
-            )
+            model.fit(data=B, nodes=nodes, **filtered_args)
         elif algorithm == "ACD":
-            model.fit(
-                data=B,
-                nodes=nodes,
-                K=args.K,
-                undirected=args.undirected,#False,
-                initialization=args.initialization,#0,
-                rseed=args.rseed,
-                assortative=args.assortative,#True,
-                constrained=args.constrained,#False,
-                ag=args.ag,  # 1.5
-                bg=args.bg,  # 10.0
-                pibr0=args.pibr0,
-                mupr0=args.mupr0,
-                flag_anomaly=args.flag_anomaly,
-                fix_communities=args.fix_communities,
-                fix_pibr=args.fix_pibr,
-                fix_mupr=args.fix_mupr,
-                out_inference=args.out_inference,
-                out_folder=args.out_folder,
-                end_file=args.end_file,
-                files=args.files,
-                verbose=0
-            )
+            model.fit(data=B, nodes=nodes, **filtered_args)
         elif algorithm == "MTCOV":
-            model.fit(
-                data=B,
-                data_X=Xs,
-                nodes=nodes,
-                batch_size=args.batch_size,
-                gamma=args.gamma,
-                rseed=args.rseed,
-                K=args.K,
-                initialization=args.initialization,
-                undirected=args.undirected,
-                assortative=args.assortative,
-                out_inference=args.out_inference,
-                out_folder=args.out_folder,
-                end_file=args.end_file,
-                files=args.files,
-            )
+            model.fit(data=B, data_X=Xs, nodes=nodes, **filtered_args)
 
     # Step 5: Run the algorithm
 

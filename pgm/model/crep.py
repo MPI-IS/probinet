@@ -14,10 +14,10 @@ import sktensor as skt
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
-    get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative)
+    get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
+    sp_uttkrp_assortative)
 from ..output.evaluate import lambda_full
 from .base import ModelBase, ModelUpdateMixin
-from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 
 
 class CRep(ModelBase, ModelUpdateMixin):
@@ -25,72 +25,28 @@ class CRep(ModelBase, ModelUpdateMixin):
     Class to perform inference in networks with reciprocity.
     """
 
+    @inherit_docstring(ModelBase)
     def __init__(
         self,
-        inf: float = INF_,  # initial value of the pseudo log-likelihood, aka, infinity
-        err_max: float = ERR_MAX_,  # minimum value for the parameters
-        err: float = ERR_,  # noise for the initialization
-        convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
-        decision: int = DECISION_,  # convergence parameter
-        max_iter: int = 1000,  # maximum number of EM steps before aborting
-        num_realizations: int = 5,  # number of iterations with different random initialization
-        plot_loglik: bool = False,  # flag to plot the log-likelihood
+        max_iter: int = 1000,
+        num_realizations: int = 5,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
-            flag_conv,
-        )
+        super().__init__(max_iter=max_iter, num_realizations=num_realizations, **kwargs)
 
-        # Initialize the attributes
-        self.u_f: np.ndarray = np.array([])
-        self.v_f: np.ndarray = np.array([])
-        self.w_f: np.ndarray = np.array([])
+        # Initialize other attributes
         self.eta_f = 0.0
 
-    def check_fit_params(
+    def _check_fit_params(
         self,
-        initialization: int,
-        eta0: Union[float, None],
-        undirected: bool,
-        assortative: bool,
-        data: Union[skt.dtensor, skt.sptensor],
-        K: int,
-        constrained: bool,
-        out_inference: bool,
-        out_folder: str,
-        end_file: str,
-        fix_eta: bool,
-        files: str
+        **kwargs: Any,
     ) -> None:
 
         message = "The initialization parameter can be either 0, 1, 2 or 3."
 
-        super()._check_fit_params(
-            initialization,
-            undirected,
-            assortative,
-            data,
-            K,
-            data_X=None,
-            gamma=None,
-            eta0=eta0,
-            beta0=None,
-            message=message,
-            out_inference=out_inference,
-            out_folder=out_folder,
-            end_file=end_file,
-            fix_eta=fix_eta,
-            files=files
-        )
+        super()._check_fit_params(message=message, **kwargs)
 
-        self.constrained = constrained
+        self.constrained = kwargs.get("constrained", True)
 
         # Parameters for the initialization of the model
         self.use_unit_uniform = True
@@ -114,11 +70,11 @@ class CRep(ModelBase, ModelUpdateMixin):
         assortative: bool = True,
         constrained: bool = True,
         out_inference: bool = True,
-        out_folder: str = "outputs/",
-        end_file: str = "_CRep",
+        out_folder: Path = Path("outputs"),
+        end_file: str = None,
         fix_eta: bool = False,
-        files: str = ""
-    )-> tuple[
+        files: str = None,
+    ) -> tuple[
         ndarray[Any, dtype[np.float64]],
         ndarray[Any, dtype[np.float64]],
         ndarray[Any, dtype[np.float64]],
@@ -159,11 +115,11 @@ class CRep(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default "_CRep".
+            Suffix for the output file, by default None.
         fix_eta : bool, optional
             Flag to indicate if the eta parameter should be fixed, by default False.
         files : str, optional
-            Path to the file for initialization, by default "".
+            Path to the file for initialization, by default None.
 
         Returns
         -------
@@ -181,7 +137,7 @@ class CRep(ModelBase, ModelUpdateMixin):
                 Maximum pseudo log-likelihood.
         """
 
-        self.check_fit_params(
+        self._check_fit_params(
             data=data,
             K=K,
             initialization=initialization,
@@ -193,12 +149,12 @@ class CRep(ModelBase, ModelUpdateMixin):
             out_folder=out_folder,
             end_file=end_file,
             fix_eta=fix_eta,
-            files=files
+            files=files,
         )
         # Set the random seed
         self.rseed = rseed
         logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
+        self.rng = np.random.RandomState(self.rseed)
 
         # Initialize the fit parameters
         self.initialization = initialization

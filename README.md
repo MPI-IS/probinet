@@ -42,11 +42,18 @@ Run the `pgm` package as a whole with the `run_model` command. A list of the par
     run_model --help
 ```
 
-To run a specific model, pass the model name as an argument with the `-a` flag. For example, to run the `CRep` model, use:
+To run a specific model, pass the model name as an argument. The available models are: `CRep`, `JointCRep`, `MTCOV`, `DynCRep`, and `ACD`. For example, to run the `CRep` model, use: 
 
 ```bash
     run_model -a CRep
 ```
+
+To see the specific options for a model, use the `-h` flag. For example, to see the options for the `CRep` model, use:  
+
+```bash 
+    run_model CRep -h 
+```
+
 The `run_model` command can be run at different logging levels. To run the command with the `DEBUG` level, use:
 
 ```bash

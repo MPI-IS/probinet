@@ -150,9 +150,9 @@ class ACDTestCase(BaseTest):
             rseed=self.rseed,
             fix_communities=False,
             out_inference=True,
-            out_folder=  self.folder,
-            end_file =  ("_OUT_" + self.algorithm),
-            files = (self.data_path / str("theta_" + self.label)).with_suffix(".npz")
+            out_folder=self.folder,
+            end_file=("_OUT_" + self.algorithm),
+            files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
         )
 
         # Define the path to the data file
@@ -214,7 +214,7 @@ class ACDTestCase(BaseTest):
             out_inference=True,
             out_folder=self.folder,
             end_file=("_OUT_" + self.algorithm),
-            files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz")
+            files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
         )
         # Define the path to the data file
         data_file_path = (

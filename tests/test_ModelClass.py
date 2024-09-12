@@ -109,5 +109,3 @@ class TestModelClass(unittest.TestCase):
         self.assertTrue(np.all(0 <= self.model_class.u))
         self.assertTrue(np.all(0 <= self.model_class.v))
         self.assertTrue(np.all(0 <= self.model_class.w))
-
-    

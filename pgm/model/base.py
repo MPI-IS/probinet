@@ -4,30 +4,50 @@ from functools import singledispatchmethod
 import logging
 from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from sktensor import dtensor, sptensor
 import sktensor as skt
 
-from pgm.input.tools import log_and_raise_error
+from pgm.input.tools import inherit_docstring, log_and_raise_error
+from pgm.model.constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 from pgm.output.plot import plot_L
 
 
 @dataclasses.dataclass
 class ModelBaseParameters:
     """
-    Base class for the model classes.
+    Attributes
+    ----------
+    inf : float
+        Initial value of the log-likelihood.
+    err_max : float
+        Minimum value for the parameters.
+    err : float
+        Noise for the initialization.
+    num_realizations : int
+        Number of iterations with different random initialization.
+    convergence_tol : float
+        Tolerance for convergence.
+    decision : int
+        Convergence parameter.
+    max_iter : int
+        Maximum number of EM steps before aborting.
+    plot_loglik : bool
+        Flag to plot the log-likelihood.
+    flag_conv : str
+        Flag to choose the convergence criterion.
     """
 
-    inf: float = 1e10  # initial value of the log-likelihood
-    err_max: float = 1e-12  # minimum value for the parameters
-    err: float = 0.1  # noise for the initialization
+    inf: float = INF_  # initial value of the log-likelihood
+    err_max: float = ERR_MAX_  # minimum value for the parameters
+    err: float = ERR_  # noise for the initialization
     num_realizations: int = (
         3  # number of iterations with different random initialization
     )
-    convergence_tol: float = 0.0001  # tolerance for convergence
-    decision: int = 10  # convergence parameter
+    convergence_tol: float = CONVERGENCE_TOL_  # tolerance for convergence
+    decision: int = DECISION_  # convergence parameter
     max_iter: int = 500  # maximum number of EM steps before aborting
     plot_loglik: bool = False  # flag to plot the log-likelihood
     flag_conv: str = "log"  # flag to choose the convergence criterion
@@ -40,30 +60,12 @@ class ModelBase(ModelBaseParameters):
     convergence. All the model classes should inherit from this class.
     """
 
-    def __init__(
-        self,
-        inf: float = 1e10,
-        err_max: float = 1e-12,
-        err: float = 0.1,
-        num_realizations: int = 3,
-        convergence_tol: float = 0.0001,
-        decision: int = 10,
-        max_iter: int = 500,
-        plot_loglik: bool = False,
-        flag_conv: str = "log",
-    ):
-        super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
-            flag_conv,
-        )
+    @inherit_docstring(ModelBaseParameters, from_init=False)
+    def __init__(self, *args, **kwargs):
+        # Call the __init__ method of the parent class
+        super().__init__(*args, **kwargs)
 
+        # Define additional attributes
         self.attributes_to_save_names = [
             "u_f",
             "v_f",
@@ -78,7 +80,10 @@ class ModelBase(ModelBaseParameters):
             "mupr",
         ]
 
-        # Define attributes
+        # Initialize the attributes
+        self.u_f: np.ndarray = np.array([])
+        self.v_f: np.ndarray = np.array([])
+        self.w_f: np.ndarray = np.array([])
         self.use_unit_uniform = False
         self.theta: Dict[str, Any] = {}
         self.normalize_rows = False
@@ -88,45 +93,54 @@ class ModelBase(ModelBaseParameters):
         self.best_r: int = 0
         self.final_it: int = 0
 
-    def _check_fit_params(
-        self,
-        initialization: int,
-        undirected: bool,
-        assortative: bool,
-        data: Union[skt.dtensor, skt.sptensor],
-        K: int,
-        data_X: Union[skt.dtensor, skt.sptensor, np.ndarray, None],
-        eta0: Union[float, None],
-        beta0: Union[float, None],
-        gamma: Union[float, None],
-        message: str = "Invalid initialization parameter.",
-        use_approximation = False,
-        temporal = True,
-        fix_eta = False,
-        fix_w = False,
-        fix_communities = False,
-        fix_beta = None,
-        files = " ", # TODO: fix this path?,
-        fix_pibr=None,
-        fix_mupr=None,
-        out_inference = False,
-        out_folder = Path("outputs"),
-        end_file = " ",
-        verbose = 0
-    ) -> None:
+    def _check_fit_params(self, *args, **kwargs) -> None:
         """
         Check the parameters of the fit method.
         """
+        # Extract parameters from args and kwargs
+        initialization = kwargs.get(
+            "initialization", args[0] if len(args) > 0 else None
+        )
+        undirected = kwargs.get("undirected", args[1] if len(args) > 1 else None)
+        assortative = kwargs.get("assortative", args[2] if len(args) > 2 else None)
+        data = kwargs.get("data", args[3] if len(args) > 3 else None)
+        K = kwargs.get("K", args[4] if len(args) > 4 else None)
+        data_X = kwargs.get("data_X", args[5] if len(args) > 5 else None)
+        eta0 = kwargs.get("eta0", args[6] if len(args) > 6 else None)
+        beta0 = kwargs.get("beta0", args[7] if len(args) > 7 else None)
+        gamma = kwargs.get("gamma", args[8] if len(args) > 8 else None)
+        message = kwargs.get("message", "Invalid initialization parameter.")
+        use_approximation = kwargs.get("use_approximation", False)
+        temporal = kwargs.get("temporal", True)
+        fix_eta = kwargs.get("fix_eta", False)
+        fix_w = kwargs.get("fix_w", False)
+        fix_communities = kwargs.get("fix_communities", False)
+        fix_beta = kwargs.get("fix_beta", None)
+        files = kwargs.get("files", None)
+        fix_pibr = kwargs.get("fix_pibr", None)
+        fix_mupr = kwargs.get("fix_mupr", None)
+        out_inference = kwargs.get("out_inference", False)
+        out_folder = kwargs.get("out_folder", Path("outputs"))
+        end_file = kwargs.get("end_file", " ")
+        verbose = kwargs.get("verbose", 0)
 
         if initialization not in {0, 1}:
             log_and_raise_error(ValueError, message)
         self.initialization = initialization
 
-        if gamma is None: # TODO: rethink this, gamma is only for MTCOV
+        if initialization == 1:
+            if files is None:
+                log_and_raise_error(
+                    ValueError, "If initialization is 1, provide a file."
+                )
+            self.files = files
+
+        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
             if (eta0 is not None) and (eta0 <= 0.0):
                 message = "If not None, the eta0 parameter has to be greater than 0.!"
                 log_and_raise_error(ValueError, message)
             self.eta0 = eta0
+
         self.undirected = undirected
         self.assortative = assortative
         self.use_approximation = use_approximation
@@ -139,7 +153,6 @@ class ModelBase(ModelBaseParameters):
         self.fix_pibr = fix_pibr
         self.fix_mupr = fix_mupr
 
-        self.files = files
         self.out_inference = out_inference
         self.out_folder = out_folder
         self.end_file = end_file
@@ -148,18 +161,15 @@ class ModelBase(ModelBaseParameters):
         self.N = data.shape[1]
         self.L = data.shape[0]
         self.K = K
-        if data_X is not None:
-            self.gamma = gamma
-            self.Z = data_X.shape[
-                1
-            ]  # number of categories of the categorical attribute
 
+        if data_X is not None and data_X.shape[0] != self.N:
+            message = "The number of rows of the data_X matrix is different from the number of nodes."
+            log_and_raise_error(ValueError, message)
 
-        if self.fix_eta:
-            if self.eta0 is None:
-                log_and_raise_error(
-                    ValueError, "If fix_eta=True, provide a value for eta0."
-                )
+        if self.fix_eta and self.eta0 is None:
+            log_and_raise_error(
+                ValueError, "If fix_eta=True, provide a value for eta0."
+            )
 
         if self.fix_beta:
             if beta0 is None:
@@ -169,29 +179,28 @@ class ModelBase(ModelBaseParameters):
             else:
                 self.beta0 = beta0
 
-
         if self.fix_w:
             if self.initialization not in {1, 3}:
-                message = (
-                    "If fix_w=True, the initialization has to be either 1 or 3."
-                )
+                message = "If fix_w=True, the initialization has to be either 1 or 3."
                 log_and_raise_error(ValueError, message)
 
         if self.fix_communities:
-            if self.initialization not in {2, 3}: # TODO: At the moment, init is between 0 and 1.
+            if self.initialization not in {
+                2,
+                3,
+            }:  # TODO: At the moment, init is between 0 and 1.
                 # Fix this when the implementation suggested by Caterina about getting
                 # initialize_v, init_w, init_u instead of initialization
                 message = "If fix_communities=True, the initialization has to be either 2 or 3."
                 log_and_raise_error(ValueError, message)
 
-        if gamma is None: #TODO: rethink this, gamma is only for MTCOV
+        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
             if self.undirected and not (self.fix_eta and self.eta0 == 1):
                 message = (
                     "If undirected=True, the parameter eta has to be fixed equal to 1 "
                     "(s.t. log(eta)=0)."
                 )
                 log_and_raise_error(ValueError, message)
-
 
     def _initialize(self) -> None:
         """
@@ -633,9 +642,8 @@ class ModelBase(ModelBaseParameters):
         output_path.mkdir(parents=True, exist_ok=True)
 
         # Define the output file
-        outfile = (Path(self.out_folder) / str("theta" + self.end_file)).with_suffix(
-            ".npz"
-        )
+        end_file = self.end_file if self.end_file is not None else ""
+        outfile = (Path(self.out_folder) / f"theta{end_file}").with_suffix(".npz")
 
         # Create a dictionary to hold the attributes to be saved
         attributes_to_save = {}

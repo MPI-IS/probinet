@@ -4,6 +4,7 @@ attributes to extract overlapping communities in directed and undirected multila
 """
 
 import logging
+from pathlib import Path
 import sys
 import time
 from typing import Any, List, Optional, Tuple, Union
@@ -13,10 +14,9 @@ import scipy.sparse
 import sktensor as skt
 
 from ..input.preprocessing import preprocess, preprocess_X
-from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
+from ..input.tools import inherit_docstring, sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import lambda_full
 from .base import ModelBase, ModelUpdateMixin
-from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, INF_
 
 
 class MTCOV(ModelBase, ModelUpdateMixin):
@@ -25,48 +25,22 @@ class MTCOV(ModelBase, ModelUpdateMixin):
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
     """
 
+    @inherit_docstring(ModelBase)
     def __init__(
         self,
-        inf: float = INF_,  # initial value of the log-likelihood
-        err_max: float = 0.0000001,  # minimum value for the parameters
-        err: float = ERR_,  # noise for the initialization
+        err_max: float = 1e-7,  # minimum value for the parameters
         num_realizations: int = 1,  # number of iterations with different random initialization
-        convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
-        decision: int = DECISION_,  # convergence parameter
-        max_iter: int = 500,  # maximum number of EM steps before aborting
-        plot_loglik: bool = False,  # flag to plot the log-likelihood
-        flag_conv: str = "log",  # flag to choose the convergence criterion
-        ):
+        **kwargs: Any,
+    ):
         super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
-            flag_conv,
+            err_max=err_max,
+            num_realizations=num_realizations,
+            **kwargs,
         )
 
-        # Initialize the attributes
-        self.u_f: np.ndarray = np.array([])
-        self.v_f: np.ndarray = np.array([])
-        self.w_f: np.ndarray = np.array([])
-
-    def check_fit_params(
+    def _check_fit_params(
         self,
-        initialization: int,
-        gamma: float,
-        undirected: bool,
-        assortative: bool,
-        data: Union[skt.dtensor, skt.sptensor, np.ndarray],
-        data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
-        K: int,
-        out_inference: bool,
-        out_folder: str,
-        end_file: str,
-        files: str,
+        **kwargs: Any,
     ) -> None:
 
         message = (
@@ -75,26 +49,18 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             "will be generated randomly, otherwise they will upload from file."
         )
 
-
         super()._check_fit_params(
-            initialization,
-            undirected,
-            assortative,
-            data,
-            K,
-            data_X,
-            eta0=None,
-            beta0=None,
-            gamma=gamma,
             message=message,
-            out_inference=out_inference,
-            out_folder=out_folder,
-            end_file=end_file,
-            files=files,
+            **kwargs,
         )
 
         # Parameters for the initialization of the model
         self.normalize_rows = False
+
+        self.gamma = kwargs.get("gamma", 0.5)
+        self.Z = kwargs.get("data_X").shape[
+            1
+        ]  # number of categories of the categorical attribute
 
         if self.initialization == 1:
             self.theta = np.load(self.files, allow_pickle=True)
@@ -107,8 +73,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             self.Z = dfB.shape[1]
             assert self.K == dfU.shape[1] == dfB.shape[0]
 
-
-
     def fit(
         self,
         data: Union[skt.dtensor, skt.sptensor],
@@ -116,16 +80,15 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         nodes: List[Any],
         batch_size: Optional[int] = None,
         gamma: float = 0.5,
-        rseed: int = 107261,#0,
-        K: int = 2,#3
+        rseed: int = 107261,
+        K: int = 2,
         initialization: int = 0,
         undirected: bool = False,
         assortative: bool = False,
         out_inference: bool = True,
-        out_folder: str = "outputs/",
-        end_file: str = "_JointCRep",
-        files: str = ""
-
+        out_folder: Path = Path("outputs"),
+        end_file: str = None,
+        files: str = None,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -164,9 +127,9 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default "_JointCRep".
+            Suffix for the output file, by default None.
         files : str, optional
-            Path to the file for initialization, by default "".
+            Path to the file for initialization, by default None.
 
         Returns
         -------
@@ -184,7 +147,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 Maximum log-likelihood value.
         """
         # Check the parameters for fitting the model
-        self.check_fit_params(
+        self._check_fit_params(
             data=data,
             data_X=data_X,
             K=K,
@@ -200,7 +163,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         # Set the random seed
         self.rseed = rseed
         logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
+        self.rng = np.random.RandomState(self.rseed)
 
         # Initialize the fit parameters
         self.initialization = initialization
@@ -264,6 +227,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         data: Union[skt.dtensor, skt.sptensor],
         data_X: np.ndarray,
         batch_size: Optional[int] = None,
+        max_batch_size: int = 5000,
     ) -> Tuple[
         Union[skt.dtensor, skt.sptensor],
         np.ndarray,
@@ -288,7 +252,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         batch_size : Optional[int], default=None
             The size of the subset of nodes to compute the likelihood with. If None, the method
             will automatically determine the batch size based on the number of nodes.
-
+        max_batch_size : int, default=5000
+            The maximum batch size to use when automatically determining the batch size.
         Returns
         -------
         preprocessed_data : Union[skt.dtensor, skt.sptensor]
@@ -307,31 +272,27 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
         """
 
-        # Pre-processing of the data to handle the sparsity
-        if not isinstance(data, skt.sptensor):
-            data = preprocess(data)
+        # Pre-process data and save the indices of the non-zero entries
+        data = preprocess(data) if not isinstance(data, skt.sptensor) else data
         data_X = preprocess_X(data_X)
-
-        # save the indexes of the nonzero entries
-        if isinstance(data, skt.dtensor):
-            subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
+        subs_nz = data.nonzero() if isinstance(data, skt.dtensor) else data.subs
         subs_X_nz = data_X.nonzero()
 
         if batch_size:
             if batch_size > self.N:
-                batch_size = min(5000, self.N)
-            np.random.seed(10) # TODO: ask Martina why this seed
+                batch_size = min(max_batch_size, self.N)
+            np.random.seed(10)  # TODO: ask Martina why this seed
             subset_N = np.random.choice(
                 np.arange(self.N), size=batch_size, replace=False
             )
             Subs = list(zip(*subs_nz))
             SubsX = list(zip(*subs_X_nz))
         else:
-            if self.N > 5000:
-                batch_size = 5000
-                np.random.seed(10)
+            if self.N > max_batch_size:
+                batch_size = max_batch_size
+                np.random.seed(
+                    10
+                )  # TODO: remove this in the ticket about random seeds.
                 subset_N = np.random.choice(
                     np.arange(self.N), size=batch_size, replace=False
                 )
@@ -343,7 +304,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 SubsX = None
         logging.debug("batch_size: %s", batch_size)
 
-        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX # type: ignore
+        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX  # type: ignore
 
     def _initialize_realization(self):
         """
