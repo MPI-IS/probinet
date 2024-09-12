@@ -300,56 +300,65 @@ class TestReciprocityMMSBM_joints(unittest.TestCase):
         self.mmsbm.build_Y()
         pass
 
-    
+
 class TestSyntNetAnomaly(unittest.TestCase):
     def setUp(self):
         self.N = 10
         self.syn_acd = SyntNetAnomaly(N=self.N)
 
     def load_expected_values(self, file_path):
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             return yaml.safe_load(file)
 
     def assert_synt_net_anomaly_attributes(self, syn_acd, expected_values):
-        self.assertEqual(syn_acd.N, expected_values['N'])
-        self.assertEqual(syn_acd.K, expected_values['K'])
-        self.assertEqual(syn_acd.m, expected_values['m'])
-        self.assertEqual(syn_acd.rseed, expected_values['rseed'])
-        self.assertEqual(syn_acd.label, expected_values['label'])
-        self.assertEqual(syn_acd.folder, expected_values['folder'])
-        self.assertEqual(syn_acd.output_parameters, expected_values['output_parameters'])
-        self.assertEqual(syn_acd.output_adj, expected_values['output_adj'])
-        self.assertEqual(syn_acd.outfile_adj, expected_values['outfile_adj'])
-        self.assertEqual(syn_acd.avg_degree, expected_values['avg_degree'])
-        self.assertEqual(syn_acd.rho_anomaly, expected_values['rho_anomaly'])
-        self.assertEqual(syn_acd.verbose, expected_values['verbose'])
-        self.assertEqual(syn_acd.pi, expected_values['pi'])
-        self.assertEqual(syn_acd.ExpM, expected_values['ExpM'])
-        self.assertEqual(syn_acd.mu, expected_values['mu'])
-        self.assertEqual(syn_acd.structure, expected_values['structure'])
-        self.assertEqual(syn_acd.eta, expected_values['eta'])
-        self.assertEqual(syn_acd.ag, expected_values['ag'])
-        self.assertEqual(syn_acd.bg, expected_values['bg'])
-        self.assertEqual(syn_acd.L1, expected_values['L1'])
-        self.assertEqual(syn_acd.corr, expected_values['corr'])
-        self.assertEqual(syn_acd.over, expected_values['over'])
+        self.assertEqual(syn_acd.N, expected_values["N"])
+        self.assertEqual(syn_acd.K, expected_values["K"])
+        self.assertEqual(syn_acd.m, expected_values["m"])
+        self.assertEqual(syn_acd.rseed, expected_values["rseed"])
+        self.assertEqual(syn_acd.label, expected_values["label"])
+        self.assertEqual(syn_acd.folder, expected_values["folder"])
+        self.assertEqual(
+            syn_acd.output_parameters, expected_values["output_parameters"]
+        )
+        self.assertEqual(syn_acd.output_adj, expected_values["output_adj"])
+        self.assertEqual(syn_acd.outfile_adj, expected_values["outfile_adj"])
+        self.assertEqual(syn_acd.avg_degree, expected_values["avg_degree"])
+        self.assertEqual(syn_acd.rho_anomaly, expected_values["rho_anomaly"])
+        self.assertEqual(syn_acd.verbose, expected_values["verbose"])
+        self.assertEqual(syn_acd.pi, expected_values["pi"])
+        self.assertEqual(syn_acd.ExpM, expected_values["ExpM"])
+        self.assertEqual(syn_acd.mu, expected_values["mu"])
+        self.assertEqual(syn_acd.structure, expected_values["structure"])
+        self.assertEqual(syn_acd.eta, expected_values["eta"])
+        self.assertEqual(syn_acd.ag, expected_values["ag"])
+        self.assertEqual(syn_acd.bg, expected_values["bg"])
+        self.assertEqual(syn_acd.L1, expected_values["L1"])
+        self.assertEqual(syn_acd.corr, expected_values["corr"])
+        self.assertEqual(syn_acd.over, expected_values["over"])
 
-    def assert_graph_nodes_and_membership_matrices(self, G, G0, syn_acd, expected_values):
-        self.assertEqual(list(G.nodes()), expected_values['nodes'])
-        self.assertEqual(list(G0.nodes()), expected_values['nodes'])
-        expected_uv = np.array(expected_values['expected_uv'])
-        expected_w = np.array(expected_values['expected_w'])
+    def assert_graph_nodes_and_membership_matrices(
+        self, G, G0, syn_acd, expected_values
+    ):
+        self.assertEqual(list(G.nodes()), expected_values["nodes"])
+        self.assertEqual(list(G0.nodes()), expected_values["nodes"])
+        expected_uv = np.array(expected_values["expected_uv"])
+        expected_w = np.array(expected_values["expected_w"])
         np.testing.assert_array_equal(syn_acd.u, expected_uv)
         np.testing.assert_array_equal(syn_acd.v, expected_uv)
         np.testing.assert_array_almost_equal(syn_acd.w, expected_w)
 
-
     def test_anomaly_network_PB(self):
         G, G0 = self.syn_acd.anomaly_network_PB()
-        expected_values = self.load_expected_values(Path(__file__).parent /
-                                                  'data/synthetic/test_anomaly_network_PB.yaml')
+        expected_values = self.load_expected_values(
+            Path(__file__).parent
+            / "data"
+            / "synthetic"
+            / "test_anomaly_network_PB.yaml"
+        )
         self.assert_synt_net_anomaly_attributes(self.syn_acd, expected_values)
-        self.assert_graph_nodes_and_membership_matrices(G, G0, self.syn_acd, expected_values)
+        self.assert_graph_nodes_and_membership_matrices(
+            G, G0, self.syn_acd, expected_values
+        )
 
     def test_anomaly_network_PB_with_parameters(self):
         syn_acd = SyntNetAnomaly(
@@ -357,16 +366,18 @@ class TestSyntNetAnomaly(unittest.TestCase):
         )
         G, G0 = syn_acd.anomaly_network_PB()
         expected_values = self.load_expected_values(
-            Path(__file__).parent /'data/synthetic/test_anomaly_network_PB_with_parameters.yaml')
+            Path(__file__).parent
+            / "data/synthetic/test_anomaly_network_PB_with_parameters.yaml"
+        )
         self.assert_synt_net_anomaly_attributes(syn_acd, expected_values)
-        self.assertEqual(G.number_of_edges(), expected_values['number_of_edges'])
-        self.assertEqual(np.sort(G.nodes())[0], expected_values['nodes'][0])
-        self.assertEqual(np.sort(G.nodes())[-1], expected_values['nodes'][-1])
-        self.assertEqual(np.sort(G0.nodes())[0], expected_values['nodes'][0])
-        self.assertEqual(np.sort(G0.nodes())[-1], expected_values['nodes'][-1])
-        self.assertEqual(np.sum(syn_acd.z), expected_values['sum_z'])
-        self.assertEqual(np.sum(syn_acd.u), expected_values['sum_u'])
-        self.assertEqual(np.sum(syn_acd.v), expected_values['sum_v'])
-        self.assertAlmostEqual(np.sum(syn_acd.w), expected_values['sum_w'])
-        expected_w = np.array(expected_values['expected_w'])
+        self.assertEqual(G.number_of_edges(), expected_values["number_of_edges"])
+        self.assertEqual(np.sort(G.nodes())[0], expected_values["nodes"][0])
+        self.assertEqual(np.sort(G.nodes())[-1], expected_values["nodes"][-1])
+        self.assertEqual(np.sort(G0.nodes())[0], expected_values["nodes"][0])
+        self.assertEqual(np.sort(G0.nodes())[-1], expected_values["nodes"][-1])
+        self.assertEqual(np.sum(syn_acd.z), expected_values["sum_z"])
+        self.assertEqual(np.sum(syn_acd.u), expected_values["sum_u"])
+        self.assertEqual(np.sum(syn_acd.v), expected_values["sum_v"])
+        self.assertAlmostEqual(np.sum(syn_acd.w), expected_values["sum_w"])
+        expected_w = np.array(expected_values["expected_w"])
         np.testing.assert_array_almost_equal(syn_acd.w, expected_w)

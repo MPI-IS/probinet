@@ -1,12 +1,16 @@
+from pathlib import Path
 import sys
 from unittest import mock
 
 import networkx as nx
 import numpy as np
 from tests.fixtures import BaseTest
-import yaml
 
 from pgm.main import main as single_main
+from pgm.main import parse_args
+
+COMMAND_TO_RUN_MODEL = "run_model"
+PATH_TO_INPUT = str(Path("pgm") / "data" / "input")
 
 
 class TestMain(BaseTest):
@@ -18,51 +22,72 @@ class TestMain(BaseTest):
         self.K_values = {}
 
     def main_with_no_parameters(self, algorithm, mock_fit, main_function):
+
+        # Set up the command line arguments for the main function
         sys.argv = [
-            "main_" + algorithm,
-            "-a",
-            algorithm,
-            "-o",
-            str(self.folder),
-            "-out_inference",
+            COMMAND_TO_RUN_MODEL,  # Name of the main script
+            algorithm,  # Algorithm name
+            "--out_folder",
+            str(self.folder),  # Output folder
+            "--out_inference",  # Flag to output inference results
+            "--files",
+            PATH_TO_INPUT,
+            "--end_file",
+            f"_{algorithm}",
         ]
+
+        # Call the main function
         main_function()
+
+        # Ensure the fit method was called exactly once
         mock_fit.assert_called_once()
-        config_file_path = self.folder + "/setting_" + algorithm + ".yaml"
-        with open(config_file_path, "r", encoding="utf8") as f:
-            actual_config = yaml.safe_load(f)
-        self.assertEqual(actual_config, self.expected_config)
+
+        # Get the arguments with which the fit method was called
         called_args = mock_fit.call_args
+
+        # Check that each expected configuration key matches the called arguments
         for key in self.expected_config:
             self.assertEqual(called_args.kwargs[key], self.expected_config[key])
+
+        # Check that each key in kwargs_to_check is present in the called arguments
         for key in self.kwargs_to_check:
             self.assertIn(key, called_args.kwargs, f"{key} not found in called_kwargs")
 
     def main_with_custom_parameters(
         self, algorithm, mock_import_data, mock_fit, main_function
     ):
+        # Set the value of K from the class attribute
         K = self.K_values
+
+        # Set up the command line arguments for the main function
         sys.argv = [
-            "main_" + algorithm,
-            "-a",
-            algorithm,
+            COMMAND_TO_RUN_MODEL,  # Name of the main script
+            algorithm,  # Algorithm name
             "-o",
-            str(self.folder),
+            str(self.folder),  # Output folder
             "-K",
-            str(K),
-            "-F",
-            "deltas",
+            str(K),  # Number of communities
+            # "--flag_conv",
+            # "deltas",  # Some parameter F with value 'deltas'
             "-A",
-            "custom_network.dat",
-            "--rseed",
-            "0",
-            "-out_inference",
+            "custom_network.dat",  # Some parameter A with value 'custom_network.dat'
+            # "--out_inference",  # Flag to output inference results
         ]
+
+        # Call the main function
         main_function()
+
+        # Ensure the import_data function was called exactly once
         mock_import_data.assert_called_once()
+
+        # Get the arguments with which the fit method was called
         called_args = mock_fit.call_args
-        assert set(called_args.kwargs.keys()) == set(self.input_names)
-        assert called_args.kwargs["K"] == K
+
+        # Check that the keys in the called arguments match the expected input names
+        self.assertSetEqual(set(called_args.kwargs.keys()), set(self.input_names))
+
+        # Check that the value of K in the called arguments matches the expected value
+        self.assertEqual(called_args.kwargs["K"], K)
 
 
 class TestMainCRep(TestMain):
@@ -70,17 +95,18 @@ class TestMainCRep(TestMain):
         super().setUp()
         self.expected_config = {
             "K": 3,
-            "assortative": True,
-            "constrained": True,
+            "assortative": False,
+            "constrained": False,
             "end_file": "_CRep",
             "eta0": None,
-            "files": "config/data/input/theta_gt111.npz",
+            "files": PATH_TO_INPUT,
             "fix_eta": False,
             "initialization": 0,
             "out_folder": str(self.folder),
             "out_inference": True,
             "rseed": 0,
             "undirected": False,
+            "mask": None,
         }
         self.kwargs_to_check = ["data", "data_T", "data_T_vals", "nodes"]
 
@@ -101,6 +127,7 @@ class TestMainCRep(TestMain):
             "out_inference",
             "rseed",
             "undirected",
+            "mask",
         ]
 
         self.K_values = 5
@@ -128,15 +155,16 @@ class TestMainJointCRep(TestMain):
             "assortative": False,
             "end_file": "_JointCRep",
             "eta0": None,
-            "files": "../data/input/theta.npz",
+            "files": PATH_TO_INPUT,
             "fix_communities": False,
             "fix_eta": False,
             "fix_w": False,
             "initialization": 0,
             "out_folder": self.folder,
             "out_inference": True,
-            "rseed": 10,
+            "rseed": 0,
             "use_approximation": False,
+            "undirected": False,
         }
         self.kwargs_to_check = ["data", "data_T", "data_T_vals", "nodes"]
 
@@ -158,6 +186,7 @@ class TestMainJointCRep(TestMain):
             "fix_w",
             "use_approximation",
             "files",
+            "undirected",
         ]
 
         self.K_values = 5
@@ -183,21 +212,21 @@ class TestMainMTCOV(TestMain):
         self.expected_config = {
             "K": 2,
             "gamma": 0.5,
-            "rseed": 107261,
+            "rseed": 0,
             "initialization": 0,
             "out_inference": True,
             "out_folder": str(self.folder),
             "end_file": "_MTCOV",
             "assortative": False,
-            "files": "../data/input/theta.npz",
+            "files": PATH_TO_INPUT,
+            "undirected": False,
         }
 
-        self.kwargs_to_check = ["data", "data_X", "nodes", "flag_conv"]
+        self.kwargs_to_check = ["data", "data_X", "nodes"]
         self.input_names = [
             "data",
             "data_X",
             "nodes",
-            "flag_conv",
             "K",
             "gamma",
             "assortative",
@@ -208,6 +237,7 @@ class TestMainMTCOV(TestMain):
             "out_inference",
             "rseed",
             "batch_size",
+            "undirected",
         ]
         self.K_values = 5
 
@@ -237,7 +267,7 @@ class TestMainDynCRep(TestMain):
             "constraintU": False,
             "end_file": "_DynCRep",
             "eta0": None,
-            "files": "tests/inputs/theta_GT_DynCRep_for_initialization.npz",
+            "files": PATH_TO_INPUT,
             "fix_beta": False,
             "fix_communities": False,
             "fix_eta": False,
@@ -247,6 +277,7 @@ class TestMainDynCRep(TestMain):
             "out_inference": True,
             "rseed": 0,
             "undirected": False,
+            "mask": None,
         }
 
         self.kwargs_to_check = [
@@ -284,6 +315,7 @@ class TestMainDynCRep(TestMain):
             "rseed",
             "temporal",
             "undirected",
+            "mask",
         ]
         self.K_values = 2
 
@@ -306,12 +338,11 @@ class TestMainAnomalyDetection(TestMain):
         super().setUp()
         self.expected_config = {
             "K": 3,
-            "files": "",
+            "files": PATH_TO_INPUT,
             "fix_communities": False,
             "end_file": "_ACD",
             "out_folder": str(self.folder),
             "out_inference": True,
-            "verbose": 1,
         }
 
         self.kwargs_to_check = [
@@ -333,7 +364,6 @@ class TestMainAnomalyDetection(TestMain):
             "fix_communities",
             "files",
             "out_inference",
-            "verbose",
             "out_folder",
         ]
 
@@ -355,8 +385,8 @@ class TestMainAnomalyDetection(TestMain):
             "K",
             "fix_communities",
             "files",
+            "mask",
             "out_inference",
-            "verbose",
             "out_folder",
             "rseed",
         ]
@@ -374,3 +404,82 @@ class TestMainAnomalyDetection(TestMain):
         return self.main_with_custom_parameters(
             "ACD", mock_import_data, mock_fit, single_main
         )
+
+
+class TestParseArgs(BaseTest):
+    """
+    Test cases for the parse_args function to ensure the correct subparser is called
+    based on the first argument and that the arguments are parsed correctly.
+    """
+
+    K_value = 5
+
+    def test_crep_subparser(self):
+        """
+        Test that the CRep subparser is called and the arguments are parsed correctly.
+        """
+        test_args = ["run_model", "CRep", "-K", str(self.K_value)]
+        with mock.patch.object(sys, "argv", test_args):
+            args = parse_args()
+            # Check that the algorithm is correctly set to CRep
+            self.assertEqual(args.algorithm, "CRep")
+            # Check that the K value is correctly parsed
+            self.assertEqual(args.K, self.K_value)
+            # Check that an argument specific to another parser (e.g., T for DynCRep) is not set
+            self.assertFalse(hasattr(args, "T"))
+
+    def test_jointcrep_subparser(self):
+        """
+        Test that the JointCRep subparser is called and the arguments are parsed correctly.
+        """
+        test_args = ["run_model", "JointCRep", "-K", str(self.K_value)]
+        with mock.patch.object(sys, "argv", test_args):
+            args = parse_args()
+            # Check that the algorithm is correctly set to JointCRep
+            self.assertEqual(args.algorithm, "JointCRep")
+            # Check that the K value is correctly parsed
+            self.assertEqual(args.K, self.K_value)
+            # Check that an argument specific to another parser (e.g., gamma for MTCOV) is not set
+            self.assertFalse(hasattr(args, "gamma"))
+
+    def test_mtcov_subparser(self):
+        """
+        Test that the MTCOV subparser is called and the arguments are parsed correctly.
+        """
+        test_args = ["run_model", "MTCOV", "-K", str(self.K_value)]
+        with mock.patch.object(sys, "argv", test_args):
+            args = parse_args()
+            # Check that the algorithm is correctly set to MTCOV
+            self.assertEqual(args.algorithm, "MTCOV")
+            # Check that the K value is correctly parsed
+            self.assertEqual(args.K, self.K_value)
+            # Check that an argument specific to another parser (e.g., beta0 for DynCRep) is not set
+            self.assertFalse(hasattr(args, "beta0"))
+
+    def test_dyncrep_subparser(self):
+        """
+        Test that the DynCRep subparser is called and the arguments are parsed correctly.
+        """
+        test_args = ["run_model", "DynCRep", "-K", str(self.K_value)]
+        with mock.patch.object(sys, "argv", test_args):
+            args = parse_args()
+            # Check that the algorithm is correctly set to DynCRep
+            self.assertEqual(args.algorithm, "DynCRep")
+            # Check that the K value is correctly parsed
+            self.assertEqual(args.K, self.K_value)
+            # Check that an argument specific to another parser (e.g., flag_anomaly for ACD) is not set
+            self.assertFalse(hasattr(args, "flag_anomaly"))
+
+    def test_acd_subparser(self):
+        """
+        Test that the ACD subparser is called and the arguments are parsed correctly.
+        """
+        test_args = ["run_model", "ACD", "-K", str(self.K_value)]
+        with mock.patch.object(sys, "argv", test_args):
+            args = parse_args()
+            # Check that the algorithm is correctly set to ACD
+            self.assertEqual(args.algorithm, "ACD")
+            # Check that the K value is correctly parsed
+            self.assertEqual(args.K, self.K_value)
+            # Check that an argument specific to another parser (e.g., cov_name for MTCOV) is not set
+            self.assertFalse(hasattr(args, "cov_name"))

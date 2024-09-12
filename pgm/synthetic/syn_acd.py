@@ -84,6 +84,10 @@ class SyntNetAnomaly:
             )
         self.verbose = verbose
 
+        # Set Bernoullis parameters
+        # if mu < 0 or mu > 1:
+        # raise ValueError('The Binomial parameter mu has to be in [0, 1]!')
+
         # Check if the value of pi is within the valid range [0, 1]
         if pi < 0 or pi > 1:
             # If not, raise a ValueError with a descriptive message
@@ -168,18 +172,21 @@ class SyntNetAnomaly:
         self.over = over
 
     def anomaly_network_PB(self, parameters=None):
-        """TODO: fix docstrings
-        Generate a directed, possibly weighted network by using the anomaly model Poisson-Poisson
+        """
+        Generate a directed, possibly weighted network by using the anomaly model Poisson-Poisson.
+
         Steps:
             1. Generate or load the latent variables Z_ij.
-            2. Extract A_ij entries (network edges) from a Poisson (M_ij) distribution if Z_ij=0; from a Poisson (pi) distribution if Z_ij=1
-        INPUT
+            2. Extract A_ij entries (network edges) from a Poisson (M_ij) distribution if Z_ij=0; from a Poisson (pi) distribution if Z_ij=1.
+
+        Parameters
         ----------
         parameters : object
-                     Latent variables z, s, u, v and w.
-        OUTPUT
-        ----------
-        G : Digraph
+            Latent variables z, s, u, v, and w.
+
+        Returns
+        -------
+        G : DiGraph
             DiGraph NetworkX object. Self-loops allowed.
         """
         ### Latent variables
@@ -275,26 +282,28 @@ class SyntNetAnomaly:
         return G, G0
 
     def _generate_lv(self):
-        """#TODO: fix docstrings
+        """
         Generate z, u, v, w latent variables.
-        INPUT
+
+        Parameters
         ----------
         prng : int
-               Seed for the random number generator.
-        OUTPUT
-        ----------
-        z : Numpy array
+            Seed for the random number generator.
+
+        Returns
+        -------
+        z : numpy.ndarray
             Matrix NxN of model indicators (binary).
 
-        u : Numpy array
+        u : numpy.ndarray
             Matrix NxK of out-going membership vectors, positive element-wise.
             With unitary L1 norm computed row-wise.
 
-        v : Numpy array
+        v : numpy.ndarray
             Matrix NxK of in-coming membership vectors, positive element-wise.
             With unitary L1 norm computed row-wise.
 
-        w : Numpy array
+        w : numpy.ndarray
             Affinity matrix KxK. Possibly None if in pure SpringRank.
             Element (k,h) gives the density of edges going from the nodes
             of group k to nodes of group h.
@@ -329,12 +338,13 @@ class SyntNetAnomaly:
         return z, u, v, w
 
     def _output_results(self, nodes):
-        """#TODO: fix docstrings
+        """
         Output results in a compressed file.
-        INPUT
+
+        Parameters
         ----------
         nodes : list
-                List of nodes IDs.
+            List of nodes IDs.
         """
         output_parameters = self.folder + "theta_" + self.label + "_" + str(self.prng)
         np.savez_compressed(
@@ -352,15 +362,17 @@ class SyntNetAnomaly:
         logging.debug("To load: theta=np.load(filename), then e.g. theta['u']")
 
     def _output_adjacency(self, G, outfile=None):
-        """#TODO: fix docstrings
-        Output the adjacency matrix. Default format is space-separated .csv
-        with 3 columns: node1 node2 weight
-        INPUT
+        """
+        Output the adjacency matrix.
+
+        Parameters
         ----------
-        G: Digraph
-           DiGraph NetworkX object.
-        outfile: str
-                 Name of the adjacency matrix.
+        G : DiGraph
+            DiGraph NetworkX object.
+
+        outfile : str
+            Name of the adjacency matrix. Default format is space-separated .csv
+            with 3 columns: node1 node2 weight.
         """
         if outfile is None:
             outfile = "syn_" + self.label + "_" + str(self.prng) + ".dat"
@@ -376,14 +388,19 @@ class SyntNetAnomaly:
         logging.debug("Adjacency matrix saved in: %s", {self.folder + outfile})
 
     def _plot_A(self, A, cmap="PuBuGn", title="Adjacency matrix"):
-        """TODO: fix docstrings
+        """
         Plot the adjacency matrix produced by the generative algorithm.
-        INPUT
+
+        Parameters
         ----------
-        A : Scipy array
-            Sparse version of the NxN adjacency matrix associated to the graph.
-        cmap : Matplotlib object
-            Colormap used for the plot.
+        A : scipy.sparse.spmatrix
+            Sparse version of the NxN adjacency matrix associated with the graph.
+
+        cmap : matplotlib.colors.Colormap, optional
+            Colormap used for the plot. Default is 'PuBuGn'.
+
+        title : str, optional
+            Title of the plot. Default is 'Adjacency matrix'.
         """
         Ad = A.todense()
         _, ax = plt.subplots(figsize=(7, 7))
@@ -396,12 +413,13 @@ class SyntNetAnomaly:
         plt.show()
 
     def _plot_Z(self, cmap="PuBuGn"):
-        """TODO: fix docstrings
+        """
         Plot the anomaly matrix produced by the generative algorithm.
-        INPUT
+
+        Parameters
         ----------
-        cmap : Matplotlib object
-            Colormap used for the plot.
+        cmap : matplotlib.colors.Colormap, optional
+            Colormap used for the plot. Default is 'PuBuGn'.
         """
         _, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(self.z, cmap=plt.get_cmap(cmap))
@@ -413,16 +431,20 @@ class SyntNetAnomaly:
         plt.show()
 
     def _plot_M(self, M, cmap="PuBuGn", title="MT means matrix"):
-        """TODO: fix docstrings
-        Plot the M matrix produced by the generative algorithm. Each entry is the
-        poisson mean associated to each couple of nodes of the graph.
-        INPUT
+        """
+        Plot the M matrix produced by the generative algorithm.
+
+        Parameters
         ----------
-        M : Numpy array
-            NxN M matrix associated to the graph. Contains all the means used
+        M : numpy.ndarray
+            NxN M matrix associated with the graph. Contains all the means used
             for generating edges.
-        cmap : Matplotlib object
-            Colormap used for the plot.
+
+        cmap : matplotlib.colors.Colormap, optional
+            Colormap used for the plot. Default is 'PuBuGn'.
+
+        title : str, optional
+            Title of the plot. Default is 'MT means matrix'.
         """
         fig, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(M, cmap=plt.get_cmap(cmap))

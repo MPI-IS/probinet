@@ -9,10 +9,10 @@ import unittest
 import numpy as np
 import yaml
 
-from .constants import INIT_STR, TOLERANCE_1
+from pgm.model_selection.cross_validation import CrossValidation
 
-current_file_path = Path(__file__)
-PATH_FOR_INIT = current_file_path.parent / "inputs/"
+from .constants import INIT_STR, K_NEW, PATH_FOR_INIT, RANDOM_SEED_REPROD, TOLERANCE_1
+
 ALGORITHM = "CRep"
 MODEL_PARAMETERS = {}
 CV_PARAMETERS = {}
@@ -123,11 +123,10 @@ class ModelTestMixin:
 
     def test_running_algorithm_initialized_from_file_from_mixin(self):
 
-        with PATH_FOR_INIT.joinpath(
-            "setting_" + self.algorithm + INIT_STR + ".yaml"
-        ).open("rb") as fp:
+        with open(
+            PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml"), encoding="utf-8"
+        ) as fp:
             self.conf = yaml.safe_load(fp)
-
         # Saving the outputs of the tests inside the tests dir
         self.conf["out_folder"] = self.folder
 
@@ -136,6 +135,7 @@ class ModelTestMixin:
         )  # Adding a suffix to the output files
 
         self.conf["initialization"] = 1
+        self.conf["files"] = self.files
 
         self._fit_model_to_data(self.conf)
 
@@ -159,6 +159,60 @@ class ModelTestMixin:
 
         # Asserting GT information
         self._assert_ground_truth_information(theta, thetaGT)
+
+    def test_model_parameter_change_with_config_file(self):
+        # Load the configuration file
+        with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
+            self.conf = yaml.safe_load(fp)
+
+        # Change the value of K in the configuration
+        self.conf["K"] = K_NEW
+
+        # Change the random seed in the configuration
+        self.conf["rseed"] = RANDOM_SEED_REPROD
+
+        # Fit the model to the data using the modified configuration
+        self._fit_model_to_data(self.conf)
+
+        # Assert that the model's K parameter matches the value in the configuration
+        assert self.model.K == self.conf["K"]
+
+        # Assert that the model's random seed matches the value in the configuration
+        assert self.model.rseed == self.conf["rseed"]
+
+
+class ConcreteCrossValidation(CrossValidation):
+    """
+    This is a dummy class that inherits from the abstract class CrossValidation.
+    """
+
+    def __init__(
+        self,
+        algorithm=ALGORITHM,
+        model_parameters=MODEL_PARAMETERS,
+        cv_parameters=CV_PARAMETERS,
+    ):
+        super().__init__(algorithm, model_parameters, cv_parameters)
+
+    def calculate_performance_and_prepare_comparison(self):
+        # Placeholder implementation
+        pass
+
+    def extract_mask(self, fold):
+        # Placeholder implementation
+        pass
+
+    def load_data(self):
+        # Placeholder implementation
+        pass
+
+    def prepare_and_run(self):
+        # Placeholder implementation
+        pass
+
+    def save_results(self):
+        # Placeholder implementation
+        pass
 
 
 def check_shape_and_sum(matrix, expected_shape, expected_sum, matrix_name):

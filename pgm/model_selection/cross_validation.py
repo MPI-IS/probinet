@@ -116,6 +116,8 @@ class CrossValidation(ABC):
         """
         Run the cross-validation procedure.
         """
+        # Set up logging
+        logging.basicConfig(level=logging.DEBUG)
 
         # Prepare cv parameters
         self.prng = np.random.RandomState(seed=self.parameters["rseed"])

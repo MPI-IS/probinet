@@ -4,6 +4,7 @@ The latent variables are related to community memberships and anomaly parameters
 """
 
 import logging
+from pathlib import Path
 import time
 from typing import List, Optional, Tuple, Union
 
@@ -11,125 +12,61 @@ import numpy as np
 import pandas as pd
 from scipy.stats import poisson
 import sktensor as skt
-from typing_extensions import Unpack
 
 from pgm.input.preprocessing import preprocess
 from pgm.input.tools import (
-    get_item_array_from_subs, log_and_raise_error, sp_uttkrp, sp_uttkrp_assortative,
-    transpose_tensor)
-from pgm.model.base import ModelBase, ModelFitParameters, ModelUpdateMixin
-from pgm.model.constants import INF_
+    get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
+    sp_uttkrp_assortative, transpose_tensor)
+from pgm.model.base import ModelBase, ModelUpdateMixin
 from pgm.output.evaluate import lambda_full
 
 EPS = 1e-12
 
 
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
+    """
+    Class definition of AnomalyDetection, the algorithm to perform inference and anomaly
+    detection on networks with reciprocity.
+    """
+
+    @inherit_docstring(ModelBase)
     def __init__(
         self,
-        inf: float = INF_,
-        err_max: float = 1e-8,
-        err: float = 0.01,
-        num_realizations: int = 1,
-        convergence_tol: float = 0.1,
-        decision: int = 2,
-        max_iter: int = 500,
-        plot_loglik: bool = False,
-        flag_conv: str = "log",
+        convergence_tol: float = 1e-1,  # Overriding the base class default
+        decision: int = 2,  # Overriding the base class default
+        err: float = 1e-2,  # Overriding the base class default
+        err_max: float = 1e-8,  # Overriding the base class default
+        num_realizations: int = 1,  # Overriding the base class default
+        max_iter: int = 1000,  # Overriding the base class default
+        **kwargs,  # Capture all other arguments for ModelBase
     ) -> None:
+        # Pass the overridden arguments along with any others to the parent class
         super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
+            convergence_tol=convergence_tol,
+            decision=decision,
+            err=err,
+            err_max=err_max,
+            num_realizations=num_realizations,
+            max_iter=max_iter,
+            **kwargs,  # Forward any other arguments to the base class
         )
-        self.inf = inf  # initial value of the log-likelihood
-        self.err_max = err_max  # minimum value for the parameters
-        self.err = err  # noise for the initialization
-        self.num_realizations = num_realizations  # number of iterations with different random initialization
-        self.convergence_tol = convergence_tol  # tolerance parameter for convergence
-        self.decision = decision  # convergence parameter
-        self.max_iter = max_iter  # maximum number of EM steps before aborting
-        self.plot_loglik = plot_loglik
-        self.flag_conv = flag_conv
 
-        # Initialize the attributes
-        self.u_f: np.ndarray = np.array([])
-        self.v_f: np.ndarray = np.array([])
-        self.w_f: np.ndarray = np.array([])
-
-    def check_fit_params(
-        self,
-        K: int,
-        data: Union[skt.sptensor, skt.dtensor],
-        undirected: bool,
-        initialization: int,
-        assortative: bool,
-        constrained: bool,
-        ag: float,
-        bg: float,
-        pibr0: float,
-        mupr0: float,
-        flag_anomaly: bool,
-        fix_pibr: bool,
-        fix_mupr: bool,
-        **extra_params: Unpack[
-            ModelFitParameters
-        ],  # TODO: This extra_params is gonna be removed soon, I'm keeping here
-        # so the check_fit works, but there's a ticket to remove change the logic for the
-        # params.
-    ) -> None:
+    def _check_fit_params(self, **kwargs) -> None:
         message = "Message"  # TODO: update message
-        available_extra_params = [
-            "fix_pibr",
-            "fix_mubr",
-            "fix_beta",
-            "fix_w",
-            "fix_communities",
-            "files",
-            "out_inference",
-            "out_folder",
-            "end_file",
-            "verbose",
-        ]
-        super()._check_fit_params(
-            initialization,
-            undirected,
-            assortative,
-            data,
-            K,
-            available_extra_params,
-            message=message,
-            data_X=None,
-            eta0=None,
-            beta0=None,
-            gamma=None,
-            **extra_params,
-        )
 
-        self.assortative = assortative  # if True, the network is assortative
-        self.constrained = constrained  # if True, use the configuration with constraints on the updates
-        self.ag = ag  # shape of gamma prior
-        self.bg = bg  # rate of gamma prior
-        self.pibr = pibr0  # pi: anomaly parameter
-        self.mupr = mupr0  # mu: prior
-        self.flag_anomaly = flag_anomaly
-        self.fix_pibr = fix_pibr
-        self.fix_mupr = fix_mupr
+        super()._check_fit_params(message=message, **kwargs)
 
-        if initialization not in {
-            0,
-            1,
-        }:  # indicator for choosing how to initialize u, v and w
-            raise ValueError(
-                "The initialization parameter can be either 0 or 1. It is used as an indicator to "
-                "initialize the membership matrices u and v and the affinity matrix w. If it is 0, they "
-                "will be generated randomly, otherwise they will upload from file."
-            )
+        self.constrained = kwargs.get(
+            "constrained", False
+        )  # if True, use the configuration with constraints on the updates
+        self.ag = kwargs.get("ag", 1.5)  # shape of gamma prior
+        self.bg = kwargs.get("bg", 10.0)  # rate of gamma prior
+        self.flag_anomaly = kwargs.get("flag_anomaly", True)
+        self.fix_pibr = kwargs.get("fix_pibr", False)
+        self.fix_mupr = kwargs.get("fix_mupr", False)
+        self.pibr = kwargs.get("pibr0", None)  # pi: anomaly parameter
+        self.mupr = kwargs.get("mupr0", None)  # mu: prior
+
         if self.pibr is not None:
             if (self.pibr < 0) or (self.pibr > 1):
                 raise ValueError("The anomaly parameter pibr0 has to be in [0, 1]!")
@@ -139,9 +76,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                 raise ValueError("The prior mupr0 has to be in [0, 1]!")
 
         if self.fix_pibr == True:
-            self.pibr = self.pibr_old = self.pibr_f = pibr0
+            self.pibr_old = self.pibr_f = self.pibr
         if self.fix_mupr == True:
-            self.mupr = self.mupr_old = self.mupr_f = mupr0
+            self.mupr_old = self.mupr_f = self.mupr
 
         if self.flag_anomaly == False:
             self.pibr = self.pibr_old = self.pibr_f = 1.0
@@ -151,8 +88,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         if self.initialization == 1:
             theta = np.load(self.files, allow_pickle=True)
             self.N, self.K = theta["u"].shape
-
-        self.verbose = extra_params.get("verbose", 0)
 
         # Parameters for the initialization of the model
         self.use_unit_uniform = True
@@ -174,86 +109,108 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         initialization: int = 0,
         assortative: bool = True,
         constrained: bool = False,
+        fix_w: bool = False,
+        fix_communities: bool = False,
         mask: Optional[np.ndarray] = None,
         rseed: int = 10,
-        **extra_params: Unpack[ModelFitParameters],
+        out_inference: bool = True,
+        out_folder: Path = Path("outputs"),
+        end_file: str = None,
+        files: Union[str, Path] = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float]:
         """
         Fit the AnomalyDetection model to the provided data.
 
         Parameters
         ----------
-        data : ndarray/sptensor
-               Graph adjacency tensor.
+        data : Union[skt.sptensor, skt.dtensor]
+            Graph adjacency tensor.
         data_T: None/sptensor
                 Graph adjacency tensor (transpose).
-        nodes : list
-                List of nodes IDs.
-        K : int
-            Number of communities.
-        undirected : bool
-                     If True, the graph is considered undirected.
-        initialization : int
-                         Indicator for choosing how to initialize u, v and w.
-        assortative : bool
-                      If True, the network is considered assortative.
-        constrained : bool
-                      If True, constraints are applied on the updates.
-        ag : float
-             Shape of gamma prior.
-        bg : float
-             Rate of gamma prior.
-        pibr0 : float
-                Initial value for the anomaly parameter pi.
-        mupr0 : float
-                Initial value for the prior mu parameter.
-        flag_anomaly : bool
-                       If True, the anomaly detection is enabled.
-        fix_pibr : bool
-                   If True, the anomaly parameter pi is fixed.
-        fix_mupr : bool
-                   If True, the prior mu parameter is fixed.
-        mask : ndarray, optional
-               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
+        nodes : List[int]
+            List of node IDs.
+        ag : float, optional
+            Shape of gamma prior, by default 1.5.
+        bg : float, optional
+            Rate of gamma prior, by default 10.0.
+        pibr0 : Optional[float], optional
+            Initial value for the anomaly parameter pi, by default None.
+        mupr0 : Optional[float], optional
+            Initial value for the prior mu parameter, by default None.
+        flag_anomaly : bool, optional
+            If True, the anomaly detection is enabled, by default True.
+        fix_pibr : bool, optional
+            If True, the anomaly parameter pi is fixed, by default False.
+        fix_mupr : bool, optional
+            If True, the prior mu parameter is fixed, by default False.
+        K : int, optional
+            Number of communities, by default 3.
+        undirected : bool, optional
+            If True, the graph is considered undirected, by default False.
+        initialization : int, optional
+            Indicator for choosing how to initialize u, v, and w, by default 0.
+        assortative : bool, optional
+            If True, the network is considered assortative, by default True.
+        constrained : bool, optional
+            If True, constraints are applied on the updates, by default False.
+        fix_w : bool, optional
+            If True, the affinity tensor w is fixed, by default False.
+        fix_communities : bool, optional
+            If True, the community memberships are fixed, by default False.
+        mask : Optional[np.ndarray], optional
+            Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
         rseed : int, optional
-                Random seed for initialization. Default is 10.
-        **extra_params : dict, optional
-                         Additional parameters.
+            Random seed for initialization, by default 10.
+        out_inference : bool, optional
+            If True, output inference results, by default True.
+        out_folder : str, optional
+            Output folder for inference results, by default "outputs/".
+        end_file : str, optional
+            Suffix for the output file, by default None.
+        files : Union[str, Path], optional
+            Path to the file for initialization, by default None.
 
         Returns
         -------
-        u_f : ndarray
-              Final out-going membership matrix.
-        v_f : ndarray
-              Final in-coming membership matrix.
-        w_f : ndarray
-              Final affinity tensor.
+
+        u_f : np.ndarray
+            Final out-going membership matrix.
+        v_f : np.ndarray
+            Final in-coming membership matrix.
+        w_f : np.ndarray
+            Final affinity tensor.
         pibr_f : float
-                Final anomaly parameter pi.
+            Final anomaly parameter pi.
         mupr_f : float
-                Final prior mu parameter.
+            Final prior mu parameter.
         maxL : float
-               Maximum log-likelihood.
+            Maximum log-likelihood.
         """
-        self.check_fit_params(
-            K,
-            data,
-            undirected,
-            initialization,
-            assortative,
-            constrained,
-            ag,
-            bg,
-            pibr0,
-            mupr0,
-            flag_anomaly,
-            fix_pibr,
-            fix_mupr,
-            **extra_params,
+        # Check the input parameters
+        self._check_fit_params(
+            K=K,
+            data=data,
+            undirected=undirected,
+            initialization=initialization,
+            assortative=assortative,
+            constrained=constrained,
+            ag=ag,
+            bg=bg,
+            pibr0=pibr0,
+            mupr0=mupr0,
+            flag_anomaly=flag_anomaly,
+            fix_pibr=fix_pibr,
+            fix_mupr=fix_mupr,
+            fix_communities=fix_communities,
+            fix_w=fix_w,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            files=files,
         )
-        logging.debug("Fixing random seed to: %s", rseed)
         self.rseed = rseed  # random seed
-        self.rng = np.random.RandomState(self.rseed)  # pylint: disable=no-member
+        logging.debug("Fixing random seed to: %s", self.rseed)
+        self.rng = np.random.RandomState(self.rseed)
 
         # Initialize the fit parameters
         maxL = -self.inf  # initialization of the maximum  log-likelihood

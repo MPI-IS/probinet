@@ -4,6 +4,7 @@ attributes to extract overlapping communities in directed and undirected multila
 """
 
 import logging
+from pathlib import Path
 import sys
 import time
 from typing import Any, List, Optional, Tuple, Union
@@ -11,13 +12,11 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 import scipy.sparse
 import sktensor as skt
-from typing_extensions import Unpack
 
 from ..input.preprocessing import preprocess, preprocess_X
-from ..input.tools import sp_uttkrp, sp_uttkrp_assortative
+from ..input.tools import inherit_docstring, sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import lambda_full
-from .base import ModelBase, ModelFitParameters, ModelUpdateMixin
-from .constants import CONVERGENCE_TOL_, DECISION_, ERR_, INF_
+from .base import ModelBase, ModelUpdateMixin
 
 
 class MTCOV(ModelBase, ModelUpdateMixin):
@@ -26,46 +25,22 @@ class MTCOV(ModelBase, ModelUpdateMixin):
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
     """
 
+    @inherit_docstring(ModelBase)
     def __init__(
         self,
-        inf: float = INF_,  # initial value of the log-likelihood
-        err_max: float = 0.0000001,  # minimum value for the parameters
-        err: float = ERR_,  # noise for the initialization
+        err_max: float = 1e-7,  # minimum value for the parameters
         num_realizations: int = 1,  # number of iterations with different random initialization
-        convergence_tol: float = CONVERGENCE_TOL_,  # tolerance for convergence
-        decision: int = DECISION_,  # convergence parameter
-        max_iter: int = 500,  # maximum number of EM steps before aborting
-        plot_loglik: bool = False,  # flag to plot the log-likelihood
-        flag_conv: str = "log",  # flag to choose the convergence criterion
-    ) -> None:
-
+        **kwargs: Any,
+    ):
         super().__init__(
-            inf,
-            err_max,
-            err,
-            num_realizations,
-            convergence_tol,
-            decision,
-            max_iter,
-            plot_loglik,
-            flag_conv,
+            err_max=err_max,
+            num_realizations=num_realizations,
+            **kwargs,
         )
 
-        # Initialize the attributes
-        self.u_f: np.ndarray = np.array([])
-        self.v_f: np.ndarray = np.array([])
-        self.w_f: np.ndarray = np.array([])
-
-    def check_fit_params(
+    def _check_fit_params(
         self,
-        initialization: int,
-        gamma: float,
-        undirected: bool,
-        assortative: bool,
-        data: Union[skt.dtensor, skt.sptensor, np.ndarray],
-        data_X: Union[skt.dtensor, skt.sptensor, np.ndarray],
-        K: int,
-        **extra_params: Unpack[ModelFitParameters],
+        **kwargs: Any,
     ) -> None:
 
         message = (
@@ -73,30 +48,19 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             "initialize the membership matrices u and v and the affinity matrix w. If it is 0, they "
             "will be generated randomly, otherwise they will upload from file."
         )
-        available_extra_params = [
-            "files",
-            "out_inference",
-            "out_folder",
-            "end_file",
-        ]
 
         super()._check_fit_params(
-            initialization,
-            undirected,
-            assortative,
-            data,
-            K,
-            available_extra_params,
-            data_X,
-            eta0=None,
-            beta0=None,
-            gamma=gamma,
             message=message,
-            **extra_params,
+            **kwargs,
         )
 
         # Parameters for the initialization of the model
         self.normalize_rows = False
+
+        self.gamma = kwargs.get("gamma", 0.5)
+        self.Z = kwargs.get("data_X").shape[
+            1
+        ]  # number of categories of the categorical attribute
 
         if self.initialization == 1:
             self.theta = np.load(self.files, allow_pickle=True)
@@ -109,106 +73,22 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             self.Z = dfB.shape[1]
             assert self.K == dfU.shape[1] == dfB.shape[0]
 
-    def preprocess_data_for_fit(
-        self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_X: np.ndarray,
-        batch_size: Optional[int] = None,
-    ) -> Tuple[
-        Union[skt.dtensor, skt.sptensor],
-        np.ndarray,
-        Tuple[np.ndarray],
-        Tuple[np.ndarray],
-        Optional[np.ndarray],
-        Optional[Tuple[np.ndarray]],
-        Optional[Tuple[np.ndarray]],
-    ]:
-        """
-        Preprocesses the input data for fitting the model.
-
-        This method handles the sparsity of the data, saves the indices of the non-zero entries,
-        and optionally selects a subset of nodes for batch processing.
-
-        Parameters
-        ----------
-        data : Union[skt.dtensor, skt.sptensor]
-            The graph adjacency tensor to be preprocessed.
-        data_X : np.ndarray
-            The one-hot encoding version of the design matrix to be preprocessed.
-        batch_size : Optional[int], default=None
-            The size of the subset of nodes to compute the likelihood with. If None, the method
-            will automatically determine the batch size based on the number of nodes.
-
-        Returns
-        -------
-        preprocessed_data : Union[skt.dtensor, skt.sptensor]
-            The preprocessed graph adjacency tensor.
-        preprocessed_data_X : np.ndarray
-            The preprocessed one-hot encoding version of the design matrix.
-        subs_nz : Tuple[np.ndarray]
-            The indices of the non-zero entries in the data.
-        subs_X_nz : Tuple[np.ndarray]
-            The indices of the non-zero entries in the design matrix.
-        subset_N : Optional[np.ndarray]
-            The subset of nodes selected for batch processing. None if no subset is selected.
-        Subs : Optional[Tuple[np.ndarray]]
-            The list of tuples representing the non-zero entries in the data. None if no subset is selected.
-        SubsX : Optional[Tuple[np.ndarray]]
-            The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
-        """
-
-        # Pre-processing of the data to handle the sparsity
-        if not isinstance(data, skt.sptensor):
-            data = preprocess(data)
-        data_X = preprocess_X(data_X)
-
-        # save the indexes of the nonzero entries
-        if isinstance(data, skt.dtensor):
-            subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
-        subs_X_nz = data_X.nonzero()
-
-        if batch_size:
-            if batch_size > self.N:
-                batch_size = min(5000, self.N)
-            np.random.seed(10)  # TODO: ask Martina why this seed
-            subset_N = np.random.choice(
-                np.arange(self.N), size=batch_size, replace=False
-            )
-            Subs = list(zip(*subs_nz))
-            SubsX = list(zip(*subs_X_nz))
-        else:
-            if self.N > 5000:
-                batch_size = 5000
-                np.random.seed(10)
-                subset_N = np.random.choice(
-                    np.arange(self.N), size=batch_size, replace=False
-                )
-                Subs = list(zip(*subs_nz))
-                SubsX = list(zip(*subs_X_nz))
-            else:
-                subset_N = None
-                Subs = None
-                SubsX = None
-        logging.debug("batch_size: %s", batch_size)
-
-        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX  # type: ignore
-
     def fit(
         self,
         data: Union[skt.dtensor, skt.sptensor],
         data_X: np.ndarray,
         nodes: List[Any],
-        flag_conv: str = "log",
         batch_size: Optional[int] = None,
         gamma: float = 0.5,
-        rseed: int = 0,
-        K: int = 3,
+        rseed: int = 107261,
+        K: int = 2,
         initialization: int = 0,
         undirected: bool = False,
-        assortative: bool = True,
-        **extra_params: Unpack[ModelFitParameters],
+        assortative: bool = False,
+        out_inference: bool = True,
+        out_folder: Path = Path("outputs"),
+        end_file: str = None,
+        files: str = None,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -217,54 +97,57 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         float,
     ]:
         """
-        Performing community detection in multilayer networks considering both the topology of interactions and node
-        attributes via EM updates.
-        Save the membership matrices U and V, the affinity tensor W and the beta matrix.
+        Perform community detection in multilayer networks considering both the topology of interactions and node
+        attributes via EM updates. Save the membership matrices U and V, the affinity tensor W, and the beta matrix.
 
         Parameters
         ----------
-        data : ndarray/sptensor
-               Graph adjacency tensor.
-        data_X : ndarray
-                 Object representing the one-hot encoding version of the design matrix.
-        flag_conv : str
-                    If 'log' the convergence is based on the loglikelihood values; if 'deltas' the convergence is
-                    based on the differences in the parameters values. The latter is suggested when the dataset
-                    is big (N > 1000 ca.).
-        nodes : list
-                List of nodes IDs.
-        batch_size : int/None
-                     Size of the subset of nodes to compute the likelihood with.
-        gamma : float
-                Weight of the node attributes.
-        rseed : int
-                Random seed.
-        K : int
-            Number of communities.
-        initialization : int
-                        If 0, the membership matrices u and v and the affinity matrix w are generated randomly;
-                        if 1, they are uploaded from file.
-        undirected : bool
-                        If True, the model is undirected.
-        assortative : bool
-                        If True, the model is assortative.
-        extra_params : dict
-                        Additional parameters.
+        data : Union[skt.dtensor, skt.sptensor]
+            Graph adjacency tensor.
+        data_X : np.ndarray
+            Object representing the one-hot encoding version of the design matrix.
+        nodes : List[Any]
+            List of node IDs.
+        batch_size : Optional[int], optional
+            Size of the subset of nodes to compute the likelihood with, by default None.
+        gamma : float, optional
+            Weight of the node attributes, by default 0.5.
+        rseed : int, optional
+            Random seed, by default 107261.
+        K : int, optional
+            Number of communities, by default 2.
+        initialization : int, optional
+            If 0, the membership matrices u and v and the affinity matrix w are generated randomly; if 1, they are uploaded from file, by default 0.
+        undirected : bool, optional
+            If True, the model is undirected, by default False.
+        assortative : bool, optional
+            If True, the model is assortative, by default False.
+        out_inference : bool, optional
+            If True, output inference results, by default True.
+        out_folder : str, optional
+            Output folder for inference results, by default "outputs/".
+        end_file : str, optional
+            Suffix for the output file, by default None.
+        files : str, optional
+            Path to the file for initialization, by default None.
+
         Returns
         -------
-        u_f : ndarray
-              Membership matrix (out-degree).
-        v_f : ndarray
-              Membership matrix (in-degree).
-        w_f : ndarray
-              Affinity tensor.
-        beta_f : ndarray
-                 Beta parameter matrix.
-        maxL : float
-               Maximum log-likelihood value.
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]
+            A tuple containing:
+            - u_f : np.ndarray
+                Membership matrix (out-degree).
+            - v_f : np.ndarray
+                Membership matrix (in-degree).
+            - w_f : np.ndarray
+                Affinity tensor.
+            - beta_f : np.ndarray
+                Beta parameter matrix.
+            - maxL : float
+                Maximum log-likelihood value.
         """
         # Check the parameters for fitting the model
-        self.check_fit_params(
+        self._check_fit_params(
             data=data,
             data_X=data_X,
             K=K,
@@ -272,11 +155,15 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             gamma=gamma,
             undirected=undirected,
             assortative=assortative,
-            **extra_params,
+            out_inference=out_inference,
+            out_folder=out_folder,
+            end_file=end_file,
+            files=files,
         )
         # Set the random seed
-        logging.debug("Fixing random seed to: %s", rseed)
-        self.rng = np.random.RandomState(rseed)  # pylint: disable=no-member
+        self.rseed = rseed
+        logging.debug("Fixing random seed to: %s", self.rseed)
+        self.rng = np.random.RandomState(self.rseed)
 
         # Initialize the fit parameters
         self.initialization = initialization
@@ -320,7 +207,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
                 self.final_it = it
                 conv = convergence
                 self.best_r = r
-                if flag_conv == "log":
+                if self.flag_conv == "log":
                     best_loglik_values = list(loglik_values)
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
@@ -334,6 +221,90 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         # Return the final parameters and the maximum log-likelihood
         return self.u_f, self.v_f, self.w_f, self.beta_f, self.maxL
+
+    def preprocess_data_for_fit(
+        self,
+        data: Union[skt.dtensor, skt.sptensor],
+        data_X: np.ndarray,
+        batch_size: Optional[int] = None,
+        max_batch_size: int = 5000,
+    ) -> Tuple[
+        Union[skt.dtensor, skt.sptensor],
+        np.ndarray,
+        Tuple[np.ndarray],
+        Tuple[np.ndarray],
+        Optional[np.ndarray],
+        Optional[Tuple[np.ndarray]],
+        Optional[Tuple[np.ndarray]],
+    ]:
+        """
+        Preprocesses the input data for fitting the model.
+
+        This method handles the sparsity of the data, saves the indices of the non-zero entries,
+        and optionally selects a subset of nodes for batch processing.
+
+        Parameters
+        ----------
+        data : Union[skt.dtensor, skt.sptensor]
+            The graph adjacency tensor to be preprocessed.
+        data_X : np.ndarray
+            The one-hot encoding version of the design matrix to be preprocessed.
+        batch_size : Optional[int], default=None
+            The size of the subset of nodes to compute the likelihood with. If None, the method
+            will automatically determine the batch size based on the number of nodes.
+        max_batch_size : int, default=5000
+            The maximum batch size to use when automatically determining the batch size.
+        Returns
+        -------
+        preprocessed_data : Union[skt.dtensor, skt.sptensor]
+            The preprocessed graph adjacency tensor.
+        preprocessed_data_X : np.ndarray
+            The preprocessed one-hot encoding version of the design matrix.
+        subs_nz : Tuple[np.ndarray]
+            The indices of the non-zero entries in the data.
+        subs_X_nz : Tuple[np.ndarray]
+            The indices of the non-zero entries in the design matrix.
+        subset_N : Optional[np.ndarray]
+            The subset of nodes selected for batch processing. None if no subset is selected.
+        Subs : Optional[Tuple[np.ndarray]]
+            The list of tuples representing the non-zero entries in the data. None if no subset is selected.
+        SubsX : Optional[Tuple[np.ndarray]]
+            The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
+        """
+
+        # Pre-process data and save the indices of the non-zero entries
+        data = preprocess(data) if not isinstance(data, skt.sptensor) else data
+        data_X = preprocess_X(data_X)
+        subs_nz = data.nonzero() if isinstance(data, skt.dtensor) else data.subs
+        subs_X_nz = data_X.nonzero()
+
+        if batch_size:
+            if batch_size > self.N:
+                batch_size = min(max_batch_size, self.N)
+            np.random.seed(10)  # TODO: ask Martina why this seed
+            subset_N = np.random.choice(
+                np.arange(self.N), size=batch_size, replace=False
+            )
+            Subs = list(zip(*subs_nz))
+            SubsX = list(zip(*subs_X_nz))
+        else:
+            if self.N > max_batch_size:
+                batch_size = max_batch_size
+                np.random.seed(
+                    10
+                )  # TODO: remove this in the ticket about random seeds.
+                subset_N = np.random.choice(
+                    np.arange(self.N), size=batch_size, replace=False
+                )
+                Subs = list(zip(*subs_nz))
+                SubsX = list(zip(*subs_X_nz))
+            else:
+                subset_N = None
+                Subs = None
+                SubsX = None
+        logging.debug("batch_size: %s", batch_size)
+
+        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX  # type: ignore
 
     def _initialize_realization(self):
         """

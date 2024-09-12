@@ -11,7 +11,7 @@ from pgm.input.loader import import_data
 from pgm.model.crep import CRep
 from pgm.output.likelihood import calculate_opt_func, PSloglikelihood
 
-from .constants import DECIMAL
+from .constants import DECIMAL, PATH_FOR_INIT
 from .fixtures import BaseTest, ModelTestMixin
 
 
@@ -48,11 +48,9 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
-        with (
-            files("pgm.data.model")
-            .joinpath("setting_" + self.algorithm + ".yaml")
-            .open("rb") as fp
-        ):
+        with open(
+            PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml"), encoding="utf-8"
+        ) as fp:
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests into the temp folder created in the BaseTest
@@ -63,6 +61,8 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         )  # Adding a suffix to the output files
 
         self.conf = conf
+
+        self.files = PATH_FOR_INIT / "theta_GT_CRep_for_initialization.npz"
 
         self.model = CRep()  # type: ignore
 

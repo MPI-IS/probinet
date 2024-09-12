@@ -4,13 +4,12 @@ This is the test module for the JointCRep algorithm.
 
 from importlib.resources import files
 
+from tests.constants import PATH_FOR_INIT
 from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
 
 from pgm.input.loader import import_data
 from pgm.model.jointcrep import JointCRep
-
-# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 
 
 class JointCRepTestCase(BaseTest, ModelTestMixin):
@@ -50,11 +49,7 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
         # Setting to run the algorithm
 
-        with (
-            files("pgm.data.model")
-            .joinpath("setting_" + self.algorithm + ".yaml")
-            .open("rb") as fp
-        ):
+        with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
             conf = yaml.safe_load(fp)
 
         # Saving the outputs of the tests inside the tests dir
@@ -71,6 +66,8 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
         self.L = len(self.A)
 
         self.N = len(self.nodes)
+
+        self.files = PATH_FOR_INIT / "theta_GT_JointCRep_for_initialization.npz"
 
         # Run model
 

@@ -8,7 +8,6 @@ parameters:
   end_file: ["_MTCOV"]
   assortative: [False]
   undirected: [True]
-  flag_conv: ["log"]
   batch_size: [null]
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
