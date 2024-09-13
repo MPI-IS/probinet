@@ -9,7 +9,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy.sparse import coo_matrix
-import sktensor as skt
+from sparse import COO
 
 from pgm.input.tools import (
     build_edgelist, can_cast_to_int, Exp_ija_matrix, get_item_array_from_subs, is_sparse,
@@ -26,7 +26,7 @@ class TestTensors(unittest.TestCase):
     """
 
     def setUp(self):
-        # Parameters for the non assortative case
+        # Parameters for the non-assortative case
         self.vals_ = np.array([1.0, 2.0, 3.0])
         self.subs_ = (np.array([0, 0, 1]), np.array([0, 1, 2]), np.array([0, 1, 2]))
         self.u_ = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]])
@@ -41,7 +41,7 @@ class TestTensors(unittest.TestCase):
         # Parameters for the assortative case
         self.vals_a = np.array(
             [1.0, 2.0, 3.0]
-        )  # of size n, number of nodes; these are the non zero values of the tensor
+        )  # of size n, number of nodes; these are the non-zero values of the tensor
         self.subs_a = (
             np.array([0, 0, 0]),
             np.array([0, 1, 2]),
@@ -85,15 +85,21 @@ class TestTensors(unittest.TestCase):
         self.assertFalse(result)
 
     def assertSptensorEqual(self, result, expected_result):
-        self.assertTrue(np.allclose(result.subs, expected_result.subs))
-        self.assertTrue(np.allclose(result.vals, expected_result.vals))
+        self.assertTrue(np.allclose(result.coords, expected_result.coords))
+        self.assertTrue(np.allclose(result.data, expected_result.data))
         self.assertEqual(result.shape, expected_result.shape)
         self.assertEqual(result.dtype, expected_result.dtype)
 
     def test_sptensor_from_dense_array(self):
         # Test case where the input ndarray is valid
         dense_array = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
-        expected_result = skt.sptensor(([0, 1, 2], [0, 1, 2]), [1, 2, 3], shape=(3, 3))
+        # Define indices and values
+        indices = ([0, 1, 2], [0, 1, 2])
+        values = np.array([1, 2, 3], dtype=np.float64)
+        shape = (3, 3)
+
+        # Create the sparse tensor
+        expected_result = COO(indices, values, shape=shape)
         result = sptensor_from_dense_array(dense_array)
         self.assertSptensorEqual(result, expected_result)
 

@@ -17,13 +17,13 @@ dependencies = [
     "jupyter",
     "matplotlib",
     "networkx",
-    "numpy==1.22.0",
+    "numpy",
     "pandas",
     "pyyaml",
     "pytest",
     "scikit-learn",
-    "scikit-tensor-py3",
-    "scipy==1.10.0",
+    "scipy",
+    "sparse",
     "seaborn"
 ]
 

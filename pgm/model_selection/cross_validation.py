@@ -7,8 +7,10 @@ Main function to implement cross-validation given a number of communities.
 """
 
 from abc import ABC, abstractmethod
+import csv
 from itertools import product
 import logging
+import os
 from pathlib import Path
 import pickle
 import time
@@ -17,6 +19,9 @@ import numpy as np
 
 from pgm.input.loader import import_data
 from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_matrix
+from pgm.output.evaluate import (
+    calculate_AUC, calculate_conditional_expectation, calculate_expectation)
+from pgm.output.likelihood import calculate_opt_func
 
 # TODO: optimize for big matrices (so when the input would be done with force_dense=False)
 
@@ -26,12 +31,16 @@ class CrossValidation(ABC):
         self, algorithm, model_parameters, cv_parameters, numerical_parameters={}
     ):
         self.algorithm = algorithm
-        for d in [model_parameters, cv_parameters, numerical_parameters]:
-            for key, value in d.items():
-                setattr(self, key, value)
+        for key, value in model_parameters.items():
+            setattr(self, key, value)
+        for key, value in cv_parameters.items():
+            setattr(self, key, value)
+        for key, value in numerical_parameters.items():
+            setattr(self, key, value)
 
     def prepare_output_directory(self):
-        Path(self.out_folder).mkdir(parents=True, exist_ok=True)
+        if not os.path.exists(self.out_folder):
+            os.makedirs(self.out_folder)
 
     @abstractmethod
     def extract_mask(self, fold):
@@ -47,7 +56,7 @@ class CrossValidation(ABC):
 
         if self.out_mask:
             outmask = self.out_folder + "mask_f" + str(fold) + "_" + self.adj + ".pkl"
-            print(f"Mask saved in: {outmask}")
+            logging.debug("Mask saved in: %s", outmask)
 
             with open(outmask, "wb") as f:
                 pickle.dump(np.where(mask > 0), f)
@@ -106,11 +115,71 @@ class CrossValidation(ABC):
         Calculate performance measures and prepare comparison.
         """
 
-    @abstractmethod
+    def _calculate_performance_and_prepare_comparison(
+        self, outputs, mask, fold, algorithm_object
+    ):
+        # Unpack the outputs from the algorithm
+        u, v, w, eta, maxL = outputs
+
+        # Initialize the comparison dictionary with keys as headers
+        comparison = {
+            "K": self.parameters["K"],
+            "fold": fold,
+            "rseed": self.parameters["rseed"],
+            "eta": eta,
+            "maxL": maxL,
+            "final_it": algorithm_object.final_it,
+        }
+
+        # Calculate the expected matrix M using the parameters u, v, w, and eta
+        M = calculate_expectation(u, v, w, eta=eta)
+
+        # Calculate the AUC for the training set (where mask is not applied)
+        comparison["auc_train"] = calculate_AUC(M, self.B, mask=np.logical_not(mask))
+
+        # Calculate the AUC for the test set (where mask is applied)
+        comparison["auc_test"] = calculate_AUC(M, self.B, mask=mask)
+
+        # Calculate the conditional expectation matrix M_cond
+        M_cond = calculate_conditional_expectation(self.B, u, v, w, eta=eta)
+
+        # Calculate the conditional AUC for the training set
+        comparison["auc_cond_train"] = calculate_AUC(
+            M_cond, self.B, mask=np.logical_not(mask)
+        )
+
+        # Calculate the conditional AUC for the test set
+        comparison["auc_cond_test"] = calculate_AUC(M_cond, self.B, mask=mask)
+
+        # Calculate the optimization function value for the training set
+        comparison["opt_func_train"] = calculate_opt_func(
+            self.B,
+            algorithm_object,
+            mask=mask,
+            assortative=self.parameters["assortative"],
+        )
+
+        # Store the comparison list in the instance variable
+        self.comparison = comparison
+
     def save_results(self):
-        """
-        Save results in a csv file.
-        """
+        # Check if the output file exists; if not, write the header
+        output_path = Path(self.out_file)
+        if not output_path.is_file():  # write header
+            with output_path.open("w") as outfile:
+                # Create a CSV writer object
+                wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
+                # Write the header row to the CSV file
+                wrtr.writerow(list(self.comparison.keys()))
+
+        # Open the output file in append mode
+        with output_path.open("a") as outfile:
+            # Create a CSV writer object
+            wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
+            # Write the comparison data to the CSV file
+            wrtr.writerow(list(self.comparison.values()))
+            # Flush the output buffer to ensure all data is written to the file
+            outfile.flush()
 
     def run_single_iteration(self):
         """
@@ -132,12 +201,12 @@ class CrossValidation(ABC):
         # Prepare output file
         if self.out_results:
             self.out_file = self.out_folder + adjacency + "_cv.csv"
-            print(f"Results will be saved in: {self.out_file}")
+            logging.info("Results will be saved in: %s" % self.out_file)
 
         # Import data
         self.load_data()
 
-        print("\n### CV procedure ###")
+        logging.info("Starting the cross-validation procedure.")
         time_start = time.time()
 
         # Prepare indices for cross-validation
@@ -147,7 +216,7 @@ class CrossValidation(ABC):
 
         # Cross-validation loop
         for fold in range(self.NFold):
-            print("\nFOLD ", fold)
+            logging.info("\nFOLD %s" % fold)
 
             self.parameters["end_file"] = (
                 self.end_file + "_" + str(fold) + "K" + str(self.parameters["K"])
@@ -164,25 +233,24 @@ class CrossValidation(ABC):
                 outputs, mask, fold, algorithm_object
             )
 
-            print(f"Time elapsed: {np.round(time.time() - tic, 2)} seconds.")
-
+            logging.info("Time elapsed: %s seconds." % np.round(time.time() - tic, 2))
             # Save results
             if self.out_results:
                 self.save_results()
 
-        print(f"\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.")
+        logging.info(
+            "\nTime elapsed: %s seconds." % np.round(time.time() - time_start, 2)
+        )
 
     def prepare_file_name(self):
-        # Get the adjacency name
-        adjacency_path = Path(self.adj)
-        # Adjacency name
-        adjacency = adjacency_path.stem
-        # Adjacency suffix
-        suffix = adjacency_path.suffix
-        # Check if the adjacency is a csv or dat file
-        if suffix not in [".dat", ".csv"]:
+        if ".dat" in self.adj:
+            adjacency = self.adj.split(".dat")[0]
+        elif ".csv" in self.adj:
+            adjacency = self.adj.split(".csv")[0]
+        else:
+            adjacency = self.adj
+            # Warning: adjacency is not csv nor dat
             logging.warning("Adjacency name not recognized.")
-
         return adjacency
 
     def run_cross_validation(self, **kwargs):

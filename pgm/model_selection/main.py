@@ -1,3 +1,7 @@
+"""
+Main module for running cross-validation for different algorithms.
+"""
+
 import logging
 
 from pgm.model_selection.acd_cross_validation import ACDCrossValidation

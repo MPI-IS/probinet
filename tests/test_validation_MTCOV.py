@@ -73,7 +73,7 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         else:
             # If force_dense is False, assert that the sum of all values in the sparse
             # matrix B is greater than 0
-            self.assertTrue(self.B.vals.sum() > 0)
+            self.assertTrue(self.B.data.sum() > 0)
 
     def _fit_model_to_data(self, conf):
         _ = self.model.fit(

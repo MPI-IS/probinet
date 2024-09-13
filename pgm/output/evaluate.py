@@ -3,12 +3,12 @@ It provides essential functions for model assessment like AUC for link predictio
 and marginal expectations.
 """
 
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.stats import poisson
 from sklearn import metrics
-from sktensor import dtensor, sptensor
+from sparse import COO
 
 from ..input.tools import check_symmetric, transpose_ij, transpose_ij2, transpose_ij3
 
@@ -99,13 +99,7 @@ def fAUC(R, Pos, Neg):
     return AUC
 
 
-def calculate_AUC_mtcov(
-    B: np.ndarray,
-    u: np.ndarray,
-    v: np.ndarray,
-    w: np.ndarray,
-    mask: Optional[np.ndarray] = None,
-) -> float:
+def calculate_AUC_mtcov(B, u, v, w, mask=None):
     """
     Return the AUC of the link prediction. It represents the probability that a randomly chosen missing connection
     (true positive) is given a higher score by our method than a randomly chosen pair of unconnected vertices
@@ -146,24 +140,7 @@ def calculate_AUC_mtcov(
     return fAUC(R, Pos, Neg)
 
 
-def fAUC(R: list, Pos: float, Neg: float) -> float:
-    """
-    Compute the Area Under the Curve (AUC) for the given ranked list of predictions.
-
-    Parameters
-    ----------
-    R : list
-        List of tuples containing the predicted scores and actual labels.
-    Pos : float
-        Number of positive samples.
-    Neg : float
-        Number of negative samples.
-
-    Returns
-    -------
-    float
-        The calculated AUC value.
-    """
+def fAUC(R, Pos, Neg):
     y = 0.0
     bad = 0.0
     for m, a in R:
@@ -209,15 +186,15 @@ def calculate_conditional_expectation(
     """
 
     if mean is None:
-        return lambda_full(u, v, w) + eta * transpose_ij3(
+        return lambda0_full(u, v, w) + eta * transpose_ij3(
             B
         )  # conditional expectation (knowing A_ji)
 
-    return lambda_full(u, v, w) + eta * transpose_ij3(mean)
+    return lambda0_full(u, v, w) + eta * transpose_ij3(mean)
 
 
 def calculate_conditional_expectation_dyncrep(
-    B_to_T: Union[dtensor, sptensor],
+    B_to_T: Union[COO, np.ndarray],
     u: np.ndarray,
     v: np.ndarray,
     w: np.ndarray,
@@ -247,7 +224,7 @@ def calculate_conditional_expectation_dyncrep(
     -------
     Matrix whose elements are lambda_{ij}.
     """
-    conditional_expectation = _lambda0_full_dyncrep(u, v, w) + eta * transpose_ij2(
+    conditional_expectation = lambda0_full_dyncrep(u, v, w) + eta * transpose_ij2(
         B_to_T
     )
     M = (beta * conditional_expectation) / (1.0 + beta * conditional_expectation)
@@ -277,16 +254,16 @@ def calculate_expectation(
         Matrix whose elements are m_{ij}.
     """
 
-    lambda0 = lambda_full(u, v, w)
+    lambda0 = lambda0_full(u, v, w)
     lambda0T = transpose_ij3(lambda0)
     M = (lambda0 + eta * lambda0T) / (1.0 - eta * eta)
 
     return M
 
 
-def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
+def lambda0_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
-    Compute the mean lambda for all entries (former Exp_ija_matrix(u, v, w)).
+    Compute the mean lambda0 for all entries (former Exp_ija_matrix(u, v, w)).
 
     Parameters
     ----------
@@ -313,7 +290,7 @@ def lambda_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     return M
 
 
-def _lambda0_full_dyncrep(u, v, w):
+def lambda0_full_dyncrep(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     """
     Compute the mean lambda0 for all entries.
 
@@ -329,7 +306,7 @@ def _lambda0_full_dyncrep(u, v, w):
     Returns
     -------
     M : ndarray
-        Mean lambda0 for all entries.
+    Mean lambda0 for all entries.
     """
 
     if w.ndim == 2:
@@ -340,6 +317,42 @@ def _lambda0_full_dyncrep(u, v, w):
         M = np.einsum("ijkq,akq->ij", M, w)
 
     return M
+
+
+def lambda0_nz(
+    subs_nz: Tuple[int, int, int],
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    assortative=True,
+) -> np.ndarray:
+    """
+    Compute the mean lambda0_ij for only non-zero entries.
+
+    Parameters
+    ----------
+    subs_nz : tuple
+              Indices of elements of data that are non-zero.
+    u : ndarray
+        Out-going membership matrix.
+    v : ndarray
+        In-coming membership matrix.
+    w : ndarray
+        Affinity tensor.
+
+    Returns
+    -------
+    nz_recon_I : ndarray
+                 Mean lambda0_ij for only non-zero entries.
+    """
+
+    if not assortative:
+        nz_recon_IQ = np.einsum("Ik,Ikq->Iq", u[subs_nz[1], :], w[subs_nz[0], :, :])
+    else:
+        nz_recon_IQ = np.einsum("Ik,Ik->Ik", u[subs_nz[1], :], w[subs_nz[0], :])
+    nz_recon_I = np.einsum("Iq,Iq->I", nz_recon_IQ, v[subs_nz[2], :])
+
+    return nz_recon_I
 
 
 def calculate_Z(lambda0_aij: np.ndarray, eta: float) -> np.ndarray:
@@ -442,7 +455,7 @@ def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> 
                            edge in one direction and both edges for every pair of edges.
     """
 
-    lambda0_aij = lambda_full(U, V, W)
+    lambda0_aij = lambda0_full(U, V, W)
 
     Z = calculate_Z(lambda0_aij, eta)
 
@@ -530,7 +543,7 @@ def expected_computation(
                     Conditional expected values.
     """
 
-    lambda0_aij = lambda_full(U, V, W)
+    lambda0_aij = lambda0_full(U, V, W)
     L = lambda0_aij.shape[0]
 
     Z = calculate_Z(lambda0_aij, eta)
@@ -728,5 +741,5 @@ def calculate_expectation_acd(
     np.ndarray
         The calculated expectation.
     """
-    lambda0 = lambda_full(U, V, W)
+    lambda0 = lambda0_full(U, V, W)
     return (1 - Q) * lambda0 + Q * pi

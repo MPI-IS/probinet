@@ -5,13 +5,13 @@ Functions for handling the data.
 from importlib.resources import files
 import logging
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
 import networkx as nx
 from numpy import ndarray
 import numpy as np
 import pandas as pd
-from sktensor import sptensor
+from sparse import COO
 
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
 from .stats import print_graph_stat, print_graph_stat_MTCOV
@@ -22,12 +22,14 @@ def import_data(
     ego: str = "source",
     alter: str = "target",
     force_dense: bool = True,
-    undirected=False,
-    noselfloop=True,
-    sep="\\s+",
-    binary=True,
+    undirected: bool = False,
+    noselfloop: bool = True,
+    sep: str = "\\s+",
+    binary: bool = True,
     header: Optional[int] = None,
-) -> Tuple[List, Union[ndarray, Any], Optional[Any], Optional[ndarray]]:
+) -> tuple[
+    Iterable[nx.MultiDiGraph], Union[ndarray, COO], Optional[COO], Optional[ndarray]
+]:
     """
     Import data, i.e. the adjacency matrix, from a given folder.
 
@@ -36,34 +38,34 @@ def import_data(
     Parameters
     ----------
     dataset : str
-              Path of the input file.
-    ego : str
-          Name of the column to consider as the source of the edge.
-    alter : str
-            Name of the column to consider as the target of the edge.
-    force_dense : bool
-                  If set to True, the algorithm is forced to consider a dense adjacency tensor.
-    undirected : bool
-                    If set to True, the algorithm considers an undirected graph.
-    noselfloop : bool
-                If set to True, the algorithm removes the self-loops.
-    sep : str
-            Separator to use when reading the dataset.
-    binary : bool
-                If set to True, the algorithm reads the graph with binary edges.
-    header : int
-             Row number to use as the column names, and the start of the data.
+        Path of the input file.
+    ego : str, optional
+        Name of the column to consider as the source of the edge. Default is "source".
+    alter : str, optional
+        Name of the column to consider as the target of the edge. Default is "target".
+    force_dense : bool, optional
+        If set to True, the algorithm is forced to consider a dense adjacency tensor. Default is True.
+    undirected : bool, optional
+        If set to True, the algorithm considers an undirected graph. Default is False.
+    noselfloop : bool, optional
+        If set to True, the algorithm removes the self-loops. Default is True.
+    sep : str, optional
+        Separator to use when reading the dataset. Default is "\\s+".
+    binary : bool, optional
+        If set to True, the algorithm reads the graph with binary edges. Default is True.
+    header : int, optional
+        Row number to use as the column names, and the start of the data. Default is None.
 
     Returns
     -------
-    A : list
-        List of MultiDiGraph NetworkX objects.
-    B : ndarray/sptensor
-        Graph adjacency tensor.
-    B_T : None/sptensor
-          Graph adjacency tensor (transpose).
-    data_T_vals : None/ndarray
-                  Array with values of entries A[j, i] given non-zero entry (i, j).
+    A : list of nx.MultiDiGraph
+        List of MultiDiGraph NetworkX objects representing the layers of the network.
+    B : ndarray or sparse.COO
+        Graph adjacency tensor. If `force_dense` is True, returns a dense ndarray. Otherwise, returns a sparse COO tensor.
+    B_T : None or sparse.COO
+        Transposed graph adjacency tensor. Returns None if `force_dense` is True.
+    data_T_vals : None or ndarray
+        Array with values of entries A[j, i] given non-zero entry (i, j). Returns None if `force_dense` is True.
     """
 
     # Read adjacency file
@@ -111,45 +113,45 @@ def import_data_mtcov(
     undirected: bool = False,
     force_dense: bool = True,
     noselfloop: bool = True,
-) -> Tuple[List, Union[sptensor, Any], Optional[Any], List]:
+) -> Tuple[
+    List[nx.MultiDiGraph], Union[ndarray, COO], Optional[pd.DataFrame], List[str]
+]:
     """
     Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
-
-    Return the NetworkX graph, its numpy adjacency tensor and the dummy version of the design matrix.
 
     Parameters
     ----------
     in_folder : str
-                Path of the folder containing the input files.
-    adj_name : str
-               Input file name of the adjacency tensor.
-    cov_name : str
-               Input file name of the design matrix.
-    ego : str
-          Name of the column to consider as source of the edge.
-    egoX : str
-           Name of the column to consider as node IDs in the design matrix-attribute dataset.
-    alter : str
-            Name of the column to consider as target of the edge.
-    attr_name : str
-                Name of the attribute to consider in the analysis.
-    undirected : bool
-                 If set to True, the algorithm considers an undirected graph.
-    force_dense : bool
-                  If set to True, the algorithm is forced to consider a dense adjacency tensor.
-    noselfloop : bool
-                 If set to True, the algorithm removes the self-loops.
+        Path of the folder containing the input files.
+    adj_name : str, optional
+        Input file name of the adjacency tensor. Default is "adj.csv".
+    cov_name : str, optional
+        Input file name of the design matrix. Default is "X.csv".
+    ego : str, optional
+        Name of the column to consider as the source of the edge. Default is "source".
+    egoX : str, optional
+        Name of the column to consider as node IDs in the design matrix-attribute dataset. Default is "Name".
+    alter : str, optional
+        Name of the column to consider as the target of the edge. Default is "target".
+    attr_name : str, optional
+        Name of the attribute to consider in the analysis. Default is "Metadata".
+    undirected : bool, optional
+        If set to True, the algorithm considers an undirected graph. Default is False.
+    force_dense : bool, optional
+        If set to True, the algorithm is forced to consider a dense adjacency tensor. Default is True.
+    noselfloop : bool, optional
+        If set to True, the algorithm removes the self-loops. Default is True.
 
     Returns
     -------
-    A : list
-        List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
-    B : ndarray/sptensor
-        Graph adjacency tensor.
-    X_attr : DataFrame
-             Pandas DataFrame object representing the one-hot encoding version of the design matrix.
-    nodes : list
-            List of nodes IDs.
+    A : list of nx.MultiDiGraph
+        List of MultiDiGraph NetworkX objects representing the layers of the network.
+    B : ndarray or sparse.COO
+        Graph adjacency tensor. If `force_dense` is True, returns a dense ndarray. Otherwise, returns a sparse COO tensor.
+    X_attr : pd.DataFrame or None
+        Pandas DataFrame object representing the one-hot encoding version of the design matrix. Returns None if the design matrix is not provided.
+    nodes : list of str
+        List of node IDs.
     """
 
     def get_data_path(in_folder):

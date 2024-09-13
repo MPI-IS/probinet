@@ -22,7 +22,7 @@ class TestCrossValidationModels(BaseTest):
             "setting_JointCRep.yaml",
         ]
         for model_file in model_files:
-            with open(PATH_TO_GT + f"{model_file}", "r") as file:
+            with open(PATH_TO_GT / model_file, "r") as file:
                 model_name = model_file.split(".")[0].split("_")[1]
                 self.models[model_name] = yaml.safe_load(file)
 
@@ -35,7 +35,7 @@ class TestCrossValidationModels(BaseTest):
         model["output_file"] = self.folder + model["output_file"]
         # Change the path of the ground truth file
         model["ground_truth_file"] = (
-            PATH_TO_GT + self.models[model_name]["ground_truth_file"]
+            PATH_TO_GT / self.models[model_name]["ground_truth_file"]
         )
         # Run the cross-validation
         cross_validation(model_name, model["parameters"], model["input_params"])

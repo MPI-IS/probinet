@@ -21,6 +21,14 @@ def define_grid(**kwargs: Any) -> List[Dict[str, Any]]:
     List[Dict[str, Any]]
         A list of dictionaries, each representing a unique combination of parameter values.
     """
+    # Check that each value is a list
+    for key, value in kwargs.items():
+        if not isinstance(value, list):
+            raise ValueError(
+                "Value for parameter %s must be a list, got %s instead."
+                % (key, type(value).__name__)
+            )
+
     # Extract parameter names
     param_names = kwargs.keys()
     # Extract parameter values

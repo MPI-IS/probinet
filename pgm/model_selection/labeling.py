@@ -1,3 +1,7 @@
+"""
+Module for extracting true labels and predicting labels.
+"""
+
 from typing import List, Optional
 
 import numpy as np

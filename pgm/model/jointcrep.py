@@ -9,13 +9,13 @@ import time
 from typing import Any, List, Tuple, Union
 
 import numpy as np
-import sktensor as skt
+from sparse import COO
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
     check_symmetric, get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
-from ..output.evaluate import lambda_full
+from ..output.evaluate import lambda0_full
 from .base import ModelBase, ModelUpdateMixin
 
 
@@ -63,8 +63,8 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T: skt.sptensor,
+        data: Union[COO, np.ndarray],
+        data_T: COO,
         data_T_vals: np.ndarray,
         nodes: List[Any],
         rseed: int = 0,
@@ -95,9 +95,9 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[skt.dtensor, skt.sptensor]
+        data : Union[COO, np.ndarray]
             Graph adjacency tensor.
-        data_T : skt.sptensor
+        data_T : COO
             Graph adjacency tensor (transpose).
         data_T_vals : np.ndarray
             Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -131,23 +131,24 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default None.
+            Suffix for the output file, by default "_JointCRep".
         files : str, optional
-            Path to the file for initialization, by default None.
+            Path to the file for initialization, by default "".
+
         Returns
         -------
         Tuple[np.ndarray, np.ndarray, np.ndarray, float, float]
             A tuple containing:
             - u_f : np.ndarray
-                Out-going membership matrix.
-            - v_f : np.ndarray
-                In-coming membership matrix.
-            - w_f : np.ndarray
-                Affinity tensor.
-            - eta_f : float
-                Pair interaction coefficient.
-            - maxL : float
-                Maximum log-likelihood.
+            Out-going membership matrix.
+        - v_f : np.ndarray
+            In-coming membership matrix.
+        - w_f : np.ndarray
+            Affinity tensor.
+        -eta_f : float
+            Pair interaction coefficient.
+        -maxL : float
+            Maximum log-likelihood.
         """
 
         # Check the parameters for fitting the model
@@ -184,7 +185,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         )
 
         # Calculate the sum of the product of non-zero values in data and data_T
-        self.AAtSum = (data.vals * data_T_vals).sum()
+        self.AAtSum = (data.data * data_T_vals).sum()
 
         # Store the preprocessed data and the indices of its non-zero elements
         self.data = data
@@ -265,20 +266,20 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
     def _preprocess_data_for_fit(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T: Union[skt.dtensor, skt.sptensor, None],
+        data: Union[COO, np.ndarray],
+        data_T: Union[COO, np.ndarray, None],
         data_T_vals: Union[np.ndarray, None],
-    ) -> Tuple[Union[skt.dtensor, skt.sptensor], np.ndarray, tuple]:
+    ) -> Tuple[Union[COO, np.ndarray], np.ndarray, tuple]:
         """
         Preprocess the data for fitting the model.
 
         Parameters
         ----------
-        data : skt.dtensor or skt.sptensor
+        data : COO, np.ndarray
             The input data tensor.
-        data_T : skt.dtensor, skt.sptensor or None
+        data_T : COO, np.ndarray, None
             The transposed input data tensor. If None, it will be calculated from the input data tensor.
-        data_T_vals : np.ndarray or None
+        data_T_vals : np.ndarray, None
             The values of the non-zero entries in the transposed input data tensor. If None, it will be calculated from data_T.
 
         Returns
@@ -296,10 +297,10 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             data = preprocess(data)
 
         # Save the indices of the non-zero entries
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
+        elif isinstance(data, COO):
+            subs_nz = data.coords
 
         return data, data_T_vals, subs_nz  # type: ignore
 
@@ -309,36 +310,34 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
         Returns
         -------
-        l : float
+        loglik : float
             Log-likelihood value.
         """
         return self._likelihood()
 
-    def _update_cache(
-        self, data: Union[skt.dtensor, skt.sptensor], subs_nz: tuple
-    ) -> None:
+    def _update_cache(self, data: Union[COO, np.ndarray], subs_nz: tuple) -> None:
         """
         Update the cache used in the em_update.
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         subs_nz : tuple
                   Indices of elements of data that are non-zero.
         """
 
-        self.lambda_aij = lambda_full(self.u, self.v, self.w)  # full matrix lambda
+        self.lambda_aij = lambda0_full(self.u, self.v, self.w)  # full matrix lambda
 
         self.lambda_nz = super()._lambda_nz(
             subs_nz
         )  # matrix lambda for non-zero entries
         lambda_zeros = self.lambda_nz == 0
         self.lambda_nz[lambda_zeros] = 1  # still good because with np.log(1)=0
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             self.data_M_nz = data[subs_nz] / self.lambda_nz
-        elif isinstance(data, skt.sptensor):
-            self.data_M_nz = data.vals / self.lambda_nz
+        elif isinstance(data, COO):
+            self.data_M_nz = data.data / self.lambda_nz
         self.data_M_nz[lambda_zeros] = 0  # to use in the updates
 
         self.den_updates = 1 + self.eta * self.lambda_aij  # to use in the updates
@@ -372,13 +371,6 @@ class JointCRep(ModelBase, ModelUpdateMixin):
     def _update_em(self) -> tuple:
         """
         Update parameters via EM procedure.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
 
         Returns
         -------
@@ -762,10 +754,6 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         """
         Compute the log-likelihood of the data.
 
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
 
         Returns
         -------
@@ -778,7 +766,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         )  # to use in Z and eta
         self.Z = self._calculate_Z()
 
-        ft = (self.data.vals * np.log(self.lambda_nz)).sum()
+        ft = (self.data.data * np.log(self.lambda_nz)).sum()
 
         st = 0.5 * np.log(self.eta) * self.AAtSum
 

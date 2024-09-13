@@ -6,7 +6,7 @@ import unittest
 
 import networkx as nx
 import numpy as np
-import sktensor as skt
+from sparse import COO
 
 from pgm.input import tools
 from pgm.input.preprocessing import build_B_from_A, build_sparse_B_from_A, preprocess
@@ -80,9 +80,9 @@ class TestPreprocessing(unittest.TestCase):
             np.array([0, 1, 0]),
             np.array([1, 2, 1]),
         )
-        expected_data_values = np.array([1.0, 2.0, 3.0])
+        expected_data_values = np.array([1.0, 2.0, 3.0], dtype=np.float64)
         expected_data_shape = (2, 3, 3)
-        expected_data = skt.sptensor(
+        expected_data = COO(
             expected_data_indices, expected_data_values, shape=expected_data_shape
         )
 
@@ -91,9 +91,9 @@ class TestPreprocessing(unittest.TestCase):
             np.array([1, 2, 1]),
             np.array([0, 1, 0]),
         )
-        expected_data_T_values = np.array([1.0, 2.0, 3.0])
+        expected_data_T_values = np.array([1.0, 2.0, 3.0], dtype=np.float64)
         expected_data_T_shape = (2, 3, 3)
-        expected_data_T = skt.sptensor(
+        expected_data_T = COO(
             expected_data_T_indices, expected_data_T_values, shape=expected_data_T_shape
         )
 
@@ -103,24 +103,35 @@ class TestPreprocessing(unittest.TestCase):
         data, data_T, v_T, rw = build_sparse_B_from_A(A, calculate_reciprocity=True)
 
         # Use np.testing.assert_array_almost_equal for comparing arrays with floating-point values
-        np.testing.assert_array_almost_equal(data.subs, expected_data.subs)
-        np.testing.assert_array_almost_equal(data_T.subs, expected_data_T.subs)
+        np.testing.assert_array_almost_equal(data.coords, expected_data.coords)
+        np.testing.assert_array_almost_equal(data_T.coords, expected_data_T.coords)
         np.testing.assert_array_almost_equal(v_T, expected_v_T)
         np.testing.assert_array_almost_equal(rw, expected_rw)
 
     def test_preprocess_dense_array(self):
         # Test case for preprocess with dense array
+        # Create a dense array A
         A = np.array([[1, 0, 0], [0, 1, 0], [1, 1, 1]])
-        expected_result = skt.dtensor(A)
+        # The expected result is the same dense array
+        expected_result = A
+        # Call the preprocess function
         result = preprocess(A)
+        # Assert that the type of the result is the same as the expected result
         self.assertEqual(type(result), type(expected_result))
+        # Assert that the result array is equal to the expected result array
         np.testing.assert_array_equal(result, expected_result)
 
     def test_preprocess_sparse_array(self):
         # Test case for preprocess with sparse array
+        # Create a dense array A that will be converted to a sparse array
         A = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        # The expected result is the sparse tensor created from the dense array
         expected_result = tools.sptensor_from_dense_array(A)
+        # Call the preprocess function
         result = preprocess(A)
+        # Assert that the type of the result is the same as the expected result
         self.assertEqual(type(result), type(expected_result))
-        self.assertTrue(np.array_equal(result.subs, expected_result.subs))
-        np.testing.assert_array_equal(result.vals, expected_result.vals)
+        # Assert that the coordinates of the sparse tensor are equal to the expected coordinates
+        self.assertTrue(np.array_equal(result.coords, expected_result.coords))
+        # Assert that the data of the sparse tensor is equal to the expected data
+        np.testing.assert_array_equal(result.data, expected_result.data)

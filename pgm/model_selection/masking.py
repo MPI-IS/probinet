@@ -165,14 +165,6 @@ def extract_masks(
         maskG = rng.binomial(1, 1.0 / float(NFold), size=(L, N, N))
         maskX = rng.binomial(1, 1.0 / float(NFold), size=N)
 
-    if out_mask:  # output the masks into files
-        outmask = "../data/input/mask_f" + str(fold)
-        np.savez_compressed(
-            outmask + ".npz", maskG=np.where(maskG > 0.0), maskX=np.where(maskX > 0.0)
-        )
-        # To load: mask = np.load('mask_f0.npz'), e.g. print(np.array_equal(maskG, mask['maskG']))
-        print("Masks saved in:", outmask)
-
     return maskG, maskX
 
 

@@ -10,8 +10,7 @@ import networkx as nx
 from numpy import ndarray
 import numpy as np
 import scipy
-from sktensor import sptensor
-import sktensor as skt
+from sparse import COO
 
 from . import tools
 
@@ -96,9 +95,9 @@ def build_B_from_A(
 
 def build_sparse_B_from_A(
     A: List[nx.MultiDiGraph], calculate_reciprocity: bool = False
-) -> Union[Tuple[sptensor, sptensor, ndarray, List[Any]], sptensor]:
+) -> Union[COO, Tuple[COO, COO, ndarray, List[Any]]]:
     """
-    Create the sptensor adjacency tensor of a networkX graph.
+    Create the sparse tensor adjacency tensor of a networkX graph using TensorLy.
 
     Parameters
     ----------
@@ -109,7 +108,7 @@ def build_sparse_B_from_A(
 
     Returns
     -------
-    data : sptensor or Tuple[sptensor, sptensor, ndarray, List[Any]]
+    data : SparseTensor or Tuple[SparseTensor, SparseTensor, ndarray, List[Any]]
            Graph adjacency tensor. If calculate_reciprocity is True, returns a tuple with the adjacency tensor, its transpose, an array with values of entries A[j, i] given non-zero entry (i, j), and a list of reciprocity values.
     """
 
@@ -123,20 +122,16 @@ def build_sparse_B_from_A(
     rw = []
 
     # Initialize arrays to store indices and values for building sparse tensors
-    d1 = np.array((), dtype="int64")
-    d2, d2_T = np.array((), dtype="int64"), np.array((), dtype="int64")
-    d3, d3_T = np.array((), dtype="int64"), np.array((), dtype="int64")
-    v, vT, v_T = (
-        np.array(()),
-        np.array(()),
-        np.array(()),
-    )  # type: ndarray, ndarray, ndarray
+    d1 = []
+    d2, d2_T = [], []
+    d3, d3_T = [], []
+    v, vT, v_T = [], [], []
 
     # Loop over each layer in A
     for layer in range(L):
-        # Convert the graph A[l] to a scipy sparse array and its transpose
+        # Convert the graph A[layer] to a scipy sparse array and its transpose
         b = nx.to_scipy_sparse_array(A[layer])
-        b_T = nx.to_scipy_sparse_array(A[layer]).transpose()
+        b_T = b.transpose()
 
         # Calculate reciprocity for the current layer and append it to the rw list
         if calculate_reciprocity:
@@ -147,49 +142,46 @@ def build_sparse_B_from_A(
         nz_T = b_T.nonzero()
 
         # Append indices and values to the arrays for building sparse tensors
-        d1 = np.hstack((d1, np.array([layer] * len(nz[0]))))
-        d2 = np.hstack((d2, nz[0]))
-        d2_T = np.hstack((d2_T, nz_T[0]))
-        d3 = np.hstack((d3, nz[1]))
-        d3_T = np.hstack((d3_T, nz_T[1]))
-        v = np.hstack((v, np.array([b[i, j] for i, j in zip(*nz)])))
-        vT = np.hstack((vT, np.array([b_T[i, j] for i, j in zip(*nz_T)])))
-        v_T = np.hstack((v_T, np.array([b[j, i] for i, j in zip(*nz)])))
+        d1.extend([layer] * len(nz[0]))
+        d2.extend(nz[0])
+        d2_T.extend(nz_T[0])
+        d3.extend(nz[1])
+        d3_T.extend(nz_T[1])
+        v.extend(b[nz])
+        vT.extend(b_T[nz_T])
+        v_T.extend(b[nz[::-1]])
 
     # Create sparse tensors for the original and transposed graphs
-    subs_ = (d1, d2, d3)
-    subs_T_ = (d1, d2_T, d3_T)
-    data = skt.sptensor(subs_, v, shape=(L, N, N), dtype=v.dtype)
-    data_T = skt.sptensor(subs_T_, vT, shape=(L, N, N), dtype=vT.dtype)
+    subs_ = (np.array(d1), np.array(d2), np.array(d3))
+    subs_T_ = (np.array(d1), np.array(d2_T), np.array(d3_T))
+    data = COO(subs_, np.array(v, dtype=np.float64), shape=(L, N, N))
+    data_T = COO(subs_T_, np.array(vT, dtype=np.float64), shape=(L, N, N))
 
     if calculate_reciprocity:
-        return data, data_T, v_T, rw
+        return data, data_T, np.array(v_T), rw
     return data
 
 
-def preprocess(A: np.ndarray) -> sptensor:
+def preprocess(A: np.ndarray) -> Union[COO, np.ndarray]:
     """
     Pre-process input data tensor.
-    If the input is sparse, returns an int sptensor. Otherwise, returns an int dtensor.
+
+    If the input is sparse, returns an integer sparse tensor (COO). Otherwise, returns an integer dense tensor (ndarray).
 
     Parameters
     ----------
     A : ndarray
-        Input data (tensor).
+        Input data tensor.
 
     Returns
     -------
-    A : sptensor/dtensor
-        Pre-processed data. If the input is sparse, returns an int sptensor. Otherwise, returns
-        an int dtensor.
+    A : COO or ndarray
+        Pre-processed data. If the input is sparse, returns an integer sparse tensor (COO). Otherwise, returns an integer dense tensor (ndarray).
     """
-
     if not A.dtype == np.dtype(int).type:
         A = A.astype(int)
     if np.logical_and(isinstance(A, np.ndarray), tools.is_sparse(A)):
         A = tools.sptensor_from_dense_array(A)
-    else:
-        A = skt.dtensor(A)
 
     return A
 

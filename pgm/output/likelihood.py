@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from pgm.input.tools import log_and_raise_error
-from pgm.output.evaluate import expected_Aija, expected_Aija_mtcov, lambda_full
+from pgm.output.evaluate import expected_Aija, expected_Aija_mtcov, lambda0_full
 
 
 def loglikelihood(
@@ -231,14 +231,14 @@ def PSloglikelihood(
     """
     if mask is None:
         # Compute the expected adjacency tensor
-        M = lambda_full(u, v, w)
+        M = lambda0_full(u, v, w)
         M += (eta * B[0, :, :].T)[np.newaxis, :, :]
         logM = np.zeros(M.shape)
         logM[M > 0] = np.log(M[M > 0])
         return (B * logM).sum() - M.sum()
 
     # Compute the expected adjacency tensor for the masked elements
-    M = lambda_full(u, v, w)[mask > 0]
+    M = lambda0_full(u, v, w)[mask > 0]
     M += (eta * B[0, :, :].T)[np.newaxis, :, :][mask > 0]
     logM = np.zeros(M.shape)
     logM[M > 0] = np.log(M[M > 0])

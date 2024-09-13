@@ -712,47 +712,61 @@ def affinity_matrix(
     structure: str = "assortative",
     N: int = 100,
     K: int = 2,
+    avg_degree: float = 4.0,
     a: float = 0.1,
     b: float = 0.3,
 ) -> np.ndarray:
     """
-    Return the KxK affinity matrix w with probabilities between and within groups.
+    Compute the KxK affinity matrix w with probabilities between and within groups.
 
     Parameters
     ----------
-    structure : str
-                Structure of the network, e.g. assortative, disassortative.
-    N : int
-        Number of nodes.
-    K : int
-        Number of communities.
-    a : float
-        Parameter for secondary probabilities.
-    b : float
-        Parameter for third probabilities.
+    structure : str, optional
+        Structure of the network (default is 'assortative').
+    N : int, optional
+        Number of nodes (default is 100).
+    K : int, optional
+        Number of communities (default is 2).
+    avg_degree : float, optional
+        Average degree of the network (default is 4.0).
+    a : float, optional
+        Parameter for secondary probabilities (default is 0.1).
+    b : float, optional
+        Parameter for secondary probabilities in 'core-periphery' and 'directed-biased' structures (default is 0.3).
 
     Returns
     -------
-    p : np.ndarray
-        Array with probabilities between and within groups. Element (k,q) gives the density
-        of edges going from the nodes of group k to nodes of group q.
+    np.ndarray
+        KxK affinity matrix. Element (k,h) gives the density of edges going from the nodes of group k to nodes of group h.
     """
 
+    # Adjust b based on a
     b *= a
-    p1 = K / N
+
+    # Calculate primary probability
+    p1 = avg_degree * K / N
+
+    # Initialize the affinity matrix based on the structure
     if structure == "assortative":
-        p = p1 * a * np.ones((K, K))  # secondary-probabilities
-        np.fill_diagonal(p, p1 * np.ones(K))  # primary-probabilities
+        # Assortative structure: higher probability within groups
+        p = p1 * a * np.ones((K, K))  # secondary probabilities
+        np.fill_diagonal(p, p1 * np.ones(K))  # primary probabilities
 
     elif structure == "disassortative":
-        p = p1 * np.ones((K, K))  # primary-probabilities
-        np.fill_diagonal(p, a * p1 * np.ones(K))  # secondary-probabilities
+        # Disassortative structure: higher probability between groups
+        p = p1 * np.ones((K, K))  # primary probabilities
+        np.fill_diagonal(p, a * p1 * np.ones(K))  # secondary probabilities
 
-    else:
-        message = (
-            "The structure of the affinity matrix w can be either assortative or "
-            "disassortative!"
-        )
-        log_and_raise_error(ValueError, message)
+    elif structure == "core-periphery":
+        # Core-periphery structure: core nodes have higher probability
+        p = p1 * np.ones((K, K))
+        np.fill_diagonal(np.fliplr(p), a * p1)
+        p[1, 1] = b * p1
+
+    elif structure == "directed-biased":
+        # Directed-biased structure: directional bias in probabilities
+        p = a * p1 * np.ones((K, K))
+        p[0, 1] = p1
+        p[1, 0] = b * p1
 
     return p

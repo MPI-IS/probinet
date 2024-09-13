@@ -1,3 +1,7 @@
+"""
+Base classes for the model classes.
+"""
+
 from abc import ABC, abstractmethod
 import dataclasses
 from functools import singledispatchmethod
@@ -7,8 +11,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from sktensor import dtensor, sptensor
-import sktensor as skt
+from sparse import COO
 
 from pgm.input.tools import inherit_docstring, log_and_raise_error
 from pgm.model.constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
@@ -496,8 +499,8 @@ class ModelBase(ModelBaseParameters):
 
     def _ps_likelihood(
         self,
-        data: Union[dtensor, sptensor],
-        data_T: skt.sptensor,
+        data: Union[COO, np.ndarray],
+        data_T: COO,
         mask: Optional[np.ndarray] = None,
     ):
         """
@@ -517,7 +520,7 @@ class ModelBase(ModelBaseParameters):
 
         Parameters
         ----------
-        data : Union[skt.dtensor, skt.sptensor]
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         it : int
              Current iteration number.
@@ -535,7 +538,7 @@ class ModelBase(ModelBaseParameters):
                   Indices of elements of data that are non-zero.
         T : Optional[int]
             Number of time steps.
-        data_T : Optional[Union[skt.dtensor, skt.sptensor]]
+        data_T : Optional[Union[COO, np.ndarray]]
                  Graph adjacency tensor (transpose).
         mask : Optional[np.ndarray]
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
@@ -899,39 +902,31 @@ class ModelUpdateMixin(ABC):
 
         Parameters
         ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T_vals : ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-        denominator : float
-                      Denominator used in the update of the eta parameter.
-        it : int
-             Number of iteration.
-        loglik : float
-                 Log-likelihood value.
-        coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
-        convergence : bool
-                      Flag for convergence.
-        loglik_values : list
-                        List of log-likelihood values.
         r : int
             Number of realizations.
+        it : int
+            Number of iterations.
+        loglik : float
+            Log-likelihood value.
+        coincide : int
+            Number of times the update of the log-likelihood respects the convergence tolerance.
+        convergence : bool
+            Flag for convergence.
+        loglik_values : list
+            List of log-likelihood values.
 
         Returns
         -------
         it : int
-             Number of iteration.
+            Updated number of iterations.
         loglik : float
-                 Log-likelihood value.
+            Updated log-likelihood value.
         coincide : int
-                   Number of time the update of the log-likelihood respects the convergence_tol.
+            Updated number of times the update of the log-likelihood respects the convergence tolerance.
         convergence : bool
-                      Flag for convergence.
+            Updated flag for convergence.
         loglik_values : list
-                        List of log-likelihood values.
+            Updated list of log-likelihood values.
         """
         logging.debug("Updating realization %s ...", r)
 

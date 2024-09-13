@@ -1,6 +1,9 @@
-import csv
+"""
+This module contains the DynCRepCrossValidation class, which is used for cross-validation of the
+DynCRep algorithm.
+"""
+
 import logging
-import os
 import time
 
 import numpy as np
@@ -36,17 +39,8 @@ class DynCRepCrossValidation(CrossValidation):
         self.parameters = parameters
         self.num_parameters = numerical_parameters
 
-    def extract_mask(self, fold: int):
-        """
-        Extract the mask for the current fold. It is not used in this class.
-        Parameters
-        ----------
-        fold : int
-            Fold index.
-
-        Returns
-        -------
-        """
+    def extract_mask(self, fold):
+        pass
 
     def load_data(self):
         """
@@ -84,23 +78,22 @@ class DynCRepCrossValidation(CrossValidation):
         # Unpack the outputs from the algorithm
         u, v, w, eta, beta, maxL = outputs
 
-        # Initialize the comparison list with 16 elements
-        comparison = [0 for _ in range(16)]
+        # Initialize the comparison dictionary with keys as headers
+        comparison = {
+            "algo": "DynCRep_temporal" if self.parameters["temporal"] else "DynCRep",
+            "constrained": self.parameters["constrained"],
+            "flag_data_T": self.parameters["flag_data_T"],
+            "rseed": algorithm_object.rseed,
+            "K": self.parameters["K"],
+            "eta0": self.parameters["eta0"],
+            "beta0": self.parameters["beta0"],
+            "T": fold,
+            "eta": eta,
+            "beta": beta,
+            "final_it": algorithm_object.final_it,
+            "maxL": maxL,
+        }
 
-        comparison[0] = "DynCRep_temporal" if self.parameters["temporal"] else "DynCRep"
-
-        comparison[1] = self.parameters["constrained"]
-        comparison[2] = self.parameters["flag_data_T"]
-
-        comparison[3] = algorithm_object.rseed
-        comparison[4] = self.parameters["K"]
-        comparison[5] = self.parameters[
-            "eta0"
-        ]  # this had a different name in the original code
-        comparison[6] = self.parameters["beta0"]
-        comparison[7] = fold
-        comparison[8] = eta
-        comparison[10] = beta
         if self.flag_data_T == 1:  # if 0: previous time step, 1: same time step
             M = calculate_conditional_expectation_dyncrep(
                 self.B[fold], u, v, w, eta=eta, beta=beta
@@ -115,47 +108,11 @@ class DynCRepCrossValidation(CrossValidation):
         if fold > 1:
             M[self.B[fold - 1].nonzero()] = 1 - beta  # to calculate AUC
 
-        comparison[12] = calculate_AUC(M, self.B[fold])
-        comparison[14] = loglik_test
+        comparison["auc"] = calculate_AUC(M, self.B[fold])
+        comparison["loglik"] = loglik_test
 
-        # Store the comparison list in the instance variable
+        # Store the comparison dictionary values in the instance variable as a list
         self.comparison = comparison
-
-    def save_results(self):
-        # Check if the output file exists; if not, write the header
-        if not os.path.isfile(self.out_file):  # write header
-            with open(self.out_file, "w") as outfile:
-                # Create a CSV writer object
-                wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
-                # Write the header row to the CSV file
-                wrtr.writerow(
-                    [
-                        "algo",
-                        "constrained",
-                        "flag_data_T",
-                        "rseed",
-                        "K",
-                        "eta0",
-                        "beta0",
-                        "T",
-                        "eta",
-                        "eta_aggr",
-                        "beta",
-                        "beta_aggr",
-                        "auc",
-                        "auc_aggr",
-                        "loglik",
-                        "loglik_aggr",
-                    ]
-                )
-        # Open the output file in append mode
-        outfile = open(self.out_file, "a")
-        # Create a CSV writer object
-        wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
-        # Write the comparison data to the CSV file
-        wrtr.writerow(self.comparison)
-        # Flush the output buffer to ensure all data is written to the file
-        outfile.flush()
 
     def run_single_iteration(self):
         """
@@ -173,7 +130,7 @@ class DynCRepCrossValidation(CrossValidation):
         # Prepare output file
         if self.out_results:
             self.out_file = self.out_folder + adjacency + "_cv.csv"
-            print(f"Results will be saved in: {self.out_file}")
+            logging.info("Results will be saved in: %s" % self.out_file)
 
         # Import data
         self.load_data()
@@ -181,7 +138,7 @@ class DynCRepCrossValidation(CrossValidation):
         # Make sure T is not too large
         self.T = max(0, min(self.T, self.B.shape[0] - 1))
 
-        print("\n### CV procedure ###")
+        logging.info("Starting the cross-validation procedure.")
         time_start = time.time()
 
         # Cross-validation loop
@@ -206,10 +163,12 @@ class DynCRepCrossValidation(CrossValidation):
                 outputs=outputs, mask=None, fold=t, algorithm_object=algorithm_object
             )
 
-            print(f"Time elapsed: {np.round(time.time() - tic, 2)} seconds.")
+            logging.info("Time elapsed: %s seconds.", np.round(time.time() - tic, 2))
 
             # Save results
             if self.out_results:
                 self.save_results()
 
-        print(f"\nTime elapsed: {np.round(time.time() - time_start, 2)} seconds.")
+        logging.info(
+            "\nTime elapsed: %s seconds.", np.round(time.time() - time_start, 2)
+        )
