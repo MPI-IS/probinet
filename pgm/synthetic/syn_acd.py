@@ -47,7 +47,57 @@ class SyntNetAnomaly:
         output_adj: bool = False,
         outfile_adj: str = None,
     ) -> None:
+        """
+        Initialize the SyntNetAnomaly class.
 
+        Parameters
+        ----------
+        m : int, optional
+            Number of networks to be generated (default is 1).
+        N : int, optional
+            Network size (number of nodes) (default is 100).
+        K : int, optional
+            Number of communities (default is 2).
+        rseed : int, optional
+            Random seed for reproducibility (default is 10).
+        avg_degree : float, optional
+            Required average degree of the network (default is 4.0).
+        rho_anomaly : float, optional
+            Proportion of anomalies in the network (default is 0.1).
+        structure : str, optional
+            Structure of the affinity matrix (default is "assortative").
+        label : str, optional
+            Label associated with the set of inputs (default is None).
+        pi : float, optional
+            Binomial parameter for edge generation (default is 0.8).
+        eta : float, optional
+            Parameter of the Dirichlet distribution (default is 0.5).
+        L1 : bool, optional
+            Flag for L1 norm (default is False).
+        ag : float, optional
+            Alpha parameter of the Gamma distribution (default is 0.6).
+        bg : float, optional
+            Beta parameter of the Gamma distribution (default is 1.0).
+        corr : float, optional
+            Correlation between u and v synthetically generated (default is 0.0).
+        over : float, optional
+            Fraction of nodes with mixed membership (default is 0.0).
+        verbose : int, optional
+            Verbosity level (default is 0).
+        folder : str, optional
+            Folder path for saving outputs (default is "").
+        output_parameters : bool, optional
+            Flag for storing the parameters (default is False).
+        output_adj : bool, optional
+            Flag for storing the generated adjacency matrix (default is False).
+        outfile_adj : str, optional
+            Name for saving the adjacency matrix (default is None).
+
+        Raises
+        ------
+        ValueError
+            If any of the input parameters are out of their valid ranges.
+        """
         # Set network size (node number)
         self.N = N
         # Set number of communities
@@ -333,7 +383,9 @@ class SyntNetAnomaly:
             self.over,
         )
         # Generate w
-        w = affinity_matrix(self.structure, self.N, self.K, self.avg_degree)
+        w = affinity_matrix(
+            structure=self.structure, N=self.N, K=self.K, avg_degree=self.avg_degree
+        )
 
         return z, u, v, w
 

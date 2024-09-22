@@ -286,3 +286,25 @@ class ACDTestCase(BaseTest):
         self.assert_model_results(
             u=u, v=v, w=w, pi=pi, mu=mu, maxL=maxL, theta=self.theta, data=data
         )
+
+    def test_force_dense_False(self):
+        """Test the import data function with force_dense set to False, i.e., the data is sparse."""
+
+        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
+            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+                network.name, header=0, force_dense=False
+            )
+
+        model = AnomalyDetection(
+            plot_loglik=True, num_realizations=1, convergence_tol=0.1
+        )
+
+        model.fit(
+            data=self.B,
+            nodes=self.nodes,
+            K=self.K,
+            out_inference=False,
+        )
+
+        # Assert that the maxL is right
+        self.assertAlmostEqual(model.maxL, -30713.444635970005, places=3)

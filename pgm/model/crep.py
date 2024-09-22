@@ -10,13 +10,13 @@ from typing import Any, List, Optional, Tuple, Union
 
 from numpy import dtype, ndarray
 import numpy as np
-import sktensor as skt
+from sparse import COO
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative)
-from ..output.evaluate import lambda_full
+from ..output.evaluate import lambda0_full
 from .base import ModelBase, ModelUpdateMixin
 
 
@@ -57,8 +57,8 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T: skt.sptensor,
+        data: Union[COO, np.ndarray],
+        data_T: COO,
         data_T_vals: np.ndarray,
         nodes: List[Any],
         rseed: int = 0,
@@ -86,9 +86,9 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[skt.dtensor, skt.sptensor]
+        data : Union[COO, np.ndarray]
             Graph adjacency tensor.
-        data_T : skt.sptensor
+        data_T : COO
             Transposed graph adjacency tensor.
         data_T_vals : np.ndarray
             Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -115,26 +115,26 @@ class CRep(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default None.
+            Suffix for the output file, by default "_CRep".
         fix_eta : bool, optional
             Flag to indicate if the eta parameter should be fixed, by default False.
         files : str, optional
-            Path to the file for initialization, by default None.
+            Path to the file for initialization, by default "".
 
         Returns
         -------
         tuple
             A tuple containing:
-            - u_f : ndarray
-                Out-going membership matrix.
-            - v_f : ndarray
-                In-coming membership matrix.
-            - w_f : ndarray
-                Affinity tensor.
-            - eta_f : float
-                Reciprocity coefficient.
-            - maxL : float
-                Maximum pseudo log-likelihood.
+            -u_f : ndarray
+            Out-going membership matrix.
+        -v_f : ndarray
+            In-coming membership matrix.
+        -w_f : ndarray
+            Affinity tensor.
+        -eta_f : float
+            Reciprocity coefficient.
+        -maxL : float
+            Maximum pseudo log-likelihood.
         """
 
         self._check_fit_params(
@@ -247,8 +247,8 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _preprocess_data_for_fit(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T: Union[skt.dtensor, skt.sptensor, None],
+        data: Union[COO, np.ndarray],
+        data_T: Union[COO, np.ndarray, None],
         data_T_vals: Union[np.ndarray, None],
     ) -> Tuple[int, Any, Any, np.ndarray, Tuple[np.ndarray]]:
         """
@@ -256,9 +256,9 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : skt.dtensor or skt.sptensor
+        data : COO, np.ndarray
             The input data tensor.
-        data_T : skt.dtensor, skt.sptensor or None
+        data_T : COO, np.ndarray or None
             The transposed input data tensor. If None, it will be calculated from the input data tensor.
         data_T_vals : np.ndarray or None
             The values of the non-zero entries in the transposed input data tensor. If None, it will be calculated from data_T.
@@ -279,13 +279,13 @@ class CRep(ModelBase, ModelUpdateMixin):
             data = preprocess(data)
             data_T = preprocess(data_T)
         else:
-            E = np.sum(data.vals)
+            E = np.sum(data.data)
 
         # Save the indices of the non-zero entries
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             subs_nz = data.nonzero()
-        elif isinstance(data, skt.sptensor):
-            subs_nz = data.subs
+        elif isinstance(data, COO):
+            subs_nz = data.coords
 
         return E, data, data_T, data_T_vals, subs_nz  # type: ignore
 
@@ -302,7 +302,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _update_cache(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
+        data: Union[COO, np.ndarray],
         data_T_vals: np.ndarray,
         subs_nz: Tuple[np.ndarray],
     ) -> None:
@@ -311,7 +311,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -322,10 +322,10 @@ class CRep(ModelBase, ModelUpdateMixin):
         self.lambda0_nz = super()._lambda_nz(subs_nz)
         self.M_nz = self.lambda0_nz + self.eta * data_T_vals
         self.M_nz[self.M_nz == 0] = 1
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             self.data_M_nz = data[subs_nz] / self.M_nz
-        elif isinstance(data, skt.sptensor):
-            self.data_M_nz = data.vals / self.M_nz
+        elif isinstance(data, COO):
+            self.data_M_nz = data.data / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
     def _update_em(self):
@@ -334,7 +334,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -387,7 +387,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _update_eta(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
+        data: Union[COO, np.ndarray],
         data_T_vals: np.ndarray,
         denominator: Optional[float] = None,
     ) -> float:
@@ -396,7 +396,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -540,8 +540,8 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _ps_likelihood(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
-        data_T: skt.sptensor,
+        data: Union[COO, np.ndarray],
+        data_T: COO,
         mask: Optional[np.ndarray] = None,
     ) -> float:
         """
@@ -549,9 +549,9 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
-        data_T : sptensor/dtensor
+        data_T : Union[COO, np.ndarray]
                  Graph adjacency tensor (transpose).
         mask : ndarray
                Mask for selecting the held out set in the adjacency tensor in case of
@@ -563,30 +563,30 @@ class CRep(ModelBase, ModelUpdateMixin):
             Pseudo log-likelihood value.
         """
 
-        self.lambda0_ija = lambda_full(self.u, self.v, self.w)
+        self.lambda0_ija = lambda0_full(self.u, self.v, self.w)
 
         if mask is not None:
             sub_mask_nz = mask.nonzero()
-            if isinstance(data, skt.dtensor):
+            if isinstance(data, np.ndarray):
                 loglik = (
                     -self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta * data_T[sub_mask_nz].sum()
                 )
-            elif isinstance(data, skt.sptensor):
+            elif isinstance(data, COO):
                 loglik = (
                     -self.lambda0_ija[sub_mask_nz].sum()
                     - self.eta * data_T.toarray()[sub_mask_nz].sum()
                 )
         else:
-            if isinstance(data, skt.dtensor):
+            if isinstance(data, np.ndarray):
                 loglik = -self.lambda0_ija.sum() - self.eta * data_T.sum()
-            elif isinstance(data, skt.sptensor):
-                loglik = -self.lambda0_ija.sum() - self.eta * data_T.vals.sum()
+            elif isinstance(data, COO):
+                loglik = -self.lambda0_ija.sum() - self.eta * data_T.data.sum()
         logM = np.log(self.M_nz)
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             Alog = data[data.nonzero()] * logM
-        elif isinstance(data, skt.sptensor):
-            Alog = data.vals * logM
+        elif isinstance(data, COO):
+            Alog = data.data * logM
 
         loglik += Alog.sum()
 

@@ -14,4 +14,4 @@ RANDOM_SEED_REPROD = 123  # Random seed for reproducibility
 CURRENT_FILE_PATH = Path(__file__)
 INIT_STR = "_for_initialization"
 PATH_FOR_INIT = CURRENT_FILE_PATH.parent / "inputs/"
-PATH_TO_GT = "tests/inputs/cross_validation/"
+PATH_TO_GT = CURRENT_FILE_PATH.parent / "inputs/cross_validation/"

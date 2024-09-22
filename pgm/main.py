@@ -8,7 +8,7 @@ from pathlib import Path
 import time
 
 import numpy as np
-import sktensor as skt
+from sparse import COO
 
 from .input.loader import import_data, import_data_mtcov
 from .input.tools import log_and_raise_error
@@ -430,7 +430,7 @@ def main():
         B_T = None
         data_T_vals = None
 
-        valid_types = [np.ndarray, skt.dtensor, skt.sptensor]
+        valid_types = [np.ndarray, COO]
         assert any(isinstance(B, vt) for vt in valid_types)
         logging.debug("Data loaded successfully from %s", args.files)
 

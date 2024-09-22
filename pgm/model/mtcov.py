@@ -11,11 +11,11 @@ from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import scipy.sparse
-import sktensor as skt
+from sparse import COO
 
 from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import inherit_docstring, sp_uttkrp, sp_uttkrp_assortative
-from ..output.evaluate import lambda_full
+from ..output.evaluate import lambda0_full
 from .base import ModelBase, ModelUpdateMixin
 
 
@@ -75,7 +75,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
+        data: Union[COO, np.ndarray],
         data_X: np.ndarray,
         nodes: List[Any],
         batch_size: Optional[int] = None,
@@ -102,7 +102,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[skt.dtensor, skt.sptensor]
+        data : Union[COO, np.ndarray]
             Graph adjacency tensor.
         data_X : np.ndarray
             Object representing the one-hot encoding version of the design matrix.
@@ -133,18 +133,16 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]
-            A tuple containing:
-            - u_f : np.ndarray
-                Membership matrix (out-degree).
-            - v_f : np.ndarray
-                Membership matrix (in-degree).
-            - w_f : np.ndarray
-                Affinity tensor.
-            - beta_f : np.ndarray
-                Beta parameter matrix.
-            - maxL : float
-                Maximum log-likelihood value.
+        u_f : np.ndarray
+            Membership matrix (out-degree).
+        v_f : np.ndarray
+            Membership matrix (in-degree).
+        w_f : np.ndarray
+            Affinity tensor.
+        beta_f : np.ndarray
+            Beta parameter matrix.
+        maxL : float
+            Maximum log-likelihood value.
         """
         # Check the parameters for fitting the model
         self._check_fit_params(
@@ -224,12 +222,12 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def preprocess_data_for_fit(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
+        data: Union[COO, np.ndarray],
         data_X: np.ndarray,
         batch_size: Optional[int] = None,
         max_batch_size: int = 5000,
     ) -> Tuple[
-        Union[skt.dtensor, skt.sptensor],
+        Union[COO, np.ndarray],
         np.ndarray,
         Tuple[np.ndarray],
         Tuple[np.ndarray],
@@ -245,18 +243,18 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[skt.dtensor, skt.sptensor]
+        data : Union[COO, np.ndarray]
             The graph adjacency tensor to be preprocessed.
         data_X : np.ndarray
             The one-hot encoding version of the design matrix to be preprocessed.
         batch_size : Optional[int], default=None
             The size of the subset of nodes to compute the likelihood with. If None, the method
             will automatically determine the batch size based on the number of nodes.
-        max_batch_size : int, default=5000
-            The maximum batch size to use when automatically determining the batch size.
+        max_batch_size
+            The maximum batch size to use when automatically determining the batch
         Returns
         -------
-        preprocessed_data : Union[skt.dtensor, skt.sptensor]
+        preprocessed_data : Union[COO, np.ndarray]
             The preprocessed graph adjacency tensor.
         preprocessed_data_X : np.ndarray
             The preprocessed one-hot encoding version of the design matrix.
@@ -273,11 +271,15 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         """
 
         # Pre-process data and save the indices of the non-zero entries
-        data = preprocess(data) if not isinstance(data, skt.sptensor) else data
+        data = preprocess(data) if not isinstance(data, COO) else data
         data_X = preprocess_X(data_X)
-        subs_nz = data.nonzero() if isinstance(data, skt.dtensor) else data.subs
-        subs_X_nz = data_X.nonzero()
 
+        # save the indexes of the nonzero entries
+        if isinstance(data, np.ndarray):
+            subs_nz = data.nonzero()
+        elif isinstance(data, COO):
+            subs_nz = data.coords
+        subs_X_nz = data_X.nonzero()
         if batch_size:
             if batch_size > self.N:
                 batch_size = min(max_batch_size, self.N)
@@ -290,9 +292,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         else:
             if self.N > max_batch_size:
                 batch_size = max_batch_size
-                np.random.seed(
-                    10
-                )  # TODO: remove this in the ticket about random seeds.
+                np.random.seed(10)
                 subset_N = np.random.choice(
                     np.arange(self.N), size=batch_size, replace=False
                 )
@@ -358,17 +358,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
     def _update_em(self):
         """
         Update parameters via EM procedure.
-
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_X : ndarray
-                 Object representing the one-hot encoding version of the design matrix.
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-        subs_X_nz : tuple
-                    Indices of elements of data_X that are non-zero.
         """
 
         if self.gamma < 1.0:
@@ -430,7 +419,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def _update_cache(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
+        data: Union[COO, np.ndarray],
         subs_nz: Tuple[np.ndarray],
         data_X: np.ndarray,
         subs_X_nz: Tuple[np.ndarray],
@@ -440,7 +429,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[skt.dtensor, skt.sptensor]
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         subs_nz : Tuple[np.ndarray]
                   Indices of elements of data that are non-zero.
@@ -453,10 +442,10 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         # A
         self.lambda0_nz = super()._lambda_nz(subs_nz)
         self.lambda0_nz[self.lambda0_nz == 0] = 1
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             self.data_M_nz = data[subs_nz] / self.lambda0_nz
-        elif isinstance(data, skt.sptensor):
-            self.data_M_nz = data.vals / self.lambda0_nz
+        elif isinstance(data, COO):
+            self.data_M_nz = data.data / self.lambda0_nz
 
         # X
         self.pi0_nz = self._pi0_nz(subs_X_nz, self.u, self.v, self.beta)
@@ -658,13 +647,13 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             Log-likelihood value.
         """
 
-        self.lambda0_ija = lambda_full(self.u, self.v, self.w)
+        self.lambda0_ija = lambda0_full(self.u, self.v, self.w)
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
-        if isinstance(self.data, skt.dtensor):
+        if isinstance(self.data, np.ndarray):
             Alog = self.data[self.data.nonzero()] * logM
-        elif isinstance(self.data, skt.sptensor):
-            Alog = self.data.vals * logM
+        elif isinstance(self.data, COO):
+            Alog = self.data.data * logM
         lG += Alog.sum()
 
         if self.undirected:
@@ -687,7 +676,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def _likelihood_batch(
         self,
-        data: Union[skt.dtensor, skt.sptensor],
+        data: Union[COO, np.ndarray],
         data_X: np.ndarray,
         subset_N: List[int],
         Subs: List[Tuple[int, int, int]],
@@ -698,7 +687,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         data_X : ndarray
                  Object representing the one-hot encoding version of the design matrix.
@@ -716,7 +705,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         """
 
         size = len(subset_N)
-        self.lambda0_ija = lambda_full(self.u, self.v, self.w)
+        self.lambda0_ija = lambda0_full(self.u, self.v, self.w)
         assert self.lambda0_ija.shape == (self.L, size, size)
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)

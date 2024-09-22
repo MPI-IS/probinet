@@ -11,8 +11,7 @@ from typing import Dict, List, Tuple, Type, Union
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy.sparse import coo_matrix
-import sktensor as skt
+from sparse import COO
 
 
 def can_cast_to_int(string: Union[int, float, str]) -> bool:
@@ -103,9 +102,9 @@ def is_sparse(X: np.ndarray) -> bool:
     return S > (I + 1) * M
 
 
-def sptensor_from_dense_array(X: np.ndarray) -> skt.sptensor:
+def sptensor_from_dense_array(X: np.ndarray) -> COO:
     """
-    Create an sptensor from a ndarray or dtensor.
+    Create a sparse tensor from a dense array using sparse.COO.
 
     Parameters
     ----------
@@ -114,18 +113,16 @@ def sptensor_from_dense_array(X: np.ndarray) -> skt.sptensor:
 
     Returns
     -------
-    sptensor from a ndarray or dtensor.
+    COO
+        Sparse tensor created from the dense array.
     """
+    # Get the non-zero indices and values from the dense array
+    coords = np.array(X.nonzero())
+    data = X[tuple(coords)].astype(float)
 
-    subs = X.nonzero()
-
-    # Extract the values of non-zero elements in the dense tensor X.
-    vals = X[subs]
-
-    # Create a sparse tensor (sptensor) using the non-zero indices (subs) and corresponding
-    # values (vals). The shape and data type of the sparse tensor are derived
-    # from the original dense tensor X.
-    return skt.sptensor(subs, vals, shape=X.shape, dtype=X.dtype)
+    # Create the sparse tensor using COO format
+    sparse_X = COO(coords, data, shape=X.shape)
+    return sparse_X
 
 
 def get_item_array_from_subs(A: np.ndarray, ref_subs: Tuple[np.ndarray]) -> np.ndarray:
@@ -243,20 +240,21 @@ def check_symmetric(
     return np.allclose(a, a.T, rtol=rtol, atol=atol)
 
 
-def build_edgelist(A: coo_matrix, layer: int) -> pd.DataFrame:
+def build_edgelist(A: COO, layer: int) -> pd.DataFrame:
     """
-    Build the edgelist for a given layer, A in DataFrame format.
+    Build the edgelist for a given layer of an adjacency tensor in DataFrame format.
 
     Parameters
     ----------
-    A : ndarray or sptensor
-        Adjacency tensor.
+    A : coo_matrix
+        Sparse matrix in COOrdinate format representing the adjacency tensor.
     layer : int
-        Layer index.
+        Index of the layer for which the edgelist is to be built.
 
     Returns
     -------
-    Dataframe with the edgelist for a given layer.
+    pd.DataFrame
+        DataFrame containing the edgelist for the specified layer with columns 'source', 'target', and 'L<layer>'.
     """
 
     # Convert the input sparse matrix A to COOrdinate format

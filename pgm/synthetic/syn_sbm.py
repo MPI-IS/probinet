@@ -1,3 +1,7 @@
+"""
+This module contains classes for generating synthetic networks using mixed-membership stochastic block models.
+"""
+
 from abc import ABCMeta
 import logging
 import math
@@ -13,7 +17,7 @@ from ..input.stats import print_graph_stat
 from ..input.tools import (
     check_symmetric, Exp_ija_matrix, log_and_raise_error, normalize_nonzero_membership,
     output_adjacency, transpose_tensor)
-from ..output.evaluate import lambda_full
+from ..output.evaluate import lambda0_full
 from ..output.plot import plot_A
 
 DEFAULT_N = 1000
@@ -592,7 +596,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
                 self.G[layer].add_node(i)
 
         # whose elements are lambda0_{ij}
-        self.M0 = lambda_full(self.u, self.v, self.w)
+        self.M0 = lambda0_full(self.u, self.v, self.w)
         for layer in range(self.L):
             np.fill_diagonal(self.M0[layer], 0)
             if self.is_sparse:

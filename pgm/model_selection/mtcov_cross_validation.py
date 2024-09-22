@@ -1,5 +1,9 @@
-import csv
-import os
+"""
+This module contains the MTCOVCrossValidation class, which is used for cross-validation of the MTCOV
+algorithm.
+"""
+
+import logging
 import pickle
 
 import numpy as np
@@ -54,7 +58,7 @@ class MTCOVCrossValidation(CrossValidation):
         if self.out_mask:
             outmaskG = self.out_folder + "maskG_f" + str(fold) + "_" + self.adj + ".pkl"
             outmaskX = self.out_folder + "maskX_f" + str(fold) + "_" + self.adj + ".pkl"
-            print(f"Masks saved in: {outmaskG}, {outmaskX}")
+            logging.debug("Masks saved in: %s, %s", outmaskG, outmaskX)
 
             # Save the masks to pickle files
             with open(outmaskG, "wb") as f:
@@ -114,34 +118,31 @@ class MTCOVCrossValidation(CrossValidation):
         # Unpack the outputs from the algorithm
         U, V, W, BETA, logL = outputs
 
-        # Initialize the comparison list with 10 elements
-        comparison = [0 for _ in range(10)]
-
-        # Assign the parameters to the first and second elements of the comparison list
-        comparison[0], comparison[1] = self.parameters["K"], self.parameters["gamma"]
-
-        # Assign the fold number and random seed to the third and fourth elements
-        comparison[2], comparison[3] = fold, self.rseed
-
-        # Assign the log-likelihood value to the fifth element
-        comparison[4] = logL
+        # Initialize the comparison dictionary with keys as headers
+        comparison = {
+            "K": self.parameters["K"],
+            "gamma": self.parameters["gamma"],
+            "fold": fold,
+            "rseed": self.rseed,
+            "logL": logL,
+        }
 
         # Calculate and assign the covariates accuracy values
         if self.parameters["gamma"] != 0:
-            comparison[5] = covariates_accuracy(
+            comparison["acc_train"] = covariates_accuracy(
                 self.X, U, V, BETA, mask=np.logical_not(maskX)
             )
-            comparison[8] = covariates_accuracy(self.X, U, V, BETA, mask=maskX)
+            comparison["acc_test"] = covariates_accuracy(self.X, U, V, BETA, mask=maskX)
 
         # Calculate and assign the AUC values
         if self.parameters["gamma"] != 1:
-            comparison[6] = calculate_AUC_mtcov(
+            comparison["auc_train"] = calculate_AUC_mtcov(
                 self.B, U, V, W, mask=np.logical_not(maskG)
             )
-            comparison[9] = calculate_AUC_mtcov(self.B, U, V, W, mask=maskG)
+            comparison["auc_test"] = calculate_AUC_mtcov(self.B, U, V, W, mask=maskG)
 
         # Calculate and assign the log-likelihood value
-        comparison[7] = loglikelihood(
+        comparison["logL_test"] = loglikelihood(
             self.B,
             self.X,
             U,
@@ -153,35 +154,5 @@ class MTCOVCrossValidation(CrossValidation):
             maskX=maskX,
         )
 
-        # Store the comparison list in the instance variable
+        # Store the comparison dictionary in the instance variable
         self.comparison = comparison
-
-    def save_results(self):
-        # Check if the output file exists; if not, write the header
-        if not os.path.isfile(self.out_file):  # write header
-            with open(self.out_file, "w") as outfile:
-                # Create a CSV writer object
-                wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
-                # Write the header row to the CSV file
-                wrtr.writerow(
-                    [
-                        "K",
-                        "gamma",
-                        "fold",
-                        "rseed",
-                        "logL",
-                        "acc_train",
-                        "auc_train",
-                        "logL_test",
-                        "acc_test",
-                        "auc_test",
-                    ]
-                )
-        # Open the output file in append mode
-        outfile = open(self.out_file, "a")
-        # Create a CSV writer object
-        wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
-        # Write the comparison data to the CSV file
-        wrtr.writerow(self.comparison)
-        # Flush the output buffer to ensure all data is written to the file
-        outfile.flush()

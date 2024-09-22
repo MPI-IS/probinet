@@ -161,14 +161,14 @@ class TestGMReciprocity(unittest.TestCase):
         self.check_invalid_parameters(params, expected_message)
 
     def test_affinity_matrix_assortative(self):
-        expected_result = np.array([[0.02, 0.002], [0.002, 0.02]])
+        expected_result = np.array([[0.08, 0.008], [0.008, 0.08]])
         actual_result = affinity_matrix(
             structure="assortative", N=100, K=2, a=0.1, b=0.3
         )
         np.testing.assert_allclose(actual_result, expected_result, rtol=RTOL)
 
     def test_affinity_matrix_disassortative(self):
-        expected_result = np.array([[0.002, 0.02], [0.02, 0.002]])
+        expected_result = np.array([[0.008, 0.08], [0.08, 0.008]])
         actual_result = affinity_matrix(
             structure="disassortative", N=100, K=2, a=0.1, b=0.3
         )

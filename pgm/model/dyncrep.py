@@ -9,14 +9,13 @@ from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy.optimize import brentq, root
-from sktensor import dtensor, sptensor
-import sktensor as skt
+from sparse import COO
 
 from ..input.preprocessing import preprocess
 from ..input.tools import (
     get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative)
-from ..output.evaluate import func_lagrange_multiplier, lambda_full, u_with_lagrange_multiplier
+from ..output.evaluate import func_lagrange_multiplier, lambda0_full, u_with_lagrange_multiplier
 from .base import ModelBase, ModelUpdateMixin
 from .constants import EPS_
 
@@ -52,7 +51,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             "indicator to initialize the membership matrices u and v and the affinity  "
             "matrix w. If it is 0, they will be generated randomly, otherwise they will  "
             "upload from file."
-        )
+        )  # TODO: Update this message
 
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
@@ -106,7 +105,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[np.ndarray, skt.sptensor],
+        data: Union[COO, np.ndarray],
         T: int,
         nodes: List[int],
         mask: Optional[np.ndarray] = None,
@@ -145,7 +144,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[np.ndarray, skt.sptensor]
+        data : Union[COO, np.ndarray]
             Graph adjacency tensor.
         T : int
             Number of time steps.
@@ -192,26 +191,24 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
-            Suffix for the output file, by default None.
+            Suffix for the output file, by default "_DynCRep".
         files : str, optional
-            Path to the file for initialization, by default None.
+            Path to the file for initialization, by default "".
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray, float]
-            A tuple containing:
-            - u_f : np.ndarray
-                Out-going membership matrix.
-            - v_f : np.ndarray
-                In-coming membership matrix.
-            - w_f : np.ndarray
-                Affinity tensor.
-            - eta_f : float
-                Reciprocity coefficient.
-            - beta_f : np.ndarray
-                Beta parameter.
-            - maxL : float
-                Maximum pseudo log-likelihood.
+        u_f : np.ndarray
+            Out-going membership matrix.
+        v_f : np.ndarray
+            In-coming membership matrix.
+        w_f : np.ndarray
+            Affinity tensor.
+        eta_f : float
+            Reciprocity coefficient.
+        beta_f : np.ndarray
+            Beta parameter.
+        maxL : float
+            Maximum pseudo log-likelihood.
         """
         # Check the parameters for fitting the model
         self._check_fit_params(
@@ -329,11 +326,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         # Return the initial state of the realization
         return coincide, convergence, it, loglik, loglik_values
 
-    def _preprocess_data_for_fit(
-        self, T: int, data: Union[skt.dtensor, skt.sptensor]
-    ) -> Tuple[
+    def _preprocess_data_for_fit(self, T: int, data: Union[COO, np.ndarray]) -> Tuple[
         int,
-        Union[skt.dtensor, skt.sptensor],
+        Union[COO, np.ndarray],
         np.ndarray,
         np.ndarray,
         np.ndarray,
@@ -347,7 +342,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         ----------
         T : int
             Number of time steps.
-        data : skt.dtensor or skt.sptensor
+        data : Union[COO, np.ndarray]
             The input data tensor.
         temporal : bool
             Flag to determine if the function should behave in a temporal manner.
@@ -433,8 +428,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         # Save the indices of the non-zero entries
         subs_nzp = (
             data_AtAtm1.nonzero()
-            if isinstance(data_AtAtm1, skt.dtensor)
-            else data_AtAtm1.subs  # type: ignore
+            if isinstance(data_AtAtm1, np.ndarray)
+            else data_AtAtm1.coords  # type: ignore
         )
 
         # Initialize the beta hat
@@ -490,15 +485,16 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
     def _update_cache(
         self,
-        data: Union[dtensor, sptensor],
+        data: Union[COO, np.ndarray],
         data_T_vals: np.ndarray,
         subs_nz: Tuple[np.ndarray],
     ) -> None:
         """
         Update the cache used in the em_update.
+
         Parameters
         ----------
-        data : sptensor/dtensor
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -509,28 +505,19 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self.M_nz = self.lambda0_nz + self.eta * data_T_vals  # [np.newaxis,:]
         self.M_nz[self.M_nz == 0] = 1
 
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             self.data_M_nz = data[subs_nz] / self.M_nz
             self.data_rho2 = (
                 (data[subs_nz] * self.eta * data_T_vals) / self.M_nz
             ).sum()
-        elif isinstance(data, skt.sptensor):
-            self.data_M_nz = data.vals / self.M_nz
-            self.data_rho2 = ((data.vals * self.eta * data_T_vals) / self.M_nz).sum()
+        elif isinstance(data, COO):
+            self.data_M_nz = data.data / self.M_nz
+            self.data_rho2 = ((data.data * self.eta * data_T_vals) / self.M_nz).sum()
 
     def _update_em(self) -> Tuple[float, float, float, float, float]:
         """
         Update parameters via EM procedure.
-        Parameters
-        ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T_vals : ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
-        subs_nz : tuple
-                  Indices of elements of data that are non-zero.
-        denominator : float
-                      Denominator used in the update of the eta parameter.
+
         Returns
         -------
         d_u : float
@@ -594,12 +581,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
     def _update_eta(self, denominator: float) -> float:
         """
         Update reciprocity coefficient eta.
+
         Parameters
         ----------
-        data : sptensor/dtensor
-               Graph adjacency tensor.
-        data_T_vals : ndarray
-                      Array with values of entries A[j, i] given non-zero entry (i, j).
         denominator : float
                       Denominator used in the update of the eta parameter.
         Returns
@@ -965,8 +949,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
     def _likelihood(  # type: ignore
         self,
-        data: Union[dtensor, sptensor],
-        data_T: Union[dtensor, sptensor],
+        data: Union[COO, np.ndarray],
+        data_T: Union[COO, np.ndarray],
         data_T_vals: np.ndarray,
         subs_nz: Tuple[np.ndarray],
         mask: Optional[np.ndarray] = None,
@@ -977,9 +961,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[dtensor, sptensor]
+        data : Union[COO, np.ndarray]
                Graph adjacency tensor.
-        data_T : Union[dtensor, sptensor]
+        data_T : Union[COO, np.ndarray]
                  Graph adjacency tensor (transpose).
         data_T_vals : np.ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -1005,47 +989,45 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         else:
             w_k = np.einsum("a,ak->ak", self.beta_hat, self.w)
 
-        lambda0_ija_loc = lambda_full(self.u, self.v, w_k)
+        lambda0_ija_loc = lambda0_full(self.u, self.v, w_k)
 
         if mask is not None:
             sub_mask_nz = mask.nonzero()
-            if isinstance(data, skt.dtensor):
+            if isinstance(data, np.ndarray):
                 loglik = (
                     -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore #
                     # TODO: Ask Hadiseh why this is not defined
                     - self.eta
                     * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
                 )
-            elif isinstance(data, skt.sptensor):
+            elif isinstance(data, COO):
                 loglik = (
                     -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
                     # TODO: Ask Hadiseh why this is not defined
                     - self.eta
                     * (
-                        data_T.toarray()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]
+                        data_T.todense()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]
                     ).sum()
                 )
         else:
-            if isinstance(data, skt.dtensor):
+            if isinstance(data, np.ndarray):
                 loglik = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (  # type: ignore
-                    # TODO: Ask Hadiseh why this is not defined
-                    data_T[0].sum()
-                    + self.beta0 * data_T[1:].sum()
+                    data_T[0].sum() + self.beta0 * data_T[1:].sum()
                 )
-            elif isinstance(data, skt.sptensor):
+            elif isinstance(data, COO):
                 loglik = (
                     -lambda0_ija_loc.sum()
                     - self.eta * (data_T.sum(axis=(1, 2)) * self.beta_hat).sum()
                 )
 
         logM = np.log(self.M_nz)
-        if isinstance(data, skt.dtensor):
+        if isinstance(data, np.ndarray):
             Alog = data[data.nonzero()] * logM
-        elif isinstance(data, skt.sptensor):
-            Alog = (data.vals * logM).sum()
+        elif isinstance(data, COO):
+            Alog = (data.data * logM).sum()
         loglik += Alog
 
-        loglik += (np.log(self.beta_hat[subs_nz[0]] + EPS_) * data.vals).sum()
+        loglik += (np.log(self.beta_hat[subs_nz[0]] + EPS_) * data.data).sum()
         if self.T > 0:
             loglik += (np.log(1 - self.beta_hat[-1] + EPS_) * self.bAtAtm1).sum()
             loglik += (np.log(self.beta_hat[-1] + EPS_) * self.Atm11At).sum()

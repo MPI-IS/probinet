@@ -75,11 +75,11 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         if self.force_dense:
             self.assertTrue(self.B.sum() > 0)
         else:
-            self.assertTrue(self.B.vals.sum() > 0)
+            self.assertTrue(self.B.data.sum() > 0)
 
     def test_calculate_opt_func(self):
         """
-        # Test calculate_opt_func function
+        # Test calculate_opt_func function in the case where data is dense
         """
         self.force_dense = True
 
