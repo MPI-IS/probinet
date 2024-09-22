@@ -29,6 +29,12 @@ def cross_validation(
 
     logging.info("Starting cross-validation for algorithm: %s", algorithm)
 
+    # If one of the parameters is an element, convert it to a list
+    for key, value in model_parameters.items():
+        if not isinstance(value, list):
+            logging.debug("Converting parameter %s to list. The value used is %s", key, value)
+            model_parameters[key] = [value]
+
     # Define the grid of parameters
     param_grid = define_grid(**model_parameters)
     logging.info("Parameter grid created with %d combinations", len(param_grid))
