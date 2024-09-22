@@ -37,34 +37,34 @@ def import_data(
 
     Parameters
     ----------
-    dataset : str
+    dataset
         Path of the input file.
-    ego : str, optional
-        Name of the column to consider as the source of the edge. Default is "source".
-    alter : str, optional
-        Name of the column to consider as the target of the edge. Default is "target".
-    force_dense : bool, optional
-        If set to True, the algorithm is forced to consider a dense adjacency tensor. Default is True.
-    undirected : bool, optional
-        If set to True, the algorithm considers an undirected graph. Default is False.
-    noselfloop : bool, optional
-        If set to True, the algorithm removes the self-loops. Default is True.
-    sep : str, optional
-        Separator to use when reading the dataset. Default is "\\s+".
-    binary : bool, optional
-        If set to True, the algorithm reads the graph with binary edges. Default is True.
-    header : int, optional
-        Row number to use as the column names, and the start of the data. Default is None.
+    ego
+        Name of the column to consider as the source of the edge.
+    alter
+        Name of the column to consider as the target of the edge.
+    force_dense
+        If set to True, the algorithm is forced to consider a dense adjacency tensor.
+    undirected
+        If set to True, the algorithm considers an undirected graph.
+    noselfloop
+        If set to True, the algorithm removes the self-loops.
+    sep
+        Separator to use when reading the dataset.
+    binary
+        If set to True, the algorithm reads the graph with binary edges.
+    header
+        Row number to use as the column names, and the start of the data.
 
     Returns
     -------
-    A : list of nx.MultiDiGraph
+    A
         List of MultiDiGraph NetworkX objects representing the layers of the network.
-    B : ndarray or sparse.COO
+    B
         Graph adjacency tensor. If `force_dense` is True, returns a dense ndarray. Otherwise, returns a sparse COO tensor.
-    B_T : None or sparse.COO
+    B_T
         Transposed graph adjacency tensor. Returns None if `force_dense` is True.
-    data_T_vals : None or ndarray
+    data_T_vals
         Array with values of entries A[j, i] given non-zero entry (i, j). Returns None if `force_dense` is True.
     """
 

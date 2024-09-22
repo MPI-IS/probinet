@@ -289,10 +289,10 @@ class ACDTestCase(BaseTest):
 
     def test_force_dense_False(self):
         """Test the import data function with force_dense set to False, i.e., the data is sparse."""
-        FORCE_DENSE = False
+
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
             self.A, self.B, self.B_T, self.data_T_vals = import_data(
-                network.name, header=0, force_dense=FORCE_DENSE
+                network.name, header=0, force_dense=False
             )
 
         model = AnomalyDetection(

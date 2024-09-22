@@ -9,28 +9,19 @@ from pgm.model.jointcrep import JointCRep
 
 
 class JointCRepTestCase(BaseTest, ModelTestMixin):
-    ALGORITHM = "JointCRep"
-    KEYS_IN_THETA_GT = ["u", "v", "w", "eta", "final_it", "maxL", "nodes"]
-    ADJ = "synthetic_data.dat"
-    EGO = "source"
-    ALTER = "target"
+    algorithm = "JointCRep"
+    keys_in_thetaGT = ["u", "v", "w", "eta", "final_it", "maxL", "nodes"]
+    adj = "synthetic_data.dat"
+    ego = "source"
+    alter = "target"
     K = 2
-    UNDIRECTED = False
-    FLAG_CONV = "log"
-    FORCE_DENSE = False
-    EXPECTED_LOGLIKELIHOOD = -7468.8053967272026
-    PLACES = 3
+    undirected = False
+    flag_conv = "log"
+    force_dense = False
+    expected_likleihood = -7468.8053967272026
+    places = 3
 
     def setUp(self):
-        self.algorithm = self.ALGORITHM
-        self.keys_in_thetaGT = self.KEYS_IN_THETA_GT
-        self.adj = self.ADJ
-        self.ego = self.EGO
-        self.alter = self.ALTER
-        self.K = self.K
-        self.undirected = self.UNDIRECTED
-        self.flag_conv = self.FLAG_CONV
-        self.force_dense = self.FORCE_DENSE
 
         self.A, self.B, self.B_T, self.data_T_vals = self._load_data(self.force_dense)
         self.nodes = self.A[0].nodes()
@@ -74,5 +65,5 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
         self.model = JointCRep()
         self._fit_model_to_data(self.conf)
         self.assertAlmostEqual(
-            self.model.maxL, self.EXPECTED_LOGLIKELIHOOD, places=self.PLACES
+            self.model.maxL, self.expected_likleihood, places=self.places
         )

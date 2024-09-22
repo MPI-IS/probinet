@@ -225,6 +225,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         data: Union[COO, np.ndarray],
         data_X: np.ndarray,
         batch_size: Optional[int] = None,
+        max_batch_size: int = 5000,
     ) -> Tuple[
         Union[COO, np.ndarray],
         np.ndarray,
@@ -249,7 +250,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         batch_size : Optional[int], default=None
             The size of the subset of nodes to compute the likelihood with. If None, the method
             will automatically determine the batch size based on the number of nodes.
-
+        max_batch_size
+            The maximum batch size to use when automatically determining the batch
         Returns
         -------
         preprocessed_data : Union[COO, np.ndarray]
@@ -268,9 +270,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
         """
 
-        # Pre-processing of the data to handle the sparsity
-        if not isinstance(data, COO):
-            data = preprocess(data)
+        # Pre-process data and save the indices of the non-zero entries
+        data = preprocess(data) if not isinstance(data, COO) else data
         data_X = preprocess_X(data_X)
 
         # save the indexes of the nonzero entries
@@ -279,10 +280,9 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         elif isinstance(data, COO):
             subs_nz = data.coords
         subs_X_nz = data_X.nonzero()
-
         if batch_size:
             if batch_size > self.N:
-                batch_size = min(5000, self.N)
+                batch_size = min(max_batch_size, self.N)
             np.random.seed(10)  # TODO: ask Martina why this seed
             subset_N = np.random.choice(
                 np.arange(self.N), size=batch_size, replace=False
@@ -290,8 +290,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             Subs = list(zip(*subs_nz))
             SubsX = list(zip(*subs_X_nz))
         else:
-            if self.N > 5000:
-                batch_size = 5000
+            if self.N > max_batch_size:
+                batch_size = max_batch_size
                 np.random.seed(10)
                 subset_N = np.random.choice(
                     np.arange(self.N), size=batch_size, replace=False

@@ -18,7 +18,7 @@ from pgm.input.tools import (
     get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
 from pgm.model.base import ModelBase, ModelUpdateMixin
-from pgm.model.constants import EPS_, INF_
+from pgm.model.constants import EPS_
 from pgm.output.evaluate import lambda0_full, lambda0_nz
 
 
@@ -299,7 +299,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def _preprocess_data_for_fit(
         self, data: Union[COO, np.ndarray], mask: Optional[np.ndarray]
     ) -> Tuple[
-        Union[COO, np.ndarray],
+        Union[COO, np.ndarray], # TODO: Add this as a custom type
         Union[COO, np.ndarray],
         np.ndarray,
         Tuple[int, int, int],

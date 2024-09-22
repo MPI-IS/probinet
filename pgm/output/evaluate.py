@@ -261,7 +261,8 @@ def calculate_expectation(
     return M
 
 
-def lambda0_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
+def lambda0_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray: # TODO: is there a
+    # better name for this? Ask Martina
     """
     Compute the mean lambda0 for all entries (former Exp_ija_matrix(u, v, w)).
 
