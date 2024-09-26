@@ -55,3 +55,6 @@ class TestNotebooks(unittest.TestCase):
 
     def test_DynCRep_notebook_execution(self):
         self.run_notebook("DynCRep")
+    
+    def test_ACD_notebook_execution(self):
+        self.run_notebook("ACD")

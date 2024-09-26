@@ -5,7 +5,7 @@ Functions for handling the data.
 from importlib.resources import files
 import logging
 from pathlib import Path
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union
 
 import networkx as nx
 from numpy import ndarray
@@ -65,7 +65,8 @@ def import_data(
     B_T
         Transposed graph adjacency tensor. Returns None if `force_dense` is True.
     data_T_vals
-        Array with values of entries A[j, i] given non-zero entry (i, j). Returns None if `force_dense` is True.
+        Array with values of entries A[j, i] given non-zero entry (i, j). Returns None if
+        `force_dense` is True. # TODO: check if this is correct with Martina
     """
 
     # Read adjacency file

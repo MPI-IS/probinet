@@ -28,7 +28,7 @@ from pgm.output.likelihood import calculate_opt_func
 
 class CrossValidation(ABC):
     def __init__(
-        self, algorithm, model_parameters, cv_parameters, numerical_parameters={}
+        self, algorithm, model_parameters, cv_parameters, numerical_parameters=None
     ):
         self.algorithm = algorithm
         for key, value in model_parameters.items():
@@ -109,11 +109,6 @@ class CrossValidation(ABC):
         Prepare and run the algorithm.
         """
 
-    @abstractmethod
-    def calculate_performance_and_prepare_comparison(self):
-        """
-        Calculate performance measures and prepare comparison.
-        """
 
     def _calculate_performance_and_prepare_comparison(
         self, outputs, mask, fold, algorithm_object
@@ -160,7 +155,7 @@ class CrossValidation(ABC):
         )
 
         # Store the comparison list in the instance variable
-        self.comparison = comparison
+        return comparison
 
     def save_results(self):
         # Check if the output file exists; if not, write the header
@@ -194,6 +189,9 @@ class CrossValidation(ABC):
 
         # Set up output directory
         self.prepare_output_directory()
+
+        # Prepare list to store results
+        self.comparison = []
 
         # Prepare parameters to load data
         adjacency = self.prepare_file_name()
@@ -229,18 +227,18 @@ class CrossValidation(ABC):
             outputs, algorithm_object = self.prepare_and_run(mask)
 
             # Output performance results
-            self.calculate_performance_and_prepare_comparison(
+            self.comparison.append(self.calculate_performance_and_prepare_comparison(
                 outputs, mask, fold, algorithm_object
-            )
+            ))
 
             logging.info("Time elapsed: %s seconds." % np.round(time.time() - tic, 2))
-            # Save results
-            if self.out_results:
-                self.save_results()
+
 
         logging.info(
             "\nTime elapsed: %s seconds." % np.round(time.time() - time_start, 2)
         )
+
+        return self.comparison
 
     def prepare_file_name(self):
         if ".dat" in self.adj:
@@ -253,14 +251,16 @@ class CrossValidation(ABC):
             logging.warning("Adjacency name not recognized.")
         return adjacency
 
-    def run_cross_validation(self, **kwargs):
-        """
-        Run the cross-validation procedure over a grid of parameters.
-        """
-        # Define the grid of parameters
-        param_grid = self.define_grid(**kwargs)
-        # Loop over the grid of parameters
-        for params in param_grid:
-            for key, value in params.items():
-                setattr(self, key, value)
-            self.run_single_iteration()
+    # def run_cross_validation(self, **kwargs):
+    #     """
+    #     Run the cross-validation procedure over a grid of parameters.
+    #     """
+    #     # Define the grid of parameters
+    #     param_grid = self.define_grid(**kwargs)
+    #     # Loop over the grid of parameters
+    #     for params in param_grid:
+    #         for key, value in params.items():
+    #             setattr(self, key, value)
+    #         self.run_single_iteration()
+    #     # checking that it exists
+    #     print()

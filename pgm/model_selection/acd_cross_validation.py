@@ -20,7 +20,7 @@ class ACDCrossValidation(CrossValidation):
     Class for cross-validation of the ACD algorithm.
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters={}):
+    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
         """
         Constructor for the ACDCrossValidation class.
         Parameters
@@ -119,5 +119,5 @@ class ACDCrossValidation(CrossValidation):
         # Calculate the AUC for the test set (where mask is applied)
         comparison["aucA_test"] = calculate_AUC(M[0], self.B[0], mask=mask[0])
 
-        # Store the comparison dictionary values in the instance variable as a list
-        self.comparison = comparison
+        # Return the comparison dictionary
+        return comparison

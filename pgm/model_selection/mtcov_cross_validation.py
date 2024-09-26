@@ -22,7 +22,7 @@ class MTCOVCrossValidation(CrossValidation):
     Class for cross-validation of the MTCOV algorithm.
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters={}):
+    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
         """
         Constructor for the MTCOVCrossValidation class.
         Parameters
@@ -33,6 +33,8 @@ class MTCOVCrossValidation(CrossValidation):
         """
         super().__init__(algorithm, parameters, input_cv_params, numerical_parameters)
         # These are the parameters for the MTCOV algorithm
+        if numerical_parameters is None:
+            numerical_parameters = {}
         self.parameters = parameters
         self.num_parameters = numerical_parameters
 
@@ -154,5 +156,5 @@ class MTCOVCrossValidation(CrossValidation):
             maskX=maskX,
         )
 
-        # Store the comparison dictionary in the instance variable
-        self.comparison = comparison
+        # Return the comparison dictionary
+        return comparison

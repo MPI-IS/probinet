@@ -44,8 +44,13 @@ def calculate_AUC(
 
     return metrics.auc(fpr, tpr)
 
-
-def calculate_AUC_mtcov(B, u, v, w, mask=None):
+def calculate_AUC_mtcov(
+    B: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    w: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+) -> float:
     """
     Return the AUC of the link prediction. It represents the probability that a randomly chosen missing connection
     (true positive) is given a higher score by our method than a randomly chosen pair of unconnected vertices
@@ -86,61 +91,24 @@ def calculate_AUC_mtcov(B, u, v, w, mask=None):
     return fAUC(R, Pos, Neg)
 
 
-def fAUC(R, Pos, Neg):
-    y = 0.0
-    bad = 0.0
-    for m, a in R:
-        if a > 0:
-            y += 1
-        else:
-            bad += y
-
-    AUC = 1.0 - (bad / (Pos * Neg))
-    return AUC
-
-
-def calculate_AUC_mtcov(B, u, v, w, mask=None):
+def fAUC(R: list, Pos: float, Neg: float) -> float:
     """
-    Return the AUC of the link prediction. It represents the probability that a randomly chosen missing connection
-    (true positive) is given a higher score by our method than a randomly chosen pair of unconnected vertices
-    (true negative).
+    Compute the Area Under the Curve (AUC) for the given ranked list of predictions.
 
     Parameters
     ----------
-    B : ndarray
-        Graph adjacency tensor.
-    u : ndarray
-        Membership matrix (out-degree).
-    v : ndarray
-        Membership matrix (in-degree).
-    w : ndarray
-        Affinity tensor.
-    mask : ndarray
-           Mask for selecting a subset of the adjacency tensor.
+    R : list
+        List of tuples containing the predicted scores and actual labels.
+    Pos : float
+        Number of positive samples.
+    Neg : float
+        Number of negative samples.
 
     Returns
     -------
-    AUC : float
-          AUC value.
+    float
+        The calculated AUC value.
     """
-
-    M = expected_Aija_mtcov(u, v, w)
-
-    if mask is None:
-        R = list(zip(M.flatten(), B.flatten()))
-        Pos = B.sum()
-    else:
-        R = list(zip(M[mask > 0], B[mask > 0]))
-        Pos = B[mask > 0].sum()
-
-    R.sort(key=lambda x: x[0], reverse=False)
-    R_length = len(R)
-    Neg = R_length - Pos
-
-    return fAUC(R, Pos, Neg)
-
-
-def fAUC(R, Pos, Neg):
     y = 0.0
     bad = 0.0
     for m, a in R:
@@ -427,11 +395,6 @@ def expected_Aija_mtcov(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarr
     M = np.einsum("ijkq,akq->aij", M, w)
     return M
 
-
-def expected_Aija_mtcov(u, v, w):
-    M = np.einsum("ik,jq->ijkq", u, v)
-    M = np.einsum("ijkq,akq->aij", M, w)
-    return M
 
 
 def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> list:

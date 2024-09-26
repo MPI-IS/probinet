@@ -31,7 +31,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         err_max: float = 1e-7,  # minimum value for the parameters
         num_realizations: int = 1,  # number of iterations with different random initialization
         **kwargs: Any,
-    ):
+    ) -> None:
         super().__init__(
             err_max=err_max,
             num_realizations=num_realizations,
@@ -133,13 +133,13 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Returns
         -------
-        u_f : np.ndarray
+         u_f : np.ndarray
             Membership matrix (out-degree).
-        v_f : np.ndarray
+         v_f : np.ndarray
             Membership matrix (in-degree).
-        w_f : np.ndarray
+         w_f : np.ndarray
             Affinity tensor.
-        beta_f : np.ndarray
+         beta_f : np.ndarray
             Beta parameter matrix.
         maxL : float
             Maximum log-likelihood value.
@@ -225,7 +225,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         data: Union[COO, np.ndarray],
         data_X: np.ndarray,
         batch_size: Optional[int] = None,
-        max_batch_size: int = 5000,
     ) -> Tuple[
         Union[COO, np.ndarray],
         np.ndarray,
@@ -282,7 +281,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         subs_X_nz = data_X.nonzero()
         if batch_size:
             if batch_size > self.N:
-                batch_size = min(max_batch_size, self.N)
+                batch_size = min(5000, self.N)
             np.random.seed(10)  # TODO: ask Martina why this seed
             subset_N = np.random.choice(
                 np.arange(self.N), size=batch_size, replace=False
@@ -290,8 +289,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             Subs = list(zip(*subs_nz))
             SubsX = list(zip(*subs_X_nz))
         else:
-            if self.N > max_batch_size:
-                batch_size = max_batch_size
+            if self.N > 5000:
+                batch_size = 5000
                 np.random.seed(10)
                 subset_N = np.random.choice(
                     np.arange(self.N), size=batch_size, replace=False

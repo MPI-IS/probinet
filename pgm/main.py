@@ -154,7 +154,10 @@ def parse_args():
         "JointCRep", help="Run the JointCRep algorithm", parents=[shared_parser]
     )
     jointcrep_parser.add_argument(
-        "-K", "--K", type=int, default=2, help="Number of communities"
+        "-K", "--K",
+        type=int,
+        default=2,
+        help="Number of communities",
     )
     jointcrep_parser.add_argument(
         "-nr", "--num_realizations", type=int, default=3, help="Number of realizations"
@@ -166,12 +169,8 @@ def parse_args():
         default=False,
         help="Flag to use approximation",
     )
-    jointcrep_parser.add_argument(
-        "--fix_eta", type=bool, default=False, help="Flag to fix eta"
-    )
-    jointcrep_parser.add_argument(
-        "--fix_w", type=bool, default=False, help="Flag to fix w"
-    )
+    jointcrep_parser.add_argument("--fix_eta", type=bool, default=False, help="Flag to fix eta")
+    jointcrep_parser.add_argument("--fix_w", type=bool, default=False, help="Flag to fix w")
     jointcrep_parser.add_argument(
         "--fix_communities", type=bool, default=False, help="Flag to fix communities"
     )
@@ -190,8 +189,7 @@ def parse_args():
     mtcov_parser = subparsers.add_parser(
         "MTCOV", help="Run the MTCOV algorithm", parents=[shared_parser]
     )
-    mtcov_parser.add_argument(
-        "-K", "--K", type=int, default=2, help="Number of communities"
+    mtcov_parser.add_argument("-K", "--K", type=int, default=2, help="Number of communities"
     )
     mtcov_parser.add_argument(
         "-nr", "--num_realizations", type=int, default=5, help="Number of realizations"
@@ -256,9 +254,7 @@ def parse_args():
     dyncrep_parser.add_argument(
         "--eta0", type=float, default=None, help="Initial eta value"
     )
-    dyncrep_parser.add_argument(
-        "--beta0", type=float, default=0.25, help="Initial beta value"
-    )
+    dyncrep_parser.add_argument("--beta0", type=float, default=0.25, help="Initial beta value")
     dyncrep_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
     dyncrep_parser.add_argument("--ag", type=float, default=1.1, help="Parameter ag")
     dyncrep_parser.add_argument("--bg", type=float, default=0.5, help="Parameter bg")
