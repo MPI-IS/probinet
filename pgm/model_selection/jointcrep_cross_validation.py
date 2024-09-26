@@ -12,7 +12,7 @@ class JointCRepCrossValidation(CrossValidation):
     Class for cross-validation of the JointCRep algorithm.
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters={}):
+    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
         """
         Constructor for the JointCRepCrossValidation class.
         Parameters
@@ -54,6 +54,6 @@ class JointCRepCrossValidation(CrossValidation):
     def calculate_performance_and_prepare_comparison(
         self, outputs, mask, fold, algorithm_object
     ):
-        super()._calculate_performance_and_prepare_comparison(
+        return super()._calculate_performance_and_prepare_comparison(
             outputs, mask, fold, algorithm_object
         )

@@ -11,7 +11,7 @@ class CRepCrossValidation(CrossValidation):
     Class for cross-validation of the CRep algorithm.
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters={}):
+    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
         """
         Constructor for the CRepCrossValidation class.
         Parameters
@@ -23,6 +23,8 @@ class CRepCrossValidation(CrossValidation):
         """
         super().__init__(algorithm, parameters, input_cv_params, numerical_parameters)
         # These are the parameters for the CRep algorithm
+        if numerical_parameters is None:
+            numerical_parameters = {}
         self.parameters = parameters
         self.num_parameters = numerical_parameters
 
@@ -54,6 +56,6 @@ class CRepCrossValidation(CrossValidation):
     def calculate_performance_and_prepare_comparison(
         self, outputs, mask, fold, algorithm_object
     ):
-        super()._calculate_performance_and_prepare_comparison(
+        return super()._calculate_performance_and_prepare_comparison(
             outputs, mask, fold, algorithm_object
         )

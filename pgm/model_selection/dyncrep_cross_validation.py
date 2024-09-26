@@ -24,7 +24,7 @@ class DynCRepCrossValidation(CrossValidation):
     - Calculate performance measures in the hidden set (AUC).
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters={}):
+    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
         """
         Constructor for the DynCRepCrossValidation class.
         Parameters
@@ -70,7 +70,8 @@ class DynCRepCrossValidation(CrossValidation):
         return outputs, algorithm_object
 
     def calculate_performance_and_prepare_comparison(
-        self, outputs, mask, fold, algorithm_object
+        self, outputs, mask, fold, algorithm_object # TODO: change signature to avoid unused 
+            # variables?
     ):
         """
         Calculate performance results and prepare comparison.
@@ -111,8 +112,8 @@ class DynCRepCrossValidation(CrossValidation):
         comparison["auc"] = calculate_AUC(M, self.B[fold])
         comparison["loglik"] = loglik_test
 
-        # Store the comparison dictionary values in the instance variable as a list
-        self.comparison = comparison
+        # Return the comparison dictionary
+        return comparison
 
     def run_single_iteration(self):
         """
@@ -124,13 +125,8 @@ class DynCRepCrossValidation(CrossValidation):
         # Set up output directory
         self.prepare_output_directory()
 
-        # Prepare parameters to load data
-        adjacency = self.prepare_file_name()
-
-        # Prepare output file
-        if self.out_results:
-            self.out_file = self.out_folder + adjacency + "_cv.csv"
-            logging.info("Results will be saved in: %s" % self.out_file)
+        # Prepare list to store results
+        self.comparison = []
 
         # Import data
         self.load_data()
@@ -159,16 +155,14 @@ class DynCRepCrossValidation(CrossValidation):
             outputs, algorithm_object = self.prepare_and_run(t)
 
             # Output performance results
-            self.calculate_performance_and_prepare_comparison(
+            self.comparison.append(self.calculate_performance_and_prepare_comparison(
                 outputs=outputs, mask=None, fold=t, algorithm_object=algorithm_object
-            )
+            ))
 
             logging.info("Time elapsed: %s seconds.", np.round(time.time() - tic, 2))
-
-            # Save results
-            if self.out_results:
-                self.save_results()
 
         logging.info(
             "\nTime elapsed: %s seconds.", np.round(time.time() - time_start, 2)
         )
+
+        return self.comparison

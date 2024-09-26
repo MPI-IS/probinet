@@ -105,19 +105,19 @@ class CRep(ModelBase, ModelUpdateMixin):
         eta0 : Union[float, None], optional
             Initial value of the reciprocity coefficient, by default None.
         undirected : bool, optional
-            Flag to indicate if the graph is undirected, by default False.
+            Flag to specify if the graph is undirected, by default False.
         assortative : bool, optional
-            Flag to indicate if the graph is assortative, by default True.
+            Flag to specify if the graph is assortative, by default True.
         constrained : bool, optional
-            Flag to indicate if the model is constrained, by default True.
+            Flag to specify if the model is constrained, by default True.
         out_inference : bool, optional
-            Flag to indicate if inference results should be output, by default True.
+            Flag to specify if inference results should be output, by default True.
         out_folder : str, optional
             Output folder for inference results, by default "outputs/".
         end_file : str, optional
             Suffix for the output file, by default "_CRep".
         fix_eta : bool, optional
-            Flag to indicate if the eta parameter should be fixed, by default False.
+            Flag to specify if the eta parameter should be fixed, by default False.
         files : str, optional
             Path to the file for initialization, by default "".
 
