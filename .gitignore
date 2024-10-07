@@ -1,0 +1,48 @@
+# Virtual environment
+venv*
+
+# Generated files and directories
+*.egg-info
+dist
+
+# Python compiled files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# IDE-specific files
+.idea
+
+# Build artifacts
+build
+
+# Pre-commit hooks
+.pre-commit-config.yaml
+
+# Test and coverage outputs
+.coverage
+
+# Output of the algorithm
+./outputs/
+
+# tox test environment
+.tox/
+
+# mypy static type checker cache
+.mypy_cache/
+
+# XML reports
+TEST*.xml
+
+doc/source/generated/
+
+doc/source/tutorials/outputs/
+
+coverage.xml
+
+CRep_output/
+
+JointCRep_output/
+
+doc/source/tutorials/tutorial_outputs/

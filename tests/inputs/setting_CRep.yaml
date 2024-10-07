@@ -1,0 +1,12 @@
+K: 3
+rseed: 0
+initialization: 0
+undirected: False
+out_inference: True
+out_folder: "outputs/" # This should be provided by the user
+end_file: "_CRep"
+assortative: True
+eta0: null
+fix_eta: False
+constrained: True
+files: "config/data/input/theta_gt111.npz"

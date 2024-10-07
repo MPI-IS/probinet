@@ -1,0 +1,12 @@
+K: 3
+assortative: true
+constrained: true
+end_file: _CRep
+eta0: null
+files: tests/inputs/theta_GT_CRep_for_initialization.npz
+fix_eta: false
+initialization: 0
+out_folder: outputs/
+out_inference: true
+rseed: 0
+undirected: false

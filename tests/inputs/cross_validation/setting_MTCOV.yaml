@@ -1,0 +1,25 @@
+parameters:
+  K: [2]
+  gamma: [0.5, 0.75]
+  rseed: [107261]
+  initialization: [0]
+  out_inference: [False]
+  out_folder: ""
+  end_file: ["_MTCOV"]
+  assortative: [False]
+  undirected: [True]
+  batch_size: [null]
+  files: ["config/data/input/theta_gt111.npz"]
+input_params:
+  in_folder: "pgm/data/input/"
+  adj: "adj_cv.csv"
+  cov: "X_cv.csv"
+  ego: "source"
+  alter: "target"
+  egoX: "Name"
+  attr_name: "Metadata"
+  NFold: 5
+  out_results: True
+  out_mask: False
+output_file: "adj_cv_cv.csv"
+ground_truth_file: "adj_cv_GT_MTCOV.csv"

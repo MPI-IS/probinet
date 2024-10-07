@@ -1,0 +1,122 @@
+# build-system
+[build-system]
+requires = [
+    "setuptools>=61",
+    "setuptools-scm[toml]>=6.2",
+]
+build-backend = "setuptools.build_meta"
+
+# Project
+[project]
+name = "pgm"
+description = "Python package for probabilistic network analysis."
+version = "1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "argparse",
+    "jupyter",
+    "matplotlib",
+    "networkx",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "pytest",
+    "scikit-learn",
+    "scipy",
+    "sparse",
+    "seaborn"
+]
+
+[project.optional-dependencies]
+dev = [
+    "autopep8",
+    "coverage",
+    "coverage2clover",
+    "isort",
+    "jupyter",
+    "matplotlib",
+    "mypy",
+    "myst_nb",
+    "nbconvert",
+    "piccolo_theme",
+    "pylint",
+    "sphinxcontrib.napoleon",
+    "tox",
+    "unittest-xml-reporting"
+]
+
+# CLI
+[project.scripts]
+run_model = "pgm.main:main"
+
+# Setuptools
+[tool.setuptools]
+packages = ["pgm"]
+
+[tool.setuptools.package-data]
+pgm = ["data/input", "data/model"]
+
+[tool.setuptools.dynamic.readme]
+file = "README.md"
+
+# Autopep8
+[tool.autopep8]
+max_line_length = 100
+aggressive = 3
+
+# isort
+[tool.isort]
+profile = "google"
+force_single_line = false
+multi_line_output = 4
+line_length = 100
+src_paths = ["pgm"]
+
+# Pylint
+[tool.pylint.MASTER]
+disable = ["attribute-defined-outside-init"]
+load-plugins = "pylint.extensions.docparams"
+extension-pkg-whitelist = "numpy"
+
+[tool.pylint.FORMAT]
+max-line-length = 100
+
+[tool.pylint.MESSAGES_CONTROL]
+disable = ["C", # convention
+]
+# Coverage
+[tool.coverage.run]
+branch = true
+source = ["pgm"]
+omit = ["pgm/version.py", "tests"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+
+# MyPy
+[tool.mypy]
+ignore_missing_imports = true
+
+## sktensor needs numpy 1.22.0 but then python 3.11 gives errors; we can upgrade to 3.11 when sktensor is removed
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py310, docs
+[testenv]
+description =
+    run unit tests
+extras =
+    dev
+commands =
+    python -m xmlrunner
+[testenv:docs]
+basepython = python3.10
+commands =
+    sphinx-build -d "{envtmpdir}{/}doctree" doc/source/ "{toxworkdir}{/}docs_out" --color -b html
+    python -c 'print(r"documentation available under file://{toxworkdir}{/}docs_out{/}index.html")'
+[testenv:type]
+deps = mypy
+skip_install = true
+commands = mypy --install-types pgm
+"""

@@ -1,0 +1,13 @@
+K: 4
+rseed: 10
+initialization: 0
+out_inference: True
+out_folder: "outputs/"
+end_file: "_JointCRep"
+assortative: False
+eta0: null
+fix_eta: False
+fix_communities: False
+fix_w: False
+use_approximation: False
+files: "../data/input/theta.npz"
