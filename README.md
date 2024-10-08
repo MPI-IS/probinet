@@ -1,7 +1,7 @@
 # ProbINet
 
 > **BETA RELEASE**:
-This is *beta release* currently being tested by users.
+This is a *beta release* currently being tested by users.
 Your feedback is valuable as we work towards finalizing the package!
 
 Welcome to the documentation for the **Prob**abilistic **I**nference on **Net**works
@@ -94,9 +94,11 @@ can also be accessed directly from the [tutorials](doc/source/tutorials) folder.
 
 The authors of the original implementations integrated to this packages are:
 
-- [Martina Contisciani]() for CRep
-- [Hasideh]() ....
-- [Caterina De Bacco]() ...
+- [Martina Contisciani](https://github.com/mcontisc) 
+- [Hasideh Safdari](https://github.com/hds-safdari) 
+- [Caterina De Bacco](https://cdebacco.com/) 
+
+See the references in the documentation for more details.
 
 ## License
 
