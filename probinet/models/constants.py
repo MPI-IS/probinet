@@ -2,6 +2,8 @@
 This file contains the constants used in the models.
 """
 
+from collections import namedtuple
+
 # Constants
 EPS_ = 1e-12  # Small value to avoid division by zero
 INF_ = 1e10  # Large value to represent infinity

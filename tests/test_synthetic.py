@@ -353,8 +353,7 @@ class TestSyntNetAnomaly(unittest.TestCase):
     def test_anomaly_network_PB(self):
         G, G0 = self.syn_acd.anomaly_network_PB()
         expected_values = self.load_expected_values(
-            Path(__file__).parent
-            / "data"
+            Path(__file__).parent / "data"
             / "synthetic"
             / "test_anomaly_network_PB.yaml"
         )

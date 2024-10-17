@@ -87,7 +87,7 @@ class GM_reciprocity:
         end_file : str, optional
             Output file suffix (default is "").
         out_folder : str, optional
-            Path for storing the evaluation (default is "../data/evaluation/real_data/cv/").
+            Path for storing the output (default is "../data/evaluation/real_data/cv/").
         output_parameters : bool, optional
             Flag for storing the parameters (default is False).
         output_adj : bool, optional
