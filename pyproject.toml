@@ -98,11 +98,11 @@ skip_empty = true
 [tool.mypy]
 ignore_missing_imports = true
 
-## sktensor needs numpy 1.22.0 but then python 3.11 gives errors; we can upgrade to 3.11 when sktensor is removed
+
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py310, docs
+envlist = py310, py311, py312, docs
 [testenv]
 description =
     run unit tests
