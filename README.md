@@ -23,14 +23,14 @@ anomaly identification, and the generation of synthetic data from latent variabl
 
 ## Installation
 
-This package requires Python 3.10. Please ensure you have this version before proceeding with the installation.
 
+This package requires Python 3.10 or higher. Please ensure you have one of these versions before proceeding with the installation.
 To get started, follow these steps:
 
 1. Create a virtual environment. For example, using ``venv``:
 
 ```bash
-   python3.10 -m venv --copies venv
+   python3 -m venv --copies venv
    . venv/bin/activate
    (venv) pip install -U pip # optional but always advised!
 ```
