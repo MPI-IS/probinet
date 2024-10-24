@@ -35,17 +35,17 @@ version = __version__
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",  # pull doc from docstrings
+    "sphinx.ext.autodoc",  # pull docs from docstrings
     # 'sphinx_autodoc_typehints',  # type hints # TODO: remove this from reqs
     "sphinx.ext.intersphinx",  # link to other projects
     "sphinx.ext.todo",  # support TODOs
     "sphinx.ext.ifconfig",  # include stuff based on configuration
     "sphinx.ext.viewcode",  # add source code
     # 'myst_parser',  # add MD files # not needed if myst_nb is used!
-    "sphinx.ext.autosummary",  # pull doc from docstrings
+    "sphinx.ext.autosummary",  # pull docs from docstrings
     # 'nbsphinx',  # add Jupyter notebooks
     "myst_nb",  # add Jupyter notebooks
-    "sphinx.ext.napoleon",  # 'sphinxcontrib.napoleon' is deprecated  # Google style doc
+    "sphinx.ext.napoleon",  # 'sphinxcontrib.napoleon' is deprecated  # Google style docs
 ]
 autodoc_default_options = {
     "members": True,  # when set to True, Sphinx will automatically document all members

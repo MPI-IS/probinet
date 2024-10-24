@@ -21,7 +21,7 @@ class TestNotebooks(unittest.TestCase):
         # Get the absolute path of the notebook dynamically
         root_path = Path(__file__).parent.parent
         notebook_path = (
-            root_path / "doc" / "source" / "tutorials" / f"{notebook_name}.ipynb"
+            root_path / "docs" / "source" / "tutorials" / f"{notebook_name}.ipynb"
         )
 
         # Store the current directory

@@ -35,9 +35,9 @@ build
 # XML reports
 TEST*.xml
 
-doc/source/generated/
+docs/source/generated/
 
-doc/source/tutorials/outputs/
+docs/source/tutorials/outputs/
 
 coverage.xml
 
@@ -45,4 +45,4 @@ CRep_output/
 
 JointCRep_output/
 
-doc/source/tutorials/tutorial_outputs/
+docs/source/tutorials/tutorial_outputs/

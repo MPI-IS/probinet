@@ -80,12 +80,12 @@ To run the tests:
 The documentation can be built with *Sphinx* by running:
 
 ```bash
-    cd doc
+    cd docs
     make html
 ```
 
 The tutorials are then displayed in the left sidebar of the generated HTML documentation. They
-can also be accessed directly from the [tutorials](doc/source/tutorials) folder.
+can also be accessed directly from the [tutorials](docs/source/tutorials) folder.
 
 ## Authors
 
