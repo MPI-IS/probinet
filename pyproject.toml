@@ -41,6 +41,7 @@ dev = [
     "piccolo_theme",
     "pylint",
     "sphinxcontrib.napoleon",
+    'sphinx_book_theme',
     "tox",
     "unittest-xml-reporting"
 ]
