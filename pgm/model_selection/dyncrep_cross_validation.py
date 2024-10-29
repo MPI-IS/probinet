@@ -8,7 +8,6 @@ import time
 
 import numpy as np
 
-from pgm.input.loader import import_data
 from pgm.model.dyncrep import DynCRep
 from pgm.model_selection.cross_validation import CrossValidation
 from pgm.output.evaluate import calculate_AUC, calculate_conditional_expectation_dyncrep
@@ -24,7 +23,9 @@ class DynCRepCrossValidation(CrossValidation):
     - Calculate performance measures in the hidden set (AUC).
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
+    def __init__(
+        self, algorithm, parameters, input_cv_params, numerical_parameters=None
+    ):
         """
         Constructor for the DynCRepCrossValidation class.
         Parameters
@@ -38,40 +39,35 @@ class DynCRepCrossValidation(CrossValidation):
         # These are the parameters for the DynCRep algorithm
         self.parameters = parameters
         self.num_parameters = numerical_parameters
+        self.model = DynCRep
 
     def extract_mask(self, fold):
         pass
 
-    def load_data(self):
-        """
-        Load data from the input folder.
-        """
-        # Load data
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(
-            self.in_folder + self.adj,
-            sep=self.sep,
-            header=0,
-        )
-        # Get the nodes
-        self.nodes = self.A[0].nodes()
-
     def prepare_and_run(self, t):
-        B_train = self.B[:t]  # use data up to time t-1 for training
+        # Create the training data
+        B_train = self.gdata.incidence_tensor[
+            :t
+        ]  # use data up to time t-1 for training
+
+        # Create a copy of gdata to use for training
+        self.gdata_for_training = self.gdata._replace(incidence_tensor=B_train)
 
         self.parameters["T"] = t
         # Initialize the ACD algorithm object
-        algorithm_object = DynCRep(**self.num_parameters)
+        algorithm_object = self.model(**self.num_parameters)
 
-        outputs = algorithm_object.fit(
-            data=B_train, nodes=self.nodes, **self.parameters
-        )
+        outputs = algorithm_object.fit(self.gdata_for_training, **self.parameters)
 
         # Return the outputs and the algorithm object
         return outputs, algorithm_object
 
     def calculate_performance_and_prepare_comparison(
-        self, outputs, mask, fold, algorithm_object # TODO: change signature to avoid unused 
-            # variables?
+        self,
+        outputs,
+        _mask,
+        fold,
+        algorithm_object,
     ):
         """
         Calculate performance results and prepare comparison.
@@ -101,15 +97,22 @@ class DynCRepCrossValidation(CrossValidation):
             )  # use data_T at time t to predict t
         elif self.flag_data_T == 0:
             M = calculate_conditional_expectation_dyncrep(
-                self.B[fold - 1], u, v, w, eta=eta, beta=beta
+                self.gdata.incidence_tensor[fold - 1], u, v, w, eta=eta, beta=beta
             )  # use data_T at time t-1 to predict t
 
-        loglik_test = likelihood_conditional(M, beta, self.B[fold], self.B[fold - 1])
+        loglik_test = likelihood_conditional(
+            M,
+            beta,
+            self.gdata.incidence_tensor[fold],
+            self.gdata.incidence_tensor[fold - 1],
+        )
 
         if fold > 1:
-            M[self.B[fold - 1].nonzero()] = 1 - beta  # to calculate AUC
+            M[self.gdata.incidence_tensor[fold - 1].nonzero()] = (
+                1 - beta
+            )  # to calculate AUC
 
-        comparison["auc"] = calculate_AUC(M, self.B[fold])
+        comparison["auc"] = calculate_AUC(M, self.gdata.incidence_tensor[fold])
         comparison["loglik"] = loglik_test
 
         # Return the comparison dictionary
@@ -132,7 +135,7 @@ class DynCRepCrossValidation(CrossValidation):
         self.load_data()
 
         # Make sure T is not too large
-        self.T = max(0, min(self.T, self.B.shape[0] - 1))
+        self.T = max(0, min(self.T, self.gdata.incidence_tensor.shape[0] - 1))
 
         logging.info("Starting the cross-validation procedure.")
         time_start = time.time()
@@ -155,9 +158,14 @@ class DynCRepCrossValidation(CrossValidation):
             outputs, algorithm_object = self.prepare_and_run(t)
 
             # Output performance results
-            self.comparison.append(self.calculate_performance_and_prepare_comparison(
-                outputs=outputs, mask=None, fold=t, algorithm_object=algorithm_object
-            ))
+            self.comparison.append(
+                self.calculate_performance_and_prepare_comparison(
+                    outputs=outputs,
+                    fold=t,
+                    _mask=None,
+                    algorithm_object=algorithm_object,
+                )
+            )
 
             logging.info("Time elapsed: %s seconds.", np.round(time.time() - tic, 2))
 

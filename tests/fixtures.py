@@ -35,10 +35,7 @@ class BaseTest(unittest.TestCase):
 
     def _fit_model_to_data(self, conf):
         _ = self.model.fit(
-            data=self.B,
-            data_T=self.B_T,
-            data_T_vals=self.data_T_vals,
-            nodes=self.nodes,
+            self.gdata,
             **conf,
         )
 

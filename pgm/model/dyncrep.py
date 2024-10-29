@@ -2,10 +2,11 @@
 Class definition of DynCRep, the algorithm to perform inference in temporal networks.
 """
 
+from argparse import Namespace
 import logging
 from pathlib import Path
 import time
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy.optimize import brentq, root
@@ -17,6 +18,7 @@ from ..input.tools import (
     sp_uttkrp_assortative)
 from ..output.evaluate import func_lagrange_multiplier, lambda0_full, u_with_lagrange_multiplier
 from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
 from .constants import EPS_
 
 
@@ -41,6 +43,21 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             max_iter=max_iter,
             **kwargs,  # Forward any other arguments to the base class
         )
+
+    def check_params_to_load_data(self, **kwargs):
+        if not kwargs["binary"]:
+            log_and_raise_error(ValueError, "DynCRep requires the parameter `binary` to be True.")
+        if not kwargs["force_dense"]:
+            log_and_raise_error(ValueError, "DynCRep requires the parameter `force_dense` to be True.")
+
+    def get_params_to_load_data(self, args: Namespace) -> Dict[str, Any]:
+        # Get the parameters for loading the data
+        data_kwargs = super().get_params_to_load_data(args)
+
+        # Additional fields
+        data_kwargs["T"] = getattr(args, "T")
+
+        return data_kwargs
 
     def _check_fit_params(
         self,
@@ -105,9 +122,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[COO, np.ndarray],
-        T: int,
-        nodes: List[int],
+        gdata: GraphData,
+        T: Optional[int] = None,
         mask: Optional[np.ndarray] = None,
         K: int = 2,
         rseed: int = 0,
@@ -130,6 +146,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         out_folder: Path = Path("outputs"),
         end_file: str = None,
         files: str = None,
+        **_kwargs: Any,
     ) -> Tuple[
         np.ndarray,
         np.ndarray,
@@ -213,7 +230,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         # Check the parameters for fitting the model
         self._check_fit_params(
             K=K,  # type: ignore
-            data=data,
+            data=gdata.incidence_tensor,
             ag=ag,
             bg=bg,
             flag_data_T=flag_data_T,
@@ -234,22 +251,27 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             end_file=end_file,
             files=files,
         )
-
+        logging.info("### Version: %s ###", "w-DYN" if temporal else "w-STATIC")
         # Set the random seed
         logging.debug("Fixing random seed to: %s", rseed)
         self.rseed = rseed
         self.rng = np.random.RandomState(rseed)
 
         # Initialize the fit parameters
-        self.nodes = nodes
+        self.nodes = gdata.nodes
         maxL = -self.inf
-        T = max(0, min(T, data.shape[0] - 1))
+        # If T is None, extract it from the data tensor
+        if T is None:
+            logging.debug("T is None. Extracting it from the data tensor.")
+            T = gdata.incidence_tensor.shape[0] - 1
+        # Make sure that T is not 0 or negative
+        T = max(0, min(T, gdata.incidence_tensor.shape[0] - 1))
         self.T = T
         self.temporal = temporal
 
         # Preprocess the data for fitting the model
         T, data, data_AtAtm1, data_T, data_T_vals, data_Tm1, subs_nzp = (
-            self._preprocess_data_for_fit(T, data)
+            self._preprocess_data_for_fit(T, gdata.incidence_tensor)
         )
 
         # Set the preprocessed data and other related variables as attributes of the class instance

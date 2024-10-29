@@ -22,7 +22,7 @@ class TestCrossValidationModels(BaseTest):
             "setting_JointCRep.yaml",
         ]
         for model_file in model_files:
-            with open(PATH_TO_GT / model_file, "r",  encoding='utf8') as file:
+            with open(PATH_TO_GT / model_file, "r", encoding="utf8") as file:
                 model_name = model_file.split(".")[0].split("_")[1]
                 self.models[model_name] = yaml.safe_load(file)
 

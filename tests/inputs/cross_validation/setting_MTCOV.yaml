@@ -19,6 +19,7 @@ input_params:
   egoX: "Name"
   attr_name: "Metadata"
   NFold: 5
+  sep: ","
   out_results: True
   out_mask: False
 output_file: "adj_cv_cv.csv"

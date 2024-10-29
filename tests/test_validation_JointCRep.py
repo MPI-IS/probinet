@@ -4,7 +4,7 @@ from tests.constants import PATH_FOR_INIT
 from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
 
-from pgm.input.loader import import_data
+from pgm.input.loader import build_adjacency_and_incidence_from_file
 from pgm.model.jointcrep import JointCRep
 
 
@@ -23,8 +23,7 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
     def setUp(self):
 
-        self.A, self.B, self.B_T, self.data_T_vals = self._load_data(self.force_dense)
-        self.nodes = self.A[0].nodes()
+        self.gdata = self._load_data(self.force_dense)
 
         with open(PATH_FOR_INIT / f"setting_{self.algorithm}.yaml") as fp:
             conf = yaml.safe_load(fp)
@@ -33,8 +32,8 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
         conf["end_file"] = f"_OUT_{self.algorithm}"
         self.conf = conf
         self.conf["K"] = self.K
-        self.L = len(self.A)
-        self.N = len(self.nodes)
+        self.L = len(self.gdata.graph_list)
+        self.N = len(self.gdata.nodes)
         self.files = PATH_FOR_INIT / "theta_GT_JointCRep_for_initialization.npz"
 
         # Run model
@@ -42,7 +41,7 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
     def _load_data(self, force_dense):
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            return import_data(
+            return build_adjacency_and_incidence_from_file(
                 network.name,
                 ego=self.ego,
                 alter=self.alter,
@@ -55,13 +54,12 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
     def test_import_data(self):
         if self.force_dense:
-            self.assertTrue(self.B.sum() > 0)
+            self.assertTrue(self.gdata.incidence_tensor.sum() > 0)
         else:
-            self.assertTrue(self.B.data.sum() > 0)
+            self.assertTrue(self.gdata.incidence_tensor.sum() > 0)
 
     def test_force_dense_True(self):
-        self.A, self.B, self.B_T, self.data_T_vals = self._load_data(True)
-        self.nodes = self.A[0].nodes()
+        self.gdata = self._load_data(True)
         self.model = JointCRep()
         self._fit_model_to_data(self.conf)
         self.assertAlmostEqual(

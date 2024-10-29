@@ -52,7 +52,7 @@ Run the ``ProbINet`` package as a whole with the `run_model` command. A list of 
 To run a specific model, pass the model name as an argument. The available models are: `CRep`, `JointCRep`, `MTCOV`, `DynCRep`, and `ACD`. For example, to run the `CRep` model, use:
 
 ```bash
-    run_model -a CRep
+    run_model CRep
 ```
 
 To see the specific options for a model, use the `-h` flag. For example, to see the options for the `CRep` model, use:

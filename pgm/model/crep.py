@@ -18,6 +18,7 @@ from ..input.tools import (
     sp_uttkrp_assortative)
 from ..output.evaluate import lambda0_full
 from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
 
 
 class CRep(ModelBase, ModelUpdateMixin):
@@ -36,6 +37,20 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         # Initialize other attributes
         self.eta_f = 0.0
+
+    def load_data(self, **kwargs: Any):
+        # Check that the parameters are correct
+        self.check_params_to_load_data(**kwargs)
+        # Load and return the data
+        return super().load_data(**kwargs)
+
+    def check_params_to_load_data(self, **kwargs):
+        if not kwargs["binary"]:
+            log_and_raise_error(ValueError, "CRep requires the parameter `binary` to be True.")
+        if not kwargs["noselfloop"]:
+            log_and_raise_error(ValueError, "CRep requires the parameter `noselfloop` to be True.")
+        if kwargs["undirected"]:
+            log_and_raise_error(ValueError, "CRep requires the parameter `undirected` to be False.")
 
     def _check_fit_params(
         self,
@@ -57,10 +72,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[COO, np.ndarray],
-        data_T: COO,
-        data_T_vals: np.ndarray,
-        nodes: List[Any],
+        gdata: GraphData,
         rseed: int = 0,
         K: int = 3,
         mask: Optional[np.ndarray] = None,
@@ -74,6 +86,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         end_file: str = None,
         fix_eta: bool = False,
         files: str = None,
+        **_kwargs: Any,
     ) -> tuple[
         ndarray[Any, dtype[np.float64]],
         ndarray[Any, dtype[np.float64]],
@@ -138,7 +151,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         """
 
         self._check_fit_params(
-            data=data,
+            data=gdata.incidence_tensor,
             K=K,
             initialization=initialization,
             eta0=eta0,
@@ -159,11 +172,11 @@ class CRep(ModelBase, ModelUpdateMixin):
         # Initialize the fit parameters
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum pseudo log-likelihood
-        self.nodes = nodes
+        self.nodes = gdata.nodes
 
         # Preprocess the data for fitting the model
         E, data, data_T, data_T_vals, subs_nz = self._preprocess_data_for_fit(
-            data, data_T, data_T_vals
+            gdata.incidence_tensor, gdata.transposed_tensor, gdata.data_values
         )
         # Set the preprocessed data and other related variables as attributes of the class instance
         self.data = data

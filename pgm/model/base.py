@@ -1,19 +1,22 @@
 """
 Base classes for the model classes.
 """
-
 from abc import ABC, abstractmethod
+from argparse import Namespace
 import dataclasses
 from functools import singledispatchmethod
 import logging
+import os
 from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 from sparse import COO
 
+from pgm.input.loader import build_adjacency_and_incidence_from_file
 from pgm.input.tools import inherit_docstring, log_and_raise_error
+from pgm.model.classes import GraphData
 from pgm.model.constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
 from pgm.output.plot import plot_L
 
@@ -90,11 +93,17 @@ class ModelBase(ModelBaseParameters):
         self.use_unit_uniform = False
         self.theta: Dict[str, Any] = {}
         self.normalize_rows = False
-        self.nodes: List[Any] = []
+        self.nodes: list[Any] = []
         self.rng = np.random.RandomState()
         self.beta_hat: np.ndarray = np.array([])
         self.best_r: int = 0
         self.final_it: int = 0
+
+    def check_params_to_load_data(self, binary, noselfloop, undirected, **kwargs):
+        """
+        Check that the parameters to load the data are correct.
+        """
+        pass
 
     def _check_fit_params(self, *args, **kwargs) -> None:
         """
@@ -670,7 +679,7 @@ class ModelBase(ModelBaseParameters):
         logging.info('To load: theta=np.load(filename), then e.g. theta["u"]')
 
     def _evaluate_fit_results(
-        self, maxL: float, conv: bool, best_loglik_values: List[float]
+        self, maxL: float, conv: bool, best_loglik_values: list[float]
     ) -> None:
         """
         Evaluate the results of the fitting process and log the results.
@@ -757,6 +766,54 @@ class ModelBase(ModelBaseParameters):
 
         This is an abstract method that must be implemented in each derived class.
         """
+
+    def load_data(self, files: str, adj_name: str, **kwargs: Any) -> GraphData:
+        """
+        Load the data from the input files.
+
+        Parameters
+        ----------
+        files
+            The directory containing the input files.
+        adj_name
+            The name of the adjacency file.
+        **kwargs
+            Additional keyword arguments to pass to the data loading function.
+
+        Returns
+        -------
+        GraphData
+            The loaded graph data.
+        """
+        file_path = os.path.join(files, adj_name)
+        gdata: GraphData = build_adjacency_and_incidence_from_file(file_path, **kwargs)
+        return gdata
+
+    def get_params_to_load_data(self, args: Namespace) -> Dict[str, Any]:
+        """
+        Get the parameters from the arguments.
+
+        Parameters
+        ----------
+        args : Namespace
+               The arguments.
+
+        Returns
+        -------
+        params : Dict[str, Any]
+                 The parameters.
+        """
+        fields = [
+            "files",
+            "adj_name",
+            "ego",
+            "alter",
+            "undirected",
+            "force_dense",
+            "noselfloop",
+            "binary",
+        ]
+        return {f: getattr(args, f) for f in fields}
 
 
 class ModelUpdateMixin(ABC):
@@ -1008,3 +1065,6 @@ class ModelUpdateMixin(ABC):
         for var in ["u", "v", "w"]:
             source_var = getattr(self, f"{var}{source_suffix}")
             setattr(self, f"{var}{target_suffix}", np.copy(source_var))
+
+
+

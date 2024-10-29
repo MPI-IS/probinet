@@ -7,7 +7,7 @@ from importlib.resources import files
 import numpy as np
 import yaml
 
-from pgm.input.loader import import_data
+from pgm.input.loader import build_adjacency_and_incidence_from_file
 from pgm.model.crep import CRep
 from pgm.output.likelihood import calculate_opt_func, PSloglikelihood
 
@@ -36,7 +36,7 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         # Import data
 
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+            self.gdata = build_adjacency_and_incidence_from_file(
                 network.name,
                 ego=self.ego,
                 alter=self.alter,
@@ -44,8 +44,6 @@ class BaseTestCase(BaseTest, ModelTestMixin):
                 binary=False,
                 header=0,
             )
-
-        self.nodes = self.A[0].nodes()
 
         # Setting to run the algorithm
         with open(
@@ -73,9 +71,9 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         """
 
         if self.force_dense:
-            self.assertTrue(self.B.sum() > 0)
+            self.assertTrue(self.gdata.incidence_tensor.sum() > 0)
         else:
-            self.assertTrue(self.B.data.sum() > 0)
+            self.assertTrue(self.gdata.incidence_tensor.data.sum() > 0)
 
     def test_calculate_opt_func(self):
         """
@@ -84,9 +82,8 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         self.force_dense = True
 
         # Import data
-
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+            self.gdata = build_adjacency_and_incidence_from_file(
                 network.name,
                 ego=self.ego,
                 alter=self.alter,
@@ -96,12 +93,11 @@ class BaseTestCase(BaseTest, ModelTestMixin):
             )
 
         # Running the algorithm
-        #
         self._fit_model_to_data(self.conf)
 
         # Call the function
         opt_func_result = calculate_opt_func(
-            self.B, algo_obj=self.model, assortative=True
+            self.gdata.incidence_tensor, algo_obj=self.model, assortative=True
         )
 
         # Check if the result is a number
@@ -114,14 +110,15 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         )
 
     def test_PSloglikelihood(self):
-        # Test PSloglikelihood function
+        """
+        Test PSloglikelihood function
+        """
 
         self.force_dense = True
 
         # Import data
-
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+            self.gdata = build_adjacency_and_incidence_from_file(
                 network.name,
                 ego=self.ego,
                 alter=self.alter,
@@ -136,7 +133,11 @@ class BaseTestCase(BaseTest, ModelTestMixin):
 
         # Calculate pseudo log-likelihood
         psloglikelihood_result = PSloglikelihood(
-            self.B, self.model.u, self.model.v, self.model.w, self.model.eta
+            self.gdata.incidence_tensor,
+            self.model.u,
+            self.model.v,
+            self.model.w,
+            self.model.eta,
         )
 
         # Check that it is what expected

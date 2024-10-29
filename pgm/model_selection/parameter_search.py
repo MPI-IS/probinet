@@ -24,8 +24,11 @@ def define_grid(**kwargs: Any) -> List[Dict[str, Any]]:
     # Check that each value is a list
     if not all(isinstance(v, list) for v in kwargs.values()):
         raise ValueError(
-            "Some values are not lists:\n\t" +
-            "\n\t".join(f"{k} : {v}" for k, v in kwargs.items() if not isinstance(v, list)))
+            "Some values are not lists:\n\t"
+            + "\n\t".join(
+                f"{k} : {v}" for k, v in kwargs.items() if not isinstance(v, list)
+            )
+        )
 
     # Extract parameter names
     param_names = kwargs.keys()
