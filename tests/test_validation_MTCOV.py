@@ -1,10 +1,9 @@
 from pathlib import Path
 
-import numpy as np
 from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
 
-from pgm.input.loader import import_data_mtcov
+from pgm.input.loader import build_adjacency_incidence_and_design_from_file
 from pgm.model.mtcov import MTCOV
 
 current_file_path = Path(__file__)
@@ -36,19 +35,19 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
 
         # Import data
         pgm_data_input_path = "pgm.data.input"
-        self.A, self.B, self.X, self.nodes = import_data_mtcov(
-            pgm_data_input_path,
-            adj_name=self.adj_name,
-            cov_name=self.cov_name,
-            ego=self.ego,
-            alter=self.alter,
-            egoX=self.egoX,
-            attr_name=self.attr_name,
-            undirected=self.undirected,
-            force_dense=self.force_dense,
+        self.gdata: GraphData = (
+            build_adjacency_incidence_and_design_from_file(
+                pgm_data_input_path,
+                adj_name=self.adj_name,
+                cov_name=self.cov_name,
+                ego=self.ego,
+                alter=self.alter,
+                egoX=self.egoX,
+                attr_name=self.attr_name,
+                undirected=self.undirected,
+                force_dense=self.force_dense,
+            )
         )
-
-        self.Xs = np.array(self.X)
 
         with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
             self.conf = yaml.safe_load(fp)
@@ -69,17 +68,15 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         if self.force_dense:
             # If force_dense is True, assert that the sum of all elements in the
             # matrix B is greater than 0
-            self.assertTrue(self.B.sum() > 0)
+            self.assertTrue(self.gdata.incidence_tensor.sum() > 0)
         else:
             # If force_dense is False, assert that the sum of all values in the sparse
             # matrix B is greater than 0
-            self.assertTrue(self.B.data.sum() > 0)
+            self.assertTrue(self.gdata.incidence_tensor.data.sum() > 0)
 
     def _fit_model_to_data(self, conf):
         _ = self.model.fit(
-            data=self.B,
-            data_X=self.Xs,
-            nodes=self.nodes,
+            self.gdata,
             batch_size=self.batch_size,
             **conf,
         )

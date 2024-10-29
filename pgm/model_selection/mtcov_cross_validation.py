@@ -8,7 +8,7 @@ import pickle
 
 import numpy as np
 
-from pgm.input.loader import import_data_mtcov
+from pgm.model.classes import GraphData
 from pgm.model.mtcov import MTCOV
 from pgm.model_selection.cross_validation import CrossValidation
 from pgm.model_selection.masking import extract_masks, shuffle_indicesG, shuffle_indicesX
@@ -17,12 +17,14 @@ from pgm.output.evaluate import calculate_AUC_mtcov
 from pgm.output.likelihood import loglikelihood
 
 
-class MTCOVCrossValidation(CrossValidation):
+class MTCOVCrossValidation(CrossValidation, MTCOV):
     """
     Class for cross-validation of the MTCOV algorithm.
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
+    def __init__(
+        self, algorithm, parameters, input_cv_params, numerical_parameters=None
+    ):
         """
         Constructor for the MTCOVCrossValidation class.
         Parameters
@@ -72,8 +74,8 @@ class MTCOVCrossValidation(CrossValidation):
         return maskG, maskX
 
     def load_data(self):
-        # Load data
-        self.A, self.B, self.X, self.nodes = import_data_mtcov(
+        self.gdata: GraphData = MTCOV.load_data(
+            self,
             self.in_folder,
             adj_name=self.adj,
             cov_name=self.cov,
@@ -83,28 +85,35 @@ class MTCOVCrossValidation(CrossValidation):
             attr_name=self.attr_name,
             undirected=self.parameters["undirected"],
             force_dense=True,
+            return_X_as_np=False,
         )
-        # Convert X to a numpy array
-        self.Xs = np.array(self.X)
+        # We need to create the attribute design matrix as a df
+        self.Xs = self.gdata.design_matrix
+        # But the algorithm expects it as a numpy array
+        self.gdata = self.gdata._replace(design_matrix=np.array(self.Xs))
 
     def prepare_and_run(self, masks):
         maskG, maskX = masks
         # Create copies of the adjacency matrix B and covariate matrix X to use for training
-        B_train = self.B.copy()
-        X_train = self.Xs.copy()
+        B_train = self.gdata.incidence_tensor.copy()
+        X_train = self.gdata.design_matrix.copy()
 
         # Apply the masks to the training data by setting masked elements to 0
         B_train[maskG > 0] = 0
         X_train[maskX > 0] = 0
+
+        # Create a copy of gdata to use for training
+        self.gdata_for_training = self.gdata._replace(incidence_tensor=B_train)
+        self.gdata_for_training = self.gdata_for_training._replace(
+            design_matrix=X_train
+        )
 
         # Initialize the MTCOV algorithm object
         algorithm_object = MTCOV(**self.num_parameters)
 
         # Fit the MTCOV model to the training data and get the outputs
         outputs = algorithm_object.fit(
-            B_train,
-            X_train,
-            nodes=self.nodes,
+            self.gdata_for_training,
             **{k: v for k, v in self.parameters.items() if k != "rseed"},
             rseed=self.rseed,
         )
@@ -132,21 +141,25 @@ class MTCOVCrossValidation(CrossValidation):
         # Calculate and assign the covariates accuracy values
         if self.parameters["gamma"] != 0:
             comparison["acc_train"] = covariates_accuracy(
-                self.X, U, V, BETA, mask=np.logical_not(maskX)
+                self.Xs, U, V, BETA, mask=np.logical_not(maskX)
             )
-            comparison["acc_test"] = covariates_accuracy(self.X, U, V, BETA, mask=maskX)
+            comparison["acc_test"] = covariates_accuracy(
+                self.Xs, U, V, BETA, mask=maskX
+            )
 
         # Calculate and assign the AUC values
         if self.parameters["gamma"] != 1:
             comparison["auc_train"] = calculate_AUC_mtcov(
-                self.B, U, V, W, mask=np.logical_not(maskG)
+                self.gdata.incidence_tensor, U, V, W, mask=np.logical_not(maskG)
             )
-            comparison["auc_test"] = calculate_AUC_mtcov(self.B, U, V, W, mask=maskG)
+            comparison["auc_test"] = calculate_AUC_mtcov(
+                self.gdata.incidence_tensor, U, V, W, mask=maskG
+            )
 
         # Calculate and assign the log-likelihood value
         comparison["logL_test"] = loglikelihood(
-            self.B,
-            self.X,
+            self.gdata.incidence_tensor,
+            self.Xs,
             U,
             V,
             W,

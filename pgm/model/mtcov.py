@@ -3,20 +3,23 @@ Class definition of MTCOV, the generative algorithm that incorporates both the t
 attributes to extract overlapping communities in directed and undirected multilayer networks.
 """
 
+from argparse import Namespace
 import logging
 from pathlib import Path
 import sys
 import time
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import scipy.sparse
 from sparse import COO
 
+from ..input.loader import build_adjacency_incidence_and_design_from_file
 from ..input.preprocessing import preprocess, preprocess_X
 from ..input.tools import inherit_docstring, sp_uttkrp, sp_uttkrp_assortative
 from ..output.evaluate import lambda0_full
 from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
 
 
 class MTCOV(ModelBase, ModelUpdateMixin):
@@ -24,6 +27,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
     Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and
     node attributes to extract overlapping communities in directed and undirected multilayer networks.
     """
+    additional_fields = ["egoX", "cov_name", "attr_name"]
 
     @inherit_docstring(ModelBase)
     def __init__(
@@ -37,6 +41,27 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             num_realizations=num_realizations,
             **kwargs,
         )
+
+    def load_data(self, files, adj_name, **kwargs):
+        """
+        Load data from the input folder.
+        """
+        return build_adjacency_incidence_and_design_from_file(
+            files, adj_name=adj_name, **kwargs
+        )
+
+    def get_params_to_load_data(self, args: Namespace) -> Dict[str, Any]:
+        """
+        Get the parameters for the model.
+        """
+        # Get the parameters for loading the data
+        data_kwargs = super().get_params_to_load_data(args)
+
+        # Additional fields
+        for f in self.additional_fields:
+            data_kwargs[f] = getattr(args, f)
+
+        return data_kwargs
 
     def _check_fit_params(
         self,
@@ -75,9 +100,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[COO, np.ndarray],
-        data_X: np.ndarray,
-        nodes: List[Any],
+        gdata: GraphData,
         batch_size: Optional[int] = None,
         gamma: float = 0.5,
         rseed: int = 107261,
@@ -89,6 +112,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         out_folder: Path = Path("outputs"),
         end_file: str = None,
         files: str = None,
+        **__kwargs: Any,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -146,8 +170,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         """
         # Check the parameters for fitting the model
         self._check_fit_params(
-            data=data,
-            data_X=data_X,
+            data=gdata.incidence_tensor,
+            data_X=gdata.design_matrix,
             K=K,
             initialization=initialization,
             gamma=gamma,
@@ -158,6 +182,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             end_file=end_file,
             files=files,
         )
+        logging.info("gamma = %s", gamma)
         # Set the random seed
         self.rseed = rseed
         logging.debug("Fixing random seed to: %s", self.rseed)
@@ -166,11 +191,13 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         # Initialize the fit parameters
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum log-likelihood
-        self.nodes = nodes
+        self.nodes = gdata.nodes
 
         # Preprocess the data for fitting the model
         data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX = (
-            self.preprocess_data_for_fit(data, data_X, batch_size)
+            self.preprocess_data_for_fit(
+                gdata.incidence_tensor, gdata.design_matrix, batch_size
+            )
         )
 
         # Set the preprocessed data and other related variables as attributes of the class instance

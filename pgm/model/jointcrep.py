@@ -17,6 +17,7 @@ from ..input.tools import (
     sp_uttkrp_assortative, transpose_tensor)
 from ..output.evaluate import lambda0_full
 from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
 
 
 class JointCRep(ModelBase, ModelUpdateMixin):
@@ -63,10 +64,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
     def fit(
         self,
-        data: Union[COO, np.ndarray],
-        data_T: COO,
-        data_T_vals: np.ndarray,
-        nodes: List[Any],
+        gdata: GraphData,
         rseed: int = 0,
         K: int = 3,
         initialization: int = 0,
@@ -81,6 +79,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         out_folder: Path = Path("outputs"),
         end_file: str = None,
         files: str = None,
+        **_kwargs: Any,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
         np.ndarray[Any, np.dtype[np.float64]],
@@ -153,7 +152,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
         # Check the parameters for fitting the model
         self._check_fit_params(
-            data=data,
+            data=gdata.incidence_tensor,
             K=K,
             initialization=initialization,
             eta0=eta0,
@@ -177,11 +176,11 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         # Initialize the fit parameters
         self.initialization = initialization
         maxL = -self.inf  # initialization of the maximum log-likelihood
-        self.nodes = nodes
+        self.nodes = gdata.nodes
 
         # Preprocess the data for fitting the model
         data, data_T_vals, subs_nz = self._preprocess_data_for_fit(
-            data, data_T, data_T_vals
+            gdata.incidence_tensor, gdata.transposed_tensor, gdata.data_values
         )
 
         # Calculate the sum of the product of non-zero values in data and data_T

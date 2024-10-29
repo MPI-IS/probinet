@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from pgm.input.loader import import_data
+from pgm.input.loader import build_adjacency_and_incidence_from_file
 from pgm.input.tools import normalize_nonzero_membership
 from pgm.model.acd import AnomalyDetection
 from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_matrix
@@ -36,16 +36,13 @@ class ACDTestCase(BaseTest):
         self.adj = "synthetic_data_for_ACD.dat"
         self.K = self.theta["u"].shape[1]
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.A, self.B, self.B_T, self.data_T_vals = import_data(
-                network.name, header=0
-            )
+            self.gdata = build_adjacency_and_incidence_from_file(network.name, header=0)
 
         # Define the nodes, positions, number of nodes, and number of layers
-        self.nodes = self.A[0].nodes()
-        self.pos = nx.spring_layout(self.A[0])
-        self.N = len(self.nodes)
-        self.T = self.B.shape[0] - 1
-        self.L = self.B.shape[0]
+        self.pos = nx.spring_layout(self.gdata.graph_list[0])
+        self.N = len(self.gdata.nodes)
+        self.T = self.gdata.incidence_tensor.shape[0] - 1
+        self.L = self.gdata.incidence_tensor.shape[0]
         self.fold = 1
         self.seed = 0
 
@@ -66,10 +63,13 @@ class ACDTestCase(BaseTest):
         np.count_nonzero(self.theta["z"][self.mask[0]])
 
         # Create a copy of the 'B' array to use for training
-        self.B_train = self.B.copy()
+        self.B_train = self.gdata.incidence_tensor.copy()
 
         # Set the elements of the training array to 0 where the mask is true
         self.B_train[self.mask > 0] = 0
+
+        # Redefine gdata
+        self.gdata = self.gdata._replace(incidence_tensor=self.B_train)
 
         # Create an input mask that is the logical NOT of the original mask
         self.mask_input = np.logical_not(self.mask)
@@ -132,8 +132,7 @@ class ACDTestCase(BaseTest):
         )
 
         u, v, w, pi, mu, maxL = model.fit(
-            data=self.B_train,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             undirected=False,
             initialization=0,
@@ -194,8 +193,7 @@ class ACDTestCase(BaseTest):
         )
 
         u, v, w, pi, mu, maxL = model.fit(
-            data=self.B_train,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             undirected=False,
             initialization=0,
@@ -248,8 +246,7 @@ class ACDTestCase(BaseTest):
         )
 
         u, v, w, pi, mu, maxL = model.fit(
-            data=self.B_train,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             undirected=False,
             initialization=1,
@@ -291,7 +288,7 @@ class ACDTestCase(BaseTest):
         """Test the import data function with force_dense set to False, i.e., the data is sparse."""
 
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+            self.gdata = build_adjacency_and_incidence_from_file(
                 network.name, header=0, force_dense=False
             )
 
@@ -300,8 +297,7 @@ class ACDTestCase(BaseTest):
         )
 
         model.fit(
-            data=self.B,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             out_inference=False,
         )

@@ -6,7 +6,7 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from pgm.input.loader import import_data
+from pgm.input.loader import build_adjacency_and_incidence_from_file
 from pgm.input.tools import flt, transpose_tensor
 from pgm.model.dyncrep import DynCRep
 from pgm.output.evaluate import calculate_AUC, expected_Aija
@@ -35,18 +35,20 @@ class DynCRepTestCase(BaseTest):
         )
         self.adj = "synthetic_data_for_DynCRep.dat"
         self.K = self.theta["u"].shape[1]
-        self.A, self.B, self.B_T, self.data_T_vals = self._import_data()
+        self.gdata = self._import_data()
         self._initialize_graph_properties()
 
     def _import_data(self, force_dense=True):
         with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            return import_data(network.name, header=0, force_dense=force_dense)
+            return build_adjacency_and_incidence_from_file(
+                network.name, header=0, force_dense=force_dense
+            )
 
     def _initialize_graph_properties(self):
-        self.nodes = self.A[0].nodes()
-        self.pos = nx.spring_layout(self.A[0])
+        self.nodes = self.gdata.nodes
+        self.pos = nx.spring_layout(self.gdata.graph_list[0])
         self.N = len(self.nodes)
-        self.T = self.B.shape[0] - 1
+        self.T = self.gdata.incidence_tensor.shape[0] - 1
 
     def _load_and_update_config(self):
         with open(PATH_FOR_INIT / f"setting_{self.algorithm}.yaml") as fp:
@@ -136,7 +138,7 @@ class DynCRepTestCase(BaseTest):
             plot_loglik=self.PLOT_LOGLIK,
         )
         u, v, w, eta, beta, Loglikelihood = model.fit(
-            data=self.B,
+            self.gdata,
             T=self.T,
             nodes=self.nodes,
             flag_data_T=0,
@@ -147,7 +149,7 @@ class DynCRepTestCase(BaseTest):
 
         # Calculate the lambda_inf and M_inf
         lambda_inf = expected_Aija(u, v, w[0])
-        M_inf = lambda_inf + eta * transpose_tensor(self.B)
+        M_inf = lambda_inf + eta * transpose_tensor(self.gdata.incidence_tensor)
         yaml_file = (
             Path(__file__).parent
             / "data"
@@ -155,7 +157,15 @@ class DynCRepTestCase(BaseTest):
             / "data_for_test_running_temporal_version.yaml"
         )
         self.assert_model_results_from_yaml(
-            u, v, w, eta, beta, Loglikelihood, M_inf, self.B, yaml_file
+            u,
+            v,
+            w,
+            eta,
+            beta,
+            Loglikelihood,
+            M_inf,
+            self.gdata.incidence_tensor,
+            yaml_file,
         )
 
         # Load expected values from YAML and assert results
@@ -166,7 +176,15 @@ class DynCRepTestCase(BaseTest):
             / "data_for_test_running_temporal_version.yaml"
         )
         self.assert_model_results_from_yaml(
-            u, v, w, eta, beta, Loglikelihood, M_inf, self.B, yaml_file
+            u,
+            v,
+            w,
+            eta,
+            beta,
+            Loglikelihood,
+            M_inf,
+            self.gdata.incidence_tensor,
+            yaml_file,
         )
 
     # Skipping this one since it looks that DynCRep does not support sparse data. To be discussed
@@ -176,9 +194,7 @@ class DynCRepTestCase(BaseTest):
         """
         This is a test for the DynCRep algorithm with force_dense=False, i.e., the input data is sparse.
         """
-        self.A, self.B, self.B_T, self.data_T_vals = self._import_data(
-            force_dense=False
-        )
+        self.gdata = self._import_data(force_dense=False)
         self._initialize_graph_properties()
         self.conf = self._load_and_update_config()
         model = DynCRep(
@@ -187,7 +203,7 @@ class DynCRepTestCase(BaseTest):
             plot_loglik=self.PLOT_LOGLIK,
         )
         u, v, w, eta, beta, Loglikelihood = model.fit(
-            data=self.B,
+            self.gdata,
             T=self.T,
             nodes=self.nodes,
             flag_data_T=0,

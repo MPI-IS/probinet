@@ -44,6 +44,7 @@ def calculate_AUC(
 
     return metrics.auc(fpr, tpr)
 
+
 def calculate_AUC_mtcov(
     B: np.ndarray,
     u: np.ndarray,
@@ -229,7 +230,9 @@ def calculate_expectation(
     return M
 
 
-def lambda0_full(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray: # TODO: is there a
+def lambda0_full(
+    u: np.ndarray, v: np.ndarray, w: np.ndarray
+) -> np.ndarray:  # TODO: is there a
     # better name for this? Ask Martina
     """
     Compute the mean lambda0 for all entries (former Exp_ija_matrix(u, v, w)).
@@ -394,7 +397,6 @@ def expected_Aija_mtcov(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarr
     M = np.einsum("ik,jq->ijkq", u, v)
     M = np.einsum("ijkq,akq->aij", M, w)
     return M
-
 
 
 def compute_M_joint(U: np.ndarray, V: np.ndarray, W: np.ndarray, eta: float) -> list:

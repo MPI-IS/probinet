@@ -9,3 +9,4 @@ ERR_MAX_ = 1e-12  # Maximum error allowed in the optimization algorithm
 CONVERGENCE_TOL_ = 1e-4  # Convergence threshold for the optimization algorithm
 ERR_ = 0.1  # Noise for the initialization
 DECISION_ = 10  # Convergence parameter
+

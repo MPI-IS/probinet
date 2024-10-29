@@ -17,13 +17,12 @@ import time
 
 import numpy as np
 
-from pgm.input.loader import import_data
+from pgm.input.loader import build_adjacency_and_incidence_from_file
+from pgm.model.classes import GraphData
 from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_matrix
 from pgm.output.evaluate import (
     calculate_AUC, calculate_conditional_expectation, calculate_expectation)
 from pgm.output.likelihood import calculate_opt_func
-
-# TODO: optimize for big matrices (so when the input would be done with force_dense=False)
 
 
 class CrossValidation(ABC):
@@ -82,33 +81,38 @@ class CrossValidation(ABC):
 
         return grid
 
-    @abstractmethod
     def load_data(self):
-        """
-        Load data from the input folder.
-        """
-
-    def _load_data(self):
         """
         Auxiliary method to load data from the input folder.
         """
         # Load data
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(
+        self.gdata: GraphData = build_adjacency_and_incidence_from_file(
             self.in_folder + self.adj,
             ego=self.ego,
             alter=self.alter,
             force_dense=True,
             header=0,
-        )
-        # Get the nodes
-        self.nodes = self.A[0].nodes()
+            sep=self.sep,
+        )  # _, self.B, self.B_T, self.data_T_vals, self.nodes
 
-    @abstractmethod
-    def prepare_and_run(self):
-        """
-        Prepare and run the algorithm.
-        """
+    def prepare_and_run(self, mask):
+        # Create a copy of the adjacency matrix B to use for training
+        B_train = self.gdata.incidence_tensor.copy()
 
+        # Apply the mask to the training data by setting masked elements to 0
+        B_train[mask > 0] = 0
+
+        # Create a copy of gdata to use for training
+        self.gdata_for_training = self.gdata._replace(incidence_tensor=B_train)
+
+        # Initialize the CRep algorithm object
+        algorithm_object = self.model(**self.num_parameters)
+
+        # Fit the CRep model to the training data and get the outputs
+        outputs = algorithm_object.fit(self.gdata_for_training, **self.parameters)
+
+        # Return the outputs and the algorithm object
+        return outputs, algorithm_object
 
     def _calculate_performance_and_prepare_comparison(
         self, outputs, mask, fold, algorithm_object
@@ -130,25 +134,33 @@ class CrossValidation(ABC):
         M = calculate_expectation(u, v, w, eta=eta)
 
         # Calculate the AUC for the training set (where mask is not applied)
-        comparison["auc_train"] = calculate_AUC(M, self.B, mask=np.logical_not(mask))
+        comparison["auc_train"] = calculate_AUC(
+            M, self.gdata.incidence_tensor, mask=np.logical_not(mask)
+        )
 
         # Calculate the AUC for the test set (where mask is applied)
-        comparison["auc_test"] = calculate_AUC(M, self.B, mask=mask)
+        comparison["auc_test"] = calculate_AUC(
+            M, self.gdata.incidence_tensor, mask=mask
+        )
 
         # Calculate the conditional expectation matrix M_cond
-        M_cond = calculate_conditional_expectation(self.B, u, v, w, eta=eta)
+        M_cond = calculate_conditional_expectation(
+            self.gdata.incidence_tensor, u, v, w, eta=eta
+        )
 
         # Calculate the conditional AUC for the training set
         comparison["auc_cond_train"] = calculate_AUC(
-            M_cond, self.B, mask=np.logical_not(mask)
+            M_cond, self.gdata.incidence_tensor, mask=np.logical_not(mask)
         )
 
         # Calculate the conditional AUC for the test set
-        comparison["auc_cond_test"] = calculate_AUC(M_cond, self.B, mask=mask)
+        comparison["auc_cond_test"] = calculate_AUC(
+            M_cond, self.gdata.incidence_tensor, mask=mask
+        )
 
         # Calculate the optimization function value for the training set
         comparison["opt_func_train"] = calculate_opt_func(
-            self.B,
+            self.gdata.incidence_tensor,
             algorithm_object,
             mask=mask,
             assortative=self.parameters["assortative"],
@@ -208,8 +220,8 @@ class CrossValidation(ABC):
         time_start = time.time()
 
         # Prepare indices for cross-validation
-        self.L = self.B.shape[0]
-        self.N = self.B.shape[-1]
+        self.L = self.gdata.incidence_tensor.shape[0]
+        self.N = self.gdata.incidence_tensor.shape[-1]
         self.indices = shuffle_indices_all_matrix(self.N, self.L, self.rseed)
 
         # Cross-validation loop
@@ -227,12 +239,13 @@ class CrossValidation(ABC):
             outputs, algorithm_object = self.prepare_and_run(mask)
 
             # Output performance results
-            self.comparison.append(self.calculate_performance_and_prepare_comparison(
-                outputs, mask, fold, algorithm_object
-            ))
+            self.comparison.append(
+                self.calculate_performance_and_prepare_comparison(
+                    outputs, mask, fold, algorithm_object
+                )
+            )
 
             logging.info("Time elapsed: %s seconds." % np.round(time.time() - tic, 2))
-
 
         logging.info(
             "\nTime elapsed: %s seconds." % np.round(time.time() - time_start, 2)
@@ -250,17 +263,3 @@ class CrossValidation(ABC):
             # Warning: adjacency is not csv nor dat
             logging.warning("Adjacency name not recognized.")
         return adjacency
-
-    # def run_cross_validation(self, **kwargs):
-    #     """
-    #     Run the cross-validation procedure over a grid of parameters.
-    #     """
-    #     # Define the grid of parameters
-    #     param_grid = self.define_grid(**kwargs)
-    #     # Loop over the grid of parameters
-    #     for params in param_grid:
-    #         for key, value in params.items():
-    #             setattr(self, key, value)
-    #         self.run_single_iteration()
-    #     # checking that it exists
-    #     print()

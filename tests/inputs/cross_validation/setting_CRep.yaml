@@ -17,6 +17,7 @@ input_params:
   ego: "source"
   alter: "target"
   NFold: 2
+  sep: " "
   out_results: True
   out_mask: False
 output_file: "syn111_cv.csv"

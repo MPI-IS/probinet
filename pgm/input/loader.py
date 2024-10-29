@@ -4,21 +4,22 @@ Functions for handling the data.
 
 from importlib.resources import files
 import logging
+from os import PathLike
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import networkx as nx
 from numpy import ndarray
 import numpy as np
 import pandas as pd
-from sparse import COO
 
+from ..model.classes import GraphData
 from .preprocessing import build_B_from_A, build_sparse_B_from_A
-from .stats import print_graph_stat, print_graph_stat_MTCOV
+from .stats import print_graph_stat
 
 
-def import_data(
-    dataset: str,
+def build_adjacency_and_incidence_from_file(
+    path_to_file: PathLike,
     ego: str = "source",
     alter: str = "target",
     force_dense: bool = True,
@@ -26,10 +27,9 @@ def import_data(
     noselfloop: bool = True,
     sep: str = "\\s+",
     binary: bool = True,
-    header: Optional[int] = None,
-) -> tuple[
-    Iterable[nx.MultiDiGraph], Union[ndarray, COO], Optional[COO], Optional[ndarray]
-]:
+    header: Optional[int] = 0,
+    **_kwargs: Any,
+) -> GraphData:
     """
     Import data, i.e. the adjacency matrix, from a given folder.
 
@@ -37,7 +37,7 @@ def import_data(
 
     Parameters
     ----------
-    dataset
+    path_to_file
         Path of the input file.
     ego
         Name of the column to consider as the source of the edge.
@@ -67,15 +67,18 @@ def import_data(
     data_T_vals
         Array with values of entries A[j, i] given non-zero entry (i, j). Returns None if
         `force_dense` is True. # TODO: check if this is correct with Martina
+    nodes
+        List of node IDs
     """
 
     # Read adjacency file
-    df_adj = pd.read_csv(dataset, sep=sep, header=header)
+    df_adj = pd.read_csv(path_to_file, sep=sep, header=header)
     logging.debug(
         "Read adjacency file from %s. The shape of the data is %s.",
-        dataset,
+        path_to_file,
         df_adj.shape,
     )
+    # Build a list of MultiDiGraph NetworkX objects representing the layers of the network
     A = read_graph(
         df_adj=df_adj,
         ego=ego,
@@ -100,10 +103,57 @@ def import_data(
     if current_level <= logging.DEBUG:
         print_graph_stat(A, rw)
 
-    return A, B, B_T, data_T_vals
+    return GraphData(
+        graph_list=A,
+        incidence_tensor=B,
+        transposed_tensor=B_T,
+        data_values=data_T_vals,
+        nodes=nodes,
+    )
 
 
-def import_data_mtcov(
+def read_and_process_design_matrix(
+    in_folder_path: PathLike,
+    cov_name: str,
+    sep: str,
+    header: Optional[int],
+    nodes: list[str],
+    attr_name: str,
+    egoX: str,
+) -> pd.DataFrame:
+    """
+    Read and process the design matrix with covariates.
+
+    Parameters
+    ----------
+    in_folder_path
+        Path to the folder containing the input files.
+    cov_name
+        Name of the covariate file.
+    sep : str
+        Separator to use when reading the covariate file.
+    header
+        Row number to use as the column names, and the start of the data.
+    nodes
+        List of node IDs.
+    attr_name
+        Name of the attribute to consider in the analysis.
+    egoX : str
+        Name of the column to consider as node IDs in the design matrix.
+
+    Returns
+    -------
+    X_attr
+        Pandas DataFrame that represents the one-hot encoding version of the design matrix.
+    """
+    df_X = pd.read_csv(in_folder_path / cov_name, sep=sep, header=header)
+    logging.debug("Indiv shape: %s", df_X.shape)
+
+    # Read and return the design matrix with covariates
+    return read_design_matrix(df_X, nodes, attribute=attr_name, ego=egoX)
+
+
+def build_adjacency_incidence_and_design_from_file(
     in_folder: str,
     adj_name: str = "adj.csv",
     cov_name: str = "X.csv",
@@ -114,9 +164,11 @@ def import_data_mtcov(
     undirected: bool = False,
     force_dense: bool = True,
     noselfloop: bool = True,
-) -> Tuple[
-    List[nx.MultiDiGraph], Union[ndarray, COO], Optional[pd.DataFrame], List[str]
-]:
+    sep: str = ",",
+    header: Optional[int] = 0,
+    return_X_as_np: bool = True,
+    **_kwargs,
+) -> GraphData:
     """
     Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
 
@@ -158,6 +210,8 @@ def import_data_mtcov(
     def get_data_path(in_folder):
         """
         Try to treat in_folder as a package data path, if that fails, treat in_folder as a file path.
+        The case where the input is a file path refers to the case where the user points to data
+        outside the package.
         """
         try:
             # Try to treat in_folder as a package data path
@@ -169,45 +223,31 @@ def import_data_mtcov(
     # Check if in_folder is a package data path or a file path
     in_folder_path = get_data_path(in_folder)
 
-    # Read the adjacency file
-    logging.debug("Reading adjacency file...")
-    df_adj = pd.read_csv(in_folder_path / adj_name)  # read adjacency file
-    logging.debug("Adjacency shape: %s", df_adj.shape)
-
-    df_X = pd.read_csv(
-        in_folder_path / cov_name
-    )  # read the csv file with the covariates
-    logging.debug("Indiv shape: %s", df_X.shape)
-
-    # Create the graph adding nodes and edges
-    A = read_graph(
-        df_adj=df_adj,
+    # Build the adjacency tensor and the incidence tensor
+    A, B, _, _, nodes, _ = build_adjacency_and_incidence_from_file(
+        path_to_file=in_folder_path / adj_name,
         ego=ego,
         alter=alter,
+        force_dense=force_dense,
         undirected=undirected,
         noselfloop=noselfloop,
+        sep=sep,
         binary=False,
+        header=header,
     )
 
-    nodes = list(A[0].nodes)
-
-    # Get the current logging level
-    current_level = logging.getLogger().getEffectiveLevel()
-
-    # Check if the current level is INFO or lower
-    if current_level <= logging.DEBUG:
-        print_graph_stat_MTCOV(A)
-
-    # Save the multilayer network in a tensor with all layers
-    if force_dense:
-        B, _ = build_B_from_A(A, nodes=nodes, calculate_reciprocity=False)
-    else:
-        B = build_sparse_B_from_A(A)
-
     # Read the design matrix with covariates
-    X_attr = read_design_matrix(df_X, nodes, attribute=attr_name, ego=egoX)
+    X_df = read_and_process_design_matrix(
+        in_folder_path, cov_name, sep, header, nodes, attr_name, egoX
+    )
 
-    return A, B, X_attr, nodes
+    if return_X_as_np:
+        # Convert X_df to a numpy array
+        X_df = np.array(X_df)
+
+    return GraphData(
+        graph_list=A, incidence_tensor=B, design_matrix=X_df, nodes=nodes
+    )
 
 
 def read_graph(
@@ -218,7 +258,7 @@ def read_graph(
     noselfloop: bool = True,
     binary: bool = True,
     label: str = "weight",
-) -> List:
+) -> list[nx.MultiDiGraph]:
     """
     Create the graph by adding edges and nodes.
 
@@ -296,7 +336,7 @@ def read_graph(
 
 def read_design_matrix(
     df_X: pd.DataFrame,
-    nodes: List,
+    nodes: list,
     attribute: Union[str, None] = None,
     ego: str = "Name",
 ):

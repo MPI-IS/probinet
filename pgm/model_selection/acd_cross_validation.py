@@ -7,7 +7,6 @@ import pickle
 
 import numpy as np
 
-from pgm.input.loader import import_data
 from pgm.model.acd import AnomalyDetection
 from pgm.model_selection.cross_validation import CrossValidation
 from pgm.model_selection.masking import extract_mask_kfold
@@ -20,7 +19,9 @@ class ACDCrossValidation(CrossValidation):
     Class for cross-validation of the ACD algorithm.
     """
 
-    def __init__(self, algorithm, parameters, input_cv_params, numerical_parameters=None):
+    def __init__(
+        self, algorithm, parameters, input_cv_params, numerical_parameters=None
+    ):
         """
         Constructor for the ACDCrossValidation class.
         Parameters
@@ -52,30 +53,21 @@ class ACDCrossValidation(CrossValidation):
         # Return the mask
         return mask
 
-    def load_data(self):
-        # Load data
-        self.A, self.B, self.B_T, self.data_T_vals = import_data(
-            self.in_folder + self.adj,
-            ego=self.ego,
-            alter=self.alter,
-            force_dense=True,
-            header=0,
-        )
-        # Get the nodes
-        self.nodes = self.A[0].nodes()
-
     def prepare_and_run(self, mask):
         # Create a copy of the adjacency matrix B to use for training
-        B_train = self.B.copy()
+        B_train = self.gdata.incidence_tensor.copy()
 
         # Apply the mask to the training data by setting masked elements to 0
         B_train[mask > 0] = 0
+
+        # Create a copy of gdata to use for training
+        self.gdata_for_training = self.gdata._replace(incidence_tensor=B_train)
 
         # Create an instance of the ACD algorithm
         algorithm_object = AnomalyDetection(**self.numerical_parameters)
 
         # Fit the ACD model to the training data and get the outputs
-        outputs = algorithm_object.fit(B_train, nodes=self.nodes, **self.parameters)
+        outputs = algorithm_object.fit(self.gdata_for_training, **self.parameters)
 
         # Return the outputs and the algorithm object
 
@@ -104,7 +96,7 @@ class ACDCrossValidation(CrossValidation):
 
         # Calculate the Q matrix if flag_anomaly is set
         if self.parameters["flag_anomaly"]:
-            Q = calculate_Q_dense(self.B, M0, pi, mu)
+            Q = calculate_Q_dense(self.gdata.incidence_tensor, M0, pi, mu)
         else:
             Q = np.zeros_like(M0)
 
@@ -113,11 +105,13 @@ class ACDCrossValidation(CrossValidation):
 
         # Calculate the AUC for the training set (where mask is not applied)
         comparison["aucA_train"] = calculate_AUC(
-            M[0], self.B[0], mask=np.logical_not(mask[0])
+            M[0], self.gdata.incidence_tensor[0], mask=np.logical_not(mask[0])
         )
 
         # Calculate the AUC for the test set (where mask is applied)
-        comparison["aucA_test"] = calculate_AUC(M[0], self.B[0], mask=mask[0])
+        comparison["aucA_test"] = calculate_AUC(
+            M[0], self.gdata.incidence_tensor[0], mask=mask[0]
+        )
 
         # Return the comparison dictionary
         return comparison

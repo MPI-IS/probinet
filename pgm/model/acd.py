@@ -6,7 +6,7 @@ The latent variables are related to community memberships and anomaly parameters
 import logging
 from pathlib import Path
 import time
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from pgm.input.tools import (
     get_item_array_from_subs, inherit_docstring, log_and_raise_error, sp_uttkrp,
     sp_uttkrp_assortative, transpose_tensor)
 from pgm.model.base import ModelBase, ModelUpdateMixin
+from pgm.model.classes import GraphData
 from pgm.model.constants import EPS_
 from pgm.output.evaluate import lambda0_full, lambda0_nz
 
@@ -79,7 +80,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         if self.fix_mupr == True:
             self.mupr_old = self.mupr_f = self.mupr
 
-        if self.flag_anomaly == False:
+        if not self.flag_anomaly:
             self.pibr = self.pibr_old = self.pibr_f = 1.0
             self.mupr = self.mupr_old = self.mupr_f = 0.0
             self.fix_pibr = self.fix_mupr = True
@@ -88,14 +89,18 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             theta = np.load(self.files, allow_pickle=True)
             self.N, self.K = theta["u"].shape
 
+        if not self.assortative:
+            raise ValueError(
+                "The assortative parameter has to be True!"
+            )  # TODO: Make it work for assortative=False
+
         # Parameters for the initialization of the model
         self.use_unit_uniform = True
         self.normalize_rows = True
 
     def fit(
         self,
-        data: Union[COO, np.ndarray],
-        nodes: List[int],
+        gdata: GraphData,
         ag: float = 1.5,
         bg: float = 10.0,
         pibr0: Optional[float] = None,
@@ -116,6 +121,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         out_folder: Path = Path("outputs"),
         end_file: str = None,
         files: Union[str, Path] = None,
+        **__kwargs: Any,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float]:
         """
         Fit the AnomalyDetection model to the provided data.
@@ -186,7 +192,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         # Check the input parameters
         self._check_fit_params(
             K=K,
-            data=data,
+            data=gdata.incidence_tensor,
             undirected=undirected,
             initialization=initialization,
             assortative=assortative,
@@ -211,11 +217,11 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         # Initialize the fit parameters
         maxL = -self.inf  # initialization of the maximum  log-likelihood
-        self.nodes = nodes
+        self.nodes = gdata.nodes
 
         # Preprocess the data for fitting the model
         data, data_T, data_T_vals, subs_nz, subs_nz_mask = (
-            self._preprocess_data_for_fit(data, mask)
+            self._preprocess_data_for_fit(gdata.incidence_tensor, mask)
         )
 
         self.data = data
@@ -299,7 +305,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def _preprocess_data_for_fit(
         self, data: Union[COO, np.ndarray], mask: Optional[np.ndarray]
     ) -> Tuple[
-        Union[COO, np.ndarray], # TODO: Add this as a custom type
+        Union[COO, np.ndarray],  # TODO: Add this as a custom type
         Union[COO, np.ndarray],
         np.ndarray,
         Tuple[int, int, int],
@@ -330,10 +336,10 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
         Random initialization of the parameters u, v, w, beta.
         """
-        if self.fix_pibr == False:
+        if not self.fix_pibr:
             self._randomize_pibr()
 
-        if self.fix_mupr == False:
+        if not self.fix_mupr:
             self._randomize_mupr()
 
         if self.initialization == 0:
@@ -385,7 +391,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                 self.w = np.diag(dfW)[np.newaxis, :].copy()
             else:
                 self.w = dfW.values[np.newaxis, :, :]
-        if self.fix_w == False:
+        if not self.fix_w:
             max_entry = np.max(self.w)
             self.w += max_entry * self.err * np.random.random_sample(self.w.shape)
 
@@ -428,7 +434,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
 
         self.lambda0_nz = super()._lambda_nz(subs_nz)
-        if self.assortative == False:
+        if not self.assortative:
             self.lambda0_nzT = lambda0_nz(
                 subs_nz, self.v, self.u, np.einsum("akq->aqk", self.w, self.assortative)
             )
@@ -531,7 +537,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                 Maximum distance between the old and the new prior mu.
         """
 
-        if self.fix_communities == False:
+        if not self.fix_communities:
             d_u = self._update_U()
             self._update_cache(self.data, self.data_T_vals, self.subs_nz)
             if self.undirected:
@@ -545,7 +551,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         else:
             d_u = d_v = 0.0
 
-        if self.fix_w == False:
+        if not self.fix_w:
             if not self.assortative:
                 d_w = self._update_W()
             else:
@@ -554,7 +560,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         else:
             d_w = 0
 
-        if self.fix_pibr == False:
+        if not self.fix_pibr:
             d_pibr = self._update_pibr(
                 self.data,
                 self.subs_nz,
@@ -566,7 +572,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         else:
             d_pibr = 0.0
 
-        if self.fix_mupr == False:
+        if not self.fix_mupr:
             d_mupr = self._update_mupr(
                 mask=self.mask,
                 subs_nz_mask=self.subs_nz_mask,
@@ -909,7 +915,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             else:
                 raise ValueError("Mask is not None but data is not a COO tensor.")
 
-        if self.flag_anomaly == False:
+        if not self.flag_anomaly:
             l = (data.data * np.log(self.lambda0_ija[data.coords] + EPS_)).sum()
             l -= (
                 self.lambda0_ija.sum()
