@@ -46,3 +46,7 @@ CRep_output/
 JointCRep_output/
 
 docs/source/tutorials/tutorial_outputs/
+
+outputs/
+
+doc/source/tutorials/.ipynb_checkpoints/

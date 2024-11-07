@@ -6,9 +6,9 @@ from tests.constants import PATH_TO_GT
 from tests.fixtures import BaseTest
 import yaml
 
-from pgm.model_selection.cross_validation import CrossValidation
-from pgm.model_selection.labeling import predict_label
-from pgm.model_selection.main import cross_validation
+from probinet.model_selection.cross_validation import CrossValidation
+from probinet.model_selection.labeling import predict_label
+from probinet.model_selection.main import cross_validation
 
 
 class TestCrossValidationModels(BaseTest):
@@ -27,11 +27,11 @@ class TestCrossValidationModels(BaseTest):
                 self.models[model_name] = yaml.safe_load(file)
 
     def run_cv_and_check_results(self, model_name):
-        # Load the model settings
+        # Load the models settings
         model = self.models[model_name]
-        # Change the output folder to the current temporary folder
+        # Change the evaluation folder to the current temporary folder
         model["parameters"]["out_folder"] = [self.folder]
-        # Change the output file to the current temporary folder
+        # Change the evaluation file to the current temporary folder
         model["output_file"] = self.folder + model["output_file"]
         # Change the path of the ground truth file
         model["ground_truth_file"] = (

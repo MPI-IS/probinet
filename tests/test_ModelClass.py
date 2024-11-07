@@ -7,7 +7,7 @@ import unittest
 
 import numpy as np
 
-from pgm.model.base import ModelBase
+from probinet.models.base import ModelBase
 
 
 class TestModelClass(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestModelClass(unittest.TestCase):
         self.model_class.K = self.K
         self.model_class.rng = np.random.RandomState(0)  # pylint: disable=no-member
         self.model_class.files = (
-            Path("pgm").resolve() / "data" / "input" / "theta_gt111.npz"
+            Path("probinet").resolve() / "data" / "input" / "theta_gt111.npz"
         )
         self.model_class.theta = np.load(
             self.model_class.files, allow_pickle=True
@@ -36,7 +36,7 @@ class TestModelClass(unittest.TestCase):
         self.model_class.assortative = True
         self.model_class.constrained = True
 
-        # Parameters for the initialization of the model
+        # Parameters for the initialization of the models
         self.model_class.use_unit_uniform = True
         self.model_class.normalize_rows = True
 

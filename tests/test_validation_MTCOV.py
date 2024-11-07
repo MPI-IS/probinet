@@ -3,8 +3,9 @@ from pathlib import Path
 from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
 
-from pgm.input.loader import build_adjacency_incidence_and_design_from_file
-from pgm.model.mtcov import MTCOV
+from probinet.input.loader import build_adjacency_and_design_from_file
+from probinet.models.classes import GraphData
+from probinet.models.mtcov import MTCOV
 
 current_file_path = Path(__file__)
 PATH_FOR_INIT = current_file_path.parent / "inputs/"
@@ -34,19 +35,17 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         self.batch_size = None
 
         # Import data
-        pgm_data_input_path = "pgm.data.input"
-        self.gdata: GraphData = (
-            build_adjacency_incidence_and_design_from_file(
-                pgm_data_input_path,
-                adj_name=self.adj_name,
-                cov_name=self.cov_name,
-                ego=self.ego,
-                alter=self.alter,
-                egoX=self.egoX,
-                attr_name=self.attr_name,
-                undirected=self.undirected,
-                force_dense=self.force_dense,
-            )
+        probinet_data_input_path = "probinet.data.input"
+        self.gdata: GraphData = build_adjacency_and_design_from_file(
+            probinet_data_input_path,
+            adj_name=self.adj_name,
+            cov_name=self.cov_name,
+            ego=self.ego,
+            alter=self.alter,
+            egoX=self.egoX,
+            attr_name=self.attr_name,
+            undirected=self.undirected,
+            force_dense=self.force_dense,
         )
 
         with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
@@ -57,7 +56,7 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
 
         self.conf["end_file"] = (
             "_OUT_" + self.algorithm
-        )  # Adding a suffix to the output files
+        )  # Adding a suffix to the evaluation files
 
         self.files = PATH_FOR_INIT / "theta_GT_MTCOV_for_initialization.npz"
 
@@ -68,11 +67,11 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         if self.force_dense:
             # If force_dense is True, assert that the sum of all elements in the
             # matrix B is greater than 0
-            self.assertTrue(self.gdata.incidence_tensor.sum() > 0)
+            self.assertTrue(self.gdata.adjacency_tensor.sum() > 0)
         else:
             # If force_dense is False, assert that the sum of all values in the sparse
             # matrix B is greater than 0
-            self.assertTrue(self.gdata.incidence_tensor.data.sum() > 0)
+            self.assertTrue(self.gdata.adjacency_tensor.data.sum() > 0)
 
     def _fit_model_to_data(self, conf):
         _ = self.model.fit(

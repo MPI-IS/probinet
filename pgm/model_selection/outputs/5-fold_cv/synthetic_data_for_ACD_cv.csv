@@ -1,2 +1,0 @@
-K,fold,rseed,flag_anomaly,mu,pi,aucA_train,aucA_test,aucZ_train,aucZ_test,ELBO,CS_U,CS_V,F1Q_train,F1Q_test
-3,0,414,True,0.02091036600029346,0.22349207080255448,0.9777520924409325,0.9802850484210918,0,0,-27695.292292696864,0,0,0,0

@@ -7,7 +7,7 @@ import unittest
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from pgm.output.plot import mapping, plot_hard_membership
+from probinet.visualization.plot import mapping, plot_hard_membership
 
 
 class TestPlotHardMembership(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestPlotHardMembership(unittest.TestCase):
     def test_plot_hard_membership(self):
         # Test plot_hard_membership function
 
-        # Capture the plot output
+        # Capture the plot evaluation
         with self.subTest():
             plt.figure()
             plot_hard_membership(

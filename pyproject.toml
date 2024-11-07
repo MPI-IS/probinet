@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 # Project
 [project]
-name = "pgm"
+name = "probinet"
 description = "Python package for probabilistic network analysis."
 version = "1.0"
 requires-python = ">=3.10"
@@ -38,7 +38,6 @@ dev = [
     "mypy",
     "myst_nb",
     "nbconvert",
-    "piccolo_theme",
     "pylint",
     "sphinxcontrib.napoleon",
     'sphinx_book_theme',
@@ -48,14 +47,14 @@ dev = [
 
 # CLI
 [project.scripts]
-run_model = "pgm.main:main"
+run_probinet = "probinet.main:main"
 
 # Setuptools
 [tool.setuptools]
-packages = ["pgm"]
+packages = ["probinet"]
 
 [tool.setuptools.package-data]
-pgm = ["data/input", "data/model"]
+probinet = ["data/input", "data/model"]
 
 [tool.setuptools.dynamic.readme]
 file = "README.md"
@@ -71,7 +70,7 @@ profile = "google"
 force_single_line = false
 multi_line_output = 4
 line_length = 100
-src_paths = ["pgm"]
+src_paths = ["probinet"]
 
 # Pylint
 [tool.pylint.MASTER]
@@ -88,8 +87,8 @@ disable = ["C", # convention
 # Coverage
 [tool.coverage.run]
 branch = true
-source = ["pgm"]
-omit = ["pgm/version.py", "tests"]
+source = ["probinet"]
+omit = ["probinet/version.py", "tests"]
 
 [tool.coverage.report]
 show_missing = true
@@ -114,10 +113,10 @@ commands =
 [testenv:docs]
 basepython = python3.10
 commands =
-    sphinx-build -d "{envtmpdir}{/}doctree" doc/source/ "{toxworkdir}{/}docs_out" --color -b html
+    sphinx-build -d "{envtmpdir}{/}doctree" docs/source/ "{toxworkdir}{/}docs_out" --color -b html
     python -c 'print(r"documentation available under file://{toxworkdir}{/}docs_out{/}index.html")'
 [testenv:type]
 deps = mypy
 skip_install = true
-commands = mypy --install-types pgm
+commands = mypy --install-types probinet
 """

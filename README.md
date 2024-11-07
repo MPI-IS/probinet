@@ -27,7 +27,14 @@ anomaly identification, and the generation of synthetic data from latent variabl
 This package requires Python 3.10 or higher. Please ensure you have one of these versions before proceeding with the installation.
 To get started, follow these steps:
 
-1. Create a virtual environment. For example, using ``venv``:
+1. Clone the repository and navigate to the `probinet` directory:
+
+```bash
+   git clone https://github.com/MPI-IS/probinet.git
+   cd probinet
+````
+
+2. Create a virtual environment. For example, using ``venv``:
 
 ```bash
    python3 -m venv --copies venv
@@ -35,7 +42,7 @@ To get started, follow these steps:
    (venv) pip install -U pip # optional but always advised!
 ```
 
-2. Install the ``ProbINet`` package by running:
+3. Install the ``ProbINet`` package by running:
 
 ```bash
    (venv) pip install .
@@ -43,29 +50,47 @@ To get started, follow these steps:
 
 ## Usage
 
-Run the ``ProbINet`` package as a whole with the `run_model` command. A list of the parameters that can be passed as arguments is available by running:
+Run the ``ProbINet`` package as a whole with the `run_probinet` command. This command can be run 
+from any directory after the package is installed.
+
+A list of the parameters that can be passed as arguments is available by running:
 
 ```bash
-    run_model --help
+    run_probinet --help
 ```
 
 To run a specific model, pass the model name as an argument. The available models are: `CRep`, `JointCRep`, `MTCOV`, `DynCRep`, and `ACD`. For example, to run the `CRep` model, use:
 
 ```bash
-    run_model CRep
+    run_probinet CRep
 ```
 
 To see the specific options for a model, use the `-h` flag. For example, to see the options for the `CRep` model, use:
 
 ```bash
-    run_model CRep -h
+    run_probinet CRep -h
 ```
 
-The `run_model` command can be run at different logging levels. To run the command with the `DEBUG` level, use:
+The `run_probinet` command can be run at different logging levels. To run the command with the `DEBUG` level, use:
 
 ```bash
-    run_model -a CRep -d
+    run_probinet CRep -d
 ```
+
+To set arguments with double dashes (e.g., `--convergence_tol`), include them in the command line 
+as follows:
+
+```bash
+    run_probinet CRep --convergence_tol 0.1
+```
+
+Some commands can also be executed using shorter versions of the arguments. For example, the 
+`--convergence_tol` argument can be shortened to `-tol`. For example:
+
+```bash
+    run_probinet CRep -tol 0.1
+```
+These shorter versions can be found in the help message of each model.
 
 ## Tests
 
@@ -77,15 +102,25 @@ To run the tests:
 
 ## Documentation
 
-The documentation can be built with *Sphinx* by running:
+The documentation can be built with *Sphinx*. To install it, run:
+
+```bash
+    pip install sphinx
+```
+
+To build the documentation, run:
 
 ```bash
     cd docs
     make html
 ```
 
-The tutorials are then displayed in the left sidebar of the generated HTML documentation. They
-can also be accessed directly from the [tutorials](docs/source/tutorials) folder.
+The documentation will be available in the [docs/build/html](docs/build/html) directory.
+
+## Tutorials
+
+The tutorials are available in the [docs/source/tutorials](docs/source/tutorials) directory. Each tutorial is a Jupyter 
+notebook that can be run in a Jupyter environment. 
 
 ## Authors
 
@@ -95,7 +130,7 @@ can also be accessed directly from the [tutorials](docs/source/tutorials) folder
 The authors of the original implementations integrated to this packages are:
 
 - [Martina Contisciani](https://github.com/mcontisc) 
-- [Hasideh Safdari](https://github.com/hds-safdari) 
+- [Hadiseh Safdari](https://github.com/hds-safdari) 
 - [Caterina De Bacco](https://cdebacco.com/) 
 
 See the references in the documentation for more details.

@@ -18,14 +18,16 @@ root_folder = Path(__file__).parent.parent.parent.resolve()
 sys.path.insert(0, str(root_folder))
 # -- Project information -----------------------------------------------------
 
-project = "pgm"
+project = "probinet"
 copyright = (
-    "2022, Max Planck Society / "
+    "2024, Max Planck Society / "
     "Software Workshop - Max Planck Institute for Intelligent Systems"
 )
 author = "Diego Baptista Theuerkauf"
 
-from pgm.version import __version__  # noqa: E402 # pylint: disable=wrong-import-position
+from probinet.version import (
+    __version__,
+)  # noqa: E402 # pylint: disable=wrong-import-position
 
 version = __version__
 
@@ -36,7 +38,6 @@ version = __version__
 # ones.
 extensions = [
     "sphinx.ext.autodoc",  # pull docs from docstrings
-    # 'sphinx_autodoc_typehints',  # type hints # TODO: remove this from reqs
     "sphinx.ext.intersphinx",  # link to other projects
     "sphinx.ext.todo",  # support TODOs
     "sphinx.ext.ifconfig",  # include stuff based on configuration
@@ -68,9 +69,9 @@ exclude_patterns: List[Any] = []
 pygments_style = "sphinx"
 
 # -- Options for myst_nb -----------------------------------------------------
-execution_timeout = 1000  # This is the timeout for executing a notebook cell
+nb_execution_timeout = 1000  # This is the timeout for executing a notebook cell
 
-# -- Options for HTML output -------------------------------------------------
+# -- Options for HTML evaluation -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

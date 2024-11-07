@@ -22,7 +22,7 @@ parameters:
   end_file: ["_DynCRep"]
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
-  in_folder: "pgm/data/input/"
+  in_folder: "probinet/data/input/"
   adj: "email-Eu-core.csv"
   ego: "source"
   alter: "target"

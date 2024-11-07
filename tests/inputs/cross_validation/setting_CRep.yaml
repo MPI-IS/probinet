@@ -12,7 +12,7 @@ parameters:
   out_folder: ""
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
-  in_folder: "pgm/data/input/"
+  in_folder: "probinet/data/input/"
   adj: "syn111.dat"
   ego: "source"
   alter: "target"

@@ -6,7 +6,10 @@ import unittest
 
 import numpy as np
 
-from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_matrix
+from probinet.model_selection.masking import (
+    extract_mask_kfold,
+    shuffle_indices_all_matrix,
+)
 
 
 class TestCV(unittest.TestCase):

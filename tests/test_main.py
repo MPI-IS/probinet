@@ -2,15 +2,13 @@ from pathlib import Path
 import sys
 from unittest import mock
 
-import networkx as nx
-import numpy as np
 from tests.fixtures import BaseTest
 
-from pgm.main import main as single_main
-from pgm.main import parse_args
+from probinet.main import main as single_main
+from probinet.main import parse_args
 
 COMMAND_TO_RUN_MODEL = "run_model"
-PATH_TO_INPUT = str(Path("pgm") / "data" / "input")
+PATH_TO_INPUT = str(Path("probinet") / "data" / "input")
 
 
 class TestMain(BaseTest):
@@ -32,7 +30,7 @@ class TestMain(BaseTest):
             algorithm,  # Algorithm name
             "--out_folder",
             str(self.folder),  # Output folder
-            "--out_inference",  # Flag to output inference results
+            "--out_inference",  # Flag to evaluation inference results
             "--files",
             PATH_TO_INPUT,
             "--end_file",
@@ -76,7 +74,7 @@ class TestMain(BaseTest):
             algorithm,  # Algorithm name
             "--out_folder",
             str(self.folder),  # Output folder
-            "--out_inference",  # Flag to output inference results
+            "--out_inference",  # Flag to evaluation inference results
             "--files",
             PATH_TO_INPUT,  # Input files
             "--end_file",
@@ -100,7 +98,7 @@ class TestMain(BaseTest):
         # Check that the value of K in the called arguments matches the expected value
         self.assertEqual(called_args.kwargs["K"], K)
 
-        # Check that the output folder in the called arguments matches the expected value
+        # Check that the evaluation folder in the called arguments matches the expected value
         self.assertEqual(called_args.kwargs["out_folder"], str(self.folder))
 
         # Check that out_inference is set to True
@@ -133,11 +131,11 @@ class TestMainCRep(TestMain):
 
         self.K_values = 5
 
-    @mock.patch("pgm.model.crep.CRep.fit")
+    @mock.patch("probinet.models.crep.CRep.fit")
     def test_CRep_with_no_parameters(self, mock_fit):
         return self.check_default_params_passed_to_fit("CRep", mock_fit, single_main)
 
-    @mock.patch("pgm.model.crep.CRep.fit")
+    @mock.patch("probinet.models.crep.CRep.fit")
     def test_CRep_with_custom_parameters(self, mock_fit):
         return self.check_custom_params_passed_to_fit("CRep", mock_fit, single_main)
 
@@ -164,13 +162,13 @@ class TestMainJointCRep(TestMain):
 
         self.K_values = 5
 
-    @mock.patch("pgm.model.jointcrep.JointCRep.fit")
+    @mock.patch("probinet.models.jointcrep.JointCRep.fit")
     def test_JointCRep_with_no_parameters(self, mock_fit):
         return self.check_default_params_passed_to_fit(
             "JointCRep", mock_fit, single_main
         )
 
-    @mock.patch("pgm.model.jointcrep.JointCRep.fit")
+    @mock.patch("probinet.models.jointcrep.JointCRep.fit")
     def test_JointCRep_with_custom_parameters(self, mock_fit):
         return self.check_custom_params_passed_to_fit(
             "JointCRep", mock_fit, single_main
@@ -196,11 +194,11 @@ class TestMainMTCOV(TestMain):
 
         self.K_values = 5
 
-    @mock.patch("pgm.model.mtcov.MTCOV.fit")
+    @mock.patch("probinet.models.mtcov.MTCOV.fit")
     def test_MTCOV_with_no_parameters(self, mock_fit):
         return self.check_default_params_passed_to_fit("MTCOV", mock_fit, single_main)
 
-    @mock.patch("pgm.model.mtcov.MTCOV.fit")
+    @mock.patch("probinet.models.mtcov.MTCOV.fit")
     def test_MTCOV_with_custom_parameters(self, mock_fit):
         return self.check_custom_params_passed_to_fit("MTCOV", mock_fit, single_main)
 
@@ -233,15 +231,15 @@ class TestMainDynCRep(TestMain):
         }
 
         self.K_values = 2
-        self.extra_args = ["--force_dense", "True"]
+        self.extra_args = ["--force_dense"]
 
-    @mock.patch("pgm.model.dyncrep.DynCRep.fit")
+    @mock.patch("probinet.models.dyncrep.DynCRep.fit")
     def test_DynCRep_with_no_parameters(self, mock_fit):
         return self.check_default_params_passed_to_fit(
             "DynCRep", mock_fit, single_main, *self.extra_args
         )
 
-    @mock.patch("pgm.model.dyncrep.DynCRep.fit")
+    @mock.patch("probinet.models.dyncrep.DynCRep.fit")
     def test_DynCRep_with_custom_parameters(self, mock_fit):
         return self.check_custom_params_passed_to_fit(
             "DynCRep", mock_fit, single_main, *self.extra_args
@@ -274,11 +272,11 @@ class TestMainAnomalyDetection(TestMain):
 
         self.K_values = 2
 
-    @mock.patch("pgm.model.acd.AnomalyDetection.fit")
+    @mock.patch("probinet.models.acd.AnomalyDetection.fit")
     def test_ACD_with_no_parameters(self, mock_fit):
         return self.check_default_params_passed_to_fit("ACD", mock_fit, single_main)
 
-    @mock.patch("pgm.model.acd.AnomalyDetection.fit")
+    @mock.patch("probinet.models.acd.AnomalyDetection.fit")
     def test_ACD_with_custom_parameters(self, mock_fit):
         return self.check_custom_params_passed_to_fit("ACD", mock_fit, single_main)
 
@@ -385,7 +383,7 @@ class TestDefaultMainCalls(BaseTest):
         self.run_algorithm_test("MTCOV")
 
     def test_main_dyncrep(self):
-        self.run_algorithm_test("DynCRep", "--force_dense", "True")
+        self.run_algorithm_test("DynCRep", "--force_dense")
 
     def test_main_acd(self):
         self.run_algorithm_test("ACD", "--assortative", "True")

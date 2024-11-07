@@ -9,14 +9,17 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from pgm.synthetic.syn_acd import SyntNetAnomaly
-from pgm.synthetic.syn_dyncrep import SyntheticDynCRep
-from pgm.synthetic.syn_rep import affinity_matrix, GM_reciprocity
-from pgm.synthetic.syn_sbm import BaseSyntheticNetwork, ReciprocityMMSBM_joints
+from probinet.synthetic.anomaly import SyntNetAnomaly
+from probinet.synthetic.base import BaseSyntheticNetwork
+from probinet.synthetic.dynamic import SyntheticDynCRep
+from probinet.synthetic.multilayer import SyntheticMTCOV
+from probinet.synthetic.reciprocity import (
+    affinity_matrix,
+    GM_reciprocity,
+    ReciprocityMMSBM_joints,
+)
 
 from .constants import RTOL
-
-# pylint: disable=missing-function-docstring, too-many-locals, too-many-instance-attributes
 
 
 class TestGMReciprocity(unittest.TestCase):
@@ -56,7 +59,7 @@ class TestGMReciprocity(unittest.TestCase):
 
     def test_reciprocity_planted_network(self):
         gm = GM_reciprocity(self.N, self.K)
-        gm.verbose = False  # Disable verbose output for testing
+        gm.verbose = False  # Disable verbose evaluation for testing
 
         expected_values = {
             "nodes": 72,
@@ -80,7 +83,7 @@ class TestGMReciprocity(unittest.TestCase):
 
     def test_planted_network_cond_independent(self):
         gm = GM_reciprocity(self.N, self.K)
-        gm.verbose = False  # Disable verbose output for testing
+        gm.verbose = False  # Disable verbose evaluation for testing
 
         expected_values = {
             "nodes": 98,
@@ -104,7 +107,7 @@ class TestGMReciprocity(unittest.TestCase):
 
     def test_planted_network_reciprocity_only(self):
         gm = GM_reciprocity(self.N, self.K)
-        gm.verbose = False  # Disable verbose output for testing
+        gm.verbose = False  # Disable verbose evaluation for testing
 
         expected_values = {
             "nodes": 26,
@@ -185,7 +188,7 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
         self.out_folder = Path(__file__).parent / "data/input/synthetic/"
         self.output_net = True
         self.show_details = True
-        self.show_plots = True
+        self.show_plots = False
         self.kwargs = {}
         self.base_synthetic_network = BaseSyntheticNetwork(
             self.N,
@@ -193,10 +196,10 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
             self.K,
             self.seed,
             self.eta,
-            self.out_folder,
-            self.output_net,
-            self.show_details,
-            self.show_plots,
+            out_folder=self.out_folder,
+            output_adj=self.output_net,
+            show_details=self.show_details,
+            show_plots=self.show_plots,
             **self.kwargs,
         )
 
@@ -206,7 +209,7 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
         self.assertEqual(self.base_synthetic_network.K, self.K)
         self.assertEqual(self.base_synthetic_network.seed, self.seed)
         self.assertEqual(self.base_synthetic_network.out_folder, self.out_folder)
-        self.assertEqual(self.base_synthetic_network.output_net, self.output_net)
+        self.assertEqual(self.base_synthetic_network.output_adj, self.output_net)
         self.assertEqual(self.base_synthetic_network.show_details, self.show_details)
         self.assertEqual(self.base_synthetic_network.show_plots, self.show_plots)
 
@@ -316,7 +319,7 @@ class TestSyntNetAnomaly(unittest.TestCase):
         self.assertEqual(syn_acd.m, expected_values["m"])
         self.assertEqual(syn_acd.rseed, expected_values["rseed"])
         self.assertEqual(syn_acd.label, expected_values["label"])
-        self.assertEqual(syn_acd.folder, expected_values["folder"])
+        self.assertEqual(syn_acd.out_folder, expected_values["out_folder"])
         self.assertEqual(
             syn_acd.output_parameters, expected_values["output_parameters"]
         )
@@ -381,3 +384,39 @@ class TestSyntNetAnomaly(unittest.TestCase):
         self.assertAlmostEqual(np.sum(syn_acd.w), expected_values["sum_w"])
         expected_w = np.array(expected_values["expected_w"])
         np.testing.assert_array_almost_equal(syn_acd.w, expected_w)
+
+
+class TestSyntheticMTCOV(unittest.TestCase):
+    def setUp(self):
+        self.N = 300
+        self.K = 3
+        self.L = 1
+        self.structure = "disassortative"
+        self.syn_mtcov = SyntheticMTCOV(
+            N=self.N, K=self.K, L=self.L, structure=self.structure
+        )
+
+    def test_initialization(self):
+        self.assertEqual(self.syn_mtcov.N, self.N)
+        self.assertEqual(self.syn_mtcov.K, self.K)
+        self.assertEqual(self.syn_mtcov.seed, 0)
+        self.assertEqual(self.syn_mtcov.directed, False)
+        self.assertEqual(self.syn_mtcov.perc_overlapping, 0.4)
+        self.assertEqual(self.syn_mtcov.correlation_u_v, 0)
+
+    def test_graph_properties(self):
+        G = self.syn_mtcov.G[0]
+        # Assert the number of nodes and edges
+        self.assertEqual(G.number_of_nodes(), self.N)
+        self.assertEqual(G.number_of_edges(), 2161)
+        # Assert that the graph is a digraph
+        self.assertIsInstance(G, nx.Graph)
+
+    def test_metadata(self):
+        metadata = self.syn_mtcov.X
+        # Count occurrences of 'attr1'
+        count_attr1 = np.count_nonzero(metadata == "attr1")
+        # Count occurrences of 'attr2'
+        count_attr2 = np.count_nonzero(metadata == "attr2")
+        self.assertEqual(count_attr1, 154)
+        self.assertEqual(count_attr2, 146)
