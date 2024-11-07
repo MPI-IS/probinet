@@ -10,7 +10,7 @@ parameters:
   undirected: [False]
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
-  in_folder: "pgm/data/input/"
+  in_folder: "probinet/data/input/"
   adj: "synthetic_data_for_ACD.dat"
   ego: "source"
   alter: "target"

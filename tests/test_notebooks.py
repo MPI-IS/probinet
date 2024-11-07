@@ -9,8 +9,6 @@ import unittest
 from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
 
-# pylint: disable=missing-function-docstring, too-many-locals
-
 
 class TestNotebooks(unittest.TestCase):
     """

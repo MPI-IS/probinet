@@ -11,7 +11,7 @@ parameters:
   batch_size: [null]
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
-  in_folder: "pgm/data/input/"
+  in_folder: "probinet/data/input/"
   adj: "adj_cv.csv"
   cov: "X_cv.csv"
   ego: "source"

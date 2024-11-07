@@ -5,12 +5,17 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from pgm.input.loader import build_adjacency_and_incidence_from_file
-from pgm.input.tools import normalize_nonzero_membership
-from pgm.model.acd import AnomalyDetection
-from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_matrix
-from pgm.model_selection.metrics import evalu
-from pgm.output.evaluate import cosine_similarity
+from probinet.evaluation.community_detection import (
+    compute_community_detection_metric,
+    cosine_similarity,
+)
+from probinet.input.loader import build_adjacency_from_file
+from probinet.model_selection.masking import (
+    extract_mask_kfold,
+    shuffle_indices_all_matrix,
+)
+from probinet.models.acd import AnomalyDetection
+from probinet.utils.matrix_operations import normalize_nonzero_membership
 
 from .constants import DECIMAL_2, DECIMAL_3, DECIMAL_4, DECIMAL_5
 from .fixtures import BaseTest
@@ -35,14 +40,14 @@ class ACDTestCase(BaseTest):
         # 'pi', 'nodes']
         self.adj = "synthetic_data_for_ACD.dat"
         self.K = self.theta["u"].shape[1]
-        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.gdata = build_adjacency_and_incidence_from_file(network.name, header=0)
+        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+            self.gdata = build_adjacency_from_file(network.name, header=0)
 
         # Define the nodes, positions, number of nodes, and number of layers
         self.pos = nx.spring_layout(self.gdata.graph_list[0])
         self.N = len(self.gdata.nodes)
-        self.T = self.gdata.incidence_tensor.shape[0] - 1
-        self.L = self.gdata.incidence_tensor.shape[0]
+        self.T = self.gdata.adjacency_tensor.shape[0] - 1
+        self.L = self.gdata.adjacency_tensor.shape[0]
         self.fold = 1
         self.seed = 0
 
@@ -63,13 +68,13 @@ class ACDTestCase(BaseTest):
         np.count_nonzero(self.theta["z"][self.mask[0]])
 
         # Create a copy of the 'B' array to use for training
-        self.B_train = self.gdata.incidence_tensor.copy()
+        self.B_train = self.gdata.adjacency_tensor.copy()
 
         # Set the elements of the training array to 0 where the mask is true
         self.B_train[self.mask > 0] = 0
 
         # Redefine gdata
-        self.gdata = self.gdata._replace(incidence_tensor=self.B_train)
+        self.gdata = self.gdata._replace(adjacency_tensor=self.B_train)
 
         # Create an input mask that is the logical NOT of the original mask
         self.mask_input = np.logical_not(self.mask)
@@ -111,8 +116,8 @@ class ACDTestCase(BaseTest):
         u1 = normalize_nonzero_membership(u)
         v1 = normalize_nonzero_membership(v)
 
-        f1_u = evalu(u1, theta["u"], "f1")
-        f1_v = evalu(v1, theta["v"], "f1")
+        f1_u = compute_community_detection_metric(u1, theta["u"], "f1")
+        f1_v = compute_community_detection_metric(v1, theta["v"], "f1")
 
         # Assertions for f1 score
         self.assertAlmostEqual(f1_u, data["f1_score"]["f1_u"], places=DECIMAL_2)
@@ -179,7 +184,7 @@ class ACDTestCase(BaseTest):
         )
         # TODO: fix the previous assert (it should not be done from 1 onwards, but using all the
         #  list. To fix it, I first need to talk to Hadiseh to see why there is a z in theta if
-        #  the model does not have it
+        #  the models does not have it
 
     def test_running_algorithm_from_random_init_2(self):
 
@@ -287,8 +292,8 @@ class ACDTestCase(BaseTest):
     def test_force_dense_False(self):
         """Test the import data function with force_dense set to False, i.e., the data is sparse."""
 
-        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.gdata = build_adjacency_and_incidence_from_file(
+        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+            self.gdata = build_adjacency_from_file(
                 network.name, header=0, force_dense=False
             )
 

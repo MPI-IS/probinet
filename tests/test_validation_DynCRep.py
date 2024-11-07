@@ -6,10 +6,14 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from pgm.input.loader import build_adjacency_and_incidence_from_file
-from pgm.input.tools import flt, transpose_tensor
-from pgm.model.dyncrep import DynCRep
-from pgm.output.evaluate import calculate_AUC, expected_Aija
+from probinet.evaluation.expectation_computation import (
+    compute_expected_adjacency_tensor,
+)
+from probinet.evaluation.link_prediction import compute_link_prediction_AUC
+from probinet.input.loader import build_adjacency_from_file
+from probinet.models.dyncrep import DynCRep
+from probinet.utils.matrix_operations import transpose_tensor
+from probinet.utils.tools import flt
 
 from .constants import PATH_FOR_INIT, TOLERANCE_2
 from .fixtures import BaseTest
@@ -39,8 +43,8 @@ class DynCRepTestCase(BaseTest):
         self._initialize_graph_properties()
 
     def _import_data(self, force_dense=True):
-        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            return build_adjacency_and_incidence_from_file(
+        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+            return build_adjacency_from_file(
                 network.name, header=0, force_dense=force_dense
             )
 
@@ -48,7 +52,7 @@ class DynCRepTestCase(BaseTest):
         self.nodes = self.gdata.nodes
         self.pos = nx.spring_layout(self.gdata.graph_list[0])
         self.N = len(self.nodes)
-        self.T = self.gdata.incidence_tensor.shape[0] - 1
+        self.T = self.gdata.adjacency_tensor.shape[0] - 1
 
     def _load_and_update_config(self):
         with open(PATH_FOR_INIT / f"setting_{self.algorithm}.yaml") as fp:
@@ -94,7 +98,7 @@ class DynCRepTestCase(BaseTest):
 
         expected_aucs = expected_values["AUC"]
         for l in range(len(expected_aucs)):
-            auc = flt(calculate_AUC(M_inf[l], B[l].astype("int")))
+            auc = flt(compute_link_prediction_AUC(M_inf[l], B[l].astype("int")))
             self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
 
     def assert_model_results_from_yaml(
@@ -127,7 +131,7 @@ class DynCRepTestCase(BaseTest):
         # Assertions for AUC
         expected_aucs = expected_values["AUC"]
         for l in range(len(expected_aucs)):
-            auc = flt(calculate_AUC(M_inf[l], B[l].astype("int")))
+            auc = flt(compute_link_prediction_AUC(M_inf[l], B[l].astype("int")))
             self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
 
     def test_running_temporal_version(self):
@@ -148,8 +152,8 @@ class DynCRepTestCase(BaseTest):
         )
 
         # Calculate the lambda_inf and M_inf
-        lambda_inf = expected_Aija(u, v, w[0])
-        M_inf = lambda_inf + eta * transpose_tensor(self.gdata.incidence_tensor)
+        lambda_inf = compute_expected_adjacency_tensor(u, v, w[0])
+        M_inf = lambda_inf + eta * transpose_tensor(self.gdata.adjacency_tensor)
         yaml_file = (
             Path(__file__).parent
             / "data"
@@ -164,7 +168,7 @@ class DynCRepTestCase(BaseTest):
             beta,
             Loglikelihood,
             M_inf,
-            self.gdata.incidence_tensor,
+            self.gdata.adjacency_tensor,
             yaml_file,
         )
 
@@ -183,7 +187,7 @@ class DynCRepTestCase(BaseTest):
             beta,
             Loglikelihood,
             M_inf,
-            self.gdata.incidence_tensor,
+            self.gdata.adjacency_tensor,
             yaml_file,
         )
 

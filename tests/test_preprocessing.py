@@ -8,8 +8,12 @@ import networkx as nx
 import numpy as np
 from sparse import COO
 
-from pgm.input import tools
-from pgm.input.preprocessing import build_B_from_A, build_sparse_B_from_A, preprocess
+from probinet.input.preprocessing import (
+    create_adjacency_tensor_from_graph_list,
+    create_sparse_adjacency_tensor_from_graph_list,
+    preprocess_adjacency_tensor,
+)
+from probinet.utils import tools
 
 
 class TestPreprocessing(unittest.TestCase):
@@ -36,7 +40,7 @@ class TestPreprocessing(unittest.TestCase):
         expected_rw = [2, 1.6]
 
         # Now, the test should pass
-        B, rw = build_B_from_A(A, nodes=nodes)
+        B, rw = create_adjacency_tensor_from_graph_list(A, nodes=nodes)
         np.testing.assert_array_equal(B, expected_B)
         np.testing.assert_array_almost_equal(rw, expected_rw)
 
@@ -52,7 +56,7 @@ class TestPreprocessing(unittest.TestCase):
 
         # This test should raise an AssertionError due to the mismatched set of vertices
         with self.assertRaises(AssertionError):
-            build_B_from_A(A, nodes=nodes)
+            create_adjacency_tensor_from_graph_list(A, nodes=nodes)
 
     def test_build_B_from_A_non_int_weighed_nodes(self):
         # Test case for build_B_from_A with mismatched nodes
@@ -64,7 +68,7 @@ class TestPreprocessing(unittest.TestCase):
 
         # This test should raise an AssertionError due to the mismatched set of vertices
         with self.assertRaises(AssertionError):
-            build_B_from_A(A, nodes=nodes)
+            create_adjacency_tensor_from_graph_list(A, nodes=nodes)
 
     def test_build_sparse_B_from_A(self):
         # Test case for build_sparse_B_from_A
@@ -100,7 +104,9 @@ class TestPreprocessing(unittest.TestCase):
         expected_v_T = np.array([0.0, 0.0, 0.0])
         expected_rw = [0.0, 0.0]
 
-        data, data_T, v_T, rw = build_sparse_B_from_A(A, calculate_reciprocity=True)
+        data, data_T, v_T, rw = create_sparse_adjacency_tensor_from_graph_list(
+            A, calculate_reciprocity=True
+        )
 
         # Use np.testing.assert_array_almost_equal for comparing arrays with floating-point values
         np.testing.assert_array_almost_equal(data.coords, expected_data.coords)
@@ -115,7 +121,7 @@ class TestPreprocessing(unittest.TestCase):
         # The expected result is the same dense array
         expected_result = A
         # Call the preprocess function
-        result = preprocess(A)
+        result = preprocess_adjacency_tensor(A)
         # Assert that the type of the result is the same as the expected result
         self.assertEqual(type(result), type(expected_result))
         # Assert that the result array is equal to the expected result array
@@ -128,7 +134,7 @@ class TestPreprocessing(unittest.TestCase):
         # The expected result is the sparse tensor created from the dense array
         expected_result = tools.sptensor_from_dense_array(A)
         # Call the preprocess function
-        result = preprocess(A)
+        result = preprocess_adjacency_tensor(A)
         # Assert that the type of the result is the same as the expected result
         self.assertEqual(type(result), type(expected_result))
         # Assert that the coordinates of the sparse tensor are equal to the expected coordinates

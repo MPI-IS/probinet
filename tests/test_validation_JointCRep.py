@@ -4,8 +4,8 @@ from tests.constants import PATH_FOR_INIT
 from tests.fixtures import BaseTest, ModelTestMixin
 import yaml
 
-from pgm.input.loader import build_adjacency_and_incidence_from_file
-from pgm.model.jointcrep import JointCRep
+from probinet.input.loader import build_adjacency_from_file
+from probinet.models.jointcrep import JointCRep
 
 
 class JointCRepTestCase(BaseTest, ModelTestMixin):
@@ -20,6 +20,7 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
     force_dense = False
     expected_likleihood = -7468.8053967272026
     places = 3
+    max_iter = 1000
 
     def setUp(self):
 
@@ -36,12 +37,12 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
         self.N = len(self.gdata.nodes)
         self.files = PATH_FOR_INIT / "theta_GT_JointCRep_for_initialization.npz"
 
-        # Run model
-        self.model = JointCRep()
+        # Run models
+        self.model = JointCRep(max_iter=self.max_iter)
 
     def _load_data(self, force_dense):
-        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            return build_adjacency_and_incidence_from_file(
+        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+            return build_adjacency_from_file(
                 network.name,
                 ego=self.ego,
                 alter=self.alter,
@@ -54,9 +55,9 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
     def test_import_data(self):
         if self.force_dense:
-            self.assertTrue(self.gdata.incidence_tensor.sum() > 0)
+            self.assertTrue(self.gdata.adjacency_tensor.sum() > 0)
         else:
-            self.assertTrue(self.gdata.incidence_tensor.sum() > 0)
+            self.assertTrue(self.gdata.adjacency_tensor.sum() > 0)
 
     def test_force_dense_True(self):
         self.gdata = self._load_data(True)
