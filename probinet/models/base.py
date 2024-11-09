@@ -697,7 +697,7 @@ class ModelBase(ModelBaseParameters):
             process.
             If not provided, it defaults to None.
         """
-        if best_loglik_values != []:
+        if best_loglik_values:
             # Log the best real, maximum log-likelihood, and the best iterations
             logging.debug(
                 "Best realization = %s - maxL = %s - best iterations = %s",

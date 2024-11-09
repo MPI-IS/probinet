@@ -110,12 +110,12 @@ class ACDCrossValidation(CrossValidation):
 
         # Calculate the AUC for the training set (where mask is not applied)
         comparison["aucA_train"] = compute_link_prediction_AUC(
-            M[0], self.gdata.adjacency_tensor[0], mask=np.logical_not(mask[0])
+            self.gdata.adjacency_tensor[0], M[0], mask=np.logical_not(mask[0])
         )
 
         # Calculate the AUC for the test set (where mask is applied)
         comparison["aucA_test"] = compute_link_prediction_AUC(
-            M[0], self.gdata.adjacency_tensor[0], mask=mask[0]
+            self.gdata.adjacency_tensor[0], M[0], mask=mask[0]
         )
 
         # Return the comparison dictionary

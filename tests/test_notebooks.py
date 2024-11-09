@@ -56,3 +56,6 @@ class TestNotebooks(unittest.TestCase):
 
     def test_ACD_notebook_execution(self):
         self.run_notebook("ACD")
+
+    def test_unknown_structure_notebook_execution(self):
+        self.run_notebook("Unknown_structure")

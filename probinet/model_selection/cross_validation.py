@@ -141,12 +141,12 @@ class CrossValidation(ABC):
 
         # Calculate the AUC for the training set (where mask is not applied)
         comparison["auc_train"] = compute_link_prediction_AUC(
-            M, self.gdata.adjacency_tensor, mask=np.logical_not(mask)
+             self.gdata.adjacency_tensor,M, mask=np.logical_not(mask)
         )
 
         # Calculate the AUC for the test set (where mask is applied)
         comparison["auc_test"] = compute_link_prediction_AUC(
-            M, self.gdata.adjacency_tensor, mask=mask
+            self.gdata.adjacency_tensor,M, mask=mask
         )
 
         # Calculate the conditional expectation matrix M_cond
