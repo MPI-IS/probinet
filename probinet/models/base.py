@@ -697,7 +697,7 @@ class ModelBase(ModelBaseParameters):
             process.
             If not provided, it defaults to None.
         """
-        if best_loglik_values != []:
+        if best_loglik_values:
             # Log the best real, maximum log-likelihood, and the best iterations
             logging.debug(
                 "Best realization = %s - maxL = %s - best iterations = %s",
@@ -716,8 +716,10 @@ class ModelBase(ModelBaseParameters):
                 logging.warning(
                     "Solution failed to converge in %s EM steps!", self.max_iter
                 )
-                logging.warning("Parameters won't be saved for this realization! If you have "
-                                "provided a number of realizations equal to one, please increase it.")
+                logging.warning(
+                    "Parameters won't be saved for this realization! If you have "
+                    "provided a number of realizations equal to one, please increase it."
+                )
             else:
                 # If the fitting process has converged and out_inference is True, evaluation the results
                 if self.out_inference:

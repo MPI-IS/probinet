@@ -131,7 +131,7 @@ class DynCRepTestCase(BaseTest):
         # Assertions for AUC
         expected_aucs = expected_values["AUC"]
         for l in range(len(expected_aucs)):
-            auc = flt(compute_link_prediction_AUC(M_inf[l], B[l].astype("int")))
+            auc = flt(compute_link_prediction_AUC(B[l], M_inf[l]))
             self.assertAlmostEqual(auc, expected_aucs[l], delta=TOLERANCE_2)
 
     def test_running_temporal_version(self):

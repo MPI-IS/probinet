@@ -116,7 +116,7 @@ class DynCRepCrossValidation(CrossValidation):
             )  # to calculate AUC
 
         comparison["auc"] = compute_link_prediction_AUC(
-            M, self.gdata.adjacency_tensor[fold]
+            self.gdata.adjacency_tensor[fold], M
         )
         comparison["loglik"] = loglik_test
 

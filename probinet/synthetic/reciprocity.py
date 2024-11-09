@@ -822,8 +822,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
         # TODO: incorporate the __init__ where it should
 
         if "eta" in kwargs:
-            eta = kwargs["eta"]
-            if eta <= 0:  # pair interaction coefficient
+            if (eta := kwargs["eta"]) <= 0:  # pair interaction coefficient
                 message = (
                     "The pair interaction coefficient eta has to be greater than 0!"
                 )

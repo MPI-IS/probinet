@@ -293,3 +293,27 @@ def calculate_opt_func(
         np.fill_diagonal(w1, algo_obj.w_f[l])
         w[l, :, :] = w1.copy()
     return PSloglikelihood(B, algo_obj.u_f, algo_obj.v_f, w, algo_obj.eta_f, mask=mask)
+
+
+def log_likelihood_given_model(model: object, adjacency_tensor: np.ndarray) -> float:
+    """
+    Calculate the log-likelihood of the model considering only the structural data.
+
+    Parameters
+    ----------
+    model : object
+        The model object containing the lambda0_ija and lambda0_nz attributes.
+    adjacency_tensor : np.ndarray
+        The adjacency matrix.
+
+    Returns
+    -------
+    float
+        The log-likelihood value, rounded to three decimal places.
+    """
+    M = model.lambda0_ija
+    loglikelihood = -M.sum()
+    logM = np.log(model.lambda0_nz)
+    XlogM = adjacency_tensor[adjacency_tensor.nonzero()] * logM
+    loglikelihood += XlogM.sum()
+    return np.round(loglikelihood, 3)
