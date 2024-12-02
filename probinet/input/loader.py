@@ -21,11 +21,12 @@ from .preprocessing import (
 from .stats import print_graph_stat
 from ..models.classes import GraphData
 
+
 def build_adjacency_from_networkx(
-        network: nx.Graph,
-        edge_weight: list[str],
-        file_name: Optional[str]=None
-        #TODO: add csv file name
+    network: nx.Graph,
+    edge_weight: list[str],
+    file_name: Optional[str] = None,
+    # TODO: add csv file name
 ) -> GraphData:
     """
 
@@ -35,22 +36,25 @@ def build_adjacency_from_networkx(
     Returns
     -------
     """
-    attribute_names = {key for _, _, data in network.edges(data=True) for key in data.keys()}
+    attribute_names = {
+        key for _, _, data in network.edges(data=True) for key in data.keys()
+    }
     for w in edge_weight:
         assert w in attribute_names, f"{w} is not an attribute"
-    
+
     if not file_name:
         file_name = getcwd() + "edge_list.csv"
     # Save edges to a CSV file
-    with open(file_name, "w", newline="") as edge_file:
+    with open(file_name, "w", newline="", encoding="utf-8") as edge_file:
         writer = csv.writer(edge_file, delimiter=" ")
         # Write header
-        writer.writerow(["source", "target"]+ edge_weight)  # Get edge keys. 
+        writer.writerow(["source", "target"] + edge_weight)  # Get edge keys.
         # Write edge data
         for source, target, attrs in network.edges(data=True):
-            writer.writerow([source, target]+[attrs[a] for a in edge_weight]) 
-    
+            writer.writerow([source, target] + [attrs[a] for a in edge_weight])
+
     return build_adjacency_from_file(file_name)
+
 
 def build_adjacency_from_file(
     path_to_file: PathLike,
