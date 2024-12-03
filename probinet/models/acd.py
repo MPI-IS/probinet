@@ -1,6 +1,7 @@
 """
 Class definition of ACD, the algorithm to perform inference in networks with anomaly.
-The latent variables are related to community memberships and anomaly parameters.
+The latent variables are related to community memberships and anomaly parameters
+:cite:`safdari2022anomaly` .
 """
 
 import logging

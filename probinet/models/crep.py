@@ -1,6 +1,7 @@
 """
 Class definition of CRep, the algorithm to perform inference in networks with reciprocity.
-The latent variables are related to community memberships and reciprocity value.
+The latent variables are related to community memberships and reciprocity value
+:cite:`safdari2021generative`.
 """
 
 import logging
@@ -16,6 +17,7 @@ from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.preprocessing import preprocess_adjacency_tensor
+from ..types import GraphDataType
 from ..types import GraphDataType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
 from ..utils.tools import get_item_array_from_subs, log_and_raise_error

@@ -39,6 +39,7 @@ dev = [
     "myst_nb",
     "nbconvert",
     "pylint",
+    "sphinxcontrib.bibtex",
     "sphinxcontrib.napoleon",
     'sphinx_book_theme',
     "tox",

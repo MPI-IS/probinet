@@ -25,6 +25,16 @@ def _(mask: np.ndarray, expected_adjacency: np.ndarray) -> np.ndarray:
     return expected_adjacency[mask > 0]
 
 
+@singledispatch
+def mask_or_flatten_array(mask: None, expected_adjacency: np.ndarray) -> np.ndarray:
+    return expected_adjacency.flatten()
+
+
+@mask_or_flatten_array.register(np.ndarray)
+def _(mask: np.ndarray, expected_adjacency: np.ndarray) -> np.ndarray:
+    return expected_adjacency[mask > 0]
+
+
 def compute_link_prediction_AUC(
     data0: np.ndarray,
     pred: np.ndarray,
