@@ -47,6 +47,7 @@ extensions = [
     # 'nbsphinx',  # add Jupyter notebooks
     "myst_nb",  # add Jupyter notebooks
     "sphinx.ext.napoleon",  # 'sphinxcontrib.napoleon' is deprecated  # Google style docs
+    "sphinxcontrib.bibtex",
 ]
 autodoc_default_options = {
     "members": True,  # when set to True, Sphinx will automatically document all members
@@ -70,6 +71,9 @@ pygments_style = "sphinx"
 
 # -- Options for myst_nb -----------------------------------------------------
 nb_execution_timeout = 1000  # This is the timeout for executing a notebook cell
+
+# -- Options for  sphinxcontrib extension ---------------------------------------
+bibtex_bibfiles = ['references.bib']
 
 # -- Options for HTML evaluation -------------------------------------------------
 

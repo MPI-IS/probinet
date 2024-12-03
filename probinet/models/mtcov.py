@@ -1,6 +1,8 @@
 """
-Class definition of MTCOV, the generative algorithm that incorporates both the topology of interactions and node
-attributes to extract overlapping communities in directed and undirected multilayer networks.
+Class definition of MTCOV, the generative algorithm that incorporates both the topology of
+interactions and node
+attributes to extract overlapping communities in directed and undirected multilayer networks
+:cite:`contisciani2020community`.
 """
 
 import logging
@@ -19,6 +21,7 @@ from .classes import GraphData
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.loader import build_adjacency_and_design_from_file
 from ..input.preprocessing import preprocess_adjacency_tensor, preprocess_data_matrix
+from ..types import GraphDataType
 from ..types import GraphDataType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
 

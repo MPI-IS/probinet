@@ -1,5 +1,5 @@
 """
-Class definition of DynCRep, the algorithm to perform inference in temporal networks.
+Class definition of DynCRep, the algorithm to perform inference in temporal networks :cite:`safdari2022reciprocity`.
 """
 
 import logging
