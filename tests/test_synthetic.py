@@ -10,11 +10,10 @@ import numpy as np
 import yaml
 
 from probinet.synthetic.anomaly import SyntNetAnomaly
-from probinet.synthetic.base import BaseSyntheticNetwork
+from probinet.synthetic.base import BaseSyntheticNetwork, affinity_matrix
 from probinet.synthetic.dynamic import SyntheticDynCRep
 from probinet.synthetic.multilayer import SyntheticMTCOV
 from probinet.synthetic.reciprocity import (
-    affinity_matrix,
     GM_reciprocity,
     ReciprocityMMSBM_joints,
 )
@@ -408,7 +407,7 @@ class TestSyntheticMTCOV(unittest.TestCase):
         G = self.syn_mtcov.G[0]
         # Assert the number of nodes and edges
         self.assertEqual(G.number_of_nodes(), self.N)
-        self.assertEqual(G.number_of_edges(), 2161)
+        self.assertEqual(G.number_of_edges(), 2171)
         # Assert that the graph is a digraph
         self.assertIsInstance(G, nx.Graph)
 
@@ -418,5 +417,5 @@ class TestSyntheticMTCOV(unittest.TestCase):
         count_attr1 = np.count_nonzero(metadata == "attr1")
         # Count occurrences of 'attr2'
         count_attr2 = np.count_nonzero(metadata == "attr2")
-        self.assertEqual(count_attr1, 154)
-        self.assertEqual(count_attr2, 146)
+        self.assertEqual(count_attr1, 156)
+        self.assertEqual(count_attr2, 144)

@@ -84,7 +84,6 @@ class TestMain(BaseTest):
             "--initialization",
             "0",
             "--assortative",
-            "True",
         ] + list(
             extra_args
         )  # Add extra arguments if any
@@ -376,14 +375,39 @@ class TestDefaultMainCalls(BaseTest):
     def test_main_crep(self):
         self.run_algorithm_test("CRep")
 
+    def test_main_crep_assortative(self):
+        self.run_algorithm_test("CRep", "--assortative", "--num_realizations", "1")
+
     def test_main_jointcrep(self):
         self.run_algorithm_test("JointCRep")
+
+    def test_main_jointcrep_approximation(self):
+        self.run_algorithm_test(
+            "JointCRep",
+            "--use_approximation",
+            "True",
+            "--num_realizations",
+            "1",
+            "--max_iter",
+            "1000",
+        )
 
     def test_main_mtcov(self):
         self.run_algorithm_test("MTCOV")
 
+    def test_main_mtcov_assortative(self):
+        self.run_algorithm_test("MTCOV", "--assortative", "--num_realizations", "1")
+
     def test_main_dyncrep(self):
         self.run_algorithm_test("DynCRep", "--force_dense")
 
+    def test_main_dyncrep_assortative(self):
+        self.run_algorithm_test(
+            "DynCRep", "--assortative", "--force_dense", "--num_realizations", "1"
+        )
+
     def test_main_acd(self):
-        self.run_algorithm_test("ACD", "--assortative", "True")
+        self.run_algorithm_test("ACD")
+
+    def test_main_acd_assortative(self):
+        self.run_algorithm_test("ACD", "--assortative")

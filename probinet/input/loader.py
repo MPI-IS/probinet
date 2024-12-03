@@ -68,8 +68,8 @@ def build_adjacency_from_file(
     B_T
         Transposed graph adjacency tensor. Returns None if `force_dense` is True.
     data_T_vals
-        Array with values of entries A[j, i] given non-zero entry (i, j). Returns None if
-        `force_dense` is True. # TODO: check if this is correct with Martina
+        Array with values of entries A[j, i] if entry A[i, j] is non-zero. Returns None if
+        `force_dense` is True.
     nodes
         List of node IDs
     """
@@ -160,7 +160,7 @@ def read_and_process_design_matrix(
 
 def build_adjacency_and_design_from_file(
     in_folder: str,
-    adj_name: str = "adj.csv",
+    adj_name: str = "multilayer_network.csv",
     cov_name: str = "X.csv",
     ego: str = "source",
     egoX: str = "Name",
@@ -182,7 +182,7 @@ def build_adjacency_and_design_from_file(
     in_folder : str
         Path of the folder containing the input files.
     adj_name : str, optional
-        Input file name of the adjacency tensor. Default is "adj.csv".
+        Input file name of the adjacency tensor. Default is "multilayer_network.csv".
     cov_name : str, optional
         Input file name of the design matrix. Default is "X.csv".
     ego : str, optional

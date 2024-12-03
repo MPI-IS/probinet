@@ -37,7 +37,7 @@ class DynCRepTestCase(BaseTest):
             (self.data_path / f"theta_{self.label}").with_suffix(".npz"),
             allow_pickle=True,
         )
-        self.adj = "synthetic_data_for_DynCRep.dat"
+        self.adj = "dynamic_network.dat"
         self.K = self.theta["u"].shape[1]
         self.gdata = self._import_data()
         self._initialize_graph_properties()

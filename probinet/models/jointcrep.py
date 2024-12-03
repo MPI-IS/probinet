@@ -4,20 +4,20 @@ The latent variables are related to community memberships and a pair interaction
 """
 
 import logging
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any, List, Tuple, Union
 
 import numpy as np
 from sparse import COO
 
-from ..evaluation.expectation_computation import compute_mean_lambda0
-from ..input.preprocessing import preprocess_adjacency_tensor
-from ..utils.decorators import inherit_docstring
-from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative, transpose_tensor
-from ..utils.tools import check_symmetric, get_item_array_from_subs, log_and_raise_error
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
+from ..evaluation.expectation_computation import compute_mean_lambda0
+from ..input.preprocessing import preprocess_adjacency_tensor
+from ..types import GraphDataType
+from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative, transpose_tensor
+from ..utils.tools import check_symmetric, get_item_array_from_subs, log_and_raise_error
 
 
 class JointCRep(ModelBase, ModelUpdateMixin):
@@ -25,33 +25,29 @@ class JointCRep(ModelBase, ModelUpdateMixin):
     Class definition of JointCRep, the algorithm to perform inference in networks with reciprocity.
     """
 
-    @inherit_docstring(ModelBase)
     def __init__(
         self,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
+        self.__doc__ = ModelBase.__init__.__doc__
 
     def _check_fit_params(
         self,
         **kwargs: Any,
     ) -> None:
 
-        message = (
-            "The initialization parameter can be either 0, 1, 2 or 3. It is used as an "
-            "indicator to initialize the membership matrices u and v and the affinity "
-            "matrix w. If it is 0, they will be generated randomly; 1 means only "
-            "the affinity matrix w will be uploaded from file; 2 implies the "
-            "membership matrices u and v will be uploaded from file and 3 all u, "
-            "v and w will be initialized through an input file."  # TODO: fix this
-        )
-
         # Call the check_fit_params method from the parent class
-        super()._check_fit_params(meesage=message, **kwargs)
+        super()._check_fit_params(**kwargs)
+
+        self._validate_eta0(kwargs["eta0"])
+        self.eta0 = kwargs["eta0"]
 
         # Parameters for the initialization of the models
         self.normalize_rows = False
         self.use_unit_uniform = False
+
+        self._validate_undirected_eta()
 
         if self.initialization == 1:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
@@ -94,7 +90,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
             Graph adjacency tensor.
         data_T : COO
             Graph adjacency tensor (transpose).
@@ -186,7 +182,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         )
 
         # Calculate the sum of the product of non-zero values in data and data_T
-        self.AAtSum = (data.data * data_T_vals).sum()
+        self.AAtSum = (self.get_data_values(data) * data_T_vals).sum()
 
         # Store the preprocessed data and the indices of its non-zero elements
         self.data = data
@@ -269,10 +265,10 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
     def _preprocess_data_for_fit(
         self,
-        data: Union[COO, np.ndarray],
-        data_T: Union[COO, np.ndarray, None],
+        data: GraphDataType,
+        data_T: Union[GraphDataType, None],
         data_T_vals: Union[np.ndarray, None],
-    ) -> Tuple[Union[COO, np.ndarray], np.ndarray, tuple]:
+    ) -> Tuple[GraphDataType, np.ndarray, tuple]:
         """
         Preprocess the data for fitting the models.
 
@@ -295,15 +291,12 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         # If data_T is not provided, calculate it from the input data tensor
         if data_T is None:
             data_T = np.einsum("aij->aji", data)
-            data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
+            data_T_vals = get_item_array_from_subs(data_T, self.get_data_nonzero(data))
             # Pre-process the data to handle the sparsity
             data = preprocess_adjacency_tensor(data)
 
         # Save the indices of the non-zero entries
-        if isinstance(data, np.ndarray):
-            subs_nz = data.nonzero()
-        elif isinstance(data, COO):
-            subs_nz = data.coords
+        subs_nz = self.get_data_nonzero(data)
 
         return data, data_T_vals, subs_nz  # type: ignore
 
@@ -318,13 +311,13 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         """
         return self._likelihood()
 
-    def _update_cache(self, data: Union[COO, np.ndarray], subs_nz: tuple) -> None:
+    def _update_cache(self, data: GraphDataType, subs_nz: tuple) -> None:
         """
         Update the cache used in the em_update.
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         subs_nz : tuple
                   Indices of elements of data that are non-zero.
@@ -339,10 +332,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         )  # matrix lambda for non-zero entries
         lambda_zeros = self.lambda_nz == 0
         self.lambda_nz[lambda_zeros] = 1  # still good because with np.log(1)=0
-        if isinstance(data, np.ndarray):
-            self.data_M_nz = data[subs_nz] / self.lambda_nz
-        elif isinstance(data, COO):
-            self.data_M_nz = data.data / self.lambda_nz
+        self.data_M_nz = self.get_data_values(data) / self.lambda_nz
         self.data_M_nz[lambda_zeros] = 0  # to use in the updates
 
         self.den_updates = 1 + self.eta * self.lambda_aij  # to use in the updates

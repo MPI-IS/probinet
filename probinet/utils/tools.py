@@ -218,7 +218,7 @@ def output_adjacency(A: List, out_folder: Union[str | Path], label: str):
 def write_adjacency(
     G: List[nx.MultiDiGraph],
     folder: str = "./",
-    fname: str = "adj.csv",
+    fname: str = "multilayer_network.csv",
     ego: str = "source",
     alter: str = "target",
 ):

@@ -36,8 +36,7 @@ class ACDTestCase(BaseTest):
         )
         self.keys_in_thetaGT = list(
             self.theta.keys()
-        )  # They should be ['z', 'u', 'v', 'w', 'mu',
-        # 'pi', 'nodes']
+        )  # They should be ['z', 'u', 'v', 'w', 'mu', 'pi', 'nodes']
         self.adj = "synthetic_data_for_ACD.dat"
         self.K = self.theta["u"].shape[1]
         with files("probinet.data.input").joinpath(self.adj).open("rb") as network:

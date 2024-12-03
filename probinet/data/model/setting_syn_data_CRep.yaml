@@ -1,7 +1,7 @@
 N: 600
 K: 3
 eta: 0.5
-k: 20
+avg_degree: 20
 ExpM: null
 over: 0.
 corr: 0.

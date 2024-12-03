@@ -12,7 +12,7 @@ parameters:
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
   in_folder: "probinet/data/input/"
-  adj: "adj_cv.csv"
+  adj: "multilayer_network_for_crossvalidation.csv"
   cov: "X_cv.csv"
   ego: "source"
   alter: "target"
@@ -22,5 +22,5 @@ input_params:
   sep: ","
   out_results: True
   out_mask: False
-output_file: "adj_cv_cv.csv"
-ground_truth_file: "adj_cv_GT_MTCOV.csv"
+output_file: "multilayer_network_for_crossvalidation_cv.csv"
+ground_truth_file: "multilayer_network_for_crossvalidation_GT_MTCOV.csv"

@@ -15,12 +15,13 @@ import scipy
 from scipy.sparse import coo_matrix
 
 from probinet.visualization.plot import plot_M
+from .base import GraphProcessingMixin, affinity_matrix
 
 from ..models.constants import EPS_
 from ..utils.matrix_operations import normalize_nonzero_membership
 
 
-class SyntheticDynCRep:
+class SyntheticDynCRep(GraphProcessingMixin):
     """
     A class to generate a synthetic network using the DynCRep models.
     """
@@ -64,50 +65,50 @@ class SyntheticDynCRep:
             Number of communities in the network.
         T : int, optional
             Number of time steps in the network.
-        eta : float, optional
+        eta : float
             Reciprocity parameter.
-        L : int, optional
+        L : int
             Number of layers in the network.
         avg_degree : float, optional
             Average degree of nodes in the network.
-        prng : Union[int, np.random.RandomState], optional # TODO: change this by seed
+        prng : Union[int, np.random.RandomState] # TODO: to be fixed on CSD-300
             Seed for random number generator.
-        verbose : int, optional
+        verbose : int
             Verbosity level.
-        beta : float, optional
+        beta : float
             Parameter (beta) for Gamma.
-        ag : float, optional
+        ag : float
             Shape parameter of the gamma prior.
-        bg : float, optional
+        bg : float
             Rate parameter of the gamma prior.
-        eta_dir : float, optional
+        eta_dir : float
             Parameter for Dirichlet.
-        L1 : bool, optional
+        L1 : bool
             Flag for parameter generation method. True for Dirichlet, False for Gamma.
-        corr : float, optional
+        corr : float
             Correlation between u and v synthetically generated.
-        over : float, optional
+        over : float
             Fraction of nodes with mixed membership.
-        label : str, optional
+        label : str
             Label for the models. This label is used as part of the filename when saving the
             evaluation.
-        end_file : str, optional
+        end_file : str
             File extension for evaluation files.
-        folder : str, optional
+        folder : str
             Folder to save evaluation files.
-        structure : str, optional
+        structure : str
             Structure of the network.
-        output_parameters : bool, optional
+        output_parameters : bool
             Whether to evaluation parameters.
-        output_adj : bool, optional
+        output_adj : bool
             Whether to evaluation adjacency matrix.
-        outfile_adj : str, optional
+        outfile_adj : str
             File name for evaluation adjacency matrix.
-        figsize : Tuple[int, int], optional
+        figsize : Tuple[int, int]
             Size of the figures generated during the network creation process.
-        fontsize : int, optional
+        fontsize : int
             Font size of the figures generated during the network creation process.
-        ExpM : np.ndarray, optional
+        ExpM : np.ndarray
             Expected number of edges in the network.
         """
         # Set network size (node number)
@@ -404,7 +405,7 @@ class SyntheticDynCRep:
             self.over,
         )
         # Generate w
-        w = affinity_matrix_dyncrep(self.structure, self.N, self.K, self.avg_degree)
+        w = affinity_matrix(self.structure, self.N, self.K, self.avg_degree)
         return u, v, w
 
     def _build_multilayer_edgelist(
@@ -627,8 +628,7 @@ class SyntheticDynCRep:
 
 
 def membership_vectors(
-    prng: RandomState = RandomState(10),
-    # TODO: change this to use random seeds instead of prng
+    prng: RandomState = RandomState(10),  # TODO: to be fixed on CSD-300
     L1: bool = False,
     eta: float = 0.5,
     alpha: float = 0.6,
@@ -709,63 +709,6 @@ def membership_vectors(
             u = normalize_nonzero_membership(u)
             v = normalize_nonzero_membership(v)
     return u, v
-
-
-def affinity_matrix_dyncrep(
-    structure: str = "assortative",
-    N: int = 100,
-    K: int = 2,
-    avg_degree: float = 4.0,
-    a: float = 0.1,
-    b: float = 0.3,
-) -> np.ndarray:
-    """
-    Compute the KxK affinity matrix w with probabilities between and within groups.
-
-    Parameters
-    ----------
-    structure : str
-                Structure of the network. Default is 'assortative'.
-    N : int
-        Number of nodes. Default is 100.
-    K : int
-        Number of communities. Default is 2.
-    avg_degree : float
-        Average degree. Default is 4.0.
-    a : float
-        Parameter for secondary probabilities. Default is 0.1.
-    b : float
-        Parameter for secondary probabilities. Default is 0.3.
-
-    Returns
-    -------
-    p : np.ndarray
-        Array with probabilities between and within groups. Element (k,h)
-        gives the density of edges going from the nodes of group k to nodes of group h.
-    """
-
-    b *= a
-    p1 = avg_degree * K / N
-
-    if structure == "assortative":
-        p = p1 * a * np.ones((K, K))  # secondary-probabilities
-        np.fill_diagonal(p, p1 * np.ones(K))  # primary-probabilities
-
-    elif structure == "disassortative":
-        p = p1 * np.ones((K, K))  # primary-probabilities
-        np.fill_diagonal(p, a * p1 * np.ones(K))  # secondary-probabilities
-
-    elif structure == "core-periphery":
-        p = p1 * np.ones((K, K))
-        np.fill_diagonal(np.fliplr(p), a * p1)
-        p[1, 1] = b * p1
-
-    elif structure == "directed-biased":
-        p = a * p1 * np.ones((K, K))
-        p[0, 1] = p1
-        p[1, 0] = b * p1
-
-    return p
 
 
 def eq_c(c: float, M: np.ndarray, N: int, E: int, rho_a: float, mu: float) -> float:

@@ -23,7 +23,7 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         self.gamma = 0.5
         self.out_folder = "outputs/"
         self.end_file = "_test"
-        self.adj_name = "adj.csv"
+        self.adj_name = "multilayer_network.csv"
         self.cov_name = "X.csv"
         self.ego = "source"
         self.alter = "target"

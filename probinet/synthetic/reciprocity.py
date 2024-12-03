@@ -4,14 +4,10 @@ It builds a directed, possibly weighted, network.
 """
 
 import math
-from pathlib import Path
 import sys
-from typing import Optional, Tuple
+
 import warnings
 
-import networkx as nx
-import numpy as np
-import pandas as pd
 from scipy.sparse import tril, triu
 
 from ..evaluation.expectation_computation import compute_mean_lambda0
@@ -23,13 +19,31 @@ from ..utils.matrix_operations import (
     transpose_tensor,
 )
 
-# TODO: add type hints into a separate script
+
+import logging
+from typing import Optional, Tuple
+
+import networkx as nx
+import numpy as np
+from scipy.optimize import brentq
+
+from probinet.visualization.plot import plot_A
+
+from ..input.stats import print_graph_stat
+from ..utils.tools import check_symmetric, log_and_raise_error, output_adjacency
+from .base import (
+    BaseSyntheticNetwork,
+    DEFAULT_ETA,
+    StandardMMSBM,
+    GraphProcessingMixin,
+    affinity_matrix,
+)
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 
-class GM_reciprocity:
+class GM_reciprocity(GraphProcessingMixin):
     """
     A class to generate a directed, possibly weighted, network with reciprocity.
     """
@@ -39,7 +53,7 @@ class GM_reciprocity:
         N: int,
         K: int,
         eta: float = 0.5,
-        k: float = 3,  # TODO: rename this variable, k is used for the number of communities
+        avg_degree: float = 3,
         over: float = 0.0,
         corr: float = 0.0,
         seed: int = 0,
@@ -65,41 +79,41 @@ class GM_reciprocity:
         K : int
             Number of communities in the network.
         eta : float, optional
-            Reciprocity coefficient (default is 0.5).
+            Reciprocity coefficient.
         k : float, optional
-            Average degree of the network (default is 3).
+            Average degree of the network.
         over : float, optional
-            Fraction of nodes with mixed membership (default is 0.0).
+            Fraction of nodes with mixed membership.
         corr : float, optional
-            Correlation between u and v synthetically generated (default is 0.0).
+            Correlation between u and v synthetically generated.
         seed : int, optional
-            Seed for the random number generator (default is 0).
+            Seed for the random number generator.
         alpha : float, optional
-            Parameter of the Dirichlet distribution (default is 0.1).
+            Parameter of the Dirichlet distribution.
         ag : float, optional
-            Alpha parameter of the Gamma distribution (default is 0.1).
+            Alpha parameter of the Gamma distribution.
         beta : float, optional
-            Beta parameter of the Gamma distribution (default is 0.1).
+            Beta parameter of the Gamma distribution.
         Normalization : int, optional
-            Indicator for choosing how to generate the latent variables (default is 0).
+            Indicator for choosing how to generate the latent variables.
         structure : str, optional
-            Structure of the affinity matrix W (default is "assortative").
+            Structure of the affinity matrix W.
         end_file : str, optional
-            Output file suffix (default is "").
+            Output file suffix.
         out_folder : str, optional
-            Path for storing the output (default is "../data/evaluation/real_data/cv/").
+            Path for storing the output.
         output_parameters : bool, optional
-            Flag for storing the parameters (default is False).
+            Flag for storing the parameters.
         output_adj : bool, optional
-            Flag for storing the generated adjacency matrix (default is False).
+            Flag for storing the generated adjacency matrix.
         outfile_adj : str, optional
-            Name for saving the adjacency matrix (default is "None").
+            Name for saving the adjacency matrix.
         ExpM : Optional[float], optional
-            Expected number of edges (default is None).
+            Expected number of edges.
         """
         self.N = N  # number of nodes
         self.K = K  # number of communities
-        self.k = k  # average degree
+        self.avg_degree = avg_degree  # average degree
         self.seed = seed  # random seed
         self.alpha = alpha  # parameter of the Dirichlet distribution
         self.ag = ag  # alpha parameter of the Gamma distribution
@@ -115,10 +129,10 @@ class GM_reciprocity:
             )
         self.eta = eta
         if ExpM is None:  # expected number of edges
-            self.ExpM = int(self.N * self.k / 2.0)
+            self.ExpM = int(self.N * self.avg_degree / 2.0)
         else:
             self.ExpM = int(ExpM)
-            self.k = 2 * self.ExpM / float(self.N)
+            self.avg_degree = 2 * self.ExpM / float(self.N)
         if (over < 0) or (over > 1):  # fraction of nodes with mixed membership
             log_and_raise_error(
                 ValueError, "The overlapping parameter has to be in [0, 1]!"
@@ -601,7 +615,7 @@ class GM_reciprocity:
 
         # If p is not provided, calculate it based on eta, k, and N
         if p is None:
-            p = (1.0 - self.eta) * self.k * 0.5 / (self.N - 1.0)
+            p = (1.0 - self.eta) * self.avg_degree * 0.5 / (self.N - 1.0)
 
         # Initialize a directed graph G
         G = nx.MultiDiGraph()
@@ -685,129 +699,6 @@ class GM_reciprocity:
 
         return G, A
 
-    def output_adjacency(
-        self, G: nx.MultiDiGraph, outfile: Optional[str] = None
-    ) -> None:
-        """
-        Output the adjacency matrix. Default format is space-separated .csv with 3 columns:
-        node1 node2 weight
-
-        Parameters
-        ----------
-        G: MultiDiGraph
-           MultiDiGraph NetworkX object.
-        outfile: str, optional
-                 Name of the adjacency matrix.
-        """
-
-        # Create a Path object for the evaluation directory
-        out_folder_path = Path(self.out_folder)
-
-        # Create evaluation dir if it does not exist
-        out_folder_path.mkdir(parents=True, exist_ok=True)
-
-        # Check if the evaluation file name is provided
-        if outfile is None:
-            # If not provided, generate a default file name using the seed and average degree
-            outfile = "syn" + str(self.seed) + "_k" + str(int(self.k)) + ".dat"
-
-        # Get the list of edges from the graph along with their data
-        edges = list(G.edges(data=True))
-
-        try:
-            # Try to extract the weight of each edge
-            data = [[u, v, d["weight"]] for u, v, d in edges]
-        except KeyError:
-            # If the weight is not available, assign a default weight of 1
-            data = [[u, v, 1] for u, v, d in edges]
-
-        # Create a DataFrame from the edge data
-        df = pd.DataFrame(data, columns=["source", "target", "w"], index=None)
-
-        # Save the DataFrame to a CSV file
-        df.to_csv(self.out_folder + outfile, index=False, sep=" ")
-
-        logging.info("Adjacency matrix saved in: %s", self.out_folder + outfile)
-
-
-def affinity_matrix(
-    structure: str = "assortative",
-    N: int = 100,
-    K: int = 2,
-    avg_degree: float = 4.0,
-    a: float = 0.1,
-    b: float = 0.3,
-) -> np.ndarray:
-    """
-    Compute the KxK affinity matrix w with probabilities between and within groups.
-
-    Parameters
-    ----------
-    structure : str, optional
-        Structure of the network (default is 'assortative').
-    N : int, optional
-        Number of nodes (default is 100).
-    K : int, optional
-        Number of communities (default is 2).
-    avg_degree : float, optional
-        Average degree of the network (default is 4.0).
-    a : float, optional
-        Parameter for secondary probabilities (default is 0.1).
-    b : float, optional
-        Parameter for secondary probabilities in 'core-periphery' and 'directed-biased' structures (default is 0.3).
-
-    Returns
-    -------
-    np.ndarray
-        KxK affinity matrix. Element (k,h) gives the density of edges going from the nodes of group k to nodes of group h.
-    """
-
-    # Adjust b based on a
-    b *= a
-
-    # Calculate primary probability
-    p1 = avg_degree * K / N
-
-    # Initialize the affinity matrix based on the structure
-    if structure == "assortative":
-        # Assortative structure: higher probability within groups
-        p = p1 * a * np.ones((K, K))  # secondary probabilities
-        np.fill_diagonal(p, p1 * np.ones(K))  # primary probabilities
-
-    elif structure == "disassortative":
-        # Disassortative structure: higher probability between groups
-        p = p1 * np.ones((K, K))  # primary probabilities
-        np.fill_diagonal(p, a * p1 * np.ones(K))  # secondary probabilities
-
-    elif structure == "core-periphery":
-        # Core-periphery structure: core nodes have higher probability
-        p = p1 * np.ones((K, K))
-        np.fill_diagonal(np.fliplr(p), a * p1)
-        p[1, 1] = b * p1
-
-    elif structure == "directed-biased":
-        # Directed-biased structure: directional bias in probabilities
-        p = a * p1 * np.ones((K, K))
-        p[0, 1] = p1
-        p[1, 0] = b * p1
-
-    return p
-
-
-import logging
-from typing import Optional, Tuple
-
-import networkx as nx
-import numpy as np
-from scipy.optimize import brentq
-
-from probinet.visualization.plot import plot_A
-
-from ..input.stats import print_graph_stat
-from ..utils.decorators import inherit_docstring
-from ..utils.tools import check_symmetric, log_and_raise_error, output_adjacency
-from .base import BaseSyntheticNetwork, DEFAULT_ETA, StandardMMSBM
-
 
 class ReciprocityMMSBM_joints(StandardMMSBM):
     """
@@ -817,10 +708,8 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
     - It models pairwise joint distributions with Bivariate Bernoulli distributions
     """
 
-    @inherit_docstring(BaseSyntheticNetwork)
     def __init__(self, **kwargs):
-        # TODO: incorporate the __init__ where it should
-
+        self.__doc__ = BaseSyntheticNetwork.__init__.__doc__
         if "eta" in kwargs:
             if (eta := kwargs["eta"]) <= 0:  # pair interaction coefficient
                 message = (
