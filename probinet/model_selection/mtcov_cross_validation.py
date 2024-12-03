@@ -61,13 +61,12 @@ class MTCOVCrossValidation(CrossValidation, MTCOV):
             NFold=self.NFold,
             fold=fold,
             rseed=self.rseed,
-            out_mask=self.out_mask,
         )
 
         # If the out_mask attribute is set, save the masks to files
         if self.out_mask:
-            outmaskG = self.out_folder + "maskG_f" + str(fold) + "_" + self.adj + ".pkl"
-            outmaskX = self.out_folder + "maskX_f" + str(fold) + "_" + self.adj + ".pkl"
+            outmaskG = f"{self.out_folder}maskG_f{fold}_{self.adj}.pkl"
+            outmaskX = f"{self.out_folder}maskX_f{fold}_{self.adj}.pkl"
             logging.debug("Masks saved in: %s, %s", outmaskG, outmaskX)
 
             # Save the masks to pickle files

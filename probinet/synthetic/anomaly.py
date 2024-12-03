@@ -3,23 +3,23 @@ Class for generation and management of synthetic networks with anomalies
 """
 
 import logging
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import pandas as pd
 from scipy import sparse
 from scipy.optimize import brentq
 
+from probinet.synthetic.base import GraphProcessingMixin, affinity_matrix
 from probinet.synthetic.dynamic import eq_c, membership_vectors
-from probinet.synthetic.reciprocity import affinity_matrix
 from probinet.utils.tools import flt
 from probinet.visualization.plot import plot_M
 
 EPS = 1e-12  # Small value to avoid division by zero
 
 
-class SyntNetAnomaly:
+class SyntNetAnomaly(GraphProcessingMixin):
     """
     Class for generation and management of synthetic networks with anomalies.
     """
@@ -33,7 +33,7 @@ class SyntNetAnomaly:
         avg_degree: float = 4.0,
         rho_anomaly: float = 0.1,
         structure: str = "assortative",
-        label: str = None,
+        label: Optional[str] = None,
         pi: float = 0.8,
         eta: float = 0.5,
         L1: bool = False,
@@ -45,7 +45,7 @@ class SyntNetAnomaly:
         out_folder: str = None,
         output_parameters: bool = False,
         output_adj: bool = False,
-        outfile_adj: str = None,
+        outfile_adj: Optional[str] = None,
     ) -> None:
         """
         Initialize the SyntNetAnomaly class.
@@ -414,32 +414,6 @@ class SyntNetAnomaly:
 
         logging.debug("Parameters saved in: %s.npz", output_parameters)
         logging.debug("To load: theta=np.load(filename), then e.g. theta['u']")
-
-    def _output_adjacency(self, G, outfile=None):
-        """
-        Output the adjacency matrix.
-
-        Parameters
-        ----------
-        G : DiGraph
-            DiGraph NetworkX object.
-
-        outfile : str
-            Name of the adjacency matrix. Default format is space-separated .csv
-            with 3 columns: node1 node2 weight.
-        """
-        if outfile is None:
-            outfile = "syn_" + self.label + "_" + str(self.prng) + ".dat"
-
-        edges = list(G.edges(data=True))
-        try:
-            data = [[u, v, d["weight"]] for u, v, d in edges]
-        except KeyError:
-            data = [[u, v, 1] for u, v, d in edges]
-
-        df = pd.DataFrame(data, columns=["source", "target", "w"], index=None)
-        df.to_csv(self.out_folder + outfile, index=False, sep=" ")
-        logging.debug("Adjacency matrix saved in: %s", {self.out_folder + outfile})
 
     def _plot_A(self, A, cmap="PuBuGn", title="Adjacency matrix"):
         """

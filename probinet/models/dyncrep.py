@@ -2,28 +2,28 @@
 Class definition of DynCRep, the algorithm to perform inference in temporal networks.
 """
 
-from argparse import Namespace
 import logging
-from pathlib import Path
 import time
+from argparse import Namespace
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy.optimize import brentq, root
 from sparse import COO
 
+from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
+from .constants import EPS_
 from ..evaluation.expectation_computation import (
     compute_lagrange_multiplier,
     compute_mean_lambda0,
     u_with_lagrange_multiplier,
 )
 from ..input.preprocessing import preprocess_adjacency_tensor
-from ..utils.decorators import inherit_docstring
+from ..types import GraphDataType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
 from ..utils.tools import get_item_array_from_subs, log_and_raise_error
-from .base import ModelBase, ModelUpdateMixin
-from .classes import GraphData
-from .constants import EPS_
 
 
 class DynCRep(ModelBase, ModelUpdateMixin):
@@ -32,7 +32,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
     with reciprocity.
     """
 
-    @inherit_docstring(ModelBase)
     def __init__(
         self,
         err: float = 0.01,  # Overriding the base class default
@@ -47,6 +46,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             max_iter=max_iter,
             **kwargs,  # Forward any other arguments to the base class
         )
+
+        self.__doc__ = ModelBase.__init__.__doc__
 
     def check_params_to_load_data(self, **kwargs):
         if not kwargs["binary"]:
@@ -72,8 +73,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         data_kwargs = super().get_params_to_load_data(args)
 
         # Additional fields
-        for f in ["T"]:
-            data_kwargs[f] = getattr(args, f)
+        data_kwargs["T"] = args.T
 
         return data_kwargs
 
@@ -81,20 +81,16 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self,
         **kwargs: Any,
     ) -> None:
-        message = (
-            "The initialization parameter can be either 0, or 1.  It is used as an "
-            "indicator to initialize the membership matrices u and v and the affinity  "
-            "matrix w. If it is 0, they will be generated randomly, otherwise they will  "
-            "upload from file."
-        )  # TODO: Update this message
 
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
             data_X=None,
             gamma=None,
-            message=message,
             **kwargs,
         )
+
+        self._validate_eta0(kwargs["eta0"])
+        self.eta0 = kwargs["eta0"]
 
         # Define other parameters for fitting the models
         self.constrained = kwargs.get("constrained", False)
@@ -121,11 +117,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             if self.eta0 is None:
                 self.eta0 = 0.0
 
-        if (
-            self.fix_eta
-        ):  # TODO: would it make sense to define this case only if self.eta0 is not
-            # None? Otherwise, mypy raises an error, giving that it leads to self.eta_old = None,
-            # but somewhere there's a difference between self.eta and self.eta_old (float - None).
+        if self.fix_eta:
             self.eta = self.eta_old = self.eta_f = self.eta0  # type: ignore
 
         if self.fix_beta:
@@ -134,6 +126,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         # Parameters for the initialization of the models
         self.use_unit_uniform = True
         self.normalize_rows = True
+
+        self._validate_undirected_eta()
 
         if self.initialization > 0:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
@@ -368,7 +362,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         # Return the initial state of the realization
         return coincide, convergence, it, loglik, loglik_values
 
-    def _preprocess_data_for_fit(self, T: int, data: Union[COO, np.ndarray]) -> Tuple[
+    def _preprocess_data_for_fit(self, T: int, data: GraphDataType) -> Tuple[
         int,
         Union[COO, np.ndarray],
         np.ndarray,
@@ -461,18 +455,16 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self.sum_data_hat = data_AtAtm1[1:].sum()
 
         # Calculate the denominator containing Aji(t)
-        data_T_vals = get_item_array_from_subs(data_Tm1, data_AtAtm1.nonzero())  # type: ignore
+        data_T_vals = get_item_array_from_subs(
+            data_Tm1, self.get_data_nonzero(data_AtAtm1)
+        )
 
         # Preprocess the data to handle the sparsity
         data_AtAtm1 = preprocess_adjacency_tensor(data_AtAtm1)
         data = preprocess_adjacency_tensor(data)
 
         # Save the indices of the non-zero entries
-        subs_nzp = (
-            data_AtAtm1.nonzero()
-            if isinstance(data_AtAtm1, np.ndarray)
-            else data_AtAtm1.coords  # type: ignore
-        )
+        subs_nzp = self.get_data_nonzero(data_AtAtm1)
 
         # Initialize the beta hat
         self.beta_hat = np.ones(T + 1)
@@ -527,7 +519,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
     def _update_cache(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T_vals: np.ndarray,
         subs_nz: Tuple[np.ndarray],
     ) -> None:
@@ -547,14 +539,10 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self.M_nz = self.lambda0_nz + self.eta * data_T_vals  # [np.newaxis,:]
         self.M_nz[self.M_nz == 0] = 1
 
-        if isinstance(data, np.ndarray):
-            self.data_M_nz = data[subs_nz] / self.M_nz
-            self.data_rho2 = (
-                (data[subs_nz] * self.eta * data_T_vals) / self.M_nz
-            ).sum()
-        elif isinstance(data, COO):
-            self.data_M_nz = data.data / self.M_nz
-            self.data_rho2 = ((data.data * self.eta * data_T_vals) / self.M_nz).sum()
+        self.data_M_nz = self.get_data_values(data) / self.M_nz
+        self.data_rho2 = (
+            self.get_data_values(data) * self.eta * data_T_vals / self.M_nz
+        ).sum()
 
     def _update_em(self) -> Tuple[float, float, float, float, float]:
         """
@@ -841,9 +829,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         self._specific_update_W_dyn(subs_nz)
 
-        # TODO: Ask why this is commented out
-        # low_values_indices = self.w < self.err_max  # values are too low
-        # self.w[low_values_indices] = 0. #self.err_max  # and set to 0.
+        low_values_indices = self.w < self.err_max  # values are too low
+        self.w[low_values_indices] = 0.0  # and set to 0.
 
         dist_w = np.amax(abs(self.w - self.w_old))
         self.w_old = np.copy(self.w_old)
@@ -991,8 +978,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
     def _likelihood(  # type: ignore
         self,
-        data: Union[COO, np.ndarray],
-        data_T: Union[COO, np.ndarray],
+        data: GraphDataType,
+        data_T: GraphDataType,
         data_T_vals: np.ndarray,
         subs_nz: Tuple[np.ndarray],
         mask: Optional[np.ndarray] = None,
@@ -1037,15 +1024,13 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             sub_mask_nz = mask.nonzero()
             if isinstance(data, np.ndarray):
                 loglik = (
-                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore #
-                    # TODO: Ask Hadiseh why this is not defined
+                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore
                     - self.eta
                     * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
                 )
             elif isinstance(data, COO):
                 loglik = (
                     -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
-                    # TODO: Ask Hadiseh why this is not defined
                     - self.eta
                     * (
                         data_T.todense()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]
@@ -1063,11 +1048,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 )
 
         logM = np.log(self.M_nz)
-        if isinstance(data, np.ndarray):
-            Alog = data[data.nonzero()] * logM
-        elif isinstance(data, COO):
-            Alog = (data.data * logM).sum()
-        loglik += Alog
+        Alog = self.get_data_values(data) * logM
+        loglik += Alog.sum()
 
         loglik += (np.log(self.beta_hat[subs_nz[0]] + EPS_) * data.data).sum()
         if self.T > 0:

@@ -3,24 +3,27 @@ Class definition of MTCOV, the generative algorithm that incorporates both the t
 attributes to extract overlapping communities in directed and undirected multilayer networks.
 """
 
-from argparse import Namespace
 import logging
-from pathlib import Path
 import sys
 import time
+from argparse import Namespace
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import scipy.sparse
 from sparse import COO
 
+from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.loader import build_adjacency_and_design_from_file
 from ..input.preprocessing import preprocess_adjacency_tensor, preprocess_data_matrix
-from ..utils.decorators import inherit_docstring
+from ..types import GraphDataType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
-from .base import ModelBase, ModelUpdateMixin
-from .classes import GraphData
+
+MAX_BATCH_SIZE = 5000
+RANDOM_SEED = 10
 
 
 class MTCOV(ModelBase, ModelUpdateMixin):
@@ -31,7 +34,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     additional_fields = ["egoX", "cov_name", "attr_name"]
 
-    @inherit_docstring(ModelBase)
     def __init__(
         self,
         err_max: float = 1e-7,  # minimum value for the parameters
@@ -43,6 +45,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             num_realizations=num_realizations,
             **kwargs,
         )
+
+        self.__doc__ = ModelBase.__init__.__doc__
 
     def load_data(self, files, adj_name, **kwargs):
         """
@@ -68,14 +72,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         **kwargs: Any,
     ) -> None:
 
-        message = (
-            "The initialization parameter can be either 0 or 1. It is used as an indicator to "
-            "initialize the membership matrices u and v and the affinity matrix w. If it is 0, they "
-            "will be generated randomly, otherwise they will upload from file."
-        )
-
         super()._check_fit_params(
-            message=message,
             **kwargs,
         )
 
@@ -251,9 +248,33 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         # Return the final parameters and the maximum log-likelihood
         return self.u_f, self.v_f, self.w_f, self.beta_f, self.maxL
 
+    def _get_subset_and_indices(self, subs_nz, subs_X_nz, batch_size):
+        if batch_size:
+            batch_size = (
+                min(MAX_BATCH_SIZE, self.N) if batch_size > self.N else batch_size
+            )
+            np.random.seed(RANDOM_SEED)
+            subset_N = np.random.choice(
+                np.arange(self.N), size=batch_size, replace=False
+            )
+            Subs = list(zip(*subs_nz))
+            SubsX = list(zip(*subs_X_nz))
+        else:
+            if self.N > MAX_BATCH_SIZE:
+                batch_size = MAX_BATCH_SIZE
+                np.random.seed(RANDOM_SEED)  # TODO: to be fixed on CSD-300
+                subset_N = np.random.choice(
+                    np.arange(self.N), size=batch_size, replace=False
+                )
+                Subs = list(zip(*subs_nz))
+                SubsX = list(zip(*subs_X_nz))
+            else:
+                subset_N, Subs, SubsX = None, None, None
+        return subset_N, Subs, SubsX
+
     def preprocess_data_for_fit(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_X: np.ndarray,
         batch_size: Optional[int] = None,
     ) -> Tuple[
@@ -305,33 +326,12 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         data_X = preprocess_data_matrix(data_X)
 
         # save the indexes of the nonzero entries
-        if isinstance(data, np.ndarray):
-            subs_nz = data.nonzero()
-        elif isinstance(data, COO):
-            subs_nz = data.coords
+        subs_nz = self.get_data_nonzero(data)
         subs_X_nz = data_X.nonzero()
-        if batch_size:
-            if batch_size > self.N:
-                batch_size = min(5000, self.N)
-            np.random.seed(10)  # TODO: ask Martina why this seed
-            subset_N = np.random.choice(
-                np.arange(self.N), size=batch_size, replace=False
-            )
-            Subs = list(zip(*subs_nz))
-            SubsX = list(zip(*subs_X_nz))
-        else:
-            if self.N > 5000:
-                batch_size = 5000
-                np.random.seed(10)
-                subset_N = np.random.choice(
-                    np.arange(self.N), size=batch_size, replace=False
-                )
-                Subs = list(zip(*subs_nz))
-                SubsX = list(zip(*subs_X_nz))
-            else:
-                subset_N = None
-                Subs = None
-                SubsX = None
+        subset_N, Subs, SubsX = self._get_subset_and_indices(
+            subs_nz, subs_X_nz, batch_size
+        )
+
         logging.debug("batch_size: %s", batch_size)
 
         return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX  # type: ignore
@@ -451,9 +451,15 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         else:
             self.w = np.zeros((self.L, self.K, self.K))
 
+    def _get_data_pi_nz(self, data_X, subs_X_nz):
+        if not scipy.sparse.issparse(data_X):
+            return data_X[subs_X_nz[0]] / self.pi0_nz
+        else:
+            return data_X.data / self.pi0_nz
+
     def _update_cache(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         subs_nz: Tuple[np.ndarray],
         data_X: np.ndarray,
         subs_X_nz: Tuple[np.ndarray],
@@ -476,18 +482,12 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         # A
         self.lambda0_nz = super()._lambda_nz(subs_nz)
         self.lambda0_nz[self.lambda0_nz == 0] = 1
-        if isinstance(data, np.ndarray):
-            self.data_M_nz = data[subs_nz] / self.lambda0_nz
-        elif isinstance(data, COO):
-            self.data_M_nz = data.data / self.lambda0_nz
+        self.data_M_nz = self.get_data_values(data) / self.lambda0_nz
 
         # X
         self.pi0_nz = self._pi0_nz(subs_X_nz, self.u, self.v, self.beta)
         self.pi0_nz[self.pi0_nz == 0] = 1
-        if not scipy.sparse.issparse(data_X):
-            self.data_pi_nz = data_X[subs_X_nz[0]] / self.pi0_nz
-        else:
-            self.data_pi_nz = data_X.data / self.pi0_nz
+        self.data_pi_nz = self._get_data_pi_nz(data_X, subs_X_nz)
 
     def _pi0_nz(
         self,
@@ -684,10 +684,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         self.lambda0_ija = compute_mean_lambda0(self.u, self.v, self.w)
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
-        if isinstance(self.data, np.ndarray):
-            Alog = self.data[self.data.nonzero()] * logM
-        elif isinstance(self.data, COO):
-            Alog = self.data.data * logM
+        Alog = self.get_data_values(self.data) * logM
         lG += Alog.sum()
 
         if self.undirected:
@@ -710,7 +707,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def _likelihood_batch(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_X: np.ndarray,
         subset_N: List[int],
         Subs: List[Tuple[int, int, int]],
@@ -740,28 +737,26 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         size = len(subset_N)
         self.lambda0_ija = compute_mean_lambda0(self.u, self.v, self.w)
+
         assert self.lambda0_ija.shape == (self.L, size, size)
+
         lG = -self.lambda0_ija.sum()
         logM = np.log(self.lambda0_nz)
         IDXs = [
             i for i, e in enumerate(Subs) if (e[1] in subset_N) and (e[2] in subset_N)
         ]
-        Alog = data.vals[IDXs] * logM[IDXs]
+        Alog = data.data[IDXs] * logM[IDXs]
         lG += Alog.sum()
 
-        if self.undirected:
-            logP = np.log(self.pi0_nz)
-        else:
-            logP = np.log(0.5 * self.pi0_nz)
-        if size:
-            IDXs = [i for i, e in enumerate(SubsX) if (e[0] in subset_N)]
-        else:
-            IDXs = []
+        logP = np.log(self.pi0_nz if self.undirected else 0.5 * self.pi0_nz)
+
+        IDXs = [i for i, e in enumerate(SubsX) if e[0] in subset_N] if size else []
+
         X_attr = scipy.sparse.csr_matrix(data_X)
         Xlog = X_attr.data[IDXs] * logP[(IDXs, X_attr.nonzero()[1][IDXs])]
         lX = Xlog.sum()
 
-        loglik = (1.0 - self.gamma) * lG + self.gamma * lX  # type: ignore
+        loglik = (1.0 - self.gamma) * lG + self.gamma * lX
 
         if np.isnan(loglik):
             logging.error("Likelihood is NaN!!!!")

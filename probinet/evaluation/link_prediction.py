@@ -2,7 +2,8 @@
 Functions for evaluating link prediction.
 """
 
-from typing import Optional
+from functools import singledispatch
+from typing import Optional, Union
 
 import numpy as np
 from sklearn import metrics
@@ -10,6 +11,18 @@ from sklearn import metrics
 from probinet.evaluation.expectation_computation import (
     compute_expected_adjacency_tensor_multilayer,
 )
+
+@singledispatch
+def mask_or_flatten_array(mask: Union[np.ndarray, None], expected_adjacency: np.ndarray) -> np.ndarray:
+    raise NotImplementedError(f"Unsupported type {type(mask)} for mask.")
+
+@mask_or_flatten_array.register(type(None))
+def _(mask: None, expected_adjacency: np.ndarray) -> np.ndarray:
+    return expected_adjacency.flatten()
+
+@mask_or_flatten_array.register(np.ndarray)
+def _(mask: np.ndarray, expected_adjacency: np.ndarray) -> np.ndarray:
+    return expected_adjacency[mask > 0]
 
 
 def compute_link_prediction_AUC(
@@ -35,10 +48,9 @@ def compute_link_prediction_AUC(
         The AUC value for the link prediction.
     """
     data = (data0 > 0).astype("int")
-    if mask is None:
-        fpr, tpr, _ = metrics.roc_curve(data.flatten(), pred.flatten())
-    else:
-        fpr, tpr, _ = metrics.roc_curve(data[mask > 0], pred[mask > 0])
+    processed_data = mask_or_flatten_array(mask, data)
+    processed_pred = mask_or_flatten_array(mask, pred)
+    fpr, tpr, _ = metrics.roc_curve(processed_data, processed_pred)
     return metrics.auc(fpr, tpr)
 
 
@@ -71,13 +83,19 @@ def compute_multilayer_link_prediction_AUC(
         The AUC value for the link prediction in multilayer data.
     """
     expected_adjacency = compute_expected_adjacency_tensor_multilayer(u, v, w)
-    if mask is None:
-        ranked_predictions = list(zip(expected_adjacency.flatten(), B.flatten()))
-        num_positive_samples = B.sum()
-    else:
-        ranked_predictions = list(zip(expected_adjacency[mask > 0], B[mask > 0]))
-        num_positive_samples = B[mask > 0].sum()
+    # Flatten the expected adjacency tensor and the predicted adjacency tensor
+    processed_adjacency = mask_or_flatten_array(
+        mask,
+        expected_adjacency,
+    )
+    processed_B = mask_or_flatten_array(mask, B)
+    # Combine the processed adjacency tensor and the processed predicted adjacency tensor
+    ranked_predictions = list(zip(processed_adjacency, processed_B))
+    # Calculate the number of positive samples
+    num_positive_samples = processed_B.sum()
+    # Sort the ranked predictions in ascending order
     ranked_predictions.sort(key=lambda x: x[0], reverse=False)
+    # Calculate the AUC value
     total_samples = len(ranked_predictions)
     num_negative_samples = total_samples - num_positive_samples
     return compute_AUC_from_ranked_predictions(
@@ -109,16 +127,7 @@ def compute_AUC_from_ranked_predictions(
     """
     y = 0.0
     bad = 0.0
-    for score, actual in ranked_predictions:
-        if actual > 0:
-            y += 1
-        else:
-            bad += y
-    AUC = 1.0 - (bad / (num_positive_samples * num_negative_samples))
-    return AUC
-    y = 0.0
-    bad = 0.0
-    for score, actual in ranked_predictions:
+    for _, actual in ranked_predictions:
         if actual > 0:
             y += 1
         else:
@@ -128,8 +137,8 @@ def compute_AUC_from_ranked_predictions(
 
 
 def calculate_f1_score(
-    pred: np.ndarray,
     data0: np.ndarray,
+    pred: np.ndarray,
     mask: Optional[np.ndarray] = None,
     threshold: float = 0.1,
 ) -> float:
@@ -138,10 +147,10 @@ def calculate_f1_score(
 
     Parameters
     ----------
-    pred : np.ndarray
-        The predicted adjacency matrix.
     data0 : np.ndarray
         The original adjacency matrix.
+    pred : np.ndarray
+        The predicted adjacency matrix.
     mask : Optional[np.ndarray], optional
         The mask to apply on the data, by default None.
     threshold : float, optional
@@ -152,12 +161,13 @@ def calculate_f1_score(
     float
         The F1 score for the given predictions and data.
     """
+    # Binarize the predictions based on the threshold
     Z_pred = np.copy(pred[0])
     Z_pred[Z_pred < threshold] = 0
     Z_pred[Z_pred >= threshold] = 1
 
+    # Binarize the data
     data = (data0 > 0).astype("int")
-    if mask is None:
-        return metrics.f1_score(data.flatten(), Z_pred.flatten())
-    else:
-        return metrics.f1_score(data[mask], Z_pred[mask])
+
+    return metrics.f1_score(mask_or_flatten_array(mask, data), mask_or_flatten_array(mask, Z_pred))
+

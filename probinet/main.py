@@ -72,7 +72,10 @@ def parse_args():
         help="Flag to force a dense transformation in input",
     )
     shared_parser.add_argument(
-        "--assortative", type=bool, default=False, help="Flag for assortative mixing"
+        "--assortative",
+        action="store_true",
+        default=False,
+        help="Flag for assortative mixing",
     )
     shared_parser.add_argument(
         "-u",
@@ -87,6 +90,13 @@ def parse_args():
         type=float,
         default=None,
         help=("Tolerance used to determine convergence"),
+    )
+    shared_parser.add_argument(
+        "-maxi",
+        "--max_iter",
+        type=int,
+        default=None,
+        help="Maximum number of iterations",
     )
     shared_parser.add_argument(
         "--flag_conv",
@@ -234,7 +244,11 @@ def parse_args():
         help="Size of the batch to use to compute the likelihood",
     )
     mtcov_parser.add_argument(
-        "-A", "--adj_name", type=str, default="adj.csv", help="Name of the network"
+        "-A",
+        "--adj_name",
+        type=str,
+        default="multilayer_network.csv",
+        help="Name of the network",
     )
     mtcov_parser.add_argument(
         "-C",
@@ -311,7 +325,7 @@ def parse_args():
         "-A",
         "--adj_name",
         type=str,
-        default="synthetic_data_for_DynCRep.dat",
+        default="dynamic_network.dat",
         help="Name of the network",
     )
 
@@ -378,6 +392,10 @@ def main():
         level=logging.DEBUG if args.debug else logging.INFO,
         format="*** [%(levelname)s][%(asctime)s][%(module)s] %(message)s",
     )
+
+    # FIXME: is there a better way of doing this?
+    # Set the logging level for third-party packages to WARNING
+    logging.getLogger("numba").setLevel(logging.WARNING)
 
     # Print all the args used in alphabetical order
     logging.debug("Arguments used:")

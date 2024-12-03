@@ -23,12 +23,12 @@ parameters:
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
   in_folder: "probinet/data/input/"
-  adj: "email-Eu-core.csv"
+  adj: "email_EU_core_network.csv"
   ego: "source"
   alter: "target"
   sep: ","
   NFold: 2
   out_results: True
   out_mask: False
-output_file: "email-Eu-core_cv.csv"
-ground_truth_file: "email-Eu-core_cv_GT_DynCRep.csv"
+output_file: "email_EU_core_network_cv.csv"
+ground_truth_file: "email_EU_core_network_cv_GT_DynCRep.csv"

@@ -1,9 +1,11 @@
 from abc import ABCMeta
 import logging
 import math
+from enum import Enum
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional, Union
 
+import pandas as pd
 from matplotlib import pyplot as plt
 import networkx as nx
 import numpy as np
@@ -12,7 +14,6 @@ from probinet.visualization.plot import plot_A
 
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.stats import print_graph_stat
-from ..utils.decorators import inherit_docstring
 from ..utils.matrix_operations import normalize_nonzero_membership
 from ..utils.tools import log_and_raise_error, output_adjacency
 
@@ -34,6 +35,12 @@ DEFAULT_IS_SPARSE = True
 DEFAULT_SHOW_DETAILS = True
 DEFAULT_SHOW_PLOTS = False
 DEFAULT_OUTPUT_NET = False
+
+class Structure(Enum):
+    ASSORTATIVE = "assortative"
+    DISASSORTATIVE = "disassortative"
+    CORE_PERIPHERY = "core-periphery"
+    DIRECTED_BIASED = "directed-biased"
 
 
 class GraphProcessingMixin:
@@ -144,6 +151,11 @@ class GraphProcessingMixin:
         # Add eta if it exists
         if hasattr(self, "eta"):
             output_params["eta"] = self.eta
+
+        # Add beta if it exists
+        if hasattr(self, "beta"):
+            output_params["beta"] = self.beta
+
         # Save parameters
         np.savez_compressed(output_parameters.with_suffix(".npz"), **output_params)
 
@@ -173,6 +185,64 @@ class GraphProcessingMixin:
                     break
             plt.colorbar(PCM, ax=ax)
             plt.show()
+
+    def _extract_edge_data(self, edges: list) -> list:
+        """
+        Extract edge data from a list of edges.
+
+        Parameters
+        ----------
+        edges : list
+            List of edges with data.
+
+        Returns
+        -------
+        list
+            List of edges with source, target, and weight.
+        """
+        try:
+            data = [[u, v, d["weight"]] for u, v, d in edges]
+        except KeyError:
+            data = [[u, v, 1] for u, v, d in edges]
+        return data
+
+    def output_adjacency(
+        self, G: nx.MultiDiGraph, outfile: Optional[str] = None
+    ) -> None:
+        """
+        Output the adjacency matrix. Default format is space-separated .csv with 3 columns:
+        node1 node2 weight
+
+        Parameters
+        ----------
+        G: MultiDiGraph
+           MultiDiGraph NetworkX object.
+        outfile: str, optional
+                 Name of the adjacency matrix.
+        """
+
+        # Create a Path object for the evaluation directory
+        out_folder_path = Path(self.out_folder)
+
+        # Create evaluation dir if it does not exist
+        out_folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Check if the evaluation file name is provided
+        if outfile is None:
+            # If not provided, generate a default file name using the seed and average degree
+            outfile = "syn" + str(self.seed) + "_k" + str(int(self.avg_degree)) + ".dat"
+
+        # Get the list of edges from the graph along with their data
+        edges = list(G.edges(data=True))
+        data = self._extract_edge_data(edges)
+
+        # Create a DataFrame from the edge data
+        df = pd.DataFrame(data, columns=["source", "target", "w"], index=None)
+
+        # Save the DataFrame to a CSV file
+        df.to_csv(self.out_folder + outfile, index=False, sep=" ")
+
+        logging.info("Adjacency matrix saved in: %s", self.out_folder + outfile)
 
 
 class BaseSyntheticNetwork(metaclass=ABCMeta):
@@ -254,10 +324,11 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
     - It models marginals (iid assumption) with Poisson distributions
     """
 
-    @inherit_docstring(BaseSyntheticNetwork)
     def __init__(self, **kwargs):
 
         super().__init__(**kwargs)
+
+        self.__doc__ = BaseSyntheticNetwork.__init__.__doc__
 
         parameters = kwargs.get("parameters")
 
@@ -438,7 +509,7 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
         self.structure = structure
 
     def build_Y(
-        self, parameters: Tuple[np.ndarray, np.ndarray, np.ndarray] = None
+        self, parameters: Optional[tuple[np.ndarray, np.ndarray, np.ndarray]] = None
     ) -> None:
         """
         Generate network layers G using the latent variables,
@@ -625,3 +696,70 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
             Mean lambda for all entries.
         """
         self._plot_matrix(self.M, self.L, cmap)
+
+
+def affinity_matrix(
+    structure: Union[Structure,str] = Structure.ASSORTATIVE.value,
+    N: int = 100,
+    K: int = 2,
+    avg_degree: float = 4.0,
+    a: float = 0.1,
+    b: float = 0.3,
+) -> np.ndarray:
+    """
+    Compute the KxK affinity matrix w with probabilities between and within groups.
+
+    Parameters
+    ----------
+    structure : Structure, optional
+        Structure of the network (default is Structure.ASSORTATIVE).
+    N : int, optional
+        Number of nodes (default is 100).
+    K : int, optional
+        Number of communities (default is 2).
+    avg_degree : float, optional
+        Average degree of the network (default is 4.0).
+    a : float, optional
+        Parameter for secondary probabilities (default is 0.1).
+    b : float, optional
+        Parameter for secondary probabilities in 'core-periphery' and 'directed-biased' structures (default is 0.3).
+
+    Returns
+    -------
+    np.ndarray
+        KxK affinity matrix. Element (k,h) gives the density of edges going from the nodes of group k to nodes of group h.
+    """
+
+    # Adjust b based on a
+    b *= a
+
+    # Calculate primary probability
+    p1 = avg_degree * K / N
+
+    # Initialize the affinity matrix based on the structure
+    if structure == Structure.ASSORTATIVE.value:
+        # Assortative structure: higher probability within groups
+        p = p1 * a * np.ones((K, K))  # secondary probabilities
+        np.fill_diagonal(p, p1 * np.ones(K))  # primary probabilities
+
+    elif structure == Structure.DISASSORTATIVE.value:
+        # Disassortative structure: higher probability between groups
+        p = p1 * np.ones((K, K))  # primary probabilities
+        np.fill_diagonal(p, a * p1 * np.ones(K))  # secondary probabilities
+
+    elif structure == Structure.CORE_PERIPHERY.value:
+        # Core-periphery structure: core nodes have higher probability
+        p = p1 * np.ones((K, K))
+        np.fill_diagonal(np.fliplr(p), a * p1)
+        p[1, 1] = b * p1
+
+    elif structure == Structure.DIRECTED_BIASED.value:
+        # Directed-biased structure: directional bias in probabilities
+        p = a * p1 * np.ones((K, K))
+        p[0, 1] = p1
+        p[1, 0] = b * p1
+
+    else:
+        raise ValueError("Invalid structure type.")
+
+    return p

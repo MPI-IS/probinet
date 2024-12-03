@@ -2,6 +2,7 @@
 Unit tests for the ModelClass class.
 """
 
+from importlib.resources import files
 from pathlib import Path
 import unittest
 
@@ -28,9 +29,11 @@ class TestModelClass(unittest.TestCase):
         self.model_class.files = (
             Path("probinet").resolve() / "data" / "input" / "theta_gt111.npz"
         )
-        self.model_class.theta = np.load(
-            self.model_class.files, allow_pickle=True
-        )  # TODO: use package data
+        self.model_class.theta_name = "theta_gt111.npz"
+        with files("probinet.data.input").joinpath(
+            self.model_class.theta_name
+        ) as theta:
+            self.model_class.theta = np.load(theta, allow_pickle=True)
         self.model_class.eta0 = 0
         self.model_class.undirected = False
         self.model_class.assortative = True

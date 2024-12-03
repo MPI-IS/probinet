@@ -62,7 +62,6 @@ def shuffle_indicesG(N: int, L: int, rseed: int = 10) -> List[List[Tuple[int, in
     """
     # Create a random number generator with the specified random seed
     rng = np.random.RandomState(rseed)
-    idxG = []
 
     # Generate indices for each layer using list comprehension
     idxG = [[(i, j) for i in range(N) for j in range(N)] for _ in range(L)]
@@ -109,8 +108,6 @@ def extract_masks(
     NFold: int = 5,
     fold: int = 0,
     rseed: int = 10,
-    out_mask: bool = False,
-    out_folder: Optional[str] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Return the masks for selecting the held out set in the adjacency tensor and design matrix.
@@ -133,9 +130,6 @@ def extract_masks(
         Current fold, by default 0.
     rseed : int, optional
         Random seed, by default 10.
-    out_mask : bool, optional
-        If set to True, the masks are saved into files, by default False.
-
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
@@ -190,7 +184,8 @@ def extract_mask_kfold(
     Returns
     -------
     mask : np.ndarray
-           Mask for selecting the held out set in the adjacency tensor.
+           Mask for selecting the held out set in the adjacency tensor. It is made of 0s and 1s,
+           where 1s represent that the element (i,j) should be used.
     """
 
     # Get the number of layers

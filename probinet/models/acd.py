@@ -4,8 +4,9 @@ The latent variables are related to community memberships and anomaly parameters
 """
 
 import logging
-from pathlib import Path
 import time
+from os import PathLike
+from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
@@ -17,17 +18,17 @@ from probinet.evaluation.expectation_computation import (
     compute_mean_lambda0,
     compute_mean_lambda0_nonzero,
 )
-from probinet.input.preprocessing import preprocess_adjacency_tensor
-from probinet.models.base import ModelBase, ModelUpdateMixin
-from probinet.models.classes import GraphData
-from probinet.models.constants import EPS_
-from probinet.utils.decorators import inherit_docstring
-from probinet.utils.matrix_operations import (
+from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
+from .constants import EPS_
+from ..input.preprocessing import preprocess_adjacency_tensor
+from ..types import GraphDataType
+from ..utils.matrix_operations import (
     sp_uttkrp,
     sp_uttkrp_assortative,
     transpose_tensor,
 )
-from probinet.utils.tools import get_item_array_from_subs, log_and_raise_error
+from ..utils.tools import get_item_array_from_subs, log_and_raise_error
 
 
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
@@ -36,7 +37,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     detection on networks with reciprocity.
     """
 
-    @inherit_docstring(ModelBase)
     def __init__(
         self,
         convergence_tol: float = 1e-1,  # Overriding the base class default
@@ -58,10 +58,12 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             **kwargs,  # Forward any other arguments to the base class
         )
 
-    def _check_fit_params(self, **kwargs) -> None:
-        message = "Message"  # TODO: update message
+        self.__doc__ = ModelBase.__init__.__doc__
 
-        super()._check_fit_params(message=message, **kwargs)
+    def _check_fit_params(self, **kwargs) -> None:
+
+        # Call the check_fit_params method from the parent class
+        super()._check_fit_params(**kwargs)
 
         self.constrained = kwargs.get(
             "constrained", False
@@ -96,11 +98,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             theta = np.load(self.files, allow_pickle=True)
             self.N, self.K = theta["u"].shape
 
-        if not self.assortative:
-            raise ValueError(
-                "The assortative parameter has to be True!"
-            )  # TODO: Make it work for assortative=False
-
         # Parameters for the initialization of the models
         self.use_unit_uniform = True
         self.normalize_rows = True
@@ -126,8 +123,8 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         rseed: int = 10,
         out_inference: bool = True,
         out_folder: Path = Path("outputs"),
-        end_file: str = None,
-        files: Union[str, Path] = None,
+        end_file: Optional[str] = None,
+        files: Optional[PathLike] = None,
         **__kwargs: Any,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float]:
         """
@@ -261,7 +258,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                 conv = convergence
                 self.best_r = r
                 best_loglik_values = list(loglik_values)
-            self.rseed += self.rng.randint(100000000)  # TODO: is this really needed?
+            self.rseed += self.rng.randint(100000000)  # TODO: to be fixed on CSD-300
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
@@ -312,34 +309,30 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         return coincide, convergence, it, loglik, loglik_values
 
     def _preprocess_data_for_fit(
-        self, data: Union[COO, np.ndarray], mask: Optional[np.ndarray]
+        self, data: GraphDataType, mask: Optional[np.ndarray]
     ) -> Tuple[
-        Union[COO, np.ndarray],  # TODO: Add this as a custom type
-        Union[COO, np.ndarray],
+        GraphDataType,
+        np.ndarray,
         np.ndarray,
         Tuple[int, int, int],
         Optional[Tuple[int, int, int]],
     ]:
-        # if data_T is None:
         logging.debug("Preprocessing the data for fitting the models.")
         logging.debug("Data looks like: %s", data)
+
         data_T = np.einsum("aij->aji", data)
         data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
+
         # pre-processing of the data to handle the sparsity
         data = preprocess_adjacency_tensor(data)
         data_T = preprocess_adjacency_tensor(data_T)
+
         # save the indexes of the nonzero entries
-        if isinstance(data, np.ndarray):
-            subs_nz = data.nonzero()
-        elif isinstance(data, COO):
-            subs_nz = data.coords
-            # Turn subs_nz into a tuple
-            subs_nz = tuple([subs_nz[i] for i in range(subs_nz.shape[0])])
-        if mask is not None:
-            subs_nz_mask = mask.nonzero()
-        else:
-            subs_nz_mask = None
-        return data, data_T, data_T_vals, subs_nz, subs_nz_mask  # type: ignore
+        subs_nz = tuple(self.get_data_nonzero(data))
+
+        subs_nz_mask = mask.nonzero() if mask is not None else None
+
+        return data, data_T, data_T_vals, subs_nz, subs_nz_mask
 
     def _initialize(self):
         """
@@ -381,10 +374,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
         self.mupr = self.rng.random_sample(1)[0]
 
-    def _initialize_w(  # type: ignore
-        self, infile_name: str
-    ) -> None:  # TODO: Is this method needed? It seems
-        # like it should but it is not used anywhere
+    def _initialize_w(self, infile_name: str) -> None:  # type: ignore
         """
         Initialize affinity tensor w from file.
 
@@ -425,7 +415,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _update_cache(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T_vals: np.ndarray,
         subs_nz: Tuple[int, int, int],
     ) -> None:
@@ -445,7 +435,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.lambda0_nz = super()._lambda_nz(subs_nz)
         if not self.assortative:
             self.lambda0_nzT = compute_mean_lambda0_nonzero(
-                subs_nz, self.v, self.u, np.einsum("akq->aqk", self.w, self.assortative)
+                subs_nz, self.v, self.u, np.einsum("akq->aqk", self.w), self.assortative
             )
         else:
             self.lambda0_nzT = compute_mean_lambda0_nonzero(
@@ -467,7 +457,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _QIJ(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T_vals: np.ndarray,
         subs_nz: Tuple[int, int, int],
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -562,7 +552,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         if not self.fix_w:
             if not self.assortative:
-                d_w = self._update_W()
+                d_w = self._update_W(self.subs_nz)
             else:
                 d_w = self._update_W_assortative()
             self._update_cache(self.data, self.data_T_vals, self.subs_nz)
@@ -594,7 +584,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _update_pibr(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         subs_nz: Tuple[int, int, int],
         mask: Optional[np.ndarray] = None,
         subs_nz_mask: Optional[Tuple[int, int, int]] = None,
@@ -800,6 +790,14 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.w[Z == 0] = 0.0
         self.w[non_zeros] /= Z[non_zeros]
 
+    def _update_W(self, subs_nz: Tuple[int, int, int]) -> float:
+        # a generic function here that will do what each class needs
+        self._specific_update_W(subs_nz)
+
+        dist, self.w, self.w_old = self._finalize_update(self.w, self.w_old)
+
+        return dist
+
     def _specific_update_W_assortative(self):
         """
         Update affinity tensor (assuming assortativity).
@@ -894,7 +892,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _ELBO(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         mask: Optional[np.ndarray] = None,
         subs_nz_mask: Optional[Tuple[int, int, int]] = None,
     ) -> float:

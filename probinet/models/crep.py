@@ -4,21 +4,21 @@ The latent variables are related to community memberships and reciprocity value.
 """
 
 import logging
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
-from numpy import dtype, ndarray
 import numpy as np
+from numpy import dtype, ndarray
 from sparse import COO
 
-from ..evaluation.expectation_computation import compute_mean_lambda0
-from ..input.preprocessing import preprocess_adjacency_tensor
-from ..utils.decorators import inherit_docstring
-from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
-from ..utils.tools import get_item_array_from_subs, log_and_raise_error
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
+from ..evaluation.expectation_computation import compute_mean_lambda0
+from ..input.preprocessing import preprocess_adjacency_tensor
+from ..types import GraphDataType
+from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
+from ..utils.tools import get_item_array_from_subs, log_and_raise_error
 
 
 class CRep(ModelBase, ModelUpdateMixin):
@@ -26,7 +26,7 @@ class CRep(ModelBase, ModelUpdateMixin):
     Class to perform inference in networks with reciprocity.
     """
 
-    @inherit_docstring(ModelBase)
+
     def __init__(
         self,
         max_iter: int = 1000,
@@ -34,6 +34,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         **kwargs: Any,
     ) -> None:
         super().__init__(max_iter=max_iter, num_realizations=num_realizations, **kwargs)
+        self.__doc__ = ModelBase.__doc__
 
         # Initialize other attributes
         self.eta_f = 0.0
@@ -63,15 +64,19 @@ class CRep(ModelBase, ModelUpdateMixin):
         **kwargs: Any,
     ) -> None:
 
-        message = "The initialization parameter can be either 0, 1, 2 or 3."
+        # Call the check_fit_params method from the parent class
+        super()._check_fit_params(**kwargs)
 
-        super()._check_fit_params(message=message, **kwargs)
+        self._validate_eta0(kwargs["eta0"])
+        self.eta0 = kwargs["eta0"]
 
         self.constrained = kwargs.get("constrained", True)
 
         # Parameters for the initialization of the models
         self.use_unit_uniform = True
         self.normalize_rows = True
+
+        self._validate_undirected_eta()
 
         if self.initialization == 1:
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
@@ -91,7 +96,8 @@ class CRep(ModelBase, ModelUpdateMixin):
         out_folder: Path = Path("outputs"),
         end_file: str = None,
         fix_eta: bool = False,
-        files: str = None,
+        fix_w: bool = False,
+        files: Optional[str] = None,
         **_kwargs: Any,
     ) -> tuple[
         ndarray[Any, dtype[np.float64]],
@@ -142,9 +148,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Returns
         -------
-        tuple
-            A tuple containing:
-            -u_f : ndarray
+        -u_f : ndarray
             Out-going membership matrix.
         -v_f : ndarray
             In-coming membership matrix.
@@ -168,6 +172,7 @@ class CRep(ModelBase, ModelUpdateMixin):
             out_folder=out_folder,
             end_file=end_file,
             fix_eta=fix_eta,
+            fix_w=fix_w,
             files=files,
         )
         # Set the random seed
@@ -268,7 +273,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _preprocess_data_for_fit(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T: Union[COO, np.ndarray, None],
         data_T_vals: Union[np.ndarray, None],
     ) -> Tuple[int, Any, Any, np.ndarray, Tuple[np.ndarray]]:
@@ -293,22 +298,21 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         # If data_T is not provided, calculate it from the input data tensor
         if data_T is None:
-            E = np.sum(data)  # weighted sum of edges (needed in the denominator of eta)
+            E = self.get_data_sum(
+                data
+            )  # weighted sum of edges (needed in the denominator of eta)
             data_T = np.einsum("aij->aji", data)
-            data_T_vals = get_item_array_from_subs(data_T, data.nonzero())
+            data_T_vals = get_item_array_from_subs(data_T, self.get_data_nonzero(data))
             # Pre-process the data to handle the sparsity
             data = preprocess_adjacency_tensor(data)
             data_T = preprocess_adjacency_tensor(data_T)
         else:
-            E = np.sum(data.data)
+            E = self.get_data_sum(data)
 
         # Save the indices of the non-zero entries
-        if isinstance(data, np.ndarray):
-            subs_nz = data.nonzero()
-        elif isinstance(data, COO):
-            subs_nz = data.coords
+        subs_nz = self.get_data_nonzero(data)
 
-        return E, data, data_T, data_T_vals, subs_nz  # type: ignore
+        return E, data, data_T, data_T_vals, subs_nz
 
     def compute_likelihood(self) -> float:
         """
@@ -323,7 +327,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _update_cache(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T_vals: np.ndarray,
         subs_nz: Tuple[np.ndarray],
     ) -> None:
@@ -343,10 +347,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         self.lambda0_nz = super()._lambda_nz(subs_nz)
         self.M_nz = self.lambda0_nz + self.eta * data_T_vals
         self.M_nz[self.M_nz == 0] = 1
-        if isinstance(data, np.ndarray):
-            self.data_M_nz = data[subs_nz] / self.M_nz
-        elif isinstance(data, COO):
-            self.data_M_nz = data.data / self.M_nz
+        self.data_M_nz = self.get_data_values(data) / self.M_nz
         self.data_M_nz[self.M_nz == 0] = 0
 
     def _update_em(self):
@@ -408,7 +409,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _update_eta(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T_vals: np.ndarray,
         denominator: Optional[float] = None,
     ) -> float:
@@ -561,7 +562,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
     def _ps_likelihood(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T: COO,
         mask: Optional[np.ndarray] = None,
     ) -> float:
@@ -583,31 +584,22 @@ class CRep(ModelBase, ModelUpdateMixin):
         loglik : float
             Pseudo log-likelihood value.
         """
-
+        # Compute the mean lambda0 for all entries
         self.lambda0_ija = compute_mean_lambda0(self.u, self.v, self.w)
 
-        if mask is not None:
-            sub_mask_nz = mask.nonzero()
-            if isinstance(data, np.ndarray):
-                loglik = (
-                    -self.lambda0_ija[sub_mask_nz].sum()
-                    - self.eta * data_T[sub_mask_nz].sum()
-                )
-            elif isinstance(data, COO):
-                loglik = (
-                    -self.lambda0_ija[sub_mask_nz].sum()
-                    - self.eta * data_T.toarray()[sub_mask_nz].sum()
-                )
+        # Get the non-zero entries of the mask
+        sub_mask_nz = mask.nonzero() if mask is not None else None
+
+        if sub_mask_nz is not None:
+            loglik = (
+                -self.lambda0_ija[sub_mask_nz].sum()
+                - self.eta * self.get_data_toarray(data_T)[sub_mask_nz].sum()
+            )
         else:
-            if isinstance(data, np.ndarray):
-                loglik = -self.lambda0_ija.sum() - self.eta * data_T.sum()
-            elif isinstance(data, COO):
-                loglik = -self.lambda0_ija.sum() - self.eta * data_T.data.sum()
+            loglik = -self.lambda0_ija.sum() - self.eta * self.get_data_sum(data_T)
+
         logM = np.log(self.M_nz)
-        if isinstance(data, np.ndarray):
-            Alog = data[data.nonzero()] * logM
-        elif isinstance(data, COO):
-            Alog = data.data * logM
+        Alog = self.get_data_values(data) * logM
 
         loglik += Alog.sum()
 

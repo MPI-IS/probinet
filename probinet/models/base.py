@@ -2,14 +2,14 @@
 Base classes for the models classes.
 """
 
-from abc import ABC, abstractmethod
-from argparse import Namespace
 import dataclasses
-from functools import singledispatchmethod
 import logging
 import os
-from pathlib import Path
 import time
+from abc import ABC, abstractmethod
+from argparse import Namespace
+from functools import singledispatchmethod
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -18,7 +18,6 @@ from sparse import COO
 from probinet.input.loader import build_adjacency_from_file
 from probinet.models.classes import GraphData
 from probinet.models.constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
-from probinet.utils.decorators import inherit_docstring
 from probinet.utils.tools import log_and_raise_error
 from probinet.visualization.plot import plot_L
 
@@ -68,11 +67,11 @@ class ModelBase(ModelBaseParameters):
     convergence. All the models classes should inherit from this class.
     """
 
-    @inherit_docstring(ModelBaseParameters, from_init=False)
+
     def __init__(self, *args, **kwargs):
         # Call the __init__ method of the parent class
         super().__init__(*args, **kwargs)
-
+        self.__doc__ = ModelBaseParameters.__doc__
         # Define additional attributes
         self.attributes_to_save_names = [
             "u_f",
@@ -101,11 +100,31 @@ class ModelBase(ModelBaseParameters):
         self.best_r: int = 0
         self.final_it: int = 0
 
+        self.message_for_invalid_initialization = (
+            "The initialization parameter can be either 0 "
+            "or 1. If 0, the model will be initialized "
+            "randomly. If 1, the model will be initialized with the parameters "
+            "stored in the file specified in the `files` parameter."
+        )
+
     def check_params_to_load_data(self, binary, noselfloop, undirected, **kwargs):
         """
         Check that the parameters to load the data are correct.
         """
         pass
+
+    def _validate_eta0(self, eta0: Optional[float]) -> None:
+        if eta0 is not None and eta0 <= 0.0:
+            message = "If not None, the eta0 parameter has to be greater than 0.!"
+            log_and_raise_error(ValueError, message)
+
+    def _validate_undirected_eta(self) -> None:
+        if self.undirected and not (self.fix_eta and self.eta0 == 1):
+            message = (
+                "If undirected=True, the parameter eta has to be fixed equal to 1 "
+                "(s.t. log(eta)=0)."
+            )
+            log_and_raise_error(ValueError, message)
 
     def _check_fit_params(self, *args, **kwargs) -> None:
         """
@@ -123,7 +142,6 @@ class ModelBase(ModelBaseParameters):
         eta0 = kwargs.get("eta0", args[6] if len(args) > 6 else None)
         beta0 = kwargs.get("beta0", args[7] if len(args) > 7 else None)
         gamma = kwargs.get("gamma", args[8] if len(args) > 8 else None)
-        message = kwargs.get("message", "Invalid initialization parameter.")
         use_approximation = kwargs.get("use_approximation", False)
         temporal = kwargs.get("temporal", True)
         fix_eta = kwargs.get("fix_eta", False)
@@ -138,8 +156,10 @@ class ModelBase(ModelBaseParameters):
         end_file = kwargs.get("end_file", " ")
         verbose = kwargs.get("verbose", 0)
 
+        # Check the initialization parameter
+        logging.debug("Initialization parameter: %s", initialization)
         if initialization not in {0, 1}:
-            log_and_raise_error(ValueError, message)
+            log_and_raise_error(ValueError, self.message_for_invalid_initialization)
         self.initialization = initialization
 
         if initialization == 1:
@@ -148,12 +168,6 @@ class ModelBase(ModelBaseParameters):
                     ValueError, "If initialization is 1, provide a file."
                 )
             self.files = files
-
-        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
-            if (eta0 is not None) and (eta0 <= 0.0):
-                message = "If not None, the eta0 parameter has to be greater than 0.!"
-                log_and_raise_error(ValueError, message)
-            self.eta0 = eta0
 
         self.undirected = undirected
         self.assortative = assortative
@@ -176,10 +190,15 @@ class ModelBase(ModelBaseParameters):
         self.L = data.shape[0]
         self.K = K
 
-        if data_X is not None and data_X.shape[0] != self.N:
-            message = "The number of rows of the data_X matrix is different from the number of nodes."
-            log_and_raise_error(ValueError, message)
+        # Validate the data_X parameter
+        if data_X is not None:
+            logging.debug("Data_X parameter: %s", data_X.shape)
+            if data_X.shape[0] != self.N:
+                message = "The number of rows of the data_X matrix is different from the number of nodes."
+                log_and_raise_error(ValueError, message)
 
+        # Validate the eta0 parameter
+        logging.debug("Eta0 parameter: %s", eta0)
         if self.fix_eta and self.eta0 is None:
             log_and_raise_error(
                 ValueError, "If fix_eta=True, provide a value for eta0."
@@ -194,26 +213,14 @@ class ModelBase(ModelBaseParameters):
                 self.beta0 = beta0
 
         if self.fix_w:
-            if self.initialization not in {1, 3}:
-                message = "If fix_w=True, the initialization has to be either 1 or 3."
+            logging.debug("Fixing w.")
+            if self.initialization != 1:
+                message = "If fix_w=True, the initialization has to be  1."
                 log_and_raise_error(ValueError, message)
 
         if self.fix_communities:
-            if self.initialization not in {
-                2,
-                3,
-            }:  # TODO: At the moment, init is between 0 and 1.
-                # Fix this when the implementation suggested by Caterina about getting
-                # initialize_v, init_w, init_u instead of initialization
-                message = "If fix_communities=True, the initialization has to be either 2 or 3."
-                log_and_raise_error(ValueError, message)
-
-        if gamma is None:  # TODO: rethink this, gamma is only for MTCOV
-            if self.undirected and not (self.fix_eta and self.eta0 == 1):
-                message = (
-                    "If undirected=True, the parameter eta has to be fixed equal to 1 "
-                    "(s.t. log(eta)=0)."
-                )
+            if self.initialization != 1:
+                message = "If fix_communities=True, the initialization has to be 1."
                 log_and_raise_error(ValueError, message)
 
     def _initialize(self) -> None:
@@ -233,6 +240,10 @@ class ModelBase(ModelBaseParameters):
         elif self.initialization == 1:
             # If initialization type is 1, call the method for file-based initialization
             self._file_initialization()
+        else:
+            # If initialization type is neither 0 nor 1, log a message and raise a ValueError
+            message = "Invalid initialization parameter."
+            log_and_raise_error(ValueError, message)
 
     def _initialize_eta(self) -> None:
 
@@ -697,45 +708,56 @@ class ModelBase(ModelBaseParameters):
             process.
             If not provided, it defaults to None.
         """
-        if best_loglik_values:
-            # Log the best real, maximum log-likelihood, and the best iterations
-            logging.debug(
-                "Best realization = %s - maxL = %s - best iterations = %s",
-                self.best_r,
-                maxL,
+        if not best_loglik_values:
+            if self.flag_conv == "log":
+                message = "Algorithm did not converge. Please increase the number of realizations, or the maximum number of iterations."
+                log_and_raise_error(RuntimeError, message)
+            else:
+                logging.debug(
+                    "The conv_flag is 'deltas'; there is no best log-likelihood."
+                )
+            return
+
+        # Log the best realization, maximum log-likelihood, and the best iterations
+        logging.debug(
+            "Best realization = %s - maxL = %s - best iterations = %s",
+            self.best_r,
+            maxL,
+            self.final_it,
+        )
+
+        # Log that the algorithm did converge
+        if conv:
+            logging.info(
+                "Algorithm successfully converged after %d iterations with a maximum log-likelihood of %.4f.",
                 self.final_it,
+                maxL,
+            )
+        else:
+            logging.info("Algorithm did not converge.")
+
+        # Check if the fitting process has converged
+        if np.logical_and(self.final_it == self.max_iter, not conv):
+            logging.warning(
+                "Solution failed to converge in %s EM steps!", self.max_iter
+            )
+            logging.warning(
+                "Parameters won't be saved for this realization! If you have "
+                "provided a number of realizations equal to one, please increase it."
+            )
+            return
+
+        # If the fitting process has converged and out_inference is True, evaluate the results
+        if self.out_inference:
+            self._output_results()
+        else:
+            logging.debug(
+                "Parameters won't be saved! If you want to save them, set out_inference=True."
             )
 
-            # Check if the fitting process has converged
-            if np.logical_and(
-                self.final_it == self.max_iter, not conv
-            ):  # TODO: if the number of
-                # realizations is equal to the maximum number of iterations and the fitting process
-                # has converged, then ask user to increase the number of realizations
-                # If the fitting process has not converged, log a warning
-                logging.warning(
-                    "Solution failed to converge in %s EM steps!", self.max_iter
-                )
-                logging.warning(
-                    "Parameters won't be saved for this realization! If you have "
-                    "provided a number of realizations equal to one, please increase it."
-                )
-            else:
-                # If the fitting process has converged and out_inference is True, evaluation the results
-                if self.out_inference:
-                    self._output_results()
-                else:
-                    logging.debug(
-                        "Parameters won't be saved! If you want to save them, set out_inference=True."
-                    )
-
-            # If plot_loglik and flag_conv are both True, plot the best log-likelihood values
-            if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
-                plot_L(best_loglik_values, int_ticks=True)
-        else:
-            # If the best log-likelihood values are not provided, log a message
-            message = "Algorithm did not converge. Please increase the number of realizations, or the maximum number of iterations."
-            log_and_raise_error(RuntimeError, message)
+        # If plot_loglik and flag_conv are both True, plot the best log-likelihood values
+        if np.logical_and(self.plot_loglik, self.flag_conv == "log"):
+            plot_L(best_loglik_values, int_ticks=True)
 
     def _log_realization_info(
         self,
@@ -824,6 +846,230 @@ class ModelBase(ModelBaseParameters):
             "binary",
         ]
         return {f: getattr(args, f) for f in fields}
+
+    @singledispatchmethod
+    def get_data_sum(self, data) -> float:
+        """
+        Compute the sum of the data.
+
+        Parameters
+        ----------
+        data : Union[np.ndarray, COO]
+            The data to sum.
+
+        Returns
+        -------
+        float
+            The sum of the data.
+
+        Raises
+        ------
+        TypeError
+            If the data type is unsupported.
+        """
+        raise TypeError("Unsupported data type")
+
+    @get_data_sum.register
+    def _(self, data: np.ndarray) -> float:
+        """
+        Compute the sum of a numpy array.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The numpy array to sum.
+
+        Returns
+        -------
+        float
+            The sum of the numpy array.
+        """
+        return data.sum()
+
+    @get_data_sum.register
+    def _(self, data: COO) -> float:
+        """
+        Compute the sum of a COO sparse array.
+
+        Parameters
+        ----------
+        data : COO
+            The COO sparse array to sum.
+
+        Returns
+        -------
+        float
+            The sum of the COO sparse array.
+        """
+        return data.data.sum()
+
+    @singledispatchmethod
+    def get_data_toarray(self, data) -> np.ndarray:
+        """
+        Convert the data to a numpy array.
+
+        Parameters
+        ----------
+        data : Union[np.ndarray, COO]
+            The data to convert.
+
+        Returns
+        -------
+        np.ndarray
+            The converted numpy array.
+
+        Raises
+        ------
+        TypeError
+            If the data type is unsupported.
+        """
+        raise TypeError("Unsupported data type")
+
+    @get_data_toarray.register
+    def _(self, data: np.ndarray) -> np.ndarray:
+        """
+        Return the numpy array as is.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The numpy array.
+
+        Returns
+        -------
+        np.ndarray
+            The same numpy array.
+        """
+        return data
+
+    @get_data_toarray.register
+    def _(self, data: COO) -> np.ndarray:
+        """
+        Convert a COO sparse array to a numpy array.
+
+        Parameters
+        ----------
+        data : COO
+            The COO sparse array to convert.
+
+        Returns
+        -------
+        np.ndarray
+            The converted numpy array.
+        """
+        return data.toarray()
+
+    @singledispatchmethod
+    def get_data_nonzero(self, data) -> tuple:
+        """
+        Get the indices of non-zero elements in the data.
+
+        Parameters
+        ----------
+        data : Union[np.ndarray, COO]
+            The data to get non-zero indices from.
+
+        Returns
+        -------
+        tuple
+            The indices of non-zero elements.
+
+        Raises
+        ------
+        TypeError
+            If the data type is unsupported.
+        """
+        raise TypeError("Unsupported data type")
+
+    @get_data_nonzero.register
+    def _(self, data: np.ndarray) -> tuple:
+        """
+        Get the indices of non-zero elements in a numpy array.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The numpy array to get non-zero indices from.
+
+        Returns
+        -------
+        tuple
+            The indices of non-zero elements.
+        """
+        return data.nonzero()
+
+    @get_data_nonzero.register
+    def _(self, data: COO) -> tuple:
+        """
+        Get the indices of non-zero elements in a COO sparse array.
+
+        Parameters
+        ----------
+        data : COO
+            The COO sparse array to get non-zero indices from.
+
+        Returns
+        -------
+        tuple
+            The indices of non-zero elements.
+        """
+        return data.coords
+
+    @singledispatchmethod
+    def get_data_values(self, data) -> np.ndarray:
+        """
+        Get the values of non-zero elements in the data.
+
+        Parameters
+        ----------
+        data : Union[np.ndarray, COO]
+            The data to get non-zero values from.
+
+        Returns
+        -------
+        np.ndarray
+            The values of non-zero elements.
+
+        Raises
+        ------
+        TypeError
+            If the data type is unsupported.
+        """
+        raise TypeError("Unsupported data type")
+
+    @get_data_values.register
+    def _(self, data: np.ndarray) -> np.ndarray:
+        """
+        Get the values of non-zero elements in a numpy array.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The numpy array to get non-zero values from.
+
+        Returns
+        -------
+        np.ndarray
+            The values of non-zero elements.
+        """
+        return data[data.nonzero()]
+
+    @get_data_values.register
+    def _(self, data: COO) -> np.ndarray:
+        """
+        Get the values of non-zero elements in a COO sparse array.
+
+        Parameters
+        ----------
+        data : COO
+            The COO sparse array to get non-zero values from.
+
+        Returns
+        -------
+        np.ndarray
+            The values of non-zero elements.
+        """
+        return data.data
 
 
 class ModelUpdateMixin(ABC):

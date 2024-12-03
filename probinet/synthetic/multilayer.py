@@ -1,8 +1,9 @@
-"""Code to generate multilayer networks with non-negative and discrete weights, and whose nodes are associated
-with one categorical attribute. Self-loops are removed and only the largest connected component is considered. """
-
+"""
+Code to generate multilayer networks with non-negative and discrete weights, and whose nodes are associated
+with one categorical attribute. Self-loops are removed and only the largest connected component is considered.
+"""
+import logging
 from abc import ABCMeta
-import math
 import os
 import warnings
 
@@ -13,6 +14,7 @@ import pandas as pd
 
 from probinet.evaluation.expectation_computation import compute_mean_lambda0
 from probinet.input.stats import print_graph_stat
+from probinet.synthetic.base import StandardMMSBM
 from probinet.utils.matrix_operations import normalize_nonzero_membership
 from probinet.utils.tools import output_adjacency
 from probinet.visualization.plot import plot_A
@@ -148,7 +150,7 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         self.show_plots = show_plots
 
 
-class SyntheticMTCOV(BaseSyntheticNetwork):
+class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
     """
     Create a synthetic, possibly directed, and weighted network (possibly multilayer)
     by a standard mixed-membership stochastic block-model
@@ -392,8 +394,20 @@ class SyntheticMTCOV(BaseSyntheticNetwork):
         self.Y = Y[np.ix_(np.arange(self.L), self.nodes, self.nodes)]
 
     def build_X(self, attributes: np.ndarray = None):
-        """Generate the design matrix."""
+        """
+        Generate the design matrix.
 
+        Parameters
+        ----------
+        attributes : np.ndarray, optional
+            The latent variables representing the contribution of the attributes.
+            If None, the attributes will be generated.
+
+        Raises
+        ------
+        ValueError
+                If the shape of the parameter `beta` is not (K, Z).
+        """
         # Latent variables
 
         if attributes is None:
@@ -415,119 +429,8 @@ class SyntheticMTCOV(BaseSyntheticNetwork):
         ).reshape(self.N)
         try:
             self.X = self.X[self.nodes]
-        except:
-            print()
-
-    def _apply_overlapping(self, u: np.ndarray, v: np.ndarray) -> tuple:
-        """
-        Introduce overlapping membership in the NxK membership vectors u and v, by using a Dirichlet distribution.
-
-        Parameters
-        ----------
-        u : np.ndarray
-            Matrix NxK of out-going membership vectors, positive element-wise.
-        v : np.ndarray
-            Matrix NxK of in-coming membership vectors, positive element-wise.
-
-        Returns
-        -------
-        tuple
-            Tuple containing the updated u and v matrices.
-        """
-
-        # number of nodes belonging to more communities
-        overlapping = int(self.N * self.perc_overlapping)
-        ind_over = self.prng.randint(len(u), size=overlapping)
-
-        u[ind_over] = self.prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
-        v[ind_over] = self.correlation_u_v * u[ind_over] + (
-            1.0 - self.correlation_u_v
-        ) * self.prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
-        if self.correlation_u_v == 1.0:
-            assert np.allclose(u, v)
-        if self.correlation_u_v > 0:
-            v = normalize_nonzero_membership(v, axis=1)
-
-        return u, v
-
-    def _sample_membership_vectors(self):
-        """
-        Compute the NxK membership vectors u and v without overlapping.
-
-        OUTPUT
-        ----------
-        u : Numpy array
-            Matrix NxK of out-going membership vectors, positive element-wise.
-
-        v : Numpy array
-            Matrix NxK of in-coming membership vectors, positive element-wise.
-        """
-
-        # Generate equal-size unmixed group membership
-        size = int(self.N / self.K)
-        u = np.zeros((self.N, self.K))
-        v = np.zeros((self.N, self.K))
-        for i in range(self.N):
-            q = int(math.floor(float(i) / float(size)))
-            if q == self.K:
-                u[i:, self.K - 1] = 1.0
-                v[i:, self.K - 1] = 1.0
-            else:
-                for j in range(q * size, q * size + size):
-                    u[j, q] = 1.0
-                    v[j, q] = 1.0
-
-        return u, v
-
-    def _compute_affinity_matrix(self, structure, a=0.01):
-        """
-        Compute the KxK affinity matrix w with probabilities between and within groups.
-
-        INPUT
-        ----------
-        structure : list
-                    List of structure of network layers.
-        a : float
-            Parameter for secondary probabilities.
-
-        OUTPUT
-        -------
-        p : Numpy array
-            Array with probabilities between and within groups. Element (k,h)
-            gives the density of edges going from the nodes of group k to nodes of group h.
-        """
-
-        p1 = self.avg_degree * self.K / self.N
-
-        if structure == "assortative":
-            p = p1 * a * np.ones((self.K, self.K))  # secondary-probabilities
-            np.fill_diagonal(p, p1 * np.ones(self.K))  # primary-probabilities
-
-        elif structure == "disassortative":
-            p = p1 * np.ones((self.K, self.K))  # primary-probabilities
-            # secondary-probabilities
-            np.fill_diagonal(p, a * p1 * np.ones(self.K))
-
-        return p
-
-    def _generate_lv(self):
-        """
-        Generate latent variables for a MMSBM, assuming network layers are independent
-        and communities are shared across layers.
-        """
-
-        # Generate u, v
-        u, v = self._sample_membership_vectors()
-        # Introduce the overlapping membership
-        if self.perc_overlapping > 0:
-            u, v = self._apply_overlapping(u, v)
-
-        # Generate w
-        w = np.zeros((self.L, self.K, self.K))
-        for l in range(self.L):
-            w[l, :, :] = self._compute_affinity_matrix(self.structure[l])
-
-        return u, v, w
+        except IndexError:
+            logging.debug("X couldn't be sliced by nodes.")
 
     def _generate_lv_attributes(self):
         """
@@ -546,25 +449,6 @@ class SyntheticMTCOV(BaseSyntheticNetwork):
 
         return beta
 
-    def _output_parameters(self):
-        """
-        Output results in a compressed file.
-        """
-
-        if not os.path.exists(self.out_folder):
-            os.makedirs(self.out_folder)
-
-        output_parameters = self.out_folder + "gt" + self.label
-        np.savez_compressed(
-            output_parameters + ".npz",
-            u=self.u,
-            v=self.v,
-            w=self.w,
-            beta=self.beta,
-            nodes=self.nodes,
-        )
-        print(f"Parameters saved in: {output_parameters}.npz")
-        print('To load: theta=np.load(filename), then e.g. theta["u"]')
 
     def _plot_M(self, cmap="PuBuGn"):
         """

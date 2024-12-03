@@ -51,9 +51,11 @@ def print_graph_stat(
             logging.info("M[%s] = %s - <k_weighted> = %.3f", layer, M, kW)
 
         logging.info("Sparsity [%s] = %.3f", layer, E / (N * N))
-        logging.info(
-            "Reciprocity (networkX) = %.3f", nx.reciprocity(nx.Graph(G[layer]))
-        )
+        # Check if network is directed; if not, skip the calculation of the reciprocity
+        if nx.is_directed(G[layer]):
+            logging.info(
+                "Reciprocity (networkX) = %.3f", nx.reciprocity(nx.Graph(G[layer]))
+            )
 
         if rw is not None:
             logging.info(
