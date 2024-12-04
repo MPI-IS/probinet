@@ -8,7 +8,7 @@ from probinet.input.loader import build_adjacency_from_networkx
 from probinet.models.classes import GraphData
 
 
-class TestInput(unittest.TestCase):
+class TestInput(BaseTest):
 
     def test_build_adjacency_from_networkx(self):
         G = nx.erdos_renyi_graph(n=14, p=0.5, seed=7, directed=False)
@@ -17,7 +17,7 @@ class TestInput(unittest.TestCase):
             G.edges[edge]["weight"] = 3
             G.edges[edge]["weight2"] = i
 
-        g_data = build_adjacency_from_networkx(G, edge_weight=["weight", "weight2"])
+        g_data = build_adjacency_from_networkx(G, weight_list=["weight", "weight2"],file_name=self.folder+"/edges.csv")
 
         self.assertTrue(type(g_data) is GraphData)
         # XXX: test didn't work; weights not added to graph using build_adjacency_from_file
