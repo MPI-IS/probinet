@@ -4,14 +4,13 @@ Functions for handling the data.
 
 import logging
 from importlib.resources import files
-from os import PathLike, getcwd
+from os import PathLike
 from pathlib import Path
 from typing import Any, Optional, Union
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from numpy import ndarray
 import csv
 
 from .preprocessing import (
