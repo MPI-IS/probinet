@@ -10,7 +10,7 @@ import sys
 import time
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import scipy.sparse
@@ -18,11 +18,11 @@ from sparse import COO
 
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
+from .constants import OUTPUT_FOLDER
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.loader import build_adjacency_and_design_from_file
 from ..input.preprocessing import preprocess_adjacency_tensor, preprocess_data_matrix
-from ..types import GraphDataType
-from ..types import GraphDataType
+from ..types import GraphDataType, EndFileType, FilesType, ArraySequence
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
 
 MAX_BATCH_SIZE = 5000
@@ -51,7 +51,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         self.__doc__ = ModelBase.__init__.__doc__
 
-    def load_data(self, files, adj_name, **kwargs):
+    def load_data(self, files: str, adj_name: str, **kwargs):
         """
         Load data from the input folder.
         """
@@ -109,9 +109,9 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         undirected: bool = False,
         assortative: bool = False,
         out_inference: bool = True,
-        out_folder: Path = Path("outputs"),
-        end_file: str = None,
-        files: str = None,
+        out_folder: Path = OUTPUT_FOLDER,
+        end_file: Optional[EndFileType] = None,
+        files: Optional[FilesType] = None,
         **__kwargs: Any,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
@@ -126,7 +126,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
             Graph adjacency tensor.
         data_X : np.ndarray
             Object representing the one-hot encoding version of the design matrix.
@@ -281,13 +281,13 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         data_X: np.ndarray,
         batch_size: Optional[int] = None,
     ) -> Tuple[
-        Union[COO, np.ndarray],
+        GraphDataType,
         np.ndarray,
-        Tuple[np.ndarray],
-        Tuple[np.ndarray],
+        ArraySequence,
+        ArraySequence,
         Optional[np.ndarray],
-        Optional[Tuple[np.ndarray]],
-        Optional[Tuple[np.ndarray]],
+        Optional[ArraySequence],
+        Optional[ArraySequence],
     ]:
         """
         Preprocesses the input data for fitting the models.
@@ -297,7 +297,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
             The graph adjacency tensor to be preprocessed.
         data_X : np.ndarray
             The one-hot encoding version of the design matrix to be preprocessed.
@@ -308,19 +308,19 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             The maximum batch size to use when automatically determining the batch
         Returns
         -------
-        preprocessed_data : Union[COO, np.ndarray]
+        preprocessed_data : GraphDataType
             The preprocessed graph adjacency tensor.
         preprocessed_data_X : np.ndarray
             The preprocessed one-hot encoding version of the design matrix.
-        subs_nz : Tuple[np.ndarray]
+        subs_nz : TupleArrays
             The indices of the non-zero entries in the data.
-        subs_X_nz : Tuple[np.ndarray]
+        subs_X_nz : TupleArrays
             The indices of the non-zero entries in the design matrix.
         subset_N : Optional[np.ndarray]
             The subset of nodes selected for batch processing. None if no subset is selected.
-        Subs : Optional[Tuple[np.ndarray]]
+        Subs : Optional[TupleArrays]
             The list of tuples representing the non-zero entries in the data. None if no subset is selected.
-        SubsX : Optional[Tuple[np.ndarray]]
+        SubsX : Optional[TupleArrays]
             The list of tuples representing the non-zero entries in the design matrix. None if no subset is selected.
         """
 
@@ -337,7 +337,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         logging.debug("batch_size: %s", batch_size)
 
-        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX  # type: ignore
+        return data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX
 
     def _initialize_realization(self):
         """
@@ -463,22 +463,22 @@ class MTCOV(ModelBase, ModelUpdateMixin):
     def _update_cache(
         self,
         data: GraphDataType,
-        subs_nz: Tuple[np.ndarray],
+        subs_nz: ArraySequence,
         data_X: np.ndarray,
-        subs_X_nz: Tuple[np.ndarray],
+        subs_X_nz: ArraySequence,
     ) -> None:
         """
         Update the cache used in the em_update.
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
-        subs_nz : Tuple[np.ndarray]
+        subs_nz : TupleArrays
                   Indices of elements of data that are non-zero.
         data_X : np.ndarray
                  Object representing the one-hot encoding version of the design matrix.
-        subs_X_nz : Tuple[np.ndarray]
+        subs_X_nz : TupleArrays
                     Indices of elements of data_X that are non-zero.
         """
 
@@ -494,7 +494,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def _pi0_nz(
         self,
-        subs_X_nz: Tuple[np.ndarray],
+        subs_X_nz: ArraySequence,
         u: np.ndarray,
         v: np.ndarray,
         beta: np.ndarray,
@@ -562,7 +562,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         for a in range(self.L):
             self.w[a, non_zeros] /= Z[non_zeros]
 
-    def _update_beta(self, subs_X_nz: Tuple[np.ndarray]) -> float:
+    def _update_beta(self, subs_X_nz: ArraySequence) -> float:
         """
         Update beta matrix.
 
@@ -616,8 +616,8 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
     def _update_membership(
         self,
-        subs_nz: Tuple[np.ndarray],
-        subs_X_nz: Tuple[np.ndarray],
+        subs_nz: ArraySequence,
+        subs_X_nz: ArraySequence,
         u: np.ndarray,
         v: np.ndarray,
         w: np.ndarray,
@@ -721,7 +721,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         data_X : ndarray
                  Object representing the one-hot encoding version of the design matrix.
@@ -767,9 +767,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         else:
             return loglik
 
-    def _check_for_convergence_delta(
-        self, it, coincide, du, dv, dw, db, convergence
-    ):  # pylint: disable=arguments-renamed
+    def _check_for_convergence_delta(self, it, coincide, du, dv, dw, db, convergence):
         """
         Check for convergence by using the maximum distances between the old and the new parameters values.
 

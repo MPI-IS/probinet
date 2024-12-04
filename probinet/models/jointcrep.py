@@ -7,17 +7,16 @@ The latent variables are related to community memberships and a pair interaction
 import logging
 import time
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, Tuple, Union, Optional
 
 import numpy as np
-from sparse import COO
 
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
+from .constants import OUTPUT_FOLDER, K_DEFAULT
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.preprocessing import preprocess_adjacency_tensor
-from ..types import GraphDataType
-from ..types import GraphDataType
+from ..types import GraphDataType, EndFileType, FilesType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative, transpose_tensor
 from ..utils.tools import check_symmetric, get_item_array_from_subs, log_and_raise_error
 
@@ -64,9 +63,9 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         self,
         gdata: GraphData,
         rseed: int = 0,
-        K: int = 3,
+        K: int = K_DEFAULT,
         initialization: int = 0,
-        eta0: Union[float, None] = None,
+        eta0: Optional[float] = None,
         undirected: bool = False,
         assortative: bool = True,
         fix_eta: bool = False,
@@ -74,9 +73,9 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         fix_w: bool = False,
         use_approximation: bool = False,
         out_inference: bool = True,
-        out_folder: Path = Path("outputs"),
-        end_file: str = None,
-        files: str = None,
+        out_folder: Path = OUTPUT_FOLDER,
+        end_file: Optional[EndFileType] = None,
+        files: Optional[FilesType] = None,
         **_kwargs: Any,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],

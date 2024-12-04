@@ -3,7 +3,7 @@ K: 2
 m: 1
 rseed: 10
 label: "10_2_4.0_0.1"
-out_folder: null
+out_folder: "outputs"
 output_parameters: false
 output_adj: false
 outfile_adj: null

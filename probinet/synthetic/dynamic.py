@@ -4,6 +4,7 @@ Class definition of the reciprocity generative models with the member functions 
 
 import logging
 import math
+from pathlib import Path
 from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ from scipy.sparse import coo_matrix
 from probinet.visualization.plot import plot_M
 from .base import GraphProcessingMixin, affinity_matrix
 
-from ..models.constants import EPS_
+from ..models.constants import EPS_, OUTPUT_FOLDER
 from ..utils.matrix_operations import normalize_nonzero_membership
 
 
@@ -45,7 +46,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
         over: float = 0.0,
         label: Optional[str] = None,
         end_file: str = ".dat",
-        folder: str = "",
+        folder: Path = OUTPUT_FOLDER,
         structure: str = "assortative",
         output_parameters: bool = False,
         output_adj: bool = False,

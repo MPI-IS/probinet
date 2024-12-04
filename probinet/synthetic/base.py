@@ -1,6 +1,11 @@
+"""
+Base classes for synthetic network generation.
+"""
+
 from abc import ABCMeta
 import logging
 import math
+from os import PathLike
 from enum import Enum
 from pathlib import Path
 from typing import Tuple, Optional, Union
@@ -35,6 +40,7 @@ DEFAULT_IS_SPARSE = True
 DEFAULT_SHOW_DETAILS = True
 DEFAULT_SHOW_PLOTS = False
 DEFAULT_OUTPUT_NET = False
+
 
 class Structure(Enum):
     ASSORTATIVE = "assortative"
@@ -259,11 +265,11 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         K: int = DEFAULT_K,
         seed: int = DEFAULT_SEED,
         eta: float = DEFAULT_ETA,
-        out_folder: Path = None,
+        out_folder: Optional[PathLike] = None,
         output_parameters: bool = DEFAULT_OUTPUT_NET,
         output_adj: bool = DEFAULT_OUTPUT_NET,
-        outfile_adj: str = None,
-        end_file: str = None,
+        outfile_adj: Optional[str] = None,
+        end_file: Optional[str] = None,
         show_details: bool = DEFAULT_SHOW_DETAILS,
         show_plots: bool = DEFAULT_SHOW_PLOTS,
         **kwargs,  # these kwargs are needed later on
@@ -550,14 +556,13 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
 
         nodes_to_remove = []
         self.G = []
-        self.layer_graphs = []
         for layer in range(self.L):
             self.G.append(nx.from_numpy_array(Y[layer], create_using=nx.DiGraph()))
             Gc = max(nx.weakly_connected_components(self.G[layer]), key=len)
             nodes_to_remove.append(set(self.G[layer].nodes()).difference(Gc))
 
         n_to_remove = nodes_to_remove[0].intersection(*nodes_to_remove)
-        self.layer_graphs = []
+        self.layer_graphs: list[np.ndarray] = []
         for layer in range(self.L):
             self._remove_nodes(self.G[layer], list(n_to_remove))
             self.nodes = self._update_nodes_list(self.G[layer])
@@ -699,7 +704,7 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
 
 
 def affinity_matrix(
-    structure: Union[Structure,str] = Structure.ASSORTATIVE.value,
+    structure: Union[Structure, str] = Structure.ASSORTATIVE.value,
     N: int = 100,
     K: int = 2,
     avg_degree: float = 4.0,

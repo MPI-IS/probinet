@@ -3,6 +3,7 @@ Main module for running cross-validation for different algorithms.
 """
 
 import logging
+from typing import Any, Optional
 
 import pandas as pd
 
@@ -15,9 +16,29 @@ from probinet.model_selection.parameter_search import define_grid
 
 
 def cross_validation(
-    algorithm, model_parameters, cv_parameters, numerical_parameters=None
-):
+    algorithm: str,
+    model_parameters: dict[str, Any],
+    cv_parameters: dict[str, Any],
+    numerical_parameters: Optional[dict[str, Any]] = None,
+) -> pd.DataFrame:
+    """
+    Run cross-validation for a given algorithm.
+    Parameters
+    ----------
+    algorithm
+        String with the name of the algorithm to run.
+    model_parameters
+        Dictionary with the parameters for the algorithm.
+    cv_parameters
+        Dictionary with the parameters for the cross-validation.
+    numerical_parameters
+        Dictionary with the numerical parameters for the algorithm, like the number of iterations, etc.
 
+    Returns
+    -------
+    results_df
+        DataFrame with the results of the cross-validation.
+    """
     if numerical_parameters is None:
         numerical_parameters = {}
     cv_classes = {

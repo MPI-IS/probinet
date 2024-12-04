@@ -2,7 +2,7 @@
 This module provides functions for shuffling indices and extracting masks for selecting the held-out set in the adjacency tensor and design matrix.
 """
 
-from typing import List, Optional, Tuple
+from typing import List, Tuple, Sequence
 
 import numpy as np
 
@@ -67,8 +67,8 @@ def shuffle_indicesG(N: int, L: int, rseed: int = 10) -> List[List[Tuple[int, in
     idxG = [[(i, j) for i in range(N) for j in range(N)] for _ in range(L)]
 
     # Shuffle indices for each layer
-    for l in range(L):
-        rng.shuffle(idxG[l])
+    for layer in range(L):
+        rng.shuffle(idxG[layer])
 
     return idxG
 
@@ -102,8 +102,8 @@ def shuffle_indicesX(N: int, rseed: int = 10) -> np.ndarray:
 def extract_masks(
     N: int,
     L: int,
-    idxG: Optional[List[List[Tuple[int, int]]]] = None,
-    idxX: Optional[List[int]] = None,
+    idxG: list[list[Tuple[int, int]]],
+    idxX: Sequence[int],
     cv_type: str = "kfold",
     NFold: int = 5,
     fold: int = 0,
