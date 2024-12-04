@@ -12,21 +12,16 @@ from probinet.evaluation.expectation_computation import (
     compute_expected_adjacency_tensor_multilayer,
 )
 
+
 @singledispatch
-def mask_or_flatten_array(mask: Union[np.ndarray, None], expected_adjacency: np.ndarray) -> np.ndarray:
+def mask_or_flatten_array(
+    mask: Union[np.ndarray, None], expected_adjacency: np.ndarray
+) -> np.ndarray:
     raise NotImplementedError(f"Unsupported type {type(mask)} for mask.")
+
 
 @mask_or_flatten_array.register(type(None))
 def _(mask: None, expected_adjacency: np.ndarray) -> np.ndarray:
-    return expected_adjacency.flatten()
-
-@mask_or_flatten_array.register(np.ndarray)
-def _(mask: np.ndarray, expected_adjacency: np.ndarray) -> np.ndarray:
-    return expected_adjacency[mask > 0]
-
-
-@singledispatch
-def mask_or_flatten_array(mask: None, expected_adjacency: np.ndarray) -> np.ndarray:
     return expected_adjacency.flatten()
 
 
@@ -179,5 +174,6 @@ def calculate_f1_score(
     # Binarize the data
     data = (data0 > 0).astype("int")
 
-    return metrics.f1_score(mask_or_flatten_array(mask, data), mask_or_flatten_array(mask, Z_pred))
-
+    return metrics.f1_score(
+        mask_or_flatten_array(mask, data), mask_or_flatten_array(mask, Z_pred)
+    )

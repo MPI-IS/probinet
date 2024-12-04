@@ -3,8 +3,39 @@ Functions for evaluating community detection.
 """
 
 from contextlib import suppress
+from typing import Set
 
 import numpy as np
+
+
+def calculate_metric(ground_truth: Set[int], detected: Set[int], metric: str) -> float:
+    """
+    Calculate a metric for evaluating community detection.
+
+    Parameters
+    ----------
+    ground_truth : Set[int]
+        The set of ground truth nodes.
+    detected : Set[int]
+        The set of detected nodes.
+    metric : str
+        The metric to use for evaluation ('f1' or 'jaccard').
+
+    Returns
+    -------
+    float
+        The calculated metric value.
+    """
+    if not len(ground_truth.intersection(detected)):
+        return 0.0
+    precision = len(ground_truth.intersection(detected)) / len(detected)
+    recall = len(ground_truth.intersection(detected)) / len(ground_truth)
+    if metric == "f1":
+        return 2 * (precision * recall) / (precision + recall)
+    elif metric == "jaccard":
+        return len(ground_truth.intersection(detected)) / len(
+            ground_truth.union(detected)
+        )
 
 
 def compute_community_detection_metric(
@@ -15,52 +46,29 @@ def compute_community_detection_metric(
     """
     if metric not in {"f1", "jaccard"}:
         raise ValueError('The similarity measure can be either "f1" or "jaccard"!')
+
     K = U0.shape[1]
-    gt = {}
+    threshold = 1 / K
+    # Create the ground truth dictionary for each community in the original partition. The key is
+    # the community index and the value is the set of nodes in that community, i.e., the nodes
+    # with a value greater than the threshold in the corresponding column of the original partition.
+    gt = {i: set(np.argwhere(U0[:, i] > threshold).flatten()) for i in range(K)}
     d = {}
-    threshold = 1 / U0.shape[1]
     for i in range(K):
-        gt[i] = list(np.argwhere(U0[:, i] > threshold).flatten())
         if com:
             with suppress(IndexError):
-                d[i] = U_infer[i]
+                d[i] = set(U_infer[i])
         else:
-            d[i] = list(np.argwhere(U_infer[:, i] > threshold).flatten())
-    R = 0
-    for i in np.arange(K):
-        ground_truth = set(gt[i])
-        _max = -1
-        M = 0
-        for j in d.keys():
-            detected = set(d[j])
-            if len(ground_truth & detected) != 0:
-                precision = len(ground_truth & detected) / len(detected)
-                recall = len(ground_truth & detected) / len(ground_truth)
-                if metric == "f1":
-                    M = 2 * (precision * recall) / (precision + recall)
-                elif metric == "jaccard":
-                    M = len(ground_truth & detected) / len(ground_truth.union(detected))
-            if M > _max:
-                _max = M
-        R += _max
-    S = 0
-    for j in d.keys():
-        detected = set(d[j])
-        _max = -1
-        M = 0
-        for i in np.arange(K):
-            ground_truth = set(gt[i])
-            if len(ground_truth & detected) != 0:
-                precision = len(ground_truth & detected) / len(detected)
-                recall = len(ground_truth & detected) / len(ground_truth)
-                if metric == "f1":
-                    M = 2 * (precision * recall) / (precision + recall)
-                elif metric == "jaccard":
-                    M = len(ground_truth & detected) / len(ground_truth.union(detected))
-            if M > _max:
-                _max = M
-        S += _max
-    return np.round(R / (2 * len(gt)) + S / (2 * len(d)), 4)
+            d[i] = set(np.argwhere(U_infer[:, i] > threshold).flatten())
+
+    R = sum(
+        max(calculate_metric(gt[i], d[j], metric) for j in d.keys()) for i in range(K)
+    )
+    S = sum(
+        max(calculate_metric(gt[i], d[j], metric) for i in range(K)) for j in d.keys()
+    )
+    # Return the average of the two measures
+    return np.round(R / (2 * K) + S / (2 * len(d)), 4)
 
 
 def compute_permutation_matrix(U_infer: np.ndarray, U0: np.ndarray) -> np.ndarray:

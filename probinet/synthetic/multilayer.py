@@ -2,10 +2,13 @@
 Code to generate multilayer networks with non-negative and discrete weights, and whose nodes are associated
 with one categorical attribute. Self-loops are removed and only the largest connected component is considered.
 """
+
 import logging
 from abc import ABCMeta
 import os
 import warnings
+from pathlib import Path
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -14,6 +17,7 @@ import pandas as pd
 
 from probinet.evaluation.expectation_computation import compute_mean_lambda0
 from probinet.input.stats import print_graph_stat
+from probinet.models.constants import OUTPUT_FOLDER
 from probinet.synthetic.base import StandardMMSBM
 from probinet.utils.matrix_operations import normalize_nonzero_membership
 from probinet.utils.tools import output_adjacency
@@ -106,7 +110,7 @@ def plot_X(X, cmap="PuBuGn"):
 
     fig, ax = plt.subplots(figsize=(7, 7))
     ax.matshow(pd.get_dummies(X), cmap=plt.get_cmap(cmap), aspect="auto")
-    ax.set_title(f"Design matrix", fontsize=15)
+    ax.set_title("Design matrix", fontsize=15)
     for PCM in ax.get_children():
         if isinstance(PCM, plt.cm.ScalarMappable):
             break
@@ -128,7 +132,7 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         K: int = DEFAULT_K,
         Z: int = DEFAULT_Z,
         seed: int = DEFAULT_SEED,
-        out_folder: str = DEFAULT_OUT_FOLDER,
+        out_folder: Path = OUTPUT_FOLDER,
         output_net: bool = DEFAULT_OUTPUT_NET,
         show_details: bool = DEFAULT_SHOW_DETAILS,
         show_plots: bool = DEFAULT_SHOW_PLOTS,
@@ -160,14 +164,9 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
     def __init__(self, **kwargs):
 
         super().__init__(**kwargs)
-        if "parameters" in kwargs:
-            parameters = kwargs["parameters"]
-        else:
-            parameters = None
-        if "attributes" in kwargs:
-            attributes = kwargs["attributes"]
-        else:
-            attributes = None
+
+        parameters = kwargs.get("parameters", None)
+        attributes = kwargs.get("attributes", None)
 
         self.init_mmsbm_params(**kwargs)
 
@@ -349,8 +348,8 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
         # Generate Y
 
         self.M = compute_mean_lambda0(self.u, self.v, self.w)
-        for l in range(self.L):
-            np.fill_diagonal(self.M[l], 0)
+        for layer in range(self.L):
+            np.fill_diagonal(self.M[layer], 0)
         # sparsity parameter for Y
         if self.is_sparse:
             c = self.ExpEdges / self.M.sum()
@@ -361,31 +360,31 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
         Y = self.prng.poisson(self.M)
         if not self.directed:
             # symmetrize
-            for l in range(self.L):
-                Y[l] = Y[l] + Y[l].T - np.diag(Y[l].diagonal())
+            for layer in range(self.L):
+                Y[layer] = Y[layer] + Y[layer].T - np.diag(Y[layer].diagonal())
 
         # Create networkx Graph objects for each layer for easier manipulation
 
         nodes_to_remove = []
         self.G = []
         self.layer_graphs = []
-        for l in range(self.L):
+        for layer in range(self.L):
             if self.directed:
-                self.G.append(nx.from_numpy_array(Y[l], create_using=nx.DiGraph()))
-                Gc = max(nx.weakly_connected_components(self.G[l]), key=len)
-                nodes_to_remove.append(set(self.G[l].nodes()).difference(Gc))
+                self.G.append(nx.from_numpy_array(Y[layer], create_using=nx.DiGraph()))
+                Gc = max(nx.weakly_connected_components(self.G[layer]), key=len)
+                nodes_to_remove.append(set(self.G[layer].nodes()).difference(Gc))
             else:
-                self.G.append(nx.from_numpy_array(Y[l], create_using=nx.Graph()))
+                self.G.append(nx.from_numpy_array(Y[layer], create_using=nx.Graph()))
 
         if self.directed:
             n_to_remove = nodes_to_remove[0].intersection(*nodes_to_remove)
-        for l in range(self.L):
+        for layer in range(self.L):
             if self.directed:
-                self.G[l].remove_nodes_from(list(n_to_remove))
-            self.nodes = list(self.G[l].nodes())
+                self.G[layer].remove_nodes_from(list(n_to_remove))
+            self.nodes = list(self.G[layer].nodes())
 
             self.layer_graphs.append(
-                nx.to_scipy_sparse_array(self.G[l], nodelist=self.nodes)
+                nx.to_scipy_sparse_array(self.G[layer], nodelist=self.nodes)
             )
 
         self.u = self.u[self.nodes]
@@ -393,8 +392,9 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
         self.N = len(self.nodes)
         self.Y = Y[np.ix_(np.arange(self.L), self.nodes, self.nodes)]
 
-    def build_X(self, attributes: np.ndarray = None):
+    def build_X(self, attributes: Optional[np.ndarray] = None):
         """
+
         Generate the design matrix.
 
         Parameters
@@ -449,16 +449,15 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
 
         return beta
 
-
     def _plot_M(self, cmap="PuBuGn"):
         """
         Plot the marginal means produced by the generative algorithm.
         """
 
-        for l in range(self.L):
+        for layer in range(self.L):
             fig, ax = plt.subplots(figsize=(7, 7))
-            ax.matshow(self.M[l], cmap=plt.get_cmap(cmap))
-            ax.set_title(f"Marginal means matrix layer {l}", fontsize=15)
+            ax.matshow(self.M[layer], cmap=plt.get_cmap(cmap))
+            ax.set_title(f"Marginal means matrix layer {layer}", fontsize=15)
             for PCM in ax.get_children():
                 if isinstance(PCM, plt.cm.ScalarMappable):
                     break

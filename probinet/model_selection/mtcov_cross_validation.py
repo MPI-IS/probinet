@@ -127,7 +127,7 @@ class MTCOVCrossValidation(CrossValidation, MTCOV):
         return outputs, algorithm_object
 
     def calculate_performance_and_prepare_comparison(
-        self, outputs, masks, fold, algorithm_object
+        self, outputs, masks, fold, _algorithm_object
     ):
         maskG, maskX = masks
 

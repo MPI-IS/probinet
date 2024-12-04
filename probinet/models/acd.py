@@ -6,9 +6,8 @@ The latent variables are related to community memberships and anomaly parameters
 
 import logging
 import time
-from os import PathLike
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -21,9 +20,16 @@ from probinet.evaluation.expectation_computation import (
 )
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
-from .constants import EPS_
+from .constants import EPS_, OUTPUT_FOLDER, BG_DEFAULT, K_DEFAULT, AG_DEFAULT
 from ..input.preprocessing import preprocess_adjacency_tensor
-from ..types import GraphDataType
+from ..types import (
+    GraphDataType,
+    MaskType,
+    EndFileType,
+    FilesType,
+    ArraySequence,
+    SubsNzType,
+)
 from ..utils.matrix_operations import (
     sp_uttkrp,
     sp_uttkrp_assortative,
@@ -106,26 +112,26 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def fit(
         self,
         gdata: GraphData,
-        ag: float = 1.5,
-        bg: float = 10.0,
+        ag: float = AG_DEFAULT,
+        bg: float = BG_DEFAULT,
         pibr0: Optional[float] = None,
         mupr0: Optional[float] = None,
         flag_anomaly: bool = True,
         fix_pibr: bool = False,
         fix_mupr: bool = False,
-        K: int = 3,
+        K: int = K_DEFAULT,
         undirected: bool = False,
         initialization: int = 0,
         assortative: bool = True,
         constrained: bool = False,
         fix_w: bool = False,
         fix_communities: bool = False,
-        mask: Optional[np.ndarray] = None,
+        mask: Optional[MaskType] = None,
         rseed: int = 10,
         out_inference: bool = True,
-        out_folder: Path = Path("outputs"),
-        end_file: Optional[str] = None,
-        files: Optional[PathLike] = None,
+        out_folder: Path = OUTPUT_FOLDER,
+        end_file: Optional[EndFileType] = None,
+        files: Optional[FilesType] = None,
         **__kwargs: Any,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float]:
         """
@@ -133,7 +139,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
             Graph adjacency tensor.
         nodes : List[int]
             List of node IDs.
@@ -141,9 +147,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             Shape of gamma prior, by default 1.5.
         bg : float, optional
             Rate of gamma prior, by default 10.0.
-        pibr0 : Optional[float], optional
+        pibr0 : float
             Initial value for the anomaly parameter pi, by default None.
-        mupr0 : Optional[float], optional
+        mupr0 : float
             Initial value for the prior mu parameter, by default None.
         flag_anomaly : bool, optional
             If True, the anomaly detection is enabled, by default True.
@@ -165,7 +171,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             If True, the affinity tensor w is fixed, by default False.
         fix_communities : bool, optional
             If True, the community memberships are fixed, by default False.
-        mask : Optional[np.ndarray], optional
+        mask : MaskType, optional
             Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
         rseed : int, optional
             Random seed for initialization, by default 10.
@@ -309,14 +315,12 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         # Return the initial state of the realization
         return coincide, convergence, it, loglik, loglik_values
 
-    def _preprocess_data_for_fit(
-        self, data: GraphDataType, mask: Optional[np.ndarray]
-    ) -> Tuple[
+    def _preprocess_data_for_fit(self, data: GraphDataType, mask: MaskType) -> Tuple[
         GraphDataType,
         np.ndarray,
         np.ndarray,
-        Tuple[int, int, int],
-        Optional[Tuple[int, int, int]],
+        tuple[int, int, int],
+        tuple[int, int, int],
     ]:
         logging.debug("Preprocessing the data for fitting the models.")
         logging.debug("Data looks like: %s", data)
@@ -425,7 +429,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -460,7 +464,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self,
         data: GraphDataType,
         data_T_vals: np.ndarray,
-        subs_nz: Tuple[int, int, int],
+        subs_nz: SubsNzType,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the mean lambda0_ij for only non-zero entries.
@@ -586,16 +590,16 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def _update_pibr(
         self,
         data: GraphDataType,
-        subs_nz: Tuple[int, int, int],
-        mask: Optional[np.ndarray] = None,
-        subs_nz_mask: Optional[Tuple[int, int, int]] = None,
+        subs_nz: SubsNzType,
+        mask: Optional[MaskType] = None,
+        subs_nz_mask: Optional[SubsNzType] = None,
     ) -> float:
         """
         Update the anomaly parameter pi.
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         subs_nz : tuple
                   Indices of elements of data that are non-zero.
@@ -625,8 +629,8 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _update_mupr(
         self,
-        mask: Optional[np.ndarray] = None,
-        subs_nz_mask: Optional[Tuple[int, int, int]] = None,
+        mask: Optional[MaskType] = None,
+        subs_nz_mask: Optional[SubsNzType] = None,
     ) -> float:
         """
         Update the prior mu parameter.
@@ -751,9 +755,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             row_sums = self.v.sum(axis=1)
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
-    def _specific_update_W(
-        self, subs_nz: Tuple[int, int, int], mask: Optional[np.ndarray] = None
-    ):
+    def _specific_update_W(self, subs_nz: SubsNzType, mask: MaskType = None):
         """
         Update affinity tensor.
 
@@ -791,7 +793,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.w[Z == 0] = 0.0
         self.w[non_zeros] /= Z[non_zeros]
 
-    def _update_W(self, subs_nz: Tuple[int, int, int]) -> float:
+    def _update_W(self, subs_nz: SubsNzType) -> float:
         # a generic function here that will do what each class needs
         self._specific_update_W(subs_nz)
 
@@ -849,7 +851,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
     def _update_membership(
         self,
-        subs_nz: Tuple[np.ndarray],
+        subs_nz: ArraySequence,
         u: np.ndarray,
         v: np.ndarray,
         w: np.ndarray,
@@ -894,15 +896,15 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
     def _ELBO(
         self,
         data: GraphDataType,
-        mask: Optional[np.ndarray] = None,
-        subs_nz_mask: Optional[Tuple[int, int, int]] = None,
+        mask: Optional[MaskType] = None,
+        subs_nz_mask: Optional[SubsNzType] = None,
     ) -> float:
         """
         Compute the Evidence Lower BOund (ELBO) of the data.
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         mask : ndarray, optional
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
@@ -935,7 +937,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             l = 0.0
 
             # Term containing Q, pi and A
-
             l -= self.pibr * self.Qij_dense.sum()
 
             if self.pibr >= 0:
@@ -953,7 +954,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                     )
 
             # Entropy of Bernoulli in Q
-
             if mask is None:
                 non_zeros = self.Qij_dense > 0
                 non_zeros1 = (1 - self.Qij_dense) > 0
@@ -970,7 +970,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             ).sum()
 
             # Term containing Q, M and A
-
             if mask is None:
                 l -= ((1 - self.Qij_dense) * self.lambda0_ija).sum()
                 coords_tuple = tuple(data.coords[i] for i in range(3))
@@ -981,7 +980,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                 ).sum()
 
                 # Term containing Q and mu
-
                 if 1 - self.mupr >= 0:
                     l += np.log(1 - self.mupr + EPS_) * (1 - self.Qij_dense).sum()
                 if self.mupr >= 0:

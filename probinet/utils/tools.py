@@ -3,13 +3,17 @@ This module contains utility functions for data manipulation and file I/O.
 """
 
 import logging
+from os import PathLike
 from pathlib import Path
-from typing import Dict, List, Tuple, Type, Union
+from typing import Dict, List, Type, Union
 
 import networkx as nx
 import numpy as np
 import pandas as pd
 from sparse import COO
+
+from ..models.constants import RTOL_DEFAULT, ATOL_DEFAULT
+from ..types import ArraySequence
 
 
 def can_cast_to_int(string: Union[int, float, str]) -> bool:
@@ -95,7 +99,7 @@ def sptensor_from_dense_array(X: np.ndarray) -> COO:
     return sparse_X
 
 
-def get_item_array_from_subs(A: np.ndarray, ref_subs: Tuple[np.ndarray]) -> np.ndarray:
+def get_item_array_from_subs(A: np.ndarray, ref_subs: ArraySequence) -> np.ndarray:
     """
     Retrieves the values of specific entries in a dense tensor.
     Output is a 1-d array with dimension = number of non-zero entries.
@@ -118,7 +122,9 @@ def get_item_array_from_subs(A: np.ndarray, ref_subs: Tuple[np.ndarray]) -> np.n
 
 
 def check_symmetric(
-    a: Union[np.ndarray, List[np.ndarray]], rtol: float = 1e-05, atol: float = 1e-08
+    a: Union[np.ndarray, List[np.ndarray]],
+    rtol: float = RTOL_DEFAULT,
+    atol: float = ATOL_DEFAULT,
 ) -> bool:
     """
     Check if a matrix or a list of matrices is symmetric.
@@ -174,7 +180,7 @@ def build_edgelist(A: COO, layer: int) -> pd.DataFrame:
     return df_res
 
 
-def output_adjacency(A: List, out_folder: Union[str | Path], label: str):
+def output_adjacency(A: List, out_folder: PathLike, label: str):
     """
     Save the adjacency tensor to a file.
     Default format is space-separated .csv with L+2 columns: source_node target_node

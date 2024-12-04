@@ -3,6 +3,7 @@ Class for generation and management of synthetic networks with anomalies
 """
 
 import logging
+from pathlib import Path
 from typing import Optional
 
 import matplotlib.pyplot as plt
@@ -11,10 +12,11 @@ import numpy as np
 from scipy import sparse
 from scipy.optimize import brentq
 
-from probinet.synthetic.base import GraphProcessingMixin, affinity_matrix
-from probinet.synthetic.dynamic import eq_c, membership_vectors
-from probinet.utils.tools import flt
-from probinet.visualization.plot import plot_M
+from ..models.constants import OUTPUT_FOLDER
+from ..synthetic.base import GraphProcessingMixin, affinity_matrix
+from ..synthetic.dynamic import eq_c, membership_vectors
+from ..utils.tools import flt
+from ..visualization.plot import plot_M
 
 EPS = 1e-12  # Small value to avoid division by zero
 
@@ -42,7 +44,7 @@ class SyntNetAnomaly(GraphProcessingMixin):
         corr: float = 0.0,
         over: float = 0.0,
         verbose: int = 0,
-        out_folder: str = None,
+        out_folder: Path = OUTPUT_FOLDER,
         output_parameters: bool = False,
         output_adj: bool = False,
         outfile_adj: Optional[str] = None,
