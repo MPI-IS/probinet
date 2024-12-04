@@ -6,6 +6,7 @@ import unittest
 import networkx as nx
 from probinet.input.loader import build_adjacency_from_networkx
 from probinet.models.classes import GraphData
+from .fixtures import BaseTest
 
 
 class TestInput(BaseTest):
@@ -17,7 +18,7 @@ class TestInput(BaseTest):
             G.edges[edge]["weight"] = 3
             G.edges[edge]["weight2"] = i
 
-        g_data = build_adjacency_from_networkx(G, weight_list=["weight", "weight2"],file_name=self.folder+"/edges.csv")
+        g_data = build_adjacency_from_networkx(G, weight_list=["weight", "weight2"],file_name=self.folder+"edges.csv")
 
         self.assertTrue(type(g_data) is GraphData)
         # XXX: test didn't work; weights not added to graph using build_adjacency_from_file

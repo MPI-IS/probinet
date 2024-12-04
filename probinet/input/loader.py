@@ -49,7 +49,7 @@ def build_adjacency_from_networkx(
     for w in weight_list:
         assert w in attribute_names, f"{w} is not an attribute"
 
-    if not file_name or Path(file_name).suffix == ".csv":
+    if not file_name or Path(file_name).suffix != ".csv":
         file_name = Path.cwd()/"edge_list.csv"
         logging.DEBUG("File will be stored at %s" % file_name)
 
