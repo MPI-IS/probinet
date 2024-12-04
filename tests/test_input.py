@@ -1,4 +1,5 @@
 """
+Test cases for the input module.
 """
 
 import unittest
