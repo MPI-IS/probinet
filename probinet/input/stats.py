@@ -14,7 +14,7 @@ import numpy as np
 from ..utils.tools import log_and_raise_error
 
 
-def print_graph_stat(
+def print_graph_stats(
     G: List[nx.MultiDiGraph], rw: Optional[List[float]] = None
 ) -> None:
     """
@@ -36,35 +36,32 @@ def print_graph_stat(
     L = len(G)
     N = G[0].number_of_nodes()
 
-    logging.info("Number of nodes = %s", N)
-    logging.info("Number of layers = %s", L)
+    print("Number of nodes = %s" % N)
+    print("Number of layers = %s" % L)
 
-    logging.info("Number of edges and average degree in each layer:")
+    print("Number of edges and average degree in each layer:")
     for layer in range(L):
         E = G[layer].number_of_edges()
         k = 2 * float(E) / float(N)
-        logging.info("E[%s] = %s / <k> = %.2f", layer, E, k)
+        print("E[%s] = %s / <k> = %.2f" % (layer, E, k))
         weights = [d["weight"] for u, v, d in list(G[layer].edges(data=True))]
         if not np.array_equal(weights, np.ones_like(weights)):
             M = np.sum([d["weight"] for u, v, d in list(G[layer].edges(data=True))])
             kW = 2 * float(M) / float(N)
-            logging.info("M[%s] = %s - <k_weighted> = %.3f", layer, M, kW)
+            print("M[%s] = %s - <k_weighted> = %.3f" % (layer, M, kW))
 
-        logging.info("Sparsity [%s] = %.3f", layer, E / (N * N))
+        print("Sparsity [%s] = %.3f" % (layer, E / (N * N)))
         # Check if network is directed; if not, skip the calculation of the reciprocity
         if nx.is_directed(G[layer]):
-            logging.info(
-                "Reciprocity (networkX) = %.3f", nx.reciprocity(nx.Graph(G[layer]))
-            )
+            print("Reciprocity (networkX) = %.3f" % nx.reciprocity(nx.Graph(G[layer])))
 
         if rw is not None:
-            logging.info(
-                "Reciprocity (considering the weights of the edges) = %.3f",
-                rw[layer],
+            print(
+                "Reciprocity (considering the weights of the edges) = %.3f" % rw[layer]
             )
 
 
-def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
+def print_graph_stats_MTCOV(A: List[nx.MultiDiGraph]) -> None:
     """
     Print the statistics of the graph A.
 
@@ -76,7 +73,7 @@ def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
 
     L = len(A)
     N = A[0].number_of_nodes()
-    logging.info("Number of edges and average degree in each layer:")
+    print("Number of edges and average degree in each layer:")
     avg_edges = 0.0
     avg_density = 0.0
     avg_M = 0.0
@@ -87,7 +84,7 @@ def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
         k = 2 * float(E) / float(N)
         avg_edges += E
         avg_density += k
-        logging.info("E[%s] = %s - <k> = %.3f", layer, E, k)
+        print("E[%s] = %s - <k> = %.3f" % (layer, E, k))
 
         weights = [d["weight"] for u, v, d in list(A[layer].edges(data=True))]
         if not np.array_equal(weights, np.ones_like(weights)):
@@ -96,20 +93,18 @@ def print_graph_stat_MTCOV(A: List[nx.MultiDiGraph]) -> None:
             kW = 2 * float(M) / float(N)
             avg_M += M
             avg_densityW += kW
-            logging.info("M[%s] = %s - <k_weighted> = %.3f", layer, M, kW)
+            print("M[%s] = %s - <k_weighted> = %.3f" % (layer, M, kW))
 
-        logging.info("Sparsity [%s] = %.3f", layer, E / (N * N))
+        print("Sparsity [%s] = %.3f" % (layer, E / (N * N)))
 
-    logging.info("\nAverage edges over all layers: %.3f", avg_edges / L)
-    logging.info("Average degree over all layers: %.2f", avg_density / L)
-    logging.info("Total number of edges: %s", avg_edges)
+    print("\nAverage edges over all layers: %.3f" % (avg_edges / L))
+    print("Average degree over all layers: %.2f" % (avg_density / L))
+    print("Total number of edges: %s" % avg_edges)
     if not unweighted:
-        logging.info("Average edges over all layers (weighted): %.3f", avg_M / L)
-        logging.info(
-            "Average degree over all layers (weighted): %.2f", avg_densityW / L
-        )
-        logging.info("Total number of edges (weighted): %.3f", avg_M)
-    logging.info("Sparsity = %.3f", avg_edges / (N * N * L))
+        print("Average edges over all layers (weighted): %.3f" % (avg_M / L))
+        print("Average degree over all layers (weighted): %.2f" % (avg_densityW / L))
+        print("Total number of edges (weighted): %.3f" % avg_M)
+    print("Sparsity = %.3f" % (avg_edges / (N * N * L)))
 
 
 def reciprocal_edges(G: nx.MultiDiGraph) -> float:

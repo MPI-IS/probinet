@@ -31,7 +31,7 @@ from scipy.optimize import brentq
 
 from probinet.visualization.plot import plot_A
 
-from ..input.stats import print_graph_stat
+from ..input.stats import print_graph_stats
 from ..utils.tools import check_symmetric, log_and_raise_error, output_adjacency
 from .base import (
     DEFAULT_ETA,
@@ -736,7 +736,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
             output_adjacency(self.layer_graphs, self.out_folder, self.outfile_adj)
 
         if self.show_details:
-            print_graph_stat(self.G)
+            print_graph_stats(self.G)
         if self.show_plots:
             plot_A(self.layer_graphs)
             if self.M0 is not None:

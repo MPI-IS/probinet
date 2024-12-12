@@ -18,7 +18,7 @@ import numpy as np
 from probinet.visualization.plot import plot_A
 
 from ..evaluation.expectation_computation import compute_mean_lambda0
-from ..input.stats import print_graph_stat
+from ..input.stats import print_graph_stats
 from ..utils.matrix_operations import normalize_nonzero_membership
 from ..utils.tools import log_and_raise_error, output_adjacency
 
@@ -348,7 +348,7 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
             output_adjacency(self.layer_graphs, self.out_folder, self.outfile_adj)
 
         if self.show_details:
-            print_graph_stat(self.G)
+            print_graph_stats(self.G)
         if self.show_plots:
             plot_A(self.layer_graphs)
             if self.M is not None:

@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from probinet.evaluation.expectation_computation import compute_mean_lambda0
-from probinet.input.stats import print_graph_stat
+from probinet.input.stats import print_graph_stats
 from probinet.models.constants import OUTPUT_FOLDER
 from probinet.synthetic.base import StandardMMSBM
 from probinet.utils.matrix_operations import normalize_nonzero_membership
@@ -180,7 +180,7 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
             output_design_matrix(self.X, self.out_folder, "X" + self.label)
 
         if self.show_details:
-            print_graph_stat(self.G)
+            print_graph_stats(self.G)
         if self.show_plots:
             plot_A(self.layer_graphs)
             plot_X(self.X)
