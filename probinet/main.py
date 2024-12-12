@@ -29,6 +29,14 @@ ALGORITHM_CLASSES = {
 
 
 def parse_args():
+    """
+    Parse the command-line arguments.
+
+    Returns
+    -------
+    args : argparse.Namespace
+           Parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Script to run the CRep, JointCRep, DynCRep, MTCOV, and ACD algorithms.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

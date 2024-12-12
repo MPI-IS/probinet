@@ -2,15 +2,15 @@
 Functions for computing expectations and related metrics.
 """
 
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.stats import poisson
 from sklearn import metrics
-from sparse import COO
 
 from ..model_selection.labeling import extract_true_label, predict_label
+from ..types import GraphDataType
 from ..utils.matrix_operations import transpose_matrix, transpose_tensor
 from ..utils.tools import check_symmetric
 
@@ -32,7 +32,7 @@ def calculate_conditional_expectation(
 
 
 def calculate_conditional_expectation_dyncrep(
-    B_to_T: Union[COO, np.ndarray],
+    B_to_T: GraphDataType,
     u: np.ndarray,
     v: np.ndarray,
     w: np.ndarray,

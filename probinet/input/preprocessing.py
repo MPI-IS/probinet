@@ -12,6 +12,7 @@ import numpy as np
 import scipy
 from sparse import COO
 
+from ..types import GraphDataType
 from ..utils import tools
 
 
@@ -162,7 +163,7 @@ def create_sparse_adjacency_tensor_from_graph_list(
     return data
 
 
-def preprocess_adjacency_tensor(A: np.ndarray) -> Union[COO, np.ndarray]:
+def preprocess_adjacency_tensor(A: np.ndarray) -> GraphDataType:
     """
     Pre-process input data tensor.
 

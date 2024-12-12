@@ -318,7 +318,7 @@ class TestSyntNetAnomaly(unittest.TestCase):
         self.assertEqual(syn_acd.m, expected_values["m"])
         self.assertEqual(syn_acd.rseed, expected_values["rseed"])
         self.assertEqual(syn_acd.label, expected_values["label"])
-        self.assertEqual(syn_acd.out_folder, expected_values["out_folder"])
+        self.assertEqual(syn_acd.out_folder.name, expected_values["out_folder"])
         self.assertEqual(
             syn_acd.output_parameters, expected_values["output_parameters"]
         )

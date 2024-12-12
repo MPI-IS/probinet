@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from argparse import Namespace
 from functools import singledispatchmethod
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from sparse import COO
@@ -18,6 +18,7 @@ from sparse import COO
 from probinet.input.loader import build_adjacency_from_file
 from probinet.models.classes import GraphData
 from probinet.models.constants import CONVERGENCE_TOL_, DECISION_, ERR_, ERR_MAX_, INF_
+from probinet.types import GraphDataType
 from probinet.utils.tools import log_and_raise_error
 from probinet.visualization.plot import plot_L
 
@@ -67,7 +68,6 @@ class ModelBase(ModelBaseParameters):
     convergence. All the models classes should inherit from this class.
     """
 
-
     def __init__(self, *args, **kwargs):
         # Call the __init__ method of the parent class
         super().__init__(*args, **kwargs)
@@ -113,7 +113,7 @@ class ModelBase(ModelBaseParameters):
         """
         pass
 
-    def _validate_eta0(self, eta0: Optional[float]) -> None:
+    def _validate_eta0(self, eta0: float) -> None:
         if eta0 is not None and eta0 <= 0.0:
             message = "If not None, the eta0 parameter has to be greater than 0.!"
             log_and_raise_error(ValueError, message)
@@ -521,7 +521,7 @@ class ModelBase(ModelBaseParameters):
 
     def _ps_likelihood(
         self,
-        data: Union[COO, np.ndarray],
+        data: GraphDataType,
         data_T: COO,
         mask: Optional[np.ndarray] = None,
     ):
@@ -542,7 +542,7 @@ class ModelBase(ModelBaseParameters):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         it : int
              Current iteration number.
@@ -560,7 +560,7 @@ class ModelBase(ModelBaseParameters):
                   Indices of elements of data that are non-zero.
         T : Optional[int]
             Number of time steps.
-        data_T : Optional[Union[COO, np.ndarray]]
+        data_T : Optional[GraphDataType]
                  Graph adjacency tensor (transpose).
         mask : Optional[np.ndarray]
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
@@ -848,13 +848,13 @@ class ModelBase(ModelBaseParameters):
         return {f: getattr(args, f) for f in fields}
 
     @singledispatchmethod
-    def get_data_sum(self, data) -> float:
+    def get_data_sum(self, data: GraphDataType) -> float:
         """
         Compute the sum of the data.
 
         Parameters
         ----------
-        data : Union[np.ndarray, COO]
+        data : GraphDataType
             The data to sum.
 
         Returns
@@ -904,13 +904,13 @@ class ModelBase(ModelBaseParameters):
         return data.data.sum()
 
     @singledispatchmethod
-    def get_data_toarray(self, data) -> np.ndarray:
+    def get_data_toarray(self, data: GraphDataType) -> np.ndarray:
         """
         Convert the data to a numpy array.
 
         Parameters
         ----------
-        data : Union[np.ndarray, COO]
+        data : GraphDataType
             The data to convert.
 
         Returns
@@ -960,13 +960,13 @@ class ModelBase(ModelBaseParameters):
         return data.toarray()
 
     @singledispatchmethod
-    def get_data_nonzero(self, data) -> tuple:
+    def get_data_nonzero(self, data: GraphDataType) -> tuple:
         """
         Get the indices of non-zero elements in the data.
 
         Parameters
         ----------
-        data : Union[np.ndarray, COO]
+        data : GraphDataType
             The data to get non-zero indices from.
 
         Returns

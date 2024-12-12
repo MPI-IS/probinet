@@ -32,6 +32,10 @@ from probinet.models.classes import GraphData
 
 
 class CrossValidation(ABC):
+    """
+    Abstract class to implement cross-validation for a given algorithm.
+    """
+
     def __init__(
         self, algorithm, model_parameters, cv_parameters, numerical_parameters=None
     ):
@@ -44,6 +48,9 @@ class CrossValidation(ABC):
             setattr(self, key, value)
 
     def prepare_output_directory(self):
+        """
+        Prepare the output directory to save the results.
+        """
         if not os.path.exists(self.out_folder):
             os.makedirs(self.out_folder)
 
@@ -101,7 +108,23 @@ class CrossValidation(ABC):
             sep=self.sep,
         )
 
-    def prepare_and_run(self, mask):
+    def prepare_and_run(self, mask: np.ndarray):
+        """
+        Prepare the data for training and run the algorithm.
+
+        Parameters
+        ----------
+        mask: np.ndarray
+            The mask to apply on the data.
+
+        Returns
+        -------
+        tuple
+            The outputs of the algorithm.
+        object
+            The algorithm object.
+
+        """
         # Create a copy of the adjacency matrix B to use for training
         B_train = self.gdata.adjacency_tensor.copy()
 

@@ -7,11 +7,13 @@ import math
 import sys
 
 import warnings
+from pathlib import Path
 
 from scipy.sparse import tril, triu
 
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.stats import reciprocal_edges
+from ..models.constants import OUTPUT_FOLDER
 from ..utils.matrix_operations import (
     Exp_ija_matrix,
     normalize_nonzero_membership,
@@ -32,11 +34,11 @@ from probinet.visualization.plot import plot_A
 from ..input.stats import print_graph_stat
 from ..utils.tools import check_symmetric, log_and_raise_error, output_adjacency
 from .base import (
-    BaseSyntheticNetwork,
     DEFAULT_ETA,
     StandardMMSBM,
     GraphProcessingMixin,
     affinity_matrix,
+    BaseSyntheticNetwork,
 )
 
 if not sys.warnoptions:
@@ -62,11 +64,11 @@ class GM_reciprocity(GraphProcessingMixin):
         beta: float = 0.1,
         Normalization: int = 0,
         structure: str = "assortative",
-        end_file: str = None,
-        out_folder: str = None,
+        end_file: Optional[str] = None,
+        out_folder: Path = OUTPUT_FOLDER,
         output_parameters: bool = False,
         output_adj: bool = False,
-        outfile_adj: str = None,
+        outfile_adj: Optional[str] = None,
         ExpM: Optional[float] = None,
     ):
         """

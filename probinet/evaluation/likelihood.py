@@ -198,8 +198,7 @@ def likelihood_conditional(
     # Check for NaN values in the log-likelihood
     if np.isnan(l):
         log_and_raise_error(ValueError, "Likelihood is NaN!")
-    else:
-        return l
+    return l
 
 
 def PSloglikelihood(

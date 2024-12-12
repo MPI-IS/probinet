@@ -15,10 +15,16 @@ from sparse import COO
 
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
+from .constants import OUTPUT_FOLDER
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.preprocessing import preprocess_adjacency_tensor
-from ..types import GraphDataType
-from ..types import GraphDataType
+from ..types import (
+    GraphDataType,
+    MaskType,
+    EndFileType,
+    FilesType,
+    ArraySequence,
+)
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
 from ..utils.tools import get_item_array_from_subs, log_and_raise_error
 
@@ -27,7 +33,6 @@ class CRep(ModelBase, ModelUpdateMixin):
     """
     Class to perform inference in networks with reciprocity.
     """
-
 
     def __init__(
         self,
@@ -88,18 +93,18 @@ class CRep(ModelBase, ModelUpdateMixin):
         gdata: GraphData,
         rseed: int = 0,
         K: int = 3,
-        mask: Optional[np.ndarray] = None,
+        mask: Optional[MaskType] = None,
         initialization: int = 0,
-        eta0: Union[float, None] = None,
+        eta0: Optional[float] = None,
         undirected: bool = False,
         assortative: bool = True,
         constrained: bool = True,
         out_inference: bool = True,
-        out_folder: Path = Path("outputs"),
-        end_file: str = None,
         fix_eta: bool = False,
         fix_w: bool = False,
-        files: Optional[str] = None,
+        out_folder: Path = OUTPUT_FOLDER,
+        end_file: Optional[EndFileType] = None,
+        files: Optional[FilesType] = None,
         **_kwargs: Any,
     ) -> tuple[
         ndarray[Any, dtype[np.float64]],
@@ -125,7 +130,7 @@ class CRep(ModelBase, ModelUpdateMixin):
             Random seed, by default 0.
         K : int, optional
             Number of communities, by default 3.
-        mask : Optional[np.ndarray], optional
+        mask : MaskType, optional
             Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
         initialization : int, optional
             Initialization method for the models parameters, by default 0.
@@ -276,9 +281,9 @@ class CRep(ModelBase, ModelUpdateMixin):
     def _preprocess_data_for_fit(
         self,
         data: GraphDataType,
-        data_T: Union[COO, np.ndarray, None],
+        data_T: Union[GraphDataType, None],
         data_T_vals: Union[np.ndarray, None],
-    ) -> Tuple[int, Any, Any, np.ndarray, Tuple[np.ndarray]]:
+    ) -> tuple[float, COO | ndarray, COO | ndarray, ndarray | None, tuple]:
         """
         Preprocess the data for fitting the models.
 
@@ -331,14 +336,14 @@ class CRep(ModelBase, ModelUpdateMixin):
         self,
         data: GraphDataType,
         data_T_vals: np.ndarray,
-        subs_nz: Tuple[np.ndarray],
+        subs_nz: ArraySequence,
     ) -> None:
         """
         Update the cache used in the em_update.
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -358,7 +363,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -420,7 +425,7 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -531,7 +536,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         non_zeros = Z > 0
         self.w[non_zeros] /= Z[non_zeros]
 
-    def _update_membership(self, subs_nz: Tuple[np.ndarray], m: int) -> np.ndarray:
+    def _update_membership(self, subs_nz: ArraySequence, m: int) -> np.ndarray:
         """
         Return the Khatri-Rao product (sparse version) used in the update of the membership
         matrices.
@@ -566,16 +571,16 @@ class CRep(ModelBase, ModelUpdateMixin):
         self,
         data: GraphDataType,
         data_T: COO,
-        mask: Optional[np.ndarray] = None,
+        mask: Optional[MaskType] = None,
     ) -> float:
         """
         Compute the pseudo log-likelihood of the data.
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
-        data_T : Union[COO, np.ndarray]
+        data_T : GraphDataType
                  Graph adjacency tensor (transpose).
         mask : ndarray
                Mask for selecting the held out set in the adjacency tensor in case of

@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import csv
 
+
 from .preprocessing import (
     create_adjacency_tensor_from_graph_list,
     create_sparse_adjacency_tensor_from_graph_list,
@@ -78,44 +79,35 @@ def build_adjacency_from_file(
     **_kwargs: Any,
 ) -> GraphData:
     """
-    Import data, i.e. the adjacency matrix, from a given folder.
+     Import data, i.e. the adjacency matrix, from a given folder.
 
-    Return the NetworkX graph and its numpy adjacency matrix.
+     Return the NetworkX graph and its numpy adjacency matrix.
 
-    Parameters
-    ----------
-    path_to_file
-        Path of the input file.
-    ego
-        Name of the column to consider as the source of the edge.
-    alter
-        Name of the column to consider as the target of the edge.
-    force_dense
-        If set to True, the algorithm is forced to consider a dense adjacency tensor.
-    undirected
-        If set to True, the algorithm considers an undirected graph.
-    noselfloop
-        If set to True, the algorithm removes the self-loops.
-    sep
-        Separator to use when reading the dataset.
-    binary
-        If set to True, the algorithm reads the graph with binary edges.
-    header
-        Row number to use as the column names, and the start of the data.
+     Parameters
+     ----------
+     path_to_file
+         Path of the input file.
+     ego
+         Name of the column to consider as the source of the edge.
+     alter
+         Name of the column to consider as the target of the edge.
+     force_dense
+         If set to True, the algorithm is forced to consider a dense adjacency tensor.
+     undirected
+         If set to True, the algorithm considers an undirected graph.
+     noselfloop
+         If set to True, the algorithm removes the self-loops.
+     sep
+         Separator to use when reading the dataset.
+     binary
+         If set to True, the algorithm reads the graph with binary edges.
+     header
+         Row number to use as the column names, and the start of the data.
 
-    Returns
-    -------
-    A
-        List of MultiDiGraph NetworkX objects representing the layers of the network.
-    B
-        Graph adjacency tensor. If `force_dense` is True, returns a dense ndarray. Otherwise, returns a sparse COO tensor.
-    B_T
-        Transposed graph adjacency tensor. Returns None if `force_dense` is True.
-    data_T_vals
-        Array with values of entries A[j, i] if entry A[i, j] is non-zero. Returns None if
-        `force_dense` is True.
-    nodes
-        List of node IDs
+     Returns
+     -------
+    GraphData
+         Named tuple containing the graph list, the adjacency tensor, the transposed tensor, the data values, and the nodes.
     """
 
     # Read adjacency file

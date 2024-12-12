@@ -6,7 +6,7 @@ import logging
 import time
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from scipy.optimize import brentq, root
@@ -14,14 +14,20 @@ from sparse import COO
 
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
-from .constants import EPS_
+from .constants import EPS_, OUTPUT_FOLDER
 from ..evaluation.expectation_computation import (
     compute_lagrange_multiplier,
     compute_mean_lambda0,
     u_with_lagrange_multiplier,
 )
 from ..input.preprocessing import preprocess_adjacency_tensor
-from ..types import GraphDataType
+from ..types import (
+    GraphDataType,
+    MaskType,
+    EndFileType,
+    FilesType,
+    ArraySequence,
+)
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
 from ..utils.tools import get_item_array_from_subs, log_and_raise_error
 
@@ -65,15 +71,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         # Additional fields
         data_kwargs["T"] = getattr(args, "T")
-
-        return data_kwargs
-
-    def get_params_to_load_data(self, args: Namespace) -> Dict[str, Any]:
-        # Get the parameters for loading the data
-        data_kwargs = super().get_params_to_load_data(args)
-
-        # Additional fields
-        data_kwargs["T"] = args.T
 
         return data_kwargs
 
@@ -136,7 +133,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self,
         gdata: GraphData,
         T: Optional[int] = None,
-        mask: Optional[np.ndarray] = None,
+        mask: Optional[MaskType] = None,
         K: int = 2,
         rseed: int = 0,
         ag: float = 1.0,
@@ -155,9 +152,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         fix_w: bool = False,
         undirected: bool = False,
         out_inference: bool = True,
-        out_folder: Path = Path("outputs"),
-        end_file: str = None,
-        files: str = None,
+        out_folder: Path = OUTPUT_FOLDER,
+        end_file: Optional[EndFileType] = None,
+        files: Optional[FilesType] = None,
         **_kwargs: Any,
     ) -> Tuple[
         np.ndarray,
@@ -173,13 +170,13 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
             Graph adjacency tensor.
         T : int
             Number of time steps.
         nodes : List[int]
             List of node IDs.
-        mask : Optional[np.ndarray], optional
+        mask : MaskType, optional
             Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
         K : int, optional
             Number of communities, by default 2.
@@ -364,7 +361,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
     def _preprocess_data_for_fit(self, T: int, data: GraphDataType) -> Tuple[
         int,
-        Union[COO, np.ndarray],
+        GraphDataType,
         np.ndarray,
         np.ndarray,
         np.ndarray,
@@ -378,7 +375,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         ----------
         T : int
             Number of time steps.
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
             The input data tensor.
         temporal : bool
             Flag to determine if the function should behave in a temporal manner.
@@ -521,14 +518,14 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self,
         data: GraphDataType,
         data_T_vals: np.ndarray,
-        subs_nz: Tuple[np.ndarray],
+        subs_nz: ArraySequence,
     ) -> None:
         """
         Update the cache used in the em_update.
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
         data_T_vals : ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
@@ -981,8 +978,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         data: GraphDataType,
         data_T: GraphDataType,
         data_T_vals: np.ndarray,
-        subs_nz: Tuple[np.ndarray],
-        mask: Optional[np.ndarray] = None,
+        subs_nz: ArraySequence,
+        mask: Optional[MaskType] = None,
     ) -> float:  # The inputs do change sometimes, so keeping it like this to avoid
         # conflicts during the execution.
         """
@@ -990,17 +987,17 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data : GraphDataType
                Graph adjacency tensor.
-        data_T : Union[COO, np.ndarray]
+        data_T : GraphDataType
                  Graph adjacency tensor (transpose).
         data_T_vals : np.ndarray
                       Array with values of entries A[j, i] given non-zero entry (i, j).
-        subs_nz : Tuple[np.ndarray]
+        subs_nz : TupleArrays
                   Indices of elements of data that are non-zero.
         T : int
             Number of time steps.
-        mask : Optional[np.ndarray]
+        mask : MaskType
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
         EPS : float, default 1e-12
               Small constant to prevent division by zero.
