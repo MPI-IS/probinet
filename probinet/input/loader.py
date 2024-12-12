@@ -44,13 +44,13 @@ def build_adjacency_from_networkx(
         GraphData object created from networkx graph
     """
     attribute_names = {
-        key for _, _, data in network.edges(data=True) for key in data.keys()
+        key for _, _, data in network.edges(data=True) for key in data
     }
     for w in weight_list:
         assert w in attribute_names, f"{w} is not an attribute"
 
     if not file_name or Path(file_name).suffix != ".csv":
-        file_name = Path.cwd()/"edge_list.csv"
+        file_name = Path.cwd() / "edge_list.csv"
         logging.DEBUG("File will be stored at %s" % file_name)
 
     # Save edges to a CSV file
