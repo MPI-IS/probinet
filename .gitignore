@@ -50,5 +50,12 @@ docs/source/tutorials/tutorial_outputs/
 outputs/
 
 doc/source/tutorials/.ipynb_checkpoints/
+
 /docs/source/tutorials/ACD_RD.ipynb
 /docs/source/tutorials/.ipynb_checkpoints/
+
+publication/template/--env
+
+publication/template/--user
+
+publication/template/--volume
