@@ -42,6 +42,7 @@ dev = [
     "sphinxcontrib.bibtex",
     "sphinxcontrib.napoleon",
     'sphinx_book_theme',
+    "sphinx-copybutton",
     "tox",
     "unittest-xml-reporting"
 ]

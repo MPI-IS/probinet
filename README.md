@@ -135,6 +135,12 @@ The authors of the original implementations integrated to this packages are:
 
 See the references in the documentation for more details.
 
+## Contributing
+
+Would you like to contribute to the development of **ProbINet**? Contributions are welcome and 
+appreciated! You can find detailed information on how to get started here: [Contributing Guide](https://mpi-is.github.io/probinet/contributing.html).
+
+
 ## License
 
 This project is licensed under the GNU GPL version 3 - see the [LICENSE](LICENSE.md) file for

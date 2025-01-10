@@ -29,6 +29,12 @@ Thank you for choosing ProbINet. We hope you enjoy using it!
 
 .. toctree::
     :maxdepth: 1
+    :caption: Contributing
+
+    How To Contribute <contributing.rst>
+
+.. toctree::
+    :maxdepth: 1
     :caption: References
 
     Bibliography <references.rst>

@@ -18,8 +18,9 @@ from .preprocessing import (
     create_adjacency_tensor_from_graph_list,
     create_sparse_adjacency_tensor_from_graph_list,
 )
-from .stats import print_graph_stat
+from .stats import print_graph_stats
 from ..models.classes import GraphData
+from ..utils.tools import log_and_raise_error
 
 
 def build_adjacency_from_networkx(
@@ -117,6 +118,11 @@ def build_adjacency_from_file(
         path_to_file,
         df_adj.shape,
     )
+    # Check that the df has only non negative values; if not, raise an error
+    if (df_adj.iloc[:, 2:] < 0).any(axis=None):
+        # We check this for the columns that contain weights (i.e., from the 2nd column onwards)
+        log_and_raise_error(ValueError, "There are negative weights.")
+
     # Build a list of MultiDiGraph NetworkX objects representing the layers of the network
     A = read_graph(
         df_adj=df_adj,
@@ -142,7 +148,7 @@ def build_adjacency_from_file(
 
     # Check if the current level is INFO or lower
     if current_level <= logging.DEBUG:
-        print_graph_stat(A, rw)
+        print_graph_stats(A, rw)
 
     return GraphData(
         graph_list=A,
@@ -301,7 +307,9 @@ def read_graph(
     """
     Create the graph by adding edges and nodes.
 
-    Return the list MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
+    Return the list MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects. The graph
+    is built by adding edges and nodes from the given DataFrame. The graphs listed in the output
+    have an edge attribute named `label`.
 
     Parameters
     ----------
@@ -318,14 +326,13 @@ def read_graph(
     binary: bool
             If set to True, read the graph with binary edges.
     label: str
-             Name of the column to consider as the edge weight.
+             Name to be assigned to the edge attribute, across all layers.
 
     Returns
     -------
     A: list
        List of MultiGraph (or MultiDiGraph if undirected=False) NetworkX objects.
     """
-
     # Build nodes
     egoID = df_adj[ego].unique()
     alterID = df_adj[alter].unique()
@@ -339,7 +346,7 @@ def read_graph(
     else:
         A = [nx.MultiDiGraph() for _ in range(L)]
 
-    logging.debug("Creating the network ...")
+    logging.debug("Creating the networks ...")
     # Set the same set of nodes and order over all layers
     for layer in range(L):
         A[layer].add_nodes_from(nodes)

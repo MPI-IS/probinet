@@ -6,6 +6,7 @@ The latent variables are related to community memberships and anomaly parameters
 
 import logging
 import time
+from os import PathLike
 from pathlib import Path
 from typing import Any, List, Tuple, Optional
 
