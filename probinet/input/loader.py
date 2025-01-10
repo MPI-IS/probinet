@@ -11,6 +11,8 @@ from typing import Any, Optional, Union
 import networkx as nx
 import numpy as np
 import pandas as pd
+import csv
+
 
 from .preprocessing import (
     create_adjacency_tensor_from_graph_list,
@@ -18,6 +20,50 @@ from .preprocessing import (
 )
 from .stats import print_graph_stat
 from ..models.classes import GraphData
+
+
+def build_adjacency_from_networkx(
+    network: nx.Graph,
+    weight_list: list[str],
+    file_name: Optional[PathLike] = None,
+) -> GraphData:
+    """
+    Import networkx graph and convert it to the GraphData object
+    
+    Parameters
+    ----------
+    networkx
+        networkx graph that will be converted to GraphData object
+    weight_list
+        list of names of weights user would like to use from networkx graph
+    file_name
+        name of csv file (and path) created from networkx graph (used to create GraphData object)
+        e.g. /path/to/file/file_name.csv
+    Returns
+    -------
+    GraphData
+        GraphData object created from networkx graph
+    """
+    attribute_names = {
+        key for _, _, data in network.edges(data=True) for key in data
+    }
+    for w in weight_list:
+        assert w in attribute_names, f"{w} is not an attribute"
+
+    if not file_name or Path(file_name).suffix != ".csv":
+        file_name = Path.cwd() / "edge_list.csv"
+        logging.DEBUG("File will be stored at %s" % file_name)
+
+    # Save edges to a CSV file
+    with open(file_name, "w", newline="", encoding="utf-8") as edge_file:
+        writer = csv.writer(edge_file, delimiter=" ")
+        # Write header
+        writer.writerow(["source", "target"] + weight_list)  # Get edge keys.
+        # Write edge data
+        for source, target, attrs in network.edges(data=True):
+            writer.writerow([source, target] + [attrs[a] for a in weight_list])
+
+    return build_adjacency_from_file(file_name)
 
 
 def build_adjacency_from_file(
