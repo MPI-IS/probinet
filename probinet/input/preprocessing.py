@@ -7,9 +7,9 @@ weights, and ensures proper formatting of input data tensors.
 from typing import Any, List, Optional, Tuple, Union
 
 import networkx as nx
-from numpy import ndarray
 import numpy as np
 import scipy
+from numpy import ndarray
 from sparse import COO
 
 from ..types import GraphDataType
@@ -32,9 +32,9 @@ def create_adjacency_tensor_from_graph_list(
     nodes : list, optional
             List of nodes IDs. If not provided, use all nodes in the first graph as the default.
     calculate_reciprocity : bool, optional
-                            Whether to calculate reciprocity or not. Default is True.
+                            Whether to calculate reciprocity or not.
     label : str, optional
-            The edge attribute key used to determine the weight of the edges. Default is 'weight'.
+            The edge attribute key used to determine the weight of the edges.
 
     Returns
     -------
@@ -105,7 +105,7 @@ def create_sparse_adjacency_tensor_from_graph_list(
     A : list
         List of MultiDiGraph NetworkX objects.
     calculate_reciprocity : bool, optional
-                            Whether to calculate and return the reciprocity values. Default is False.
+                            Whether to calculate and return the reciprocity values..
 
     Returns
     -------

@@ -1,5 +1,5 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 from unittest import mock
 
 from tests.fixtures import BaseTest
@@ -12,7 +12,6 @@ PATH_TO_INPUT = str(Path("probinet") / "data" / "input")
 
 
 class TestMain(BaseTest):
-
     def setUp(self):
         self.expected_config = {}
         self.kwargs_to_check = {}
@@ -23,7 +22,6 @@ class TestMain(BaseTest):
     def check_default_params_passed_to_fit(
         self, algorithm, mock_fit, main_function, *extra_args
     ):
-
         # Set up the command line arguments for the main function
         sys.argv = [
             COMMAND_TO_RUN_MODEL,  # Name of the main script
@@ -56,11 +54,14 @@ class TestMain(BaseTest):
             self.assertIn(
                 key, called_args.kwargs, "Key '%s' not found in called arguments" % key
             )
-            self.assertEqual(
-                called_args.kwargs[key],
-                value,
-                "Value for key '%s' does not match the expected value" % key,
-            )
+            if (
+                key != "rseed"
+            ):  # Skip rseed as it is generated based on the current time
+                self.assertEqual(
+                    called_args.kwargs[key],
+                    value,
+                    "Value for key '%s' does not match the expected value" % key,
+                )
 
     def check_custom_params_passed_to_fit(
         self, algorithm, mock_fit, main_function, *extra_args

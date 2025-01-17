@@ -1,11 +1,14 @@
 from pathlib import Path
 
-from tests.fixtures import BaseTest, ModelTestMixin
+import numpy as np
 import yaml
 
 from probinet.input.loader import build_adjacency_and_design_from_file
 from probinet.models.classes import GraphData
 from probinet.models.mtcov import MTCOV
+
+from .constants import RANDOM_SEED_REPROD
+from .fixtures import BaseTest, ModelTestMixin
 
 current_file_path = Path(__file__)
 PATH_FOR_INIT = current_file_path.parent / "inputs/"
@@ -13,7 +16,6 @@ INIT_STR = "_for_initialization"
 
 
 class MTCOVTestCase(BaseTest, ModelTestMixin):
-
     def setUp(self):
         """
         Set up the test case.
@@ -57,10 +59,11 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         self.conf["end_file"] = (
             "_OUT_" + self.algorithm
         )  # Adding a suffix to the evaluation files
+        self.conf["rng"] = np.random.default_rng(seed=RANDOM_SEED_REPROD)
 
         self.files = PATH_FOR_INIT / "theta_GT_MTCOV_for_initialization.npz"
 
-        self.model = MTCOV()
+        self.model = MTCOV(num_realizations=2, max_iter=1000)
 
     def test_import_data(self):
         # Check if the force_dense flag is set to True
@@ -79,3 +82,12 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
             batch_size=self.batch_size,
             **conf,
         )
+
+    def test_running_algorithm_from_mixin(self):
+        self.running_algorithm_from_mixin()
+
+    def test_running_algorithm_initialized_from_file_from_mixin(self):
+        self.running_algorithm_initialized_from_file_from_mixin()
+
+    def test_model_parameter_change_with_config_file(self):
+        self.model_parameter_change_with_config_file()

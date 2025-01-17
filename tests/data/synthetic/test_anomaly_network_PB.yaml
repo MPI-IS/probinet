@@ -1,7 +1,7 @@
 N: 10
 K: 2
 m: 1
-rseed: 10
+rseed: 0
 label: "10_2_4.0_0.1"
 out_folder: "outputs"
 output_parameters: false

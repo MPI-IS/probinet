@@ -2,9 +2,9 @@
 Unit tests for the ModelClass class.
 """
 
+import unittest
 from importlib.resources import files
 from pathlib import Path
-import unittest
 
 import numpy as np
 
@@ -50,7 +50,6 @@ class TestModelClass(unittest.TestCase):
         self.assertTrue(0 <= self.model_class.eta <= 1)
 
     def test_randomize_w(self):
-
         self.model_class._randomize_w()  # pylint: disable=protected-access
         if self.model_class.assortative:
             self.assertEqual(
@@ -75,13 +74,11 @@ class TestModelClass(unittest.TestCase):
             self.assertTrue(np.all(row_sums_v > 0))
 
     def test_initialize_random_eta(self):
-
         self.model_class.initialization = 0
         self.model_class._initialize()  # nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(0 <= self.model_class.eta <= 1)
 
     def test_initialize_random_uvw(self):
-
         self.model_class.initialization = 0
         self.model_class._initialize()  # nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(np.all((0 <= self.model_class.u) & (self.model_class.u <= 1)))

@@ -4,9 +4,9 @@ with one categorical attribute. Self-loops are removed and only the largest conn
 """
 
 import logging
-from abc import ABCMeta
 import os
 import warnings
+from abc import ABCMeta
 from pathlib import Path
 from typing import Optional
 
@@ -20,7 +20,7 @@ from probinet.input.stats import print_graph_stats
 from probinet.models.constants import OUTPUT_FOLDER
 from probinet.synthetic.base import StandardMMSBM
 from probinet.utils.matrix_operations import normalize_nonzero_membership
-from probinet.utils.tools import output_adjacency
+from probinet.utils.tools import get_or_create_rng, output_adjacency
 from probinet.visualization.plot import plot_A
 
 DEFAULT_N = 100
@@ -131,11 +131,11 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         L: int = DEFAULT_L,
         K: int = DEFAULT_K,
         Z: int = DEFAULT_Z,
-        seed: int = DEFAULT_SEED,
         out_folder: Path = OUTPUT_FOLDER,
         output_net: bool = DEFAULT_OUTPUT_NET,
         show_details: bool = DEFAULT_SHOW_DETAILS,
         show_plots: bool = DEFAULT_SHOW_PLOTS,
+        rng: Optional[np.random.Generator] = None,
         **kwargs,
     ):
         self.N = N  # number of nodes
@@ -143,9 +143,8 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         self.K = K  # number of communities
         self.Z = Z  # number of categories of the categorical attribute
 
-        # Set seed random number generator
-        self.seed = seed
-        self.prng = np.random.RandomState(self.seed)
+        # Set  random number generator
+        self.rng = get_or_create_rng(rng)
 
         self.out_folder = out_folder
         self.output_data = output_net
@@ -162,7 +161,6 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
     """
 
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
 
         parameters = kwargs.get("parameters", None)
@@ -227,9 +225,7 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
         if "label" in kwargs:
             label = kwargs["label"]
         else:
-            msg = (
-                "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_seed"
-            )
+            msg = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree"
             warnings.warn(msg)
             label = "_".join(
                 [
@@ -238,7 +234,6 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
                     str(self.L),
                     str(self.K),
                     str(self.avg_degree),
-                    str(self.seed),
                 ]
             )
         self.label = label
@@ -357,7 +352,7 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
             if parameters is None:
                 self.w *= c
 
-        Y = self.prng.poisson(self.M)
+        Y = self.rng.poisson(self.M)
         if not self.directed:
             # symmetrize
             for layer in range(self.L):
@@ -425,7 +420,7 @@ class SyntheticMTCOV(BaseSyntheticNetwork, StandardMMSBM):
         self.pi = pi_ik_matrix(self.u, self.v, self.beta)
         categories = [f"attr{z+1}" for z in range(self.Z)]
         self.X = np.array(
-            [self.prng.choice(categories, p=self.pi[i]) for i in np.arange(self.N)]
+            [self.rng.choice(categories, p=self.pi[i]) for i in np.arange(self.N)]
         ).reshape(self.N)
         try:
             self.X = self.X[self.nodes]

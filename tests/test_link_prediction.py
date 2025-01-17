@@ -1,6 +1,8 @@
 import unittest
+
 import numpy as np
 from sklearn import metrics
+
 from probinet.evaluation.link_prediction import calculate_f1_score
 
 

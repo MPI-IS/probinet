@@ -10,16 +10,15 @@ from typing import List, Optional, Tuple
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from numpy.random import RandomState
 import pandas as pd
 import scipy
 from scipy.sparse import coo_matrix
 
 from probinet.visualization.plot import plot_M
-from .base import GraphProcessingMixin, affinity_matrix
 
 from ..models.constants import EPS_, OUTPUT_FOLDER
 from ..utils.matrix_operations import normalize_nonzero_membership
+from .base import GraphProcessingMixin, Structure, affinity_matrix
 
 
 class SyntheticDynCRep(GraphProcessingMixin):
@@ -35,7 +34,6 @@ class SyntheticDynCRep(GraphProcessingMixin):
         eta: float = 0.0,  # reciprocity parameter
         L: int = 1,
         avg_degree: float = 5.0,
-        rseed: int = 0,
         verbose: int = 0,
         beta: float = 0.2,  # edge disappearance rate β(t)
         ag: float = 1.0,  # shape of gamma prior
@@ -47,16 +45,17 @@ class SyntheticDynCRep(GraphProcessingMixin):
         label: Optional[str] = None,
         end_file: str = ".dat",
         folder: Path = OUTPUT_FOLDER,
-        structure: str = "assortative",
+        structure: str = Structure.ASSORTATIVE.value,
         output_parameters: bool = False,
         output_adj: bool = False,
         outfile_adj: Optional[str] = None,
         figsize: Tuple[int, int] = (7, 7),
         fontsize: int = 15,
         ExpM: Optional[np.ndarray] = None,
+        rng: Optional[np.random.Generator] = None,
     ):
         """
-        Initialize the CRepDyn class to generate a synthetic network using the DynCRep models.
+        Initialize the SyntheticDynCRep class to generate a synthetic network using the DynCRep models.
 
         Parameters
         ----------
@@ -64,20 +63,18 @@ class SyntheticDynCRep(GraphProcessingMixin):
             Number of nodes in the network.
         K : int
             Number of communities in the network.
-        T : int, optional
+        T : int
             Number of time steps in the network.
         eta : float
             Reciprocity parameter.
         L : int
             Number of layers in the network.
-        avg_degree : float, optional
+        avg_degree : float
             Average degree of nodes in the network.
-        prng : Union[int, np.random.RandomState] # TODO: to be fixed on CSD-300
-            Seed for random number generator.
         verbose : int
             Verbosity level.
         beta : float
-            Parameter (beta) for Gamma.
+            Edge disappearance rate β(t).
         ag : float
             Shape parameter of the gamma prior.
         bg : float
@@ -91,26 +88,27 @@ class SyntheticDynCRep(GraphProcessingMixin):
         over : float
             Fraction of nodes with mixed membership.
         label : str
-            Label for the models. This label is used as part of the filename when saving the
-            evaluation.
+            Label for the models. This label is used as part of the filename when saving the evaluation.
         end_file : str
             File extension for evaluation files.
-        folder : str
+        folder : Path
             Folder to save evaluation files.
         structure : str
             Structure of the network.
         output_parameters : bool
-            Whether to evaluation parameters.
+            Whether to save parameters.
         output_adj : bool
-            Whether to evaluation adjacency matrix.
+            Whether to save adjacency matrix.
         outfile_adj : str
-            File name for evaluation adjacency matrix.
+            File name for saving adjacency matrix.
         figsize : Tuple[int, int]
             Size of the figures generated during the network creation process.
         fontsize : int
             Font size of the figures generated during the network creation process.
         ExpM : np.ndarray
             Expected number of edges in the network.
+        rng : np.random.Generator
+            Random number generator.
         """
         # Set network size (node number)
         self.N = N
@@ -122,10 +120,8 @@ class SyntheticDynCRep(GraphProcessingMixin):
         self.L = L
         # Set average degree
         self.avg_degree = avg_degree
-        # Set random seed
-        self.rseed = rseed
         # Set seed random number generator
-        self.prng = np.random.RandomState(self.rseed)
+        self.rng = np.random.default_rng() if not rng else rng
         self.end_file = end_file
         self.folder = folder
         # Set evaluation flags
@@ -238,7 +234,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
 
         Parameters
         ----------
-        parameters : dict, optional
+        parameters : dict
             Latent variables eta, beta, u, v and w.
 
         Returns
@@ -271,7 +267,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
         for i in range(self.N):
             for j in range(self.N):
                 if i != j:
-                    A_ij = self.prng.poisson(c * M[i, j], 1)[0]
+                    A_ij = self.rng.poisson(c * M[i, j], 1)[0]
                     if A_ij > 0:
                         G[0].add_edge(i, j, weight=1)  # binarized
 
@@ -280,7 +276,6 @@ class SyntheticDynCRep(GraphProcessingMixin):
             for i in range(self.N):
                 for j in range(self.N):
                     if i != j:
-
                         if G[t].has_edge(
                             j, i
                         ):  # reciprocal edge determines Poisson rate
@@ -294,7 +289,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
                             q = 1 - self.beta
                         else:
                             q = self.beta * lambda_ij
-                        r = self.prng.rand()
+                        r = self.rng.random()
                         if r <= q:
                             G[t + 1].add_edge(i, j, weight=1)  # binarized
 
@@ -372,11 +367,6 @@ class SyntheticDynCRep(GraphProcessingMixin):
         """
         Generate u, v, w latent variables.
 
-        Parameters
-        ----------
-        prng : int, optional
-            Seed for the random number generator. Default is 42.
-
         Returns
         ----------
         u : np.ndarray
@@ -395,7 +385,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
 
         # Generate u, v for overlapping communities
         u, v = membership_vectors(
-            self.prng,
+            self.rng,
             self.L1,
             self.eta_dir,
             self.ag,
@@ -427,7 +417,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
             The total adjacency matrix.
         A : List[scipy.sparse.coo_matrix]
             List of adjacency matrices for each layer.
-        nodes_to_keep : List[int], optional
+        nodes_to_keep : List[int]
             List of node IDs to keep. If not provided, all nodes are kept.
 
         Returns
@@ -479,7 +469,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
         nodes : List[int]
             List of node IDs.
         """
-        output_parameters = self.folder + "theta_" + self.label + "_" + str(self.prng)
+        output_parameters = self.folder + "theta_" + self.label + "_" + str(self.rng)
         np.savez_compressed(
             output_parameters + ".npz",
             u=self.u,
@@ -511,13 +501,13 @@ class SyntheticDynCRep(GraphProcessingMixin):
             The total adjacency matrix.
         A : List[scipy.sparse.coo_matrix]
             List of adjacency matrices for each layer.
-        nodes_to_keep : List[int], optional
+        nodes_to_keep : List[int]
             List of node IDs to keep. If not provided, all nodes are kept.
-        outfile : str, optional
+        outfile : str
             Name of the evaluation file for the adjacency matrix. If not provided, a default name is used.
         """
         if outfile is None:
-            outfile = "syn_" + self.label + "_" + str(self.prng) + ".dat"
+            outfile = "syn_" + self.label + "_" + str(self.rng) + ".dat"
 
         df = self._build_multilayer_edgelist(A_tot, A, nodes_to_keep=nodes_to_keep)
         df.to_csv(self.folder + outfile, index=False, sep=" ")
@@ -537,11 +527,11 @@ class SyntheticDynCRep(GraphProcessingMixin):
         ----------
         A : np.ndarray
             Sparse version of the NxN adjacency matrix associated to the graph.
-        cmap : str, optional
+        cmap : str
             Colormap used for the plot.
-        figsize : Tuple[int, int], optional
+        figsize : Tuple[int, int]
             Size of the figure to be plotted.
-        fontsize : int, optional
+        fontsize : int
             Font size to be used in the plot title.
         """
         for i in range(len(A)):
@@ -570,11 +560,11 @@ class SyntheticDynCRep(GraphProcessingMixin):
         M : np.ndarray
             NxN M matrix associated with the graph. Contains all the means used
             for generating edges.
-        cmap : str, optional
+        cmap : str
             Colormap used for the plot.
-        figsize : Tuple[int, int], optional
+        figsize : Tuple[int, int]
             Size of the figure to be plotted.
-        fontsize : int, optional
+        fontsize : int
             Font size to be used in the plot title.
         """
 
@@ -629,7 +619,7 @@ class SyntheticDynCRep(GraphProcessingMixin):
 
 
 def membership_vectors(
-    prng: RandomState = RandomState(10),  # TODO: to be fixed on CSD-300
+    rng: np.random.Generator,
     L1: bool = False,
     eta: float = 0.5,
     alpha: float = 0.6,
@@ -644,7 +634,7 @@ def membership_vectors(
 
     Parameters
     ----------
-    prng : numpy.random.RandomState
+    rng : np.random.Generator
         Random number generator container.
     L1 : bool
         Flag for parameter generation method. True for Dirichlet, False for Gamma.
@@ -692,19 +682,19 @@ def membership_vectors(
     # Generate mixed communities if requested
     if over != 0.0:
         overlapping = int(N * over)  # number of nodes belonging to more communities
-        ind_over = prng.randint(len(u), size=overlapping)
+        ind_over = rng.integers(len(u), size=overlapping)
         if L1:
-            u[ind_over] = prng.dirichlet(eta * np.ones(K), overlapping)
-            v[ind_over] = corr * u[ind_over] + (1.0 - corr) * prng.dirichlet(
-                eta * np.ones(K), overlapping  # pylint: disable=undefined-variable
+            u[ind_over] = rng.dirichlet(eta * np.ones(K), overlapping)
+            v[ind_over] = corr * u[ind_over] + (1.0 - corr) * rng.dirichlet(
+                eta * np.ones(K), overlapping
             )
             if corr == 1.0:
                 assert np.allclose(u, v)
             if corr > 0:
                 v = normalize_nonzero_membership(v)
         else:
-            u[ind_over] = prng.gamma(alpha, 1.0 / beta, size=(N, K))
-            v[ind_over] = corr * u[ind_over] + (1.0 - corr) * prng.gamma(
+            u[ind_over] = rng.gamma(alpha, 1.0 / beta, size=(N, K))
+            v[ind_over] = corr * u[ind_over] + (1.0 - corr) * rng.gamma(
                 alpha, 1.0 / beta, size=(overlapping, K)
             )
             u = normalize_nonzero_membership(u)

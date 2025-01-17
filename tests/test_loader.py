@@ -3,13 +3,13 @@ import os
 import networkx as nx
 import numpy as np
 
-from probinet.models.classes import GraphData
-from .fixtures import BaseTest
 from probinet.input.loader import build_adjacency_from_file
+from probinet.models.classes import GraphData
+
+from .fixtures import BaseTest
 
 
 class TestBuildAdjacencyFromFile(BaseTest):
-
     def setUp(self):
         # Initialize node labels as instance attributes
         self.node1 = "A"

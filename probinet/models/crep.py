@@ -13,20 +13,18 @@ import numpy as np
 from numpy import dtype, ndarray
 from sparse import COO
 
+from ..evaluation.expectation_computation import compute_mean_lambda0
+from ..input.preprocessing import preprocess_adjacency_tensor
+from ..types import ArraySequence, EndFileType, FilesType, GraphDataType, MaskType
+from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
+from ..utils.tools import (
+    get_item_array_from_subs,
+    get_or_create_rng,
+    log_and_raise_error,
+)
 from .base import ModelBase, ModelUpdateMixin
 from .classes import GraphData
 from .constants import OUTPUT_FOLDER
-from ..evaluation.expectation_computation import compute_mean_lambda0
-from ..input.preprocessing import preprocess_adjacency_tensor
-from ..types import (
-    GraphDataType,
-    MaskType,
-    EndFileType,
-    FilesType,
-    ArraySequence,
-)
-from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
-from ..utils.tools import get_item_array_from_subs, log_and_raise_error
 
 
 class CRep(ModelBase, ModelUpdateMixin):
@@ -70,7 +68,6 @@ class CRep(ModelBase, ModelUpdateMixin):
         self,
         **kwargs: Any,
     ) -> None:
-
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(**kwargs)
 
@@ -91,7 +88,6 @@ class CRep(ModelBase, ModelUpdateMixin):
     def fit(
         self,
         gdata: GraphData,
-        rseed: int = 0,
         K: int = 3,
         mask: Optional[MaskType] = None,
         initialization: int = 0,
@@ -105,6 +101,7 @@ class CRep(ModelBase, ModelUpdateMixin):
         out_folder: Path = OUTPUT_FOLDER,
         end_file: Optional[EndFileType] = None,
         files: Optional[FilesType] = None,
+        rng: Optional[np.random.Generator] = None,
         **_kwargs: Any,
     ) -> tuple[
         ndarray[Any, dtype[np.float64]],
@@ -118,52 +115,50 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : Union[COO, np.ndarray]
+        data
             Graph adjacency tensor.
-        data_T : COO
+        data_T
             Transposed graph adjacency tensor.
-        data_T_vals : np.ndarray
+        data_T_vals
             Array with values of entries A[j, i] given non-zero entry (i, j).
-        nodes : List[Any]
+        nodes
             List of node IDs.
-        rseed : int, optional
-            Random seed, by default 0.
-        K : int, optional
+        K
             Number of communities, by default 3.
-        mask : MaskType, optional
+        mask
             Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
-        initialization : int, optional
+        initialization
             Initialization method for the models parameters, by default 0.
-        eta0 : Union[float, None], optional
+        eta0
             Initial value of the reciprocity coefficient, by default None.
-        undirected : bool, optional
+        undirected
             Flag to specify if the graph is undirected, by default False.
-        assortative : bool, optional
+        assortative
             Flag to specify if the graph is assortative, by default True.
-        constrained : bool, optional
+        constrained
             Flag to specify if the models is constrained, by default True.
-        out_inference : bool, optional
+        out_inference
             Flag to specify if inference results should be evaluation, by default True.
-        out_folder : str, optional
+        out_folder
             Output folder for inference results, by default "outputs/".
-        end_file : str, optional
+        end_file
             Suffix for the evaluation file, by default "_CRep".
-        fix_eta : bool, optional
+        fix_eta
             Flag to specify if the eta parameter should be fixed, by default False.
-        files : str, optional
+        files
             Path to the file for initialization, by default "".
 
         Returns
         -------
-        -u_f : ndarray
+        u_f
             Out-going membership matrix.
-        -v_f : ndarray
+        v_f
             In-coming membership matrix.
-        -w_f : ndarray
+        w_f
             Affinity tensor.
-        -eta_f : float
+        eta_f
             Reciprocity coefficient.
-        -maxL : float
+        maxL
             Maximum pseudo log-likelihood.
         """
 
@@ -183,9 +178,7 @@ class CRep(ModelBase, ModelUpdateMixin):
             files=files,
         )
         # Set the random seed
-        self.rseed = rseed
-        logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)
+        self.rng = get_or_create_rng(rng)
 
         # Initialize the fit parameters
         self.initialization = initialization
@@ -208,11 +201,14 @@ class CRep(ModelBase, ModelUpdateMixin):
 
         # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
         for r in range(self.num_realizations):
-
             # Initialize the parameters for the current realization
-            coincide, convergence, it, loglik, loglik_values = (
-                self._initialize_realization()
-            )
+            (
+                coincide,
+                convergence,
+                it,
+                loglik,
+                loglik_values,
+            ) = self._initialize_realization()
 
             # Update the parameters for the current realization
             it, loglik, coincide, convergence, loglik_values = self._update_realization(
@@ -253,7 +249,10 @@ class CRep(ModelBase, ModelUpdateMixin):
         """
 
         # Log the current state of the random number generator
-        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])  # type: ignore
+        logging.debug(
+            "Random number generator seed: %s",
+            self.rng.bit_generator.state["state"]["state"],
+        )
 
         # Initialize the parameters for the current realization
         super()._initialize()
@@ -451,7 +450,6 @@ class CRep(ModelBase, ModelUpdateMixin):
         return dist_eta
 
     def _specific_update_U(self):
-
         self.u = self.u_old * self._update_membership(self.subs_nz, 1)  # type: ignore
 
         if not self.constrained:
@@ -478,7 +476,6 @@ class CRep(ModelBase, ModelUpdateMixin):
         return dist_u
 
     def _specific_update_V(self):
-
         self.v *= self._update_membership(self.subs_nz, 2)
 
         if not self.constrained:
@@ -497,7 +494,6 @@ class CRep(ModelBase, ModelUpdateMixin):
             self.v[row_sums > 0] /= row_sums[row_sums > 0, np.newaxis]
 
     def _specific_update_W(self):
-
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum(

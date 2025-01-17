@@ -6,14 +6,13 @@ Main function to implement cross-validation given a number of communities.
 - Calculate performance measures in the test set (AUC).
 """
 
-from abc import ABC, abstractmethod
 import csv
-from itertools import product
 import logging
-import os
-from pathlib import Path
 import pickle
 import time
+from abc import ABC, abstractmethod
+from itertools import product
+from pathlib import Path
 
 import numpy as np
 
@@ -51,8 +50,8 @@ class CrossValidation(ABC):
         """
         Prepare the output directory to save the results.
         """
-        if not os.path.exists(self.out_folder):
-            os.makedirs(self.out_folder)
+        output_path = Path(self.out_folder)
+        output_path.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
     def extract_mask(self, fold):
@@ -134,8 +133,11 @@ class CrossValidation(ABC):
         # Create a copy of gdata to use for training
         self.gdata_for_training = self.gdata._replace(adjacency_tensor=B_train)
 
-        # Initialize the CRep algorithm object
+        # Initialize the algorithm object
         algorithm_object = self.model(**self.num_parameters)
+
+        # Define rng parameter from the previously defined rng
+        self.parameters["rng"] = self.rng
 
         # Fit the CRep models to the training data and get the outputs
         outputs = algorithm_object.fit(self.gdata_for_training, **self.parameters)
@@ -202,14 +204,14 @@ class CrossValidation(ABC):
         # Check if the evaluation file exists; if not, write the header
         output_path = Path(self.out_file)
         if not output_path.is_file():  # write header
-            with output_path.open("w") as outfile:
+            with output_path.open("w", encoding="utf-8") as outfile:
                 # Create a CSV writer object
                 wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
                 # Write the header row to the CSV file
                 wrtr.writerow(list(self.comparison.keys()))
 
         # Open the evaluation file in append mode
-        with output_path.open("a") as outfile:
+        with output_path.open("a", encoding="utf-8") as outfile:
             # Create a CSV writer object
             wrtr = csv.writer(outfile, delimiter=",", quotechar='"')
             # Write the comparison data to the CSV file
@@ -225,8 +227,7 @@ class CrossValidation(ABC):
         logging.basicConfig(level=logging.DEBUG)
 
         # Prepare cv parameters
-        self.prng = np.random.RandomState(seed=self.parameters["rseed"])
-        self.rseed = self.prng.randint(1000)
+        self.rng = np.random.default_rng(seed=self.parameters["rseed"])
 
         # Set up evaluation directory
         self.prepare_output_directory()
@@ -251,7 +252,7 @@ class CrossValidation(ABC):
         # Prepare indices for cross-validation
         self.L = self.gdata.adjacency_tensor.shape[0]
         self.N = self.gdata.adjacency_tensor.shape[-1]
-        self.indices = shuffle_indices_all_matrix(self.N, self.L, self.rseed)
+        self.indices = shuffle_indices_all_matrix(self.N, self.L, rng=self.rng)
 
         # Cross-validation loop
         for fold in range(self.NFold):

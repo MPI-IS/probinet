@@ -24,7 +24,46 @@ def calculate_conditional_expectation(
     mean: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """
-    Compute the conditional expectations.
+    Calculates the conditional expectation of a given set of parameters.
+
+    This function computes the conditional expectation of a multivariate random
+    process based on the provided inputs. It incorporates a scaling parameter
+    (eta) and optionally a mean tensor to compute the result. If the mean tensor
+    is not provided, it defaults to computing a mean based on the input parameters
+    u, v, and w.
+
+    Parameters
+    ----------
+    B
+        A 3-dimensional tensor used in the computation of the weighted mean. The
+        tensor represents the relationship between variables in the multivariate
+        process.
+    u
+        A 1-dimensional array representing the first set of variables
+        contributing to the computation of the mean. Typically corresponds to a
+        principal factor in the model.
+    v
+        A 1-dimensional array representing the second set of variables
+        contributing to the computation of the mean. It complements the u array
+        in forming the joint distribution.
+    w
+        A 1-dimensional array representing the third set of variables
+        interacting with u and v to establish a comprehensive measure of
+        centrality in the model.
+    eta
+        A scaling parameter applied to the tensor factors to adjust their
+        weighted contribution to the overall mean measure of expectations.
+    mean
+        A precomputed 3-dimensional tensor mean to override the default computed
+        mean. If None, the mean will be computed using u, v, and w.
+
+    Returns
+    -------
+    np.ndarray
+        A 3-dimensional tensor that represents the computed conditional
+        expectation given the provided parameters. The tensor provides a
+        context-sensitive measure of expectation, calculated as either a default
+        weighted mean or incorporating a provided precomputed mean.
     """
     if mean is None:
         return compute_mean_lambda0(u, v, w) + eta * transpose_tensor(B)
@@ -40,7 +79,41 @@ def calculate_conditional_expectation_dyncrep(
     beta: float = 1.0,
 ) -> np.ndarray:
     """
-    Compute the conditional expectations for dynamic reciprocity.
+    Calculate the conditional expectation for given dynamic representation.
+
+    This function computes the conditional expectation based on the dynamic
+    representation of the input data, including arrays and graph-based data.
+    It utilizes transformation and normalization techniques such as
+    matrix transposition and scaling.
+
+    Parameters
+    ----------
+    B_to_T : GraphDataType
+        Graph-based data structure representing relationships or
+        transitions between nodes or states.
+
+    u : np.ndarray
+        Input array representing data points or state variables.
+
+    v : np.ndarray
+        Input array representing another set of data points or state
+        variables related to `u`.
+
+    w : np.ndarray
+        Auxiliary input array used for reference in the calculation.
+
+    eta : float, optional
+        Scaling factor applied to the graph transformation. Default is 0.0.
+
+    beta : float, optional
+        Scaling factor applied in the normalization computation. Default
+        is 1.0.
+
+    Returns
+    -------
+    np.ndarray
+        Array representing the computed conditional expectation
+        after applying the dynamic representation transformations.
     """
     conditional_expectation = compute_mean_lambda0_dyncrep(
         u, v, w

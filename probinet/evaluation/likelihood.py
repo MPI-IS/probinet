@@ -101,12 +101,12 @@ def loglikelihood_network(
         logM = np.zeros(M.shape)
         logM[M > 0] = np.log(M[M > 0])
         return (B * logM).sum() - M.sum()
-    else:
-        # Compute the expected adjacency tensor for the masked elements
-        M = compute_expected_adjacency_tensor_multilayer(u, v, w)[mask > 0]
-        logM = np.zeros(M.shape)
-        logM[M > 0] = np.log(M[M > 0])
-        return (B[mask > 0] * logM).sum() - M.sum()
+
+    # Compute the expected adjacency tensor for the masked elements
+    M = compute_expected_adjacency_tensor_multilayer(u, v, w)[mask > 0]
+    logM = np.zeros(M.shape)
+    logM[M > 0] = np.log(M[M > 0])
+    return (B[mask > 0] * logM).sum() - M.sum()
 
 
 def loglikelihood_attributes(
@@ -143,12 +143,12 @@ def loglikelihood_attributes(
         nonzeros = p > 0.0
         p[nonzeros] = np.log(p[nonzeros] / 2.0)
         return (X * p).sum().sum()
-    else:
-        # Compute the expected attribute matrix for the masked elements
-        p = np.dot(u[mask > 0] + v[mask > 0], beta) / 2
-        nonzeros = p > 0.0
-        p[nonzeros] = np.log(p[nonzeros] / 2.0)
-        return (X.iloc[mask > 0] * p).sum().sum()
+
+    # Compute the expected attribute matrix for the masked elements
+    p = np.dot(u[mask > 0] + v[mask > 0], beta) / 2
+    nonzeros = p > 0.0
+    p[nonzeros] = np.log(p[nonzeros] / 2.0)
+    return (X.iloc[mask > 0] * p).sum().sum()
 
 
 def likelihood_conditional(

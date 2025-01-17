@@ -95,7 +95,7 @@ class ModelBase(ModelBaseParameters):
         self.theta: Dict[str, Any] = {}
         self.normalize_rows = False
         self.nodes: list[Any] = []
-        self.rng = np.random.RandomState()
+        self.rng = np.random.default_rng()
         self.beta_hat: np.ndarray = np.array([])
         self.best_r: int = 0
         self.final_it: int = 0
@@ -246,7 +246,6 @@ class ModelBase(ModelBaseParameters):
             log_and_raise_error(ValueError, message)
 
     def _initialize_eta(self) -> None:
-
         # If eta0 is not None, assign its value to eta
         if self.eta0 is not None:
             self.eta = self.eta0
@@ -288,7 +287,6 @@ class ModelBase(ModelBaseParameters):
     def _initialize_membership_matrix(
         self, matrix_name: str, matrix_value: np.ndarray
     ) -> None:
-
         # Assign the input matrix value to the local variable 'matrix'
         matrix = matrix_value
 
@@ -301,7 +299,7 @@ class ModelBase(ModelBaseParameters):
 
         # Add random noise to the 'matrix'. The noise is a random number between 0 and 1,
         # multiplied by the maximum entry in the 'matrix' and the error rate 'self.err'
-        matrix += max_entry * self.err * self.rng.random_sample(matrix.shape)
+        matrix += max_entry * self.err * self.rng.random(matrix.shape)
 
         # Set the attribute of the current object with the name 'matrix_name' to
         # the value of 'matrix'
@@ -337,17 +335,12 @@ class ModelBase(ModelBaseParameters):
             The matrix after random noise has been added.
         """
         max_entry = np.max(matrix)
-        matrix += max_entry * self.err * self.rng.random_sample(matrix.shape)
+        matrix += max_entry * self.err * self.rng.random(matrix.shape)
         return matrix
 
     def _initialize_w(self) -> None:
         """
         Initialize affinity tensor w from file.
-
-        Parameters
-        ----------
-        rng : RandomState
-              Container for the Mersenne Twister pseudo-random number generator.
         """
         self.w = self.theta["w"]
         if self.assortative:
@@ -359,7 +352,6 @@ class ModelBase(ModelBaseParameters):
         self.w = self._add_random_noise(self.w)
 
     def _initialize_w_dyn(self):
-
         # Initialize the affinity tensor w from the input file
         w0 = self.theta["w"]
         # Initialize the affinity tensor w with zeros
@@ -399,7 +391,7 @@ class ModelBase(ModelBaseParameters):
         shape : int
                 The shape of the beta matrix.
         """
-        self.beta = self.rng.random_sample(shape)
+        self.beta = self.rng.random(shape)
 
     @_randomize_beta.register
     def _(self, shape: tuple):
@@ -410,7 +402,7 @@ class ModelBase(ModelBaseParameters):
         shape : tuple
                 The shape of the beta matrix.
         """
-        self.beta = self.rng.random_sample(shape)
+        self.beta = self.rng.random(shape)
         self.beta = (self.beta.T / np.sum(self.beta, axis=1)).T
 
     def _randomize_u_v(self, normalize_rows: bool = True) -> None:
@@ -424,7 +416,7 @@ class ModelBase(ModelBaseParameters):
                          If True, normalize each row of the membership matrices u and v.
         """
 
-        self.u = self.rng.random_sample((self.N, self.K))
+        self.u = self.rng.random((self.N, self.K))
         # Normalize each row of the membership matrix u
         if normalize_rows:
             # Compute the sum of each row of the membership matrix u
@@ -434,7 +426,7 @@ class ModelBase(ModelBaseParameters):
 
         if not self.undirected:
             # Set the membership matrix v to be a random sample of shape (self.N, self.K)
-            self.v = self.rng.random_sample((self.N, self.K))
+            self.v = self.rng.random((self.N, self.K))
             # Normalize each row of the membership matrix v
             if normalize_rows:
                 row_sums = self.v.sum(axis=1)
@@ -450,9 +442,9 @@ class ModelBase(ModelBaseParameters):
         """
 
         if self.assortative:
-            self.w = self.rng.random_sample((self.L, self.K))
+            self.w = self.rng.random((self.L, self.K))
         else:
-            self.w = self.rng.random_sample((self.L, self.K, self.K))
+            self.w = self.rng.random((self.L, self.K, self.K))
 
     def _randomize_eta(self, use_unit_uniform: bool = False) -> None:
         """
@@ -467,7 +459,7 @@ class ModelBase(ModelBaseParameters):
         """
 
         if use_unit_uniform:
-            self.eta = float((self.rng.random_sample(1)[0]))
+            self.eta = float((self.rng.random(1)[0]))
         else:
             self.eta = self.rng.uniform(1.01, 49.99)
 
@@ -661,11 +653,10 @@ class ModelBase(ModelBaseParameters):
         nodes : list
                 List of nodes IDs.
         """
-
         # Check if the evaluation folder exists, otherwise create it
+        # self.out_folder = 'newnew/'
         output_path = Path(self.out_folder)
         output_path.mkdir(parents=True, exist_ok=True)
-
         # Define the evaluation file
         end_file = self.end_file if self.end_file is not None else ""
         outfile = (Path(self.out_folder) / f"theta{end_file}").with_suffix(".npz")
@@ -856,11 +847,6 @@ class ModelBase(ModelBaseParameters):
         ----------
         data : GraphDataType
             The data to sum.
-
-        Returns
-        -------
-        float
-            The sum of the data.
 
         Raises
         ------
@@ -1096,8 +1082,6 @@ class ModelUpdateMixin(ABC):
         self.delta_w = None
         self.delta_eta = None
         self.compute_likelihood = None
-
-    not_implemented_message = "This method should be overridden in the derived class"
 
     def _finalize_update(
         self, matrix: np.ndarray, matrix_old: np.ndarray

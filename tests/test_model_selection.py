@@ -2,9 +2,9 @@ import unittest
 
 import numpy as np
 import pandas as pd
+import yaml
 from tests.constants import PATH_TO_GT
 from tests.fixtures import BaseTest
-import yaml
 
 from probinet.model_selection.cross_validation import CrossValidation
 from probinet.model_selection.labeling import predict_label

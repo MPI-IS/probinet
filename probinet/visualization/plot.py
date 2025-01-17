@@ -4,12 +4,12 @@ It provides a set of plotting functions for visualizing the results of the gener
 
 from typing import Dict, List, Optional, Tuple
 
-from matplotlib import colormaps, gridspec
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 import networkx as nx
 import numpy as np
 import seaborn as sns
+from matplotlib import colormaps, gridspec
+from matplotlib.ticker import MaxNLocator
 
 
 def plot_hard_membership(

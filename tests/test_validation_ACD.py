@@ -17,7 +17,7 @@ from probinet.model_selection.masking import (
 from probinet.models.acd import AnomalyDetection
 from probinet.utils.matrix_operations import normalize_nonzero_membership
 
-from .constants import DECIMAL_2, DECIMAL_3, DECIMAL_4, DECIMAL_5
+from .constants import DECIMAL_2, DECIMAL_3, DECIMAL_4, DECIMAL_5, RANDOM_SEED_REPROD
 from .fixtures import BaseTest
 
 
@@ -48,17 +48,13 @@ class ACDTestCase(BaseTest):
         self.T = self.gdata.adjacency_tensor.shape[0] - 1
         self.L = self.gdata.adjacency_tensor.shape[0]
         self.fold = 1
-        self.seed = 0
+
+        # Create a random number generator with a specified seed
+        self.rng = np.random.default_rng(seed=RANDOM_SEED_REPROD)
 
     def prepare_data(self):
-        # Create a random number generator with a specified seed
-        self.prng = np.random.RandomState(seed=self.seed)
-
-        # Generate a random integer from 0 to 1000 using the random number generator
-        self.rseed = self.prng.randint(1000)
-
         # Shuffle the indices of all matrices using the generated random seed
-        self.indices = shuffle_indices_all_matrix(self.N, self.L, rseed=self.rseed)
+        self.indices = shuffle_indices_all_matrix(self.N, self.L, rng=self.rng)
 
         # Extract a mask for k-fold cross-validation using the shuffled indices
         self.mask = extract_mask_kfold(self.indices, self.N, fold=self.fold, NFold=5)
@@ -77,9 +73,6 @@ class ACDTestCase(BaseTest):
 
         # Create an input mask that is the logical NOT of the original mask
         self.mask_input = np.logical_not(self.mask)
-
-        # Redefine the random seed to this fixed value (10)
-        self.rseed = 10
 
     def assert_model_results(self, u, v, w, pi, mu, maxL, theta, data):
         # Assertions for u
@@ -123,12 +116,9 @@ class ACDTestCase(BaseTest):
         self.assertAlmostEqual(f1_v, data["f1_score"]["f1_v"], places=DECIMAL_2)
 
     def test_running_algorithm_from_random_init(self):
-
         # The next section is taken from the original code like this. This is a temporary
         # validation test. In the future, a test built from fixture will be added.
 
-        seed = 10
-        self.seed = seed
         self.prepare_data()
 
         model = AnomalyDetection(
@@ -150,12 +140,12 @@ class ACDTestCase(BaseTest):
             fix_pibr=False,
             fix_mupr=False,
             mask=self.mask_input,
-            rseed=self.rseed,
             fix_communities=False,
             out_inference=True,
             out_folder=self.folder,
             end_file=("_OUT_" + self.algorithm),
             files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
+            rng=self.rng,
         )
 
         # Define the path to the data file
@@ -182,13 +172,15 @@ class ACDTestCase(BaseTest):
             "Some keys are missing in the theta dictionary",
         )
         # TODO: fix the previous assert (it should not be done from 1 onwards, but using all the
-        #  list. To fix it, I first need to talk to Hadiseh to see why there is a z in theta if
+        #  list. To fix it, I first need to talk to author to see why there is a z in theta if
         #  the models does not have it
 
     def test_running_algorithm_from_random_init_2(self):
-
         # The next section is taken from the original code like this. This is a temporary
         # validation test. In the future, a test built from fixture will be added.
+
+        # Create a random number generator with a specified seed
+        self.rng = np.random.default_rng(seed=RANDOM_SEED_REPROD + 1)
 
         self.prepare_data()
 
@@ -211,12 +203,12 @@ class ACDTestCase(BaseTest):
             fix_pibr=False,
             fix_mupr=False,
             mask=self.mask_input,
-            rseed=self.rseed,
             fix_communities=False,
             out_inference=True,
             out_folder=self.folder,
             end_file=("_OUT_" + self.algorithm),
             files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
+            rng=self.rng,
         )
         # Define the path to the data file
         data_file_path = (
@@ -264,11 +256,11 @@ class ACDTestCase(BaseTest):
             fix_pibr=True,
             fix_mupr=True,
             mask=self.mask_input,
-            rseed=self.rseed,
             fix_communities=False,
             out_inference=False,
             end_file=self.label,
             files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
+            rng=self.rng,
         )
 
         # Define the path to the data file
@@ -288,7 +280,7 @@ class ACDTestCase(BaseTest):
             u=u, v=v, w=w, pi=pi, mu=mu, maxL=maxL, theta=self.theta, data=data
         )
 
-    def test_force_dense_False(self):
+    def test_force_dense_false(self):
         """Test the import data function with force_dense set to False, i.e., the data is sparse."""
 
         with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
@@ -304,7 +296,8 @@ class ACDTestCase(BaseTest):
             self.gdata,
             K=self.K,
             out_inference=False,
+            rng=self.rng,
         )
 
         # Assert that the maxL is right
-        self.assertAlmostEqual(model.maxL, -30713.444635970005, places=3)
+        self.assertAlmostEqual(model.maxL, -33272.4811, places=3)
