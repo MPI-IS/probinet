@@ -10,8 +10,8 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any, List
 
 root_folder = Path(__file__).parent.parent.parent.resolve()
@@ -25,9 +25,9 @@ copyright = (
 )
 author = "Diego Baptista Theuerkauf"
 
-from probinet.version import (
+from probinet.version import (  # noqa: E402 # pylint: disable=wrong-import-position
     __version__,
-)  # noqa: E402 # pylint: disable=wrong-import-position
+)
 
 version = __version__
 

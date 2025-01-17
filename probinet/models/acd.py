@@ -8,7 +8,7 @@ import logging
 import time
 from os import PathLike
 from pathlib import Path
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -19,24 +19,25 @@ from probinet.evaluation.expectation_computation import (
     compute_mean_lambda0,
     compute_mean_lambda0_nonzero,
 )
-from .base import ModelBase, ModelUpdateMixin
-from .classes import GraphData
-from .constants import EPS_, OUTPUT_FOLDER, BG_DEFAULT, K_DEFAULT, AG_DEFAULT
+
 from ..input.preprocessing import preprocess_adjacency_tensor
 from ..types import (
-    GraphDataType,
-    MaskType,
+    ArraySequence,
     EndFileType,
     FilesType,
-    ArraySequence,
+    GraphDataType,
+    MaskType,
     SubsNzType,
 )
-from ..utils.matrix_operations import (
-    sp_uttkrp,
-    sp_uttkrp_assortative,
-    transpose_tensor,
+from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative, transpose_tensor
+from ..utils.tools import (
+    get_item_array_from_subs,
+    get_or_create_rng,
+    log_and_raise_error,
 )
-from ..utils.tools import get_item_array_from_subs, log_and_raise_error
+from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
+from .constants import AG_DEFAULT, BG_DEFAULT, EPS_, K_DEFAULT, OUTPUT_FOLDER
 
 
 class AnomalyDetection(ModelBase, ModelUpdateMixin):
@@ -69,7 +70,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.__doc__ = ModelBase.__init__.__doc__
 
     def _check_fit_params(self, **kwargs) -> None:
-
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(**kwargs)
 
@@ -128,11 +128,11 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         fix_w: bool = False,
         fix_communities: bool = False,
         mask: Optional[MaskType] = None,
-        rseed: int = 10,
         out_inference: bool = True,
         out_folder: Path = OUTPUT_FOLDER,
         end_file: Optional[EndFileType] = None,
         files: Optional[FilesType] = None,
+        rng: Optional[np.random.Generator] = None,
         **__kwargs: Any,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float]:
         """
@@ -140,67 +140,67 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : GraphDataType
+        gdata
             Graph adjacency tensor.
-        nodes : List[int]
-            List of node IDs.
-        ag : float, optional
+        ag
             Shape of gamma prior, by default 1.5.
-        bg : float, optional
+        bg
             Rate of gamma prior, by default 10.0.
-        pibr0 : float
+        pibr0
             Initial value for the anomaly parameter pi, by default None.
-        mupr0 : float
+        mupr0
             Initial value for the prior mu parameter, by default None.
-        flag_anomaly : bool, optional
+        flag_anomaly
             If True, the anomaly detection is enabled, by default True.
-        fix_pibr : bool, optional
+        fix_pibr
             If True, the anomaly parameter pi is fixed, by default False.
-        fix_mupr : bool, optional
+        fix_mupr
             If True, the prior mu parameter is fixed, by default False.
-        K : int, optional
+        K
             Number of communities, by default 3.
-        undirected : bool, optional
+        undirected
             If True, the graph is considered undirected, by default False.
-        initialization : int, optional
+        initialization
             Indicator for choosing how to initialize u, v, and w, by default 0.
-        assortative : bool, optional
+        assortative
             If True, the network is considered assortative, by default True.
-        constrained : bool, optional
+        constrained
             If True, constraints are applied on the updates, by default False.
-        fix_w : bool, optional
+        fix_w
             If True, the affinity tensor w is fixed, by default False.
-        fix_communities : bool, optional
+        fix_communities
             If True, the community memberships are fixed, by default False.
-        mask : MaskType, optional
+        mask
             Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
-        rseed : int, optional
-            Random seed for initialization, by default 10.
-        out_inference : bool, optional
+        out_inference
             If True, evaluation inference results, by default True.
-        out_folder : str, optional
+        out_folder
             Output folder for inference results, by default "outputs/".
-        end_file : str, optional
+        end_file
             Suffix for the evaluation file, by default None.
-        files : Union[str, Path], optional
+        files
             Path to the file for initialization, by default None.
+        rng
+            Random number generator, by default None.
+        **kwargs
+            Additional parameters for the model.
 
         Returns
         -------
-
-        u_f : np.ndarray
+        u_f
             Final out-going membership matrix.
-        v_f : np.ndarray
+        v_f
             Final in-coming membership matrix.
-        w_f : np.ndarray
+        w_f
             Final affinity tensor.
-        pibr_f : float
+        pibr_f
             Final anomaly parameter pi.
-        mupr_f : float
+        mupr_f
             Final prior mu parameter.
-        maxL : float
+        maxL
             Maximum log-likelihood.
         """
+
         # Check the input parameters
         self._check_fit_params(
             K=K,
@@ -223,9 +223,8 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
             end_file=end_file,
             files=files,
         )
-        self.rseed = rseed  # random seed
-        logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)
+        # Set the random seed
+        self.rng = get_or_create_rng(rng)
 
         # Initialize the fit parameters
         maxL = -self.inf  # initialization of the maximum  log-likelihood
@@ -234,9 +233,13 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         best_loglik_values = []  # initialization of the log-likelihood values
 
         # Preprocess the data for fitting the models
-        data, data_T, data_T_vals, subs_nz, subs_nz_mask = (
-            self._preprocess_data_for_fit(gdata.adjacency_tensor, mask)
-        )
+        (
+            data,
+            data_T,
+            data_T_vals,
+            subs_nz,
+            subs_nz_mask,
+        ) = self._preprocess_data_for_fit(gdata.adjacency_tensor, mask)
 
         self.data = data
         self.data_T = data_T
@@ -247,11 +250,14 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
         for r in range(self.num_realizations):
-
             # Initialize the parameters for the current realization
-            coincide, convergence, it, loglik, loglik_values = (
-                self._initialize_realization()
-            )
+            (
+                coincide,
+                convergence,
+                it,
+                loglik,
+                loglik_values,
+            ) = self._initialize_realization()
             # Update the parameters for the current realization
             it, loglik, coincide, convergence, loglik_values = self._update_realization(
                 r, it, loglik, coincide, convergence, loglik_values
@@ -266,7 +272,6 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                 conv = convergence
                 self.best_r = r
                 best_loglik_values = list(loglik_values)
-            self.rseed += self.rng.randint(100000000)  # TODO: to be fixed on CSD-300
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
@@ -290,7 +295,10 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
 
         # Log the current state of the random number generator
-        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+        logging.debug(
+            "Random number generator state: %s",
+            self.rng.bit_generator.state["state"]["state"],
+        )
 
         # Initialize the parameters for the current realization
         self._initialize()  # Remark: this version of this method uses the initialize from this
@@ -316,7 +324,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         # Return the initial state of the realization
         return coincide, convergence, it, loglik, loglik_values
 
-    def _preprocess_data_for_fit(self, data: GraphDataType, mask: MaskType) -> Tuple[
+    def _preprocess_data_for_fit(
+        self, data: GraphDataType, mask: MaskType
+    ) -> Tuple[
         GraphDataType,
         np.ndarray,
         np.ndarray,
@@ -372,13 +382,13 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         """
         Generate a random number in (0, 1.).
         """
-        self.pibr = self.rng.random_sample(1)[0]
+        self.pibr = self.rng.random()
 
     def _randomize_mupr(self):
         """
         Generate a random number in (0, 1.).
         """
-        self.mupr = self.rng.random_sample(1)[0]
+        self.mupr = self.rng.random()
 
     def _initialize_w(self, infile_name: str) -> None:  # type: ignore
         """
@@ -604,9 +614,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
                Graph adjacency tensor.
         subs_nz : tuple
                   Indices of elements of data that are non-zero.
-        mask : ndarray, optional
+        mask : ndarray
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
-        subs_nz_mask : tuple, optional
+        subs_nz_mask : tuple
                        Indices of elements of data that are non-zero in the mask.
 
         Returns
@@ -614,17 +624,20 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         dist_pibr : float
                     Maximum distance between the old and the new anomaly parameter pi.
         """
+        Adata = None
         if isinstance(data, np.ndarray):
             Adata = (data[subs_nz] * self.Qij_nz).sum()
         elif isinstance(data, COO):
             Adata = (data.data * self.Qij_nz).sum()
+        else:
+            log_and_raise_error(TypeError, "Data type not supported!")
         if mask is None:
             self.pibr = Adata / self.Qij_dense.sum()
         else:
             self.pibr = Adata / self.Qij_dense[subs_nz_mask].sum()
 
         dist_pibr = abs(self.pibr - self.pibr_old)
-        self.pibr_old = np.copy(self.pibr)  # type: ignore
+        self.pibr_old = np.copy(self.pibr)
 
         return dist_pibr
 
@@ -638,9 +651,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        mask : ndarray, optional
+        mask : ndarray
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
-        subs_nz_mask : tuple, optional
+        subs_nz_mask : tuple
                        Indices of elements of data that are non-zero in the mask.
 
         Returns
@@ -778,13 +791,10 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         self.w = self.ag - 1 + self.w * uttkrp_DKQ
 
         if self.flag_anomaly == True:
-            if not mask:
-                UQk = np.einsum("aij,ik->ajk", (1 - self.Qij_dense), self.u)
-            else:
-                UQk = np.einsum("aij,ik->ajk", mask * (1 - self.Qij_dense), self.u)
+            mask = mask if mask is not None else 1
+            UQk = np.einsum("aij,ik->ajk", mask * (1 - self.Qij_dense), self.u)
             Z = np.einsum("ajk,jq->akq", UQk, self.v)
         else:  # flag_anomaly == False
-            # Z = np.einsum('ik,jq->kq',self.u,self.v)
             Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))[
                 np.newaxis, :, :
             ]
@@ -907,9 +917,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         ----------
         data : GraphDataType
                Graph adjacency tensor.
-        mask : ndarray, optional
+        mask : ndarray
                Mask for selecting the held out set in the adjacency tensor in case of cross-validation.
-        subs_nz_mask : tuple, optional
+        subs_nz_mask : tuple
                        Indices of elements of data that are non-zero in the mask.
 
         Returns

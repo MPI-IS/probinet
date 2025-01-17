@@ -2,27 +2,30 @@
 This module provides functions for shuffling indices and extracting masks for selecting the held-out set in the adjacency tensor and design matrix.
 """
 
-from typing import List, Tuple, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from probinet.utils.tools import get_or_create_rng
 
-def shuffle_indices(N: int, L: int, rseed: int) -> List[np.ndarray]:
+
+def shuffle_indices(
+    N: int, L: int, rng: Optional[np.random.Generator] = None
+) -> (List)[np.ndarray]:
     """
     Shuffle the indices of the adjacency tensor.
 
     Parameters
     ----------
-    N : int
+    N
         Number of nodes.
-    L : int
+    L
         Number of layers.
-    rseed : int
-        Random seed.
-
+    rng
+        Random number generator.
     Returns
     -------
-    List[np.ndarray]
+    Indices in a shuffled order.
         Indices in a shuffled order.
     """
     # Calculate the total number of samples in the adjacency tensor
@@ -32,7 +35,7 @@ def shuffle_indices(N: int, L: int, rseed: int) -> List[np.ndarray]:
     indices = [np.arange(n_samples) for _ in range(L)]
 
     # Create a random number generator with the specified random seed
-    rng = np.random.default_rng(rseed)
+    rng = get_or_create_rng(rng)
 
     # Loop over each layer and shuffle the corresponding indices
     for l in range(L):
@@ -42,26 +45,25 @@ def shuffle_indices(N: int, L: int, rseed: int) -> List[np.ndarray]:
     return indices
 
 
-def shuffle_indicesG(N: int, L: int, rseed: int = 10) -> List[List[Tuple[int, int]]]:
+def shuffle_indicesG(
+    N: int, L: int, rng: Optional[np.random.Generator] = None
+) -> List[List[Tuple[int, int]]]:
     """
-    Extract a maskG using KFold.
-
     Parameters
     ----------
-    N : int
+    N
         Number of nodes.
-    L : int
+    L
         Number of layers.
-    rseed : int, optional
-        Random seed, by default 10.
-
+    rng
+        Random number generator.
     Returns
     -------
-    List[List[Tuple[int, int]]]
-        Shuffled indices for each layer.
+    Shuffled indices for each layer.
     """
+
     # Create a random number generator with the specified random seed
-    rng = np.random.RandomState(rseed)
+    rng = get_or_create_rng(rng)
 
     # Generate indices for each layer using list comprehension
     idxG = [[(i, j) for i in range(N) for j in range(N)] for _ in range(L)]
@@ -73,24 +75,22 @@ def shuffle_indicesG(N: int, L: int, rseed: int = 10) -> List[List[Tuple[int, in
     return idxG
 
 
-def shuffle_indicesX(N: int, rseed: int = 10) -> np.ndarray:
+def shuffle_indicesX(N: int, rng: Optional[np.random.Generator] = None) -> np.ndarray:
     """
     Extract a maskX using KFold.
 
     Parameters
     ----------
-    N : int
+    N
         Number of nodes.
-    rseed : int, optional
-        Random seed, by default 10.
-
+    rng
+        Random number generator.
     Returns
     -------
-    np.ndarray
-        Shuffled indices.
+    Shuffled indices.
     """
     # Create a random number generator with the specified random seed
-    rng = np.random.RandomState(rseed)
+    rng = get_or_create_rng(rng)
     idxX = np.arange(N)
 
     # Shuffle the indices
@@ -107,32 +107,32 @@ def extract_masks(
     cv_type: str = "kfold",
     NFold: int = 5,
     fold: int = 0,
-    rseed: int = 10,
+    rng: Optional[np.random.Generator] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Return the masks for selecting the held out set in the adjacency tensor and design matrix.
 
     Parameters
     ----------
-    N : int
+    N
         Number of nodes.
-    L : int
+    L
         Number of layers.
-    idxG : Optional[List[List[Tuple[int, int]]]], optional
+    idxG
         Each list has the indexes of the entries of the adjacency matrix of layer L, when cv is set to kfold.
-    idxX : Optional[List[int]], optional
+    idxX
         List with the indexes of the entries of design matrix, when cv is set to kfold.
-    cv_type : str, optional
+    cv_type
         Type of cross-validation: kfold or random, by default 'kfold'.
-    NFold : int, optional
+    NFold
         Number of C-fold, by default 5.
-    fold : int, optional
+    fold
         Current fold, by default 0.
-    rseed : int, optional
-        Random seed, by default 10.
+    rng
+        Random number generator.
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray]
+    Mask for selecting the held out set in the adjacency tensor and design matrix.
         Mask for selecting the held out set in the adjacency tensor and design matrix.
     """
     # Initialize masks
@@ -155,7 +155,7 @@ def extract_masks(
         maskX[testcov] = 1
 
     else:  # random split for choosing the test set
-        rng = np.random.RandomState(rseed)  # Mersenne-Twister random number generator
+        rng = get_or_create_rng(rng)
         maskG = rng.binomial(1, 1.0 / float(NFold), size=(L, N, N))
         maskX = rng.binomial(1, 1.0 / float(NFold), size=N)
 
@@ -172,19 +172,19 @@ def extract_mask_kfold(
 
     Parameters
     ----------
-    indices : List[np.ndarray]
+    indices
               Indices of the adjacency tensor in a shuffled order.
-    N : int
+    N
         Number of nodes.
-    fold : int
+    fold
            Current fold.
-    NFold : int
+    NFold
             Number of total folds.
-
     Returns
     -------
-    mask : np.ndarray
+    mask
            Mask for selecting the held out set in the adjacency tensor. It is made of 0s and 1s,
+           where 1s represent that the element (i,j) should be used.
            where 1s represent that the element (i,j) should be used.
     """
 
@@ -215,24 +215,29 @@ def extract_mask_kfold(
     return mask
 
 
-def shuffle_indices_all_matrix(N: int, L: int, rseed: int = 10) -> List[np.ndarray]:
+def shuffle_indices_all_matrix(
+    N: int, L: int, rng: Optional[np.random.Generator] = None
+) -> List[np.ndarray]:
     """
     Shuffle the indices of the adjacency tensor.
 
     Parameters
     ----------
-    N : int
+    N
         Number of nodes.
-    L : int
+    L
         Number of layers.
-    rseed : int
-            Random seed.
-
+    rng
+            Random number generator.
     Returns
     -------
-    indices : List[np.ndarray]
+    indices
+              Indices in a shuffled order.
               Indices in a shuffled order.
     """
+
+    # Create a random number generator with the specified random seed
+    rng = get_or_create_rng(rng)
 
     # Calculate the total number of samples in the adjacency tensor
     n_samples = int(N * N)
@@ -240,12 +245,9 @@ def shuffle_indices_all_matrix(N: int, L: int, rseed: int = 10) -> List[np.ndarr
     # Create a list of arrays, where each array contains the range of indices for a layer
     indices = [np.arange(n_samples) for _ in range(L)]
 
-    # Create a random number generator with the specified random seed
-    rng = np.random.default_rng(rseed)
-
     # Loop over each layer and shuffle the corresponding indices
-    for l in range(L):
-        rng.shuffle(indices[l])
+    for layer in range(L):
+        rng.shuffle(indices[layer])
 
     # Return the shuffled indices
     return indices

@@ -2,8 +2,8 @@
 Test cases for the generate_network module.
 """
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 import networkx as nx
 import numpy as np
@@ -13,12 +13,9 @@ from probinet.synthetic.anomaly import SyntNetAnomaly
 from probinet.synthetic.base import BaseSyntheticNetwork, affinity_matrix
 from probinet.synthetic.dynamic import SyntheticDynCRep
 from probinet.synthetic.multilayer import SyntheticMTCOV
-from probinet.synthetic.reciprocity import (
-    GM_reciprocity,
-    ReciprocityMMSBM_joints,
-)
+from probinet.synthetic.reciprocity import GM_reciprocity, ReciprocityMMSBM_joints
 
-from .constants import RTOL
+from .constants import RANDOM_SEED_REPROD, RTOL
 
 
 class TestGMReciprocity(unittest.TestCase):
@@ -88,7 +85,7 @@ class TestGMReciprocity(unittest.TestCase):
             "nodes": 98,
             "edges": 137,
             "sparsity_cof": 2.796,
-            "reciprocity": 0.0292,
+            "reciprocity": 0.029,
         }
         self._run_test(gm.planted_network_cond_independent, expected_values)
 
@@ -100,7 +97,7 @@ class TestGMReciprocity(unittest.TestCase):
             "nodes": 98,
             "edges": 137,
             "sparsity_cof": 2.796,
-            "reciprocity": 0.0292,
+            "reciprocity": 0.029,
         }
         self._run_test(gm.planted_network_cond_independent, expected_values)
 
@@ -223,7 +220,7 @@ class TestCRepDyn(unittest.TestCase):
         # Expected values
         self.expected_number_of_edges_graph_0 = 234
         self.expected_number_of_edges_graph_1 = 233
-        self.expected_number_of_edges_graph_2 = 243
+        self.expected_number_of_edges_graph_2 = 259
         self.expected_u_sum_axis_1 = 100.0
         self.expected_u_sum_axis_0 = np.array([50.0, 50.0])
         expected_number_of_edges = [
@@ -231,8 +228,10 @@ class TestCRepDyn(unittest.TestCase):
             self.expected_number_of_edges_graph_1,
             self.expected_number_of_edges_graph_2,
         ]
+        # Create rng from RANDOM_SEED_REPROD
+        rng = np.random.default_rng(seed=RANDOM_SEED_REPROD)
         # Create the CRepDyn object
-        crepdyn = SyntheticDynCRep(N=self.N, K=self.K, T=self.T)
+        crepdyn = SyntheticDynCRep(N=self.N, K=self.K, T=self.T, rng=rng)
         graphs = crepdyn.generate_net()
         self.assertEqual(len(graphs), self.T + 1)
         # Check the number of nodes and edges in each graph
@@ -286,7 +285,6 @@ class TestCRepDyn(unittest.TestCase):
 
 
 class TestReciprocityMMSBM_joints(unittest.TestCase):
-
     def setUp(self):
         mmsbm = ReciprocityMMSBM_joints(
             eta=50,
@@ -306,7 +304,8 @@ class TestReciprocityMMSBM_joints(unittest.TestCase):
 class TestSyntNetAnomaly(unittest.TestCase):
     def setUp(self):
         self.N = 10
-        self.syn_acd = SyntNetAnomaly(N=self.N)
+        self.rng = np.random.default_rng(seed=RANDOM_SEED_REPROD)
+        self.syn_acd = SyntNetAnomaly(N=self.N, rng=self.rng)
 
     def load_expected_values(self, file_path):
         with open(file_path, "r") as file:
@@ -316,7 +315,6 @@ class TestSyntNetAnomaly(unittest.TestCase):
         self.assertEqual(syn_acd.N, expected_values["N"])
         self.assertEqual(syn_acd.K, expected_values["K"])
         self.assertEqual(syn_acd.m, expected_values["m"])
-        self.assertEqual(syn_acd.rseed, expected_values["rseed"])
         self.assertEqual(syn_acd.label, expected_values["label"])
         self.assertEqual(syn_acd.out_folder.name, expected_values["out_folder"])
         self.assertEqual(
@@ -364,7 +362,13 @@ class TestSyntNetAnomaly(unittest.TestCase):
 
     def test_anomaly_network_PB_with_parameters(self):
         syn_acd = SyntNetAnomaly(
-            N=200, K=3, corr=0.9, over=0.5, structure="disassortative", L1=True
+            N=200,
+            K=3,
+            corr=0.9,
+            over=0.5,
+            structure="disassortative",
+            L1=True,
+            rng=self.rng,
         )
         G, G0 = syn_acd.anomaly_network_PB()
         expected_values = self.load_expected_values(
@@ -391,14 +395,14 @@ class TestSyntheticMTCOV(unittest.TestCase):
         self.K = 3
         self.L = 1
         self.structure = "disassortative"
+        self.rng = np.random.default_rng(seed=RANDOM_SEED_REPROD)
         self.syn_mtcov = SyntheticMTCOV(
-            N=self.N, K=self.K, L=self.L, structure=self.structure
+            N=self.N, K=self.K, L=self.L, structure=self.structure, rng=self.rng
         )
 
     def test_initialization(self):
         self.assertEqual(self.syn_mtcov.N, self.N)
         self.assertEqual(self.syn_mtcov.K, self.K)
-        self.assertEqual(self.syn_mtcov.seed, 0)
         self.assertEqual(self.syn_mtcov.directed, False)
         self.assertEqual(self.syn_mtcov.perc_overlapping, 0.4)
         self.assertEqual(self.syn_mtcov.correlation_u_v, 0)
@@ -407,7 +411,7 @@ class TestSyntheticMTCOV(unittest.TestCase):
         G = self.syn_mtcov.G[0]
         # Assert the number of nodes and edges
         self.assertEqual(G.number_of_nodes(), self.N)
-        self.assertEqual(G.number_of_edges(), 2171)
+        self.assertEqual(G.number_of_edges(), 2167)
         # Assert that the graph is a digraph
         self.assertIsInstance(G, nx.Graph)
 
@@ -417,5 +421,5 @@ class TestSyntheticMTCOV(unittest.TestCase):
         count_attr1 = np.count_nonzero(metadata == "attr1")
         # Count occurrences of 'attr2'
         count_attr2 = np.count_nonzero(metadata == "attr2")
-        self.assertEqual(count_attr1, 156)
-        self.assertEqual(count_attr2, 144)
+        self.assertEqual(count_attr1, 145)
+        self.assertEqual(count_attr2, 155)

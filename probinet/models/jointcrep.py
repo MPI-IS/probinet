@@ -7,18 +7,23 @@ The latent variables are related to community memberships and a pair interaction
 import logging
 import time
 from pathlib import Path
-from typing import Any, Tuple, Union, Optional
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 
-from .base import ModelBase, ModelUpdateMixin
-from .classes import GraphData
-from .constants import OUTPUT_FOLDER, K_DEFAULT
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.preprocessing import preprocess_adjacency_tensor
-from ..types import GraphDataType, EndFileType, FilesType
+from ..types import EndFileType, FilesType, GraphDataType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative, transpose_tensor
-from ..utils.tools import check_symmetric, get_item_array_from_subs, log_and_raise_error
+from ..utils.tools import (
+    check_symmetric,
+    get_item_array_from_subs,
+    get_or_create_rng,
+    log_and_raise_error,
+)
+from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
+from .constants import K_DEFAULT, OUTPUT_FOLDER
 
 
 class JointCRep(ModelBase, ModelUpdateMixin):
@@ -37,7 +42,6 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         self,
         **kwargs: Any,
     ) -> None:
-
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(**kwargs)
 
@@ -62,7 +66,6 @@ class JointCRep(ModelBase, ModelUpdateMixin):
     def fit(
         self,
         gdata: GraphData,
-        rseed: int = 0,
         K: int = K_DEFAULT,
         initialization: int = 0,
         eta0: Optional[float] = None,
@@ -76,6 +79,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         out_folder: Path = OUTPUT_FOLDER,
         end_file: Optional[EndFileType] = None,
         files: Optional[FilesType] = None,
+        rng: Optional[np.random.Generator] = None,
         **_kwargs: Any,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
@@ -85,65 +89,58 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         float,
     ]:
         """
-        Model directed networks by using a probabilistic generative models based on a Bivariate
+        Model directed networks by using a probabilistic generative model based on a Bivariate
         Bernoulli distribution that assumes community parameters and a pair interaction
-        coefficient as latent variables. The inference is performed via EM algorithm.
+        coefficient as latent variables. The inference is performed via the EM algorithm.
 
         Parameters
         ----------
-        data : GraphDataType
+        gdata
             Graph adjacency tensor.
-        data_T : COO
-            Graph adjacency tensor (transpose).
-        data_T_vals : np.ndarray
-            Array with values of entries A[j, i] given non-zero entry (i, j).
-        nodes : List[Any]
-            List of nodes IDs.
-        rseed : int, optional
-            Random seed, by default 0.
-        K : int, optional
+        K
             Number of communities, by default 3.
-        initialization : int, optional
-            Indicator for choosing how to initialize u, v and w. If 0, they will be generated randomly;
+        initialization
+            Indicator for choosing how to initialize u, v, and w. If 0, they will be generated randomly;
             1 means only the affinity matrix w will be uploaded from file; 2 implies the membership
-            matrices u and v will be uploaded from file and 3 all u, v and w will be initialized
+            matrices u and v will be uploaded from file, and 3 all u, v, and w will be initialized
             through an input file, by default 0.
-        eta0 : Union[float, None], optional
+        eta0
             Initial value for the reciprocity coefficient, by default None.
-        undirected : bool, optional
+        undirected
             Flag to call the undirected network, by default False.
-        assortative : bool, optional
+        assortative
             Flag to call the assortative network, by default True.
-        fix_eta : bool, optional
+        fix_eta
             Flag to fix the eta parameter, by default False.
-        fix_communities : bool, optional
+        fix_communities
             Flag to fix the community memberships, by default False.
-        fix_w : bool, optional
+        fix_w
             Flag to fix the affinity tensor, by default False.
-        use_approximation : bool, optional
+        use_approximation
             Flag to use approximation in updates, by default False.
-        out_inference : bool, optional
-            Flag to evaluation inference results, by default True.
-        out_folder : str, optional
-            Output folder for inference results, by default "outputs/".
-        end_file : str, optional
-            Suffix for the evaluation file, by default "_JointCRep".
-        files : str, optional
-            Path to the file for initialization, by default "".
+        out_inference
+            Flag to evaluate inference results, by default True.
+        out_folder
+            Output folder for inference results, by default OUTPUT_FOLDER.
+        end_file
+            Suffix for the evaluation file, by default None.
+        files
+            Path to the file for initialization, by default None.
+        rng
+            Random number generator, by default None.
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray, np.ndarray, float, float]
-            A tuple containing:
-            - u_f : np.ndarray
+
+        u_f
             Out-going membership matrix.
-        - v_f : np.ndarray
+        v_f
             In-coming membership matrix.
-        - w_f : np.ndarray
+        w_f
             Affinity tensor.
-        -eta_f : float
+        eta_f
             Pair interaction coefficient.
-        -maxL : float
+        maxL
             Maximum log-likelihood.
         """
 
@@ -165,10 +162,8 @@ class JointCRep(ModelBase, ModelUpdateMixin):
             end_file=end_file,
         )
 
-        # Fix the random seed
-        self.rseed = rseed
-        logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)
+        # Set the random seed
+        self.rng = get_or_create_rng(rng)
 
         # Initialize the fit parameters
         self.initialization = initialization
@@ -191,11 +186,14 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
         # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
         for r in range(self.num_realizations):
-
             # Initialize the parameters for the current realization
-            coincide, convergence, it, loglik, loglik_values = (
-                self._initialize_realization(data, subs_nz)
-            )
+            (
+                coincide,
+                convergence,
+                it,
+                loglik,
+                loglik_values,
+            ) = self._initialize_realization(data, subs_nz)
 
             # Update the parameters for the current realization
             it, loglik, coincide, convergence, loglik_values = self._update_realization(
@@ -239,7 +237,10 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         It also sets up local variables for convergence checking.
         """
         # Log the current state of the random number generator
-        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+        logging.debug(
+            "Random number generator seed: %s",
+            self.rng.bit_generator.state["state"]["state"],
+        )
 
         # Call the _initialize method from the parent class to initialize the parameters for the current realization
         super()._initialize()
@@ -464,7 +465,6 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         return dist_u
 
     def _specific_update_U(self):
-
         self.u *= self._update_membership(self.subs_nz, 1)
 
         if not self.assortative:
@@ -527,7 +527,6 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         self.v[non_zeros] /= den[non_zeros]
 
     def _specific_update_W(self):
-
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum(

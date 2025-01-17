@@ -15,7 +15,7 @@ from scipy.optimize import brentq
 from ..models.constants import OUTPUT_FOLDER
 from ..synthetic.base import GraphProcessingMixin, affinity_matrix
 from ..synthetic.dynamic import eq_c, membership_vectors
-from ..utils.tools import flt
+from ..utils.tools import flt, get_or_create_rng
 from ..visualization.plot import plot_M
 
 EPS = 1e-12  # Small value to avoid division by zero
@@ -31,7 +31,6 @@ class SyntNetAnomaly(GraphProcessingMixin):
         m: int = 1,
         N: int = 100,
         K: int = 2,
-        rseed: int = 10,
         avg_degree: float = 4.0,
         rho_anomaly: float = 0.1,
         structure: str = "assortative",
@@ -48,52 +47,53 @@ class SyntNetAnomaly(GraphProcessingMixin):
         output_parameters: bool = False,
         output_adj: bool = False,
         outfile_adj: Optional[str] = None,
+        rng: Optional[np.random.Generator] = None,
     ) -> None:
         """
         Initialize the SyntNetAnomaly class.
 
         Parameters
         ----------
-        m : int, optional
+        m
             Number of networks to be generated (default is 1).
-        N : int, optional
+        N
             Network size (number of nodes) (default is 100).
-        K : int, optional
+        K
             Number of communities (default is 2).
-        rseed : int, optional
-            Random seed for reproducibility (default is 10).
-        avg_degree : float, optional
+        avg_degree
             Required average degree of the network (default is 4.0).
-        rho_anomaly : float, optional
+        rho_anomaly
             Proportion of anomalies in the network (default is 0.1).
-        structure : str, optional
+        structure
             Structure of the affinity matrix (default is "assortative").
-        label : str, optional
+        label
             Label associated with the set of inputs (default is None).
-        pi : float, optional
+        pi
             Binomial parameter for edge generation (default is 0.8).
-        eta : float, optional
+        eta
             Parameter of the Dirichlet distribution (default is 0.5).
-        L1 : bool, optional
+        L1
             Flag for L1 norm (default is False).
-        ag : float, optional
+        ag
             Alpha parameter of the Gamma distribution (default is 0.6).
-        bg : float, optional
+        bg
             Beta parameter of the Gamma distribution (default is 1.0).
-        corr : float, optional
+        corr
             Correlation between u and v synthetically generated (default is 0.0).
-        over : float, optional
+        over
             Fraction of nodes with mixed membership (default is 0.0).
-        verbose : int, optional
+        verbose
             Verbosity level (default is 0).
-        folder : str, optional
+        folder
             Folder path for saving outputs (default is "").
-        output_parameters : bool, optional
+        output_parameters
             Flag for storing the parameters (default is False).
-        output_adj : bool, optional
+        output_adj
             Flag for storing the generated adjacency matrix (default is False).
-        outfile_adj : str, optional
+        outfile_adj
             Name for saving the adjacency matrix (default is None).
+        rng
+            Random number generator (default is None).
 
         Raises
         ------
@@ -106,10 +106,8 @@ class SyntNetAnomaly(GraphProcessingMixin):
         self.K = K
         # Set number of networks to be generated
         self.m = m
-        # Set random seed
-        self.rseed = rseed
         # Set seed random number generator
-        self.prng = np.random.RandomState(self.rseed)
+        self.rng = get_or_create_rng(rng)
         # Set label (associated uniquely with the set of inputs)
         if label is not None:
             self.label = label
@@ -233,7 +231,7 @@ class SyntNetAnomaly(GraphProcessingMixin):
 
         Parameters
         ----------
-        parameters : object
+        parameters
             Latent variables z, s, u, v, and w.
 
         Returns
@@ -262,13 +260,13 @@ class SyntNetAnomaly(GraphProcessingMixin):
         self.w *= c
 
         # Build network
-        A = self.prng.poisson(c * M)
+        A = self.rng.poisson(c * M)
         A[A > 0] = 1  # binarize the adjacency matrix
         np.fill_diagonal(A, 0)
         G0 = nx.to_networkx_graph(A, create_using=nx.DiGraph)
 
         # weighted anomaly
-        A[self.z.nonzero()] = self.prng.poisson(self.pi * self.z.count_nonzero())
+        A[self.z.nonzero()] = self.rng.poisson(self.pi * self.z.count_nonzero())
         A[A > 0] = 1  # binarize the adjacency matrix
         np.fill_diagonal(A, 0)
 
@@ -337,28 +335,23 @@ class SyntNetAnomaly(GraphProcessingMixin):
         """
         Generate z, u, v, w latent variables.
 
-        Parameters
-        ----------
-        prng : int
-            Seed for the random number generator.
-
-        Returns
         -------
-        z : numpy.ndarray
+        z
             Matrix NxN of models indicators (binary).
 
-        u : numpy.ndarray
+        u
             Matrix NxK of out-going membership vectors, positive element-wise.
             With unitary L1 norm computed row-wise.
 
-        v : numpy.ndarray
+        v
             Matrix NxK of in-coming membership vectors, positive element-wise.
             With unitary L1 norm computed row-wise.
 
-        w : numpy.ndarray
+        w
             Affinity matrix KxK. Possibly None if in pure SpringRank.
             Element (k,h) gives the density of edges going from the nodes
             of group k to nodes of group h.
+
         """
         # Generate z through binomial distribution
 
@@ -367,14 +360,14 @@ class SyntNetAnomaly(GraphProcessingMixin):
         else:
             density = self.mu
         z = sparse.random(
-            self.N, self.N, density=density, data_rvs=np.ones, random_state=self.rseed
+            self.N, self.N, density=density, data_rvs=np.ones, random_state=self.rng
         )
         upper_z = sparse.triu(z)
         z = upper_z + upper_z.T
 
         # Generate u, v for overlapping communities
         u, v = membership_vectors(
-            self.prng,
+            self.rng,
             self.L1,
             self.eta,
             self.ag,
@@ -395,14 +388,12 @@ class SyntNetAnomaly(GraphProcessingMixin):
         """
         Output results in a compressed file.
 
-        Parameters
         ----------
-        nodes : list
+        nodes
             List of nodes IDs.
+
         """
-        output_parameters = (
-            self.out_folder + "theta_" + self.label + "_" + str(self.prng)
-        )
+        output_parameters = self.out_folder + "theta_" + self.label
         np.savez_compressed(
             output_parameters + ".npz",
             z=self.z.todense(),
@@ -421,16 +412,16 @@ class SyntNetAnomaly(GraphProcessingMixin):
         """
         Plot the adjacency matrix produced by the generative algorithm.
 
-        Parameters
         ----------
-        A : scipy.sparse.spmatrix
+        A
             Sparse version of the NxN adjacency matrix associated with the graph.
 
-        cmap : matplotlib.colors.Colormap, optional
-            Colormap used for the plot. Default is 'PuBuGn'.
+        cmap
+            Colormap used for the plot.
 
-        title : str, optional
-            Title of the plot. Default is 'Adjacency matrix'.
+        title
+            Title of the plot.
+
         """
         Ad = A.todense()
         _, ax = plt.subplots(figsize=(7, 7))
@@ -446,10 +437,10 @@ class SyntNetAnomaly(GraphProcessingMixin):
         """
         Plot the anomaly matrix produced by the generative algorithm.
 
-        Parameters
         ----------
-        cmap : matplotlib.colors.Colormap, optional
-            Colormap used for the plot. Default is 'PuBuGn'.
+        cmap
+            Colormap used for the plot.
+
         """
         _, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(self.z, cmap=plt.get_cmap(cmap))
@@ -464,17 +455,17 @@ class SyntNetAnomaly(GraphProcessingMixin):
         """
         Plot the M matrix produced by the generative algorithm.
 
-        Parameters
         ----------
-        M : numpy.ndarray
+        M
             NxN M matrix associated with the graph. Contains all the means used
             for generating edges.
 
-        cmap : matplotlib.colors.Colormap, optional
-            Colormap used for the plot. Default is 'PuBuGn'.
+        cmap
+            Colormap used for the plot.
 
-        title : str, optional
-            Title of the plot. Default is 'MT means matrix'.
+        title
+            Title of the plot.
+
         """
         fig, ax = plt.subplots(figsize=(7, 7))
         ax.matshow(M, cmap=plt.get_cmap(cmap))

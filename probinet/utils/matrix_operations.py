@@ -157,6 +157,8 @@ def normalize_nonzero_membership(u: np.ndarray, axis: Optional[int] = 1) -> np.n
     ----------
     u: ndarray
        Numpy Matrix.
+    axis: Optional[int]
+          Axis along which the matrix should be normalized.
 
     Returns
     -------

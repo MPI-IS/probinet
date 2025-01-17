@@ -57,9 +57,13 @@ class DynCRepCrossValidation(CrossValidation):
         self.gdata_for_training = self.gdata._replace(adjacency_tensor=B_train)
 
         self.parameters["T"] = t
-        # Initialize the ACD algorithm object
+        # Initialize the algorithm object
         algorithm_object = self.model(**self.num_parameters)
 
+        # Define rng from the seed and add it to the parameters
+        self.parameters["rng"] = np.random.default_rng(seed=self.parameters["rseed"])
+
+        # Fit the model to the training data
         outputs = algorithm_object.fit(self.gdata_for_training, **self.parameters)
 
         # Return the outputs and the algorithm object
@@ -83,7 +87,7 @@ class DynCRepCrossValidation(CrossValidation):
             "algo": "DynCRep_temporal" if self.parameters["temporal"] else "DynCRep",
             "constrained": self.parameters["constrained"],
             "flag_data_T": self.parameters["flag_data_T"],
-            "rseed": algorithm_object.rseed,
+            "rseed": self.parameters["rseed"],
             "K": self.parameters["K"],
             "eta0": self.parameters["eta0"],
             "beta0": self.parameters["beta0"],
@@ -147,11 +151,10 @@ class DynCRepCrossValidation(CrossValidation):
 
         # Cross-validation loop
         for t in range(1, self.T + 1):  # skip first and last time step (last is hidden)
-
             if t == 1:
-                self.parameters["fix_beta"] = (
-                    True  # for the first time step beta cannot be inferred
-                )
+                self.parameters[
+                    "fix_beta"
+                ] = True  # for the first time step beta cannot be inferred
             else:
                 self.parameters["fix_beta"] = False
             self.parameters["end_file"] = (

@@ -12,24 +12,22 @@ import numpy as np
 from scipy.optimize import brentq, root
 from sparse import COO
 
-from .base import ModelBase, ModelUpdateMixin
-from .classes import GraphData
-from .constants import EPS_, OUTPUT_FOLDER
 from ..evaluation.expectation_computation import (
     compute_lagrange_multiplier,
     compute_mean_lambda0,
     u_with_lagrange_multiplier,
 )
 from ..input.preprocessing import preprocess_adjacency_tensor
-from ..types import (
-    GraphDataType,
-    MaskType,
-    EndFileType,
-    FilesType,
-    ArraySequence,
-)
+from ..types import ArraySequence, EndFileType, FilesType, GraphDataType, MaskType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
-from ..utils.tools import get_item_array_from_subs, log_and_raise_error
+from ..utils.tools import (
+    get_item_array_from_subs,
+    get_or_create_rng,
+    log_and_raise_error,
+)
+from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
+from .constants import EPS_, OUTPUT_FOLDER
 
 
 class DynCRep(ModelBase, ModelUpdateMixin):
@@ -78,7 +76,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self,
         **kwargs: Any,
     ) -> None:
-
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
             data_X=None,
@@ -135,10 +132,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         T: Optional[int] = None,
         mask: Optional[MaskType] = None,
         K: int = 2,
-        rseed: int = 0,
         ag: float = 1.0,
         bg: float = 0.5,
-        eta0: Optional[float] = None,
+        eta0: float = None,
         beta0: float = 0.25,
         flag_data_T: int = 0,
         temporal: bool = True,
@@ -155,87 +151,82 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         out_folder: Path = OUTPUT_FOLDER,
         end_file: Optional[EndFileType] = None,
         files: Optional[FilesType] = None,
+        rng: Optional[np.random.Generator] = None,
         **_kwargs: Any,
-    ) -> Tuple[
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        float,
-        np.ndarray,
-        float,
-    ]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray, float,]:
         """
         Model directed networks by using a probabilistic generative models that assumes community parameters and
         reciprocity coefficient. The inference is performed via the EM algorithm.
 
         Parameters
         ----------
-        data : GraphDataType
+        gdata
             Graph adjacency tensor.
-        T : int
+        T
             Number of time steps.
-        nodes : List[int]
-            List of node IDs.
-        mask : MaskType, optional
+        mask
             Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
-        K : int, optional
+        K
             Number of communities, by default 2.
-        rseed : int, optional
-            Random seed, by default 0.
-        ag : float, optional
+        ag
             Shape of gamma prior, by default 1.0.
-        bg : float, optional
+        bg
             Rate of gamma prior, by default 0.5.
-        eta0 : Optional[float], optional
+        eta0
             Initial value of the reciprocity coefficient, by default None.
-        beta0 : float, optional
+        beta0
             Initial value of the beta parameter, by default 0.25.
-        flag_data_T : int, optional
+        flag_data_T
             Flag to determine which log-likelihood function to use, by default 0.
-        temporal : bool, optional
+        temporal
             Flag to determine if the function should behave in a temporal manner, by default True.
-        initialization : int, optional
+        initialization
             Initialization method for the models parameters, by default 0.
-        assortative : bool, optional
+        assortative
             Flag to indicate if the graph is assortative, by default False.
-        constrained : bool, optional
+        constrained
             Flag to indicate if the models is constrained, by default False.
-        constraintU : bool, optional
+        constraintU
             Flag to indicate if there is a constraint on U, by default False.
-        fix_eta : bool, optional
+        fix_eta
             Flag to indicate if the eta parameter should be fixed, by default False.
-        fix_beta : bool, optional
+        fix_beta
             Flag to indicate if the beta parameter should be fixed, by default False.
-        fix_communities : bool, optional
+        fix_communities
             Flag to indicate if the communities should be fixed, by default False.
-        fix_w : bool, optional
+        fix_w
             Flag to indicate if the w parameter should be fixed, by default False.
-        undirected : bool, optional
+        undirected
             Flag to indicate if the graph is undirected, by default False.
-        out_inference : bool, optional
+        out_inference
             Flag to indicate if inference results should be evaluation, by default True.
-        out_folder : str, optional
+        out_folder
             Output folder for inference results, by default "outputs/".
-        end_file : str, optional
+        end_file
             Suffix for the evaluation file, by default "_DynCRep".
-        files : str, optional
+        files
             Path to the file for initialization, by default "".
+        rng
+            Random number generator, by default None.
+        **kwargs
+            Additional parameters for the model.
 
         Returns
         -------
-        u_f : np.ndarray
+        u_f
             Out-going membership matrix.
-        v_f : np.ndarray
+        v_f
             In-coming membership matrix.
-        w_f : np.ndarray
+        w_f
             Affinity tensor.
-        eta_f : float
+        eta_f
             Reciprocity coefficient.
-        beta_f : np.ndarray
+        beta_f
             Beta parameter.
-        maxL : float
+        maxL
             Maximum pseudo log-likelihood.
         """
+
         # Check the parameters for fitting the models
         self._check_fit_params(
             K=K,
@@ -262,9 +253,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         )
         logging.info("### Version: %s ###", "w-DYN" if temporal else "w-STATIC")
         # Set the random seed
-        logging.debug("Fixing random seed to: %s", rseed)
-        self.rseed = rseed
-        self.rng = np.random.RandomState(rseed)
+        self.rng = get_or_create_rng(rng)
 
         # Initialize the fit parameters
         self.nodes = gdata.nodes
@@ -281,9 +270,15 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         best_loglik_values = []  # initialization of the log-likelihood values
 
         # Preprocess the data for fitting the models
-        T, data, data_AtAtm1, data_T, data_T_vals, data_Tm1, subs_nzp = (
-            self._preprocess_data_for_fit(T, gdata.adjacency_tensor)
-        )
+        (
+            T,
+            data,
+            data_AtAtm1,
+            data_T,
+            data_T_vals,
+            data_Tm1,
+            subs_nzp,
+        ) = self._preprocess_data_for_fit(T, gdata.adjacency_tensor)
 
         # Set the preprocessed data and other related variables as attributes of the class instance
         self.data_AtAtm1 = data_AtAtm1
@@ -297,11 +292,14 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         # Run the Expectation-Maximization (EM) algorithm for a specified number of realizations
         for r in range(self.num_realizations):
-
             # Initialize the parameters for the current realization
-            coincide, convergence, it, loglik, loglik_values = (
-                self._initialize_realization()
-            )
+            (
+                coincide,
+                convergence,
+                it,
+                loglik,
+                loglik_values,
+            ) = self._initialize_realization()
 
             # Update the parameters for the current realization
             it, loglik, coincide, convergence, loglik_values = self._update_realization(
@@ -337,7 +335,10 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         It also sets up local variables for convergence checking.
         """
         # Log the current state of the random number generator
-        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+        logging.debug(
+            "Random number generator seed: %s",
+            self.rng.bit_generator.state["state"]["state"],
+        )
 
         # Call the _initialize method from the parent class to initialize the parameters for the current realization
         super()._initialize()
@@ -359,7 +360,9 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         # Return the initial state of the realization
         return coincide, convergence, it, loglik, loglik_values
 
-    def _preprocess_data_for_fit(self, T: int, data: GraphDataType) -> Tuple[
+    def _preprocess_data_for_fit(
+        self, T: int, data: GraphDataType
+    ) -> Tuple[
         int,
         GraphDataType,
         np.ndarray,
@@ -489,7 +492,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         )
 
     def _initialize_beta(self) -> None:
-
         # If beta0 is not None, assign its value to beta
         if self.beta0 is not None:
             self.beta = self.beta0
@@ -624,7 +626,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             self.eta = 0.0
 
         if self.eta < 0 or self.eta > 1:
-
             message = f"Eta has to be a positive number! Current value is {self.eta}"
             log_and_raise_error(ValueError, message)
 
@@ -697,7 +698,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                 self.u[i] = abs(u_tmp[i] / (lambda_i + Z_uk))
 
         else:
-
             self.u = (self.ag - 1) + self.u_old * (
                 self._update_membership(subs_nz, self.u, self.v, self.w, 1)
             )
@@ -795,7 +795,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
                     self.v[i] = v_root.x
 
     def _specific_update_W_dyn(self, subs_nz: tuple):
-
         uttkrp_DKQ = np.zeros_like(self.w)
 
         for idx, (a, i, j) in enumerate(zip(*subs_nz)):
@@ -835,7 +834,6 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         return dist_w
 
     def _specific_update_W_stat(self, subs_nz: tuple):
-
         sub_w_nz = self.w.nonzero()
         uttkrp_DKQ = np.zeros_like(self.w)
 

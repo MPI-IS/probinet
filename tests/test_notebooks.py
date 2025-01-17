@@ -3,11 +3,11 @@ Unit tests for the JointCRep notebook.
 """
 
 import os
-from pathlib import Path
 import unittest
+from pathlib import Path
 
-from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
+from nbconvert.preprocessors import ExecutePreprocessor
 
 
 class TestNotebooks(unittest.TestCase):

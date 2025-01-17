@@ -1,6 +1,6 @@
 parameters:
   K: [2]
-  rseed: [10]
+  rseed: [0]
   initialization: [0]
   out_inference: [False]
   out_folder: ""

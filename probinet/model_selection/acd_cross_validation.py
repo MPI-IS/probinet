@@ -71,6 +71,9 @@ class ACDCrossValidation(CrossValidation):
         # Create an instance of the ACD algorithm
         algorithm_object = AnomalyDetection(**self.numerical_parameters)
 
+        # Define rng from the seed and add it to the parameters
+        self.parameters["rng"] = np.random.default_rng(seed=self.parameters["rseed"])
+
         # Fit the ACD models to the training data and get the outputs
         outputs = algorithm_object.fit(self.gdata_for_training, **self.parameters)
 

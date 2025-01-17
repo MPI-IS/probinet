@@ -5,6 +5,7 @@ Test cases for the evaluate module.
 import unittest
 
 import numpy as np
+from tests.constants import RANDOM_SEED_REPROD
 
 from probinet.evaluation.expectation_computation import (
     calculate_conditional_expectation,
@@ -25,7 +26,7 @@ class TestEvaluateFunctions(unittest.TestCase):
         self.L = 3
         self.K = 2
         self.eta = 0.2
-        self.rseed = 42
+        self.rseed = RANDOM_SEED_REPROD
 
         # Generate random data for testing
         np.random.seed(self.rseed)

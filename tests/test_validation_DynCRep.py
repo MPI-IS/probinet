@@ -1,6 +1,6 @@
+import unittest
 from importlib.resources import files
 from pathlib import Path
-import unittest
 
 import networkx as nx
 import numpy as np
@@ -15,7 +15,7 @@ from probinet.models.dyncrep import DynCRep
 from probinet.utils.matrix_operations import transpose_tensor
 from probinet.utils.tools import flt
 
-from .constants import PATH_FOR_INIT, TOLERANCE_2
+from .constants import PATH_FOR_INIT, RANDOM_SEED_REPROD, TOLERANCE_2
 from .fixtures import BaseTest
 
 
@@ -70,6 +70,8 @@ class DynCRepTestCase(BaseTest):
                 "beta0": self.theta["beta"],
             }
         )
+        conf["rng"] = np.random.default_rng(seed=RANDOM_SEED_REPROD)
+
         return conf
 
     def assert_model_results_from_yaml(
@@ -191,8 +193,6 @@ class DynCRepTestCase(BaseTest):
             yaml_file,
         )
 
-    # Skipping this one since it looks that DynCRep does not support sparse data. To be discussed
-    # with Hadiseh.
     @unittest.skip("DynCRep does not support sparse data")
     def test_force_dense_false(self):
         """

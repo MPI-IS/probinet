@@ -5,14 +5,14 @@ This module contains utility functions for data manipulation and file I/O.
 import logging
 from os import PathLike
 from pathlib import Path
-from typing import Dict, List, Type, Union
+from typing import Dict, List, Optional, Type, Union
 
 import networkx as nx
 import numpy as np
 import pandas as pd
 from sparse import COO
 
-from ..models.constants import RTOL_DEFAULT, ATOL_DEFAULT
+from ..models.constants import ATOL_DEFAULT, RTOL_DEFAULT
 from ..types import ArraySequence
 
 
@@ -406,3 +406,20 @@ def flt(x: float, d: int = 3) -> float:
         The input number rounded to the specified number of decimal places.
     """
     return round(x, d)
+
+
+def get_or_create_rng(rng: Optional[np.random.Generator] = None) -> np.random.Generator:
+    """
+    Set the random seed and initialize the random number generator.
+
+    Parameters
+    ----------
+    rng : Optional[np.random.Generator]
+        Random number generator. If None, a new generator is created using the seed.
+
+    Returns
+    -------
+    np.random.Generator
+        Initialized random number generator.
+    """
+    return rng if rng else np.random.default_rng()

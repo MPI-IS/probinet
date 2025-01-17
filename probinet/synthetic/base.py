@@ -2,18 +2,18 @@
 Base classes for synthetic network generation.
 """
 
-from abc import ABCMeta
 import logging
 import math
-from os import PathLike
+from abc import ABCMeta
 from enum import Enum
+from os import PathLike
 from pathlib import Path
-from typing import Tuple, Optional, Union
+from typing import Optional, Tuple, Union
 
-import pandas as pd
-from matplotlib import pyplot as plt
 import networkx as nx
 import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 
 from probinet.visualization.plot import plot_A
 
@@ -310,7 +310,7 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         # Set seed random number generator
         self.seed = seed
         self.eta = eta
-        self.prng = np.random.RandomState(self.seed)
+        self.rng = np.random.default_rng(seed)
 
         self.out_folder = out_folder
         self.output_parameters = output_parameters
@@ -331,7 +331,6 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
     """
 
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
 
         self.__doc__ = BaseSyntheticNetwork.__init__.__doc__
@@ -550,7 +549,7 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
             if parameters is None:
                 self.w *= c
 
-        Y = self.prng.poisson(self.M)
+        Y = self.rng.poisson(self.M)
 
         # Create networkx DiGraph objects for each layer for easier manipulation
 
@@ -590,12 +589,12 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
 
         # number of nodes belonging to more communities
         overlapping = int(self.N * self.perc_overlapping)
-        ind_over = self.prng.randint(len(u), size=overlapping)
+        ind_over = self.rng.integers(low=0, high=len(u), size=overlapping)
 
-        u[ind_over] = self.prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+        u[ind_over] = self.rng.dirichlet(self.alpha * np.ones(self.K), overlapping)
         v[ind_over] = self.correlation_u_v * u[ind_over] + (
             1.0 - self.correlation_u_v
-        ) * self.prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+        ) * self.rng.dirichlet(self.alpha * np.ones(self.K), overlapping)
         if self.correlation_u_v == 1.0:
             assert np.allclose(u, v)
         if self.correlation_u_v > 0:

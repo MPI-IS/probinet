@@ -16,17 +16,17 @@ import numpy as np
 import scipy.sparse
 from sparse import COO
 
-from .base import ModelBase, ModelUpdateMixin
-from .classes import GraphData
-from .constants import OUTPUT_FOLDER
 from ..evaluation.expectation_computation import compute_mean_lambda0
 from ..input.loader import build_adjacency_and_design_from_file
 from ..input.preprocessing import preprocess_adjacency_tensor, preprocess_data_matrix
-from ..types import GraphDataType, EndFileType, FilesType, ArraySequence
+from ..types import ArraySequence, EndFileType, FilesType, GraphDataType
 from ..utils.matrix_operations import sp_uttkrp, sp_uttkrp_assortative
+from ..utils.tools import get_or_create_rng
+from .base import ModelBase, ModelUpdateMixin
+from .classes import GraphData
+from .constants import OUTPUT_FOLDER
 
 MAX_BATCH_SIZE = 5000
-RANDOM_SEED = 10
 
 
 class MTCOV(ModelBase, ModelUpdateMixin):
@@ -74,7 +74,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         self,
         **kwargs: Any,
     ) -> None:
-
         super()._check_fit_params(
             **kwargs,
         )
@@ -103,7 +102,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         gdata: GraphData,
         batch_size: Optional[int] = None,
         gamma: float = 0.5,
-        rseed: int = 107261,
         K: int = 2,
         initialization: int = 0,
         undirected: bool = False,
@@ -112,6 +110,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         out_folder: Path = OUTPUT_FOLDER,
         end_file: Optional[EndFileType] = None,
         files: Optional[FilesType] = None,
+        rng: Optional[np.random.Generator] = None,
         **__kwargs: Any,
     ) -> tuple[
         np.ndarray[Any, np.dtype[np.float64]],
@@ -126,49 +125,52 @@ class MTCOV(ModelBase, ModelUpdateMixin):
 
         Parameters
         ----------
-        data : GraphDataType
+        gdata
             Graph adjacency tensor.
-        data_X : np.ndarray
-            Object representing the one-hot encoding version of the design matrix.
-        nodes : List[Any]
-            List of node IDs.
-        batch_size : Optional[int], optional
-            Size of the subset of nodes to compute the likelihood with, by default None.
-        gamma : float, optional
-            Weight of the node attributes, by default 0.5.
-        rseed : int, optional
-            Random seed, by default 107261.
-        K : int, optional
-            Number of communities, by default 2.
-        initialization : int, optional
-            If 0, the membership matrices u and v and the affinity matrix w are generated randomly; if 1, they are uploaded from file, by default 0.
-        undirected : bool, optional
-            If True, the models is undirected, by default False.
-        assortative : bool, optional
-            If True, the models is assortative, by default False.
-        out_inference : bool, optional
-            If True, evaluation inference results, by default True.
-        out_folder : str, optional
-            Output folder for inference results, by default "outputs/".
-        end_file : str, optional
+        K
+            Number of communities, by default 3.
+        initialization
+            Indicator for choosing how to initialize u, v, and w. If 0, they will be generated randomly;
+            1 means only the affinity matrix w will be uploaded from file; 2 implies the membership
+            matrices u and v will be uploaded from file, and 3 all u, v, and w will be initialized
+            through an input file, by default 0.
+        eta0
+            Initial value for the reciprocity coefficient, by default None.
+        undirected
+            Flag to call the undirected network, by default False.
+        assortative
+            Flag to call the assortative network, by default True.
+        fix_eta
+            Flag to fix the eta parameter, by default False.
+        fix_communities
+            Flag to fix the community memberships, by default False.
+        fix_w
+            Flag to fix the affinity tensor, by default False.
+        use_approximation
+            Flag to use approximation in updates, by default False.
+        out_inference
+            Flag to evaluate inference results, by default True.
+        out_folder
+            Output folder for inference results, by default OUTPUT_FOLDER.
+        end_file
             Suffix for the evaluation file, by default None.
-        files : str, optional
+        files
             Path to the file for initialization, by default None.
+        rng
+            Random number generator, by default None.
 
         Returns
         -------
-         Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]
-            A tuple containing:
-            - u_f : np.ndarray
-            Membership matrix (out-degree).
-        - v_f : np.ndarray
-            Membership matrix (in-degree).
-        - w_f : np.ndarray
+        u_f
+            Out-going membership matrix.
+        v_f
+            In-coming membership matrix.
+        w_f
             Affinity tensor.
-        - beta_f : np.ndarray
-            Beta parameter matrix.
-        -maxL : float
-            Maximum log-likelihood value.
+        eta_f
+            Pair interaction coefficient.
+        maxL
+            Maximum log-likelihood.
         """
         # Check the parameters for fitting the models
         self._check_fit_params(
@@ -186,9 +188,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         )
         logging.info("gamma = %s", gamma)
         # Set the random seed
-        self.rseed = rseed
-        logging.debug("Fixing random seed to: %s", self.rseed)
-        self.rng = np.random.RandomState(self.rseed)
+        self.rng = get_or_create_rng(rng)
 
         # Initialize the fit parameters
         self.initialization = initialization
@@ -198,10 +198,16 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         best_loglik_values = []  # initialization of the log-likelihood values
 
         # Preprocess the data for fitting the models
-        data, data_X, subs_nz, subs_X_nz, subset_N, Subs, SubsX = (
-            self.preprocess_data_for_fit(
-                gdata.adjacency_tensor, gdata.design_matrix, batch_size
-            )
+        (
+            data,
+            data_X,
+            subs_nz,
+            subs_X_nz,
+            subset_N,
+            Subs,
+            SubsX,
+        ) = self.preprocess_data_for_fit(
+            gdata.adjacency_tensor, gdata.design_matrix, batch_size
         )
 
         # Set the preprocessed data and other related variables as attributes of the class instance
@@ -217,11 +223,14 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         # The following part of the code is responsible for running the Expectation-Maximization
         # (EM)  algorithm for a specified number of realizations (self.num_realizations):
         for r in range(self.num_realizations):
-
             # Initialize the parameters for the current realization
-            coincide, convergence, it, loglik, loglik_values = (
-                self._initialize_realization()
-            )
+            (
+                coincide,
+                convergence,
+                it,
+                loglik,
+                loglik_values,
+            ) = self._initialize_realization()
 
             # Update the parameters for the current realization
             it, loglik, coincide, convergence, loglik_values = self._update_realization(
@@ -256,7 +265,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             batch_size = (
                 min(MAX_BATCH_SIZE, self.N) if batch_size > self.N else batch_size
             )
-            np.random.seed(RANDOM_SEED)
             subset_N = np.random.choice(
                 np.arange(self.N), size=batch_size, replace=False
             )
@@ -265,7 +273,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         else:
             if self.N > MAX_BATCH_SIZE:
                 batch_size = MAX_BATCH_SIZE
-                np.random.seed(RANDOM_SEED)  # TODO: to be fixed on CSD-300
                 subset_N = np.random.choice(
                     np.arange(self.N), size=batch_size, replace=False
                 )
@@ -304,8 +311,7 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         batch_size : Optional[int], default=None
             The size of the subset of nodes to compute the likelihood with. If None, the method
             will automatically determine the batch size based on the number of nodes.
-        max_batch_size
-            The maximum batch size to use when automatically determining the batch
+
         Returns
         -------
         preprocessed_data : GraphDataType
@@ -347,7 +353,10 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         initial log-likelihood.
         """
         # Log the current state of the random number generator
-        logging.debug("Random number generator seed: %s", self.rng.get_state()[1][0])
+        logging.debug(
+            "Random number generator seed: %s",
+            self.rng.bit_generator.state["state"]["state"],
+        )
 
         # Call the _initialize method from the parent class to initialize the parameters for the current realization
         super()._initialize()
@@ -523,7 +532,6 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         return np.einsum("Ik,kz->Iz", u[subs_X_nz[0], :] + v[subs_X_nz[0], :], beta)
 
     def _specific_update_W(self):
-
         uttkrp_DKQ = np.zeros_like(self.w)
 
         UV = np.einsum(

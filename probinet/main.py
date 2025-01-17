@@ -5,8 +5,10 @@ Main script to run the algorithms.
 import argparse
 import dataclasses
 import logging
-from pathlib import Path
 import time
+from pathlib import Path
+
+import numpy as np
 
 from .models.acd import AnomalyDetection
 from .models.base import ModelBaseParameters
@@ -120,6 +122,9 @@ def parse_args():
         help="Flag to plot the log-likelihood",
     )
     shared_parser.add_argument(
+        "--rseed", type=int, default=int(time.time() * 1000), help="Random seed"
+    )
+    shared_parser.add_argument(
         "--initialization", type=int, default=0, help="Initialization method"
     )
     shared_parser.add_argument(
@@ -156,7 +161,6 @@ def parse_args():
     crep_parser.add_argument(
         "-nr", "--num_realizations", type=int, default=5, help="Number of realizations"
     )
-    crep_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
     crep_parser.add_argument(
         "--constrained",
         action="store_true",
@@ -187,7 +191,6 @@ def parse_args():
     jointcrep_parser.add_argument(
         "-nr", "--num_realizations", type=int, default=3, help="Number of realizations"
     )
-    jointcrep_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
     jointcrep_parser.add_argument(
         "--use_approximation",
         type=bool,
@@ -241,7 +244,6 @@ def parse_args():
         default="Metadata",
         help="Name of the attribute to consider in MTCOV",
     )
-    mtcov_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
     mtcov_parser.add_argument(
         "--gamma", type=float, default=0.5, help="Scaling hyper parameter in MTCOV"
     )
@@ -291,7 +293,6 @@ def parse_args():
     dyncrep_parser.add_argument(
         "--beta0", type=float, default=0.25, help="Initial beta value"
     )
-    dyncrep_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
     dyncrep_parser.add_argument("--ag", type=float, default=1.1, help="Parameter ag")
     dyncrep_parser.add_argument("--bg", type=float, default=0.5, help="Parameter bg")
     dyncrep_parser.add_argument(
@@ -347,7 +348,6 @@ def parse_args():
     acd_parser.add_argument(
         "-nr", "--num_realizations", type=int, default=1, help="Number of realizations"
     )
-    acd_parser.add_argument("--rseed", type=int, default=0, help="Random seed")
     acd_parser.add_argument("--ag", type=float, default=1.1, help="Parameter ag")
     acd_parser.add_argument("--bg", type=float, default=0.5, help="Parameter bg")
     acd_parser.add_argument("--pibr0", default=None, help="Anomaly parameter pi")
@@ -401,7 +401,6 @@ def main():
         format="*** [%(levelname)s][%(asctime)s][%(module)s] %(message)s",
     )
 
-    # FIXME: is there a better way of doing this?
     # Set the logging level for third-party packages to WARNING
     logging.getLogger("numba").setLevel(logging.WARNING)
 
@@ -433,6 +432,9 @@ def main():
 
     # Time the execution
     time_start = time.time()
+
+    # Create the rng object and add it to the args
+    args.rng = np.random.default_rng(seed=args.rseed)
 
     # Fit the models to the graph data using the fit args
     logging.info("### Running %s ###", model.__class__.__name__)

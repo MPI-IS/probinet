@@ -16,10 +16,10 @@ def extract_true_label(
 
     Parameters
     ----------
-    X : pd.DataFrame
+    X
         Pandas DataFrame object representing the one-hot encoding version of the design matrix.
-    mask : Optional[np.ndarray]
-        Mask for selecting a subset of the design matrix.
+    mask
+            Mask for selecting a subset of the design matrix.
 
     Returns
     -------
@@ -28,8 +28,7 @@ def extract_true_label(
     """
     if mask is not None:
         return X.iloc[mask > 0].idxmax(axis=1).values
-    else:
-        return X.idxmax(axis=1).values
+    return X.idxmax(axis=1).values
 
 
 def predict_label(
@@ -44,16 +43,16 @@ def predict_label(
 
     Parameters
     ----------
-    X : pd.DataFrame
-        Pandas DataFrame object representing the one-hot encoding version of the design matrix.
-    u : np.ndarray
-        Membership matrix (out-degree).
-    v : np.ndarray
-        Membership matrix (in-degree).
-    beta : np.ndarray
-        Beta parameter matrix.
-    mask : Optional[np.ndarray]
-        Mask for selecting a subset of the design matrix.
+    X
+            Pandas DataFrame object representing the one-hot encoding version of the design matrix.
+    u : Membership matrix (out-degree).
+            Membership matrix (out-degree).
+    v : Membership matrix (in-degree).
+            Membership matrix (in-degree).
+    beta : Beta parameter matrix.
+            Beta parameter matrix.
+    mask : Mask for selecting a subset of the design matrix.
+            Mask for selecting a subset of the design matrix.
 
     Returns
     -------

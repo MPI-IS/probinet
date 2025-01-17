@@ -1,6 +1,6 @@
 parameters:
   K: [2, 3, 4]
-  rseed: [623]
+  rseed: [0]
   initialization: [0]
   undirected: [False]
   end_file: ["_CRep"]

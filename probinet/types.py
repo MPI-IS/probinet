@@ -3,7 +3,8 @@ Custom type hints.
 '"""
 
 from os import PathLike
-from typing import Union, Sequence
+from typing import Sequence, Union
+
 import numpy as np
 from sparse import COO
 

@@ -48,8 +48,8 @@ class MTCOVCrossValidation(CrossValidation, MTCOV):
 
     def extract_mask(self, fold):
         # Prepare indices for cross-validation
-        idxG = shuffle_indicesG(self.N, self.L, rseed=self.rseed)
-        idxX = shuffle_indicesX(self.N, rseed=self.rseed)
+        idxG = shuffle_indicesG(self.N, self.L, rng=self.rng)
+        idxX = shuffle_indicesX(self.N, rng=self.rng)
 
         # Extract the masks for the current fold using k-fold cross-validation
         maskG, maskX = extract_masks(
@@ -60,7 +60,7 @@ class MTCOVCrossValidation(CrossValidation, MTCOV):
             cv_type="kfold",
             NFold=self.NFold,
             fold=fold,
-            rseed=self.rseed,
+            rng=self.rng,
         )
 
         # If the out_mask attribute is set, save the masks to files
@@ -120,7 +120,7 @@ class MTCOVCrossValidation(CrossValidation, MTCOV):
         outputs = algorithm_object.fit(
             self.gdata_for_training,
             **{k: v for k, v in self.parameters.items() if k != "rseed"},
-            rseed=self.rseed,
+            rng=self.rng,
         )
 
         # Return the outputs and the algorithm object

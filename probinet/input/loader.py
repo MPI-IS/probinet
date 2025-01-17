@@ -2,6 +2,7 @@
 Functions for handling the data.
 """
 
+import csv
 import logging
 from importlib.resources import files
 from os import PathLike
@@ -11,16 +12,14 @@ from typing import Any, Optional, Union
 import networkx as nx
 import numpy as np
 import pandas as pd
-import csv
 
-
+from ..models.classes import GraphData
+from ..utils.tools import log_and_raise_error
 from .preprocessing import (
     create_adjacency_tensor_from_graph_list,
     create_sparse_adjacency_tensor_from_graph_list,
 )
 from .stats import print_graph_stats
-from ..models.classes import GraphData
-from ..utils.tools import log_and_raise_error
 
 
 def build_adjacency_from_networkx(
@@ -30,7 +29,7 @@ def build_adjacency_from_networkx(
 ) -> GraphData:
     """
     Import networkx graph and convert it to the GraphData object
-    
+
     Parameters
     ----------
     networkx
@@ -45,9 +44,7 @@ def build_adjacency_from_networkx(
     GraphData
         GraphData object created from networkx graph
     """
-    attribute_names = {
-        key for _, _, data in network.edges(data=True) for key in data
-    }
+    attribute_names = {key for _, _, data in network.edges(data=True) for key in data}
     for w in weight_list:
         assert w in attribute_names, f"{w} is not an attribute"
 
@@ -223,24 +220,32 @@ def build_adjacency_and_design_from_file(
     ----------
     in_folder : str
         Path of the folder containing the input files.
-    adj_name : str, optional
-        Input file name of the adjacency tensor. Default is "multilayer_network.csv".
-    cov_name : str, optional
-        Input file name of the design matrix. Default is "X.csv".
-    ego : str, optional
-        Name of the column to consider as the source of the edge. Default is "source".
-    egoX : str, optional
-        Name of the column to consider as node IDs in the design matrix-attribute dataset. Default is "Name".
-    alter : str, optional
-        Name of the column to consider as the target of the edge. Default is "target".
-    attr_name : str, optional
-        Name of the attribute to consider in the analysis. Default is "Metadata".
-    undirected : bool, optional
-        If set to True, the algorithm considers an undirected graph. Default is False.
-    force_dense : bool, optional
-        If set to True, the algorithm is forced to consider a dense adjacency tensor. Default is True.
-    noselfloop : bool, optional
-        If set to True, the algorithm removes the self-loops. Default is True.
+    adj_name : str
+        Input file name of the adjacency tensor.
+    cov_name : str
+        Input file name of the design matrix.
+    ego : str
+        Name of the column to consider as the source of the edge.
+    egoX : str
+        Name of the column to consider as node IDs in the design matrix-attribute dataset.
+    alter : str
+        Name of the column to consider as the target of the edge.
+    attr_name : str
+        Name of the attribute to consider in the analysis.
+    undirected : bool
+        If set to True, the algorithm considers an undirected graph.
+    force_dense : bool
+        If set to True, the algorithm is forced to consider a dense adjacency tensor.
+    noselfloop : bool
+        If set to True, the algorithm removes the self-loops.
+    sep : str
+        Separator to use when reading the dataset.
+    header : int
+        Row number to use as the column names, and the start of the data.
+    return_X_as_np : bool
+        If set to True, the design matrix is returned as a numpy array.
+    _kwargs
+        Additional keyword arguments.
 
     Returns
     -------

@@ -1,5 +1,5 @@
 K: 4
-rseed: 10
+rseed: 0
 initialization: 0
 out_inference: True
 out_folder: "outputs/"

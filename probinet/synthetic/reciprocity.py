@@ -3,42 +3,38 @@ Class definition of the reciprocity generative models with the member functions 
 It builds a directed, possibly weighted, network.
 """
 
+import logging
 import math
 import sys
-
 import warnings
 from pathlib import Path
+from typing import Optional, Tuple
 
+import networkx as nx
+import numpy as np
+from scipy.optimize import brentq
 from scipy.sparse import tril, triu
 
+from probinet.visualization.plot import plot_A
+
 from ..evaluation.expectation_computation import compute_mean_lambda0
-from ..input.stats import reciprocal_edges
+from ..input.stats import print_graph_stats, reciprocal_edges
 from ..models.constants import OUTPUT_FOLDER
+from ..types import EndFileType
 from ..utils.matrix_operations import (
     Exp_ija_matrix,
     normalize_nonzero_membership,
     transpose_matrix,
     transpose_tensor,
 )
-
-
-import logging
-from typing import Optional, Tuple
-
-import networkx as nx
-import numpy as np
-from scipy.optimize import brentq
-
-from probinet.visualization.plot import plot_A
-
-from ..input.stats import print_graph_stats
 from ..utils.tools import check_symmetric, log_and_raise_error, output_adjacency
 from .base import (
     DEFAULT_ETA,
-    StandardMMSBM,
-    GraphProcessingMixin,
-    affinity_matrix,
     BaseSyntheticNetwork,
+    GraphProcessingMixin,
+    StandardMMSBM,
+    Structure,
+    affinity_matrix,
 )
 
 if not sys.warnoptions:
@@ -63,8 +59,8 @@ class GM_reciprocity(GraphProcessingMixin):
         ag: float = 0.1,
         beta: float = 0.1,
         Normalization: int = 0,
-        structure: str = "assortative",
-        end_file: Optional[str] = None,
+        structure: str = Structure.ASSORTATIVE.value,
+        end_file: Optional[EndFileType] = None,
         out_folder: Path = OUTPUT_FOLDER,
         output_parameters: bool = False,
         output_adj: bool = False,
@@ -117,6 +113,7 @@ class GM_reciprocity(GraphProcessingMixin):
         self.K = K  # number of communities
         self.avg_degree = avg_degree  # average degree
         self.seed = seed  # random seed
+        self.rng = np.random.RandomState(self.seed)
         self.alpha = alpha  # parameter of the Dirichlet distribution
         self.ag = ag  # alpha parameter of the Gamma distribution
         self.beta = beta  # beta parameter of the Gamma distribution
@@ -173,9 +170,7 @@ class GM_reciprocity(GraphProcessingMixin):
     def reciprocity_planted_network(
         self,
         parameters: Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, float]] = None,
-    ) -> Tuple[
-        nx.MultiDiGraph, np.ndarray
-    ]:  # this could be called CRep (synthetic.CRep)
+    ) -> Tuple[nx.MultiDiGraph, np.ndarray]:
         """
         Generate a directed, possibly weighted network by using the reciprocity generative model.
         Can be used to generate benchmarks for networks with reciprocity.
@@ -197,10 +192,6 @@ class GM_reciprocity(GraphProcessingMixin):
         A: np.ndarray
            The adjacency matrix of the generated network.
         """
-
-        # Create a random number generator with a specific seed
-        prng = np.random.RandomState(self.seed)
-
         # Check if parameters are provided
         if parameters is not None:
             # If parameters are provided, set u, v, w, and eta to the provided values
@@ -245,12 +236,12 @@ class GM_reciprocity(GraphProcessingMixin):
                 # Check the normalization method
                 if self.Normalization == 0:
                     # If Normalization is 0, generate u and v from a Dirichlet distribution
-                    self.u[ind_over] = prng.dirichlet(
+                    self.u[ind_over] = self.rng.dirichlet(
                         self.alpha * np.ones(self.K), overlapping
                     )
                     self.v[ind_over] = self.corr * self.u[ind_over] + (
                         1.0 - self.corr
-                    ) * prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+                    ) * self.rng.dirichlet(self.alpha * np.ones(self.K), overlapping)
 
                     # If correlation is 1, ensure u and v are close
                     if self.corr == 1.0:
@@ -261,12 +252,14 @@ class GM_reciprocity(GraphProcessingMixin):
                         self.v = normalize_nonzero_membership(self.v)
                 elif self.Normalization == 1:
                     # If Normalization is 1, generate u and v from a Gamma distribution
-                    self.u[ind_over] = prng.gamma(
+                    self.u[ind_over] = self.rng.gamma(
                         self.ag, 1.0 / self.beta, size=(overlapping, self.K)
                     )
                     self.v[ind_over] = self.corr * self.u[ind_over] + (
                         1.0 - self.corr
-                    ) * prng.gamma(self.ag, 1.0 / self.beta, size=(overlapping, self.K))
+                    ) * self.rng.gamma(
+                        self.ag, 1.0 / self.beta, size=(overlapping, self.K)
+                    )
 
                     # Normalize u and v
                     self.u = normalize_nonzero_membership(self.u)
@@ -310,10 +303,10 @@ class GM_reciprocity(GraphProcessingMixin):
         counter, totM = 0, 0
         for i in range(self.N):
             for j in range(i + 1, self.N):
-                r = prng.rand(1)[0]
+                r = self.rng.random(1)[0]
                 if r < 0.5:
                     # Draw the number of edges from node i to node j from a Poisson distribution
-                    A_ij = prng.poisson(M[i, j], 1)[
+                    A_ij = self.rng.poisson(M[i, j], 1)[
                         0
                     ]  # draw A_ij from P(A_ij) = Poisson(m_ij)
                     if A_ij > 0:
@@ -322,14 +315,14 @@ class GM_reciprocity(GraphProcessingMixin):
                     # reciprocity
                     lambda_ji = M0[j, i] + self.eta * A_ij
                     # Draw the number of edges from node j to node i from a Poisson distribution
-                    A_ji = prng.poisson(lambda_ji, 1)[
+                    A_ji = self.rng.poisson(lambda_ji, 1)[
                         0
                     ]  # draw A_ji from P(A_ji|A_ij) = Poisson(lambda0_ji + eta*A_ij)
                     if A_ji > 0:
                         G.add_edge(j, i, weight=A_ji)
                 else:
                     # Draw the number of edges from node j to node i from a Poisson distribution
-                    A_ji = prng.poisson(M[j, i], 1)[
+                    A_ji = self.rng.poisson(M[j, i], 1)[
                         0
                     ]  # draw A_ij from P(A_ij) = Poisson(m_ij)
                     if A_ji > 0:
@@ -338,7 +331,7 @@ class GM_reciprocity(GraphProcessingMixin):
                     # reciprocity
                     lambda_ij = M0[i, j] + self.eta * A_ji
                     # Draw the number of edges from node i to node j from a Poisson distribution
-                    A_ij = prng.poisson(lambda_ij, 1)[
+                    A_ij = self.rng.poisson(lambda_ij, 1)[
                         0
                     ]  # draw A_ji from P(A_ji|A_ij) = Poisson(lambda0_ji + eta*A_ij)
                     if A_ij > 0:
@@ -424,9 +417,6 @@ class GM_reciprocity(GraphProcessingMixin):
             The adjacency matrix of the generated network.
         """
 
-        # Create a random number generator with a specific seed
-        prng = np.random.RandomState(self.seed)
-
         # Set latent variables u,v,w
         if parameters is not None:
             # If parameters are provided, set u, v, w to the provided values
@@ -471,12 +461,12 @@ class GM_reciprocity(GraphProcessingMixin):
                 # Check the normalization method
                 if self.Normalization == 0:
                     # If Normalization is 0, generate u and v from a Dirichlet distribution
-                    self.u[ind_over] = prng.dirichlet(
+                    self.u[ind_over] = self.rng.dirichlet(
                         self.alpha * np.ones(self.K), overlapping
                     )
                     self.v[ind_over] = self.corr * self.u[ind_over] + (
                         1.0 - self.corr
-                    ) * prng.dirichlet(self.alpha * np.ones(self.K), overlapping)
+                    ) * self.rng.dirichlet(self.alpha * np.ones(self.K), overlapping)
 
                     # If correlation is 1, ensure u and v are close
                     if self.corr == 1.0:
@@ -487,12 +477,14 @@ class GM_reciprocity(GraphProcessingMixin):
                         self.v = normalize_nonzero_membership(self.v)
                 elif self.Normalization == 1:
                     # If Normalization is 1, generate u and v from a Gamma distribution
-                    self.u[ind_over] = prng.gamma(
+                    self.u[ind_over] = self.rng.gamma(
                         self.ag, 1.0 / self.beta, size=(overlapping, self.K)
                     )
                     self.v[ind_over] = self.corr * self.u[ind_over] + (
                         1.0 - self.corr
-                    ) * prng.gamma(self.ag, 1.0 / self.beta, size=(overlapping, self.K))
+                    ) * self.rng.gamma(
+                        self.ag, 1.0 / self.beta, size=(overlapping, self.K)
+                    )
 
                     # Normalize u and v
                     self.u = normalize_nonzero_membership(self.u)
@@ -524,7 +516,7 @@ class GM_reciprocity(GraphProcessingMixin):
             for j in range(self.N):
                 if i != j:  # no self-loops
                     # draw A_ij from P(A_ij) = Poisson(c*m_ij)
-                    A_ij = prng.poisson(c * M0[i, j], 1)[0]
+                    A_ij = self.rng.poisson(c * M0[i, j], 1)[0]
                     if A_ij > 0:
                         G.add_edge(i, j, weight=A_ij)
                     totM += A_ij
@@ -611,10 +603,6 @@ class GM_reciprocity(GraphProcessingMixin):
         A: np.ndarray
             The adjacency matrix of the generated network.
         """
-
-        # Create a random number generator with a specific seed
-        prng = np.random.RandomState(self.seed)
-
         # If p is not provided, calculate it based on eta, k, and N
         if p is None:
             p = (1.0 - self.eta) * self.avg_degree * 0.5 / (self.N - 1.0)
@@ -631,9 +619,9 @@ class GM_reciprocity(GraphProcessingMixin):
         for i in range(self.N):
             for j in range(i + 1, self.N):
                 # Draw two random numbers from Poisson distribution
-                A0 = prng.poisson(p, 1)[0]
-                A1 = prng.poisson(p + A0, 1)[0]
-                r = prng.rand(1)[0]
+                A0 = self.rng.poisson(p, 1)[0]
+                A1 = self.rng.poisson(p + A0, 1)[0]
+                r = self.rng.random(1)[0]
                 # Add edges to the graph based on the drawn numbers
                 if r < 0.5:
                     if A0 > 0:
@@ -817,7 +805,7 @@ class ReciprocityMMSBM_joints(StandardMMSBM):
                         1.0,
                     ]
 
-                    r = self.prng.rand(1)[0]
+                    r = self.rng.random(1)[0]
                     if r <= probabilities[0]:
                         A_ij, A_ji = 0, 0
                     elif probabilities[0] < r <= cumulative[1]:
