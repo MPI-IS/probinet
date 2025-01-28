@@ -13,6 +13,7 @@ from probinet.evaluation.expectation_computation import (
     compute_mean_lambda0,
 )
 from probinet.evaluation.link_prediction import compute_link_prediction_AUC
+from tests.constants import RANDOM_SEED_REPROD
 
 
 class TestEvaluateFunctions(unittest.TestCase):

@@ -8,13 +8,13 @@ import time
 
 import numpy as np
 
-from probinet.evaluation.expectation_computation import (
+from ..evaluation.expectation_computation import (
     calculate_conditional_expectation_dyncrep,
 )
-from probinet.evaluation.likelihood import likelihood_conditional
-from probinet.evaluation.link_prediction import compute_link_prediction_AUC
-from probinet.model_selection.cross_validation import CrossValidation
-from probinet.models.dyncrep import DynCRep
+from ..evaluation.likelihood import likelihood_conditional
+from ..evaluation.link_prediction import compute_link_prediction_AUC
+from ..models.dyncrep import DynCRep
+from .cross_validation import CrossValidation
 
 
 class DynCRepCrossValidation(CrossValidation):

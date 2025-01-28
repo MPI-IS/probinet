@@ -10,10 +10,29 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "probinet"
 description = "Python package for probabilistic network analysis."
-version = "1.0"
-requires-python = ">=3.10"
+version = "1.0.0-rc3"
+requires-python = ">=3.10,<3.13"
+readme = "README.md"
+maintainers = [
+    {name= "Diego Baptista Theuerkauf", email= "diego.theuerkauf@tue.mpg.de"},
+]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Typing :: Typed",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+]
+
 dependencies = [
-    "argparse",
     "jupyter",
     "matplotlib",
     "networkx",
@@ -46,6 +65,11 @@ dev = [
     "tox",
     "unittest-xml-reporting"
 ]
+# URLs
+[project.urls]
+documentation = "https://mpi-is.github.io/probinet/"
+source = "https://github.com/MPI-IS/probinet"
+tracker = "https://github.com/MPI-IS/probinet/issues"
 
 # CLI
 [project.scripts]
@@ -56,7 +80,7 @@ run_probinet = "probinet.main:main"
 packages = ["probinet"]
 
 [tool.setuptools.package-data]
-probinet = ["data/input", "data/model"]
+probinet = ["data/input", "data/model", "py.typed"]
 
 [tool.setuptools.dynamic.readme]
 file = "README.md"

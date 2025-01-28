@@ -6,6 +6,7 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+from sklearn import metrics
 
 
 def extract_true_label(
@@ -73,3 +74,19 @@ def predict_label(
         # TO REMIND: when gamma=1, this assert fails because we don't update the entries of U and V that belong
         # to the test set, because all these rows will be not in the subs (all elements are zeros)
         return [X.iloc[mask > 0].columns[el] for el in np.argmax(probs, axis=1)]
+
+
+def compute_covariate_prediction_accuracy(
+    X: pd.DataFrame,
+    u: np.ndarray,
+    v: np.ndarray,
+    beta: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+) -> float:
+    """
+    Return the accuracy of the attribute prediction, computed as the fraction of correctly classified examples.
+    """
+    true_label = extract_true_label(X, mask=mask)
+    pred_label = predict_label(X, u, v, beta, mask=mask)
+    acc = metrics.accuracy_score(true_label, pred_label)
+    return acc

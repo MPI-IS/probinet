@@ -8,19 +8,13 @@ import pickle
 
 import numpy as np
 
-from probinet.evaluation.expectation_computation import (
-    compute_covariate_prediction_accuracy,
-)
-from probinet.evaluation.likelihood import loglikelihood
-from probinet.evaluation.link_prediction import compute_multilayer_link_prediction_AUC
-from probinet.model_selection.cross_validation import CrossValidation
-from probinet.model_selection.masking import (
-    extract_masks,
-    shuffle_indicesG,
-    shuffle_indicesX,
-)
-from probinet.models.classes import GraphData
-from probinet.models.mtcov import MTCOV
+from ..evaluation.covariate_prediction import compute_covariate_prediction_accuracy
+from ..evaluation.likelihood import loglikelihood
+from ..evaluation.link_prediction import compute_multilayer_link_prediction_AUC
+from ..models.classes import GraphData
+from ..models.mtcov import MTCOV
+from .cross_validation import CrossValidation
+from .masking import extract_masks, shuffle_indicesG, shuffle_indicesX
 
 
 class MTCOVCrossValidation(CrossValidation, MTCOV):

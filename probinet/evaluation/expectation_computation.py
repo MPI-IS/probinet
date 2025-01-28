@@ -9,7 +9,7 @@ import pandas as pd
 from scipy.stats import poisson
 from sklearn import metrics
 
-from ..model_selection.labeling import extract_true_label, predict_label
+from ..evaluation.covariate_prediction import extract_true_label, predict_label
 from ..types import GraphDataType
 from ..utils.matrix_operations import transpose_matrix, transpose_tensor
 from ..utils.tools import check_symmetric
@@ -296,22 +296,6 @@ def calculate_expectation_acd(
     """
     lambda0 = compute_mean_lambda0(U, V, W)
     return (1 - Q) * lambda0 + Q * pi
-
-
-def compute_covariate_prediction_accuracy(
-    X: pd.DataFrame,
-    u: np.ndarray,
-    v: np.ndarray,
-    beta: np.ndarray,
-    mask: Optional[np.ndarray] = None,
-) -> float:
-    """
-    Return the accuracy of the attribute prediction, computed as the fraction of correctly classified examples.
-    """
-    true_label = extract_true_label(X, mask=mask)
-    pred_label = predict_label(X, u, v, beta, mask=mask)
-    acc = metrics.accuracy_score(true_label, pred_label)
-    return acc
 
 
 def calculate_Q_dense(

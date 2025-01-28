@@ -7,12 +7,12 @@ from typing import Any, Optional
 
 import pandas as pd
 
-from probinet.model_selection.acd_cross_validation import ACDCrossValidation
-from probinet.model_selection.crep_cross_validation import CRepCrossValidation
-from probinet.model_selection.dyncrep_cross_validation import DynCRepCrossValidation
-from probinet.model_selection.jointcrep_cross_validation import JointCRepCrossValidation
-from probinet.model_selection.mtcov_cross_validation import MTCOVCrossValidation
-from probinet.model_selection.parameter_search import define_grid
+from .acd_cross_validation import ACDCrossValidation
+from .crep_cross_validation import CRepCrossValidation
+from .dyncrep_cross_validation import DynCRepCrossValidation
+from .jointcrep_cross_validation import JointCRepCrossValidation
+from .mtcov_cross_validation import MTCOVCrossValidation
+from .parameter_search import define_grid
 
 
 def cross_validation(

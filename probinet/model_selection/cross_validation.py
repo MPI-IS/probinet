@@ -20,14 +20,12 @@ from probinet.evaluation.expectation_computation import (
     calculate_conditional_expectation,
     calculate_expectation,
 )
-from probinet.evaluation.likelihood import calculate_opt_func
-from probinet.evaluation.link_prediction import compute_link_prediction_AUC
-from probinet.input.loader import build_adjacency_from_file
-from probinet.model_selection.masking import (
-    extract_mask_kfold,
-    shuffle_indices_all_matrix,
-)
-from probinet.models.classes import GraphData
+
+from ..evaluation.likelihood import calculate_opt_func
+from ..evaluation.link_prediction import compute_link_prediction_AUC
+from ..input.loader import build_adjacency_from_file
+from ..models.classes import GraphData
+from .masking import extract_mask_kfold, shuffle_indices_all_matrix
 
 
 class CrossValidation(ABC):

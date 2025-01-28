@@ -17,6 +17,12 @@ Thank you for choosing ProbINet. We hope you enjoy using it!
    api
 
 .. toctree::
+    :maxdepth: 1
+    :caption: First Steps
+
+    Inputs and Outputs <start.rst>
+
+.. toctree::
    :maxdepth: 1
    :caption: Tutorials
 

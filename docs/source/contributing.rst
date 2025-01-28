@@ -117,7 +117,7 @@ Submitting Your Contribution
 Code of Conduct
 ---------------
 
-By contributing to this repository, you agree to abide by our `Code of Conduct
+By contributing to this repository, you agree to follow our `Code of Conduct
 <https://policies.python.org/python.org/code-of-conduct/>`_.
 
 We appreciate your contributions and will review your Pull Request promptly!

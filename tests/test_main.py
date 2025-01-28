@@ -388,7 +388,7 @@ class TestDefaultMainCalls(BaseTest):
             "--use_approximation",
             "True",
             "--num_realizations",
-            "1",
+            "2",
             "--max_iter",
             "1000",
         )
