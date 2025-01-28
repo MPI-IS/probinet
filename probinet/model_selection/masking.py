@@ -6,7 +6,7 @@ from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from probinet.utils.tools import get_or_create_rng
+from ..utils.tools import get_or_create_rng
 
 
 def shuffle_indices(

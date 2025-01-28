@@ -2,8 +2,8 @@
 This module contains the CRepCrossValidation class, which is used for cross-validation of the CRep algorithm.
 """
 
-from probinet.model_selection.cross_validation import CrossValidation
-from probinet.models.crep import CRep
+from ..models.crep import CRep
+from .cross_validation import CrossValidation
 
 
 class CRepCrossValidation(CrossValidation):

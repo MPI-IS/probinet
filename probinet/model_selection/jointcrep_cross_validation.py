@@ -3,8 +3,8 @@ This module contains the JointCRepCrossValidation class, which is used for cross
 JointCRep algorithm.
 """
 
-from probinet.model_selection.cross_validation import CrossValidation
-from probinet.models.jointcrep import JointCRep
+from ..models.jointcrep import JointCRep
+from .cross_validation import CrossValidation
 
 
 class JointCRepCrossValidation(CrossValidation):

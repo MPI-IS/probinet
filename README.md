@@ -1,8 +1,10 @@
 # ProbINet
 
-> **BETA RELEASE**:
-This is a *beta release* currently being tested by users.
-Your feedback is valuable as we work towards finalizing the package!
+![Python](https://img.shields.io/pypi/pyversions/probinet)
+![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12-blue)
+![Build Status](https://github.com/MPI-IS/probinet/actions/workflows/test.yml/badge.svg)
+![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)
+![Typed](https://img.shields.io/badge/typed-yes-brightgreen)
 
 Welcome to the documentation for the **Prob**abilistic **I**nference on **Net**works
 (``ProbINet``) Python
@@ -115,25 +117,37 @@ To build the documentation, run:
     make html
 ```
 
-The documentation will be available in the [docs/build/html](docs/build/html) directory.
+The documentation will be available in the `docs/build/html` directory.
 
 ## Tutorials
 
-The tutorials are available in the [docs/source/tutorials](docs/source/tutorials) directory. Each tutorial is a Jupyter 
+The tutorials are available in the [tutorials](https://github.com/MPI-IS/probinet/tree/develop/docs/source/tutorials) 
+directory.
+Each tutorial is a Jupyter 
 notebook that can be run in a Jupyter environment. 
+
+## Where to start
+
+If you are new to this type of modeling, we suggest checking out the [Inputs and Outputs](https://mpi-is.github.io/probinet/start.html) section. 
+This section provides an overview of the input and output data structures used in the package.
 
 ## Authors
 
 - [Diego Baptista Theuerkauf](https://github.com/diegoabt)
-- [Jean-Claude Passy](jean-claude.passy@tuebignen.mpg.de)
+- [Jean-Claude Passy](https://is.mpg.de/person/jpassy)
 
-The authors of the original implementations integrated to this packages are:
+The authors of the original implementations integrated to this package are:
 
-- [Martina Contisciani](https://github.com/mcontisc) 
-- [Hadiseh Safdari](https://github.com/hds-safdari) 
 - [Caterina De Bacco](https://cdebacco.com/) 
+- [Martina Contisciani](https://github.com/mcontisc) 
+- [Hadiseh Safdari](https://github.com/hds-safdari)
 
 See the references in the documentation for more details.
+
+Special thanks to [Alejandro Posada](https://is.mpg.de/~posada) for his contributions to the 
+logo design. A sincere thank you to [Valkyrie Felso](https://github.com/vmfelso) and [Kathy Su](https://github.com/ksu00) for their invaluable feedback. 
+We also deeply appreciate [Kibidi Neocosmos](https://github.com/kibidi) for serving as a beta user and helping refine the 
+package.
 
 ## Contributing
 
@@ -143,7 +157,7 @@ appreciated! You can find detailed information on how to get started here: [Cont
 
 ## License
 
-This project is licensed under the GNU GPL version 3 - see the [LICENSE](LICENSE.md) file for
+This project is licensed under the GNU GPL version 3 - see the [LICENSE](https://github.com/MPI-IS/probinet/blob/develop/LICENSE.md) file for
 details.
 
 

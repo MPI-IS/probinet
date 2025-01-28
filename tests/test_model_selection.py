@@ -6,8 +6,8 @@ import yaml
 from tests.constants import PATH_TO_GT
 from tests.fixtures import BaseTest
 
+from probinet.evaluation.covariate_prediction import predict_label
 from probinet.model_selection.cross_validation import CrossValidation
-from probinet.model_selection.labeling import predict_label
 from probinet.model_selection.main import cross_validation
 
 

@@ -44,7 +44,9 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     # Shared parser for common arguments
-    shared_parser = argparse.ArgumentParser(add_help=False)
+    shared_parser = argparse.ArgumentParser(
+        add_help=False,
+    )
 
     # Define the subparsers
     subparsers = parser.add_subparsers(
@@ -153,7 +155,10 @@ def parse_args():
 
     # CRep parser
     crep_parser = subparsers.add_parser(
-        "CRep", help="Run the CRep algorithm", parents=[shared_parser]
+        "CRep",
+        help="Run the CRep algorithm",
+        parents=[shared_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     crep_parser.add_argument(
         "-K", "--K", type=int, default=3, help="Number of communities"
@@ -179,7 +184,10 @@ def parse_args():
 
     # JointCRep parser
     jointcrep_parser = subparsers.add_parser(
-        "JointCRep", help="Run the JointCRep algorithm", parents=[shared_parser]
+        "JointCRep",
+        help="Run the JointCRep algorithm",
+        parents=[shared_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     jointcrep_parser.add_argument(
         "-K",
@@ -222,7 +230,10 @@ def parse_args():
 
     # MTCOV parser
     mtcov_parser = subparsers.add_parser(
-        "MTCOV", help="Run the MTCOV algorithm", parents=[shared_parser]
+        "MTCOV",
+        help="Run the MTCOV algorithm",
+        parents=[shared_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     mtcov_parser.add_argument(
         "-K", "--K", type=int, default=2, help="Number of communities"
@@ -270,7 +281,10 @@ def parse_args():
 
     # DynCRep parser
     dyncrep_parser = subparsers.add_parser(
-        "DynCRep", help="Run the DynCRep algorithm", parents=[shared_parser]
+        "DynCRep",
+        help="Run the DynCRep algorithm",
+        parents=[shared_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     dyncrep_parser.add_argument(
         "-K", "--K", type=int, default=2, help="Number of communities"
@@ -340,7 +354,10 @@ def parse_args():
 
     # ACD parser
     acd_parser = subparsers.add_parser(
-        "ACD", help="Run the ACD algorithm", parents=[shared_parser]
+        "ACD",
+        help="Run the ACD algorithm",
+        parents=[shared_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     acd_parser.add_argument(
         "-K", "--K", type=int, default=3, help="Number of communities"

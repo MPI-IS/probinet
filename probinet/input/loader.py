@@ -77,35 +77,36 @@ def build_adjacency_from_file(
     **_kwargs: Any,
 ) -> GraphData:
     """
-     Import data, i.e. the adjacency matrix, from a given folder.
+    Import data, i.e., the adjacency matrix, from a given folder.
 
-     Return the NetworkX graph and its numpy adjacency matrix.
+    Return the NetworkX graph and its numpy adjacency matrix.
 
-     Parameters
-     ----------
-     path_to_file
-         Path of the input file.
-     ego
-         Name of the column to consider as the source of the edge.
-     alter
-         Name of the column to consider as the target of the edge.
-     force_dense
-         If set to True, the algorithm is forced to consider a dense adjacency tensor.
-     undirected
-         If set to True, the algorithm considers an undirected graph.
-     noselfloop
-         If set to True, the algorithm removes the self-loops.
-     sep
-         Separator to use when reading the dataset.
-     binary
-         If set to True, the algorithm reads the graph with binary edges.
-     header
-         Row number to use as the column names, and the start of the data.
+    Parameters
+    ----------
+    path_to_file
+        Path of the input file.
+    ego
+        Name of the column to consider as the source of the edge.
+    alter
+        Name of the column to consider as the target of the edge.
+    force_dense
+        If set to True, the algorithm is forced to consider a dense adjacency tensor.
+    undirected
+        If set to True, the algorithm considers an undirected graph.
+    noselfloop
+        If set to True, the algorithm removes the self-loops.
+    sep
+        Separator to use when reading the dataset.
+    binary
+        If set to True, the algorithm reads the graph with binary edges.
+    header
+        Row number to use as the column names, and the start of the data.
 
-     Returns
-     -------
+    Returns
+    -------
     GraphData
-         Named tuple containing the graph list, the adjacency tensor, the transposed tensor, the data values, and the nodes.
+        Named tuple containing the graph list, the adjacency tensor, the transposed tensor,
+        the data values, and the nodes.
     """
 
     # Read adjacency file

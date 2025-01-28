@@ -147,6 +147,8 @@ class CRep(ModelBase, ModelUpdateMixin):
             Flag to specify if the eta parameter should be fixed, by default False.
         files
             Path to the file for initialization, by default "".
+        rng
+            Random number generator.
 
         Returns
         -------
