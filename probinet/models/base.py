@@ -654,7 +654,6 @@ class ModelBase(ModelBaseParameters):
                 List of nodes IDs.
         """
         # Check if the evaluation folder exists, otherwise create it
-        # self.out_folder = 'newnew/'
         output_path = Path(self.out_folder)
         output_path.mkdir(parents=True, exist_ok=True)
         # Define the evaluation file
