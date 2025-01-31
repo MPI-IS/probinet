@@ -101,10 +101,10 @@ To run the tests:
 
 ## Documentation
 
-The documentation can be built with *Sphinx*. To install it, run:
+The documentation can be built locally. First, install the `dev` extra:
 
 ```bash
-    pip install sphinx
+    pip install ".[dev]"
 ```
 
 To build the documentation, run:

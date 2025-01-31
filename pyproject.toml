@@ -10,9 +10,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "probinet"
 description = "Python package for probabilistic network analysis."
-version = "1.0.0-rc3"
+version = "1.0"
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
+authors = [
+    {name = "Diego Baptista Theuerkauf", email = "diego.theuerkauf@tue.mpg.de"},
+]
 maintainers = [
     {name= "Diego Baptista Theuerkauf", email= "diego.theuerkauf@tue.mpg.de"},
 ]
@@ -80,7 +83,7 @@ run_probinet = "probinet.main:main"
 packages = ["probinet"]
 
 [tool.setuptools.package-data]
-probinet = ["data/input", "data/model", "py.typed"]
+probinet = ["data/input", "data/model", "probinet/py.typed"]
 
 [tool.setuptools.dynamic.readme]
 file = "README.md"
