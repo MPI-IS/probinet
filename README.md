@@ -1,7 +1,7 @@
 # ProbINet
 
 ![Python](https://img.shields.io/pypi/pyversions/probinet)
-![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12-blue)
+[![PyPI version](https://img.shields.io/pypi/v/probinet.svg)](https://pypi.org/project/probinet/)
 ![Build Status](https://github.com/MPI-IS/probinet/actions/workflows/test.yml/badge.svg)
 ![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![Typed](https://img.shields.io/badge/typed-yes-brightgreen)
