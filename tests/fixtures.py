@@ -2,14 +2,14 @@
 This file contains the fixtures for the tests.
 """
 
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 import yaml
 
-from pgm.model_selection.cross_validation import CrossValidation
+from probinet.model_selection.cross_validation import CrossValidation
 
 from .constants import INIT_STR, K_NEW, PATH_FOR_INIT, RANDOM_SEED_REPROD, TOLERANCE_1
 
@@ -21,8 +21,8 @@ CV_PARAMETERS = {}
 class BaseTest(unittest.TestCase):
     """
     This is a base test class that sets up a temporary directory for each test run.
-    It also provides helper methods for fitting models to data, loading model results,
-    and asserting model information. It does not have any test methods of its own.
+    It also provides helper methods for fitting models to data, loading models results,
+    and asserting models information. It does not have any test methods of its own.
     """
 
     def run(self, result=None):
@@ -35,10 +35,7 @@ class BaseTest(unittest.TestCase):
 
     def _fit_model_to_data(self, conf):
         _ = self.model.fit(
-            data=self.B,
-            data_T=self.B_T,
-            data_T_vals=self.data_T_vals,
-            nodes=self.nodes,
+            self.gdata,
             **conf,
         )
 
@@ -60,7 +57,7 @@ class BaseTest(unittest.TestCase):
         self.assertTrue(np.allclose(self.model.w_f, theta["w"]))
         if self.algorithm == "CRep" or self.algorithm == "JointCRep":
             self.assertTrue(np.allclose(self.model.eta_f, theta["eta"]))
-        else:
+        elif self.algorithm == "MTCOV":
             self.assertTrue(np.allclose(self.model.beta_f, theta["beta"]))
 
     def _assert_dictionary_keys(self, theta):
@@ -73,9 +70,13 @@ class BaseTest(unittest.TestCase):
         self.assertTrue(np.allclose(thetaGT["u"], theta["u"]))
         self.assertTrue(np.allclose(thetaGT["v"], theta["v"]))
         self.assertTrue(np.allclose(thetaGT["w"], theta["w"]))
-        if self.algorithm == "CRep" or self.algorithm == "JointCRep":
+        # Check if the name of the algorithm used is contained in either CRep or JointCRep
+        if (
+            self.algorithm.startswith("CRep") or self.algorithm.startswith("JointCRep")
+        ) and "DynCRep" not in self.algorithm:
             self.assertTrue(np.allclose(thetaGT["eta"], theta["eta"]))
-        else:
+        # If not, then it should be MTCOV
+        elif "MTCOV" in self.algorithm:
             self.assertTrue(np.allclose(thetaGT["beta"], theta["beta"]))
 
 
@@ -84,35 +85,35 @@ class ModelTestMixin:
     A mixin class that provides common test methods for validating models.
 
     This class is designed to be used as a mixin, adding its methods to those of a unittest.TestCase subclass.
-    It provides methods to fit a model to data, load model results, load ground truth results, and assert
-    various conditions about the model and its results.
+    It provides methods to fit a models to data, load models results, load ground truth results, and assert
+    various conditions about the models and its results.
 
-    The methods in this class should be used in the validation tests for each model to ensure consistency
+    The methods in this class should be used in the validation tests for each models to ensure consistency
     and reduce code duplication.
 
     Methods:
-        test_running_algorithm_from_mixin: Tests the algorithm by fitting the model to data, loading the
-        model results, and asserting various conditions about the model and its results.
+        test_running_algorithm_from_mixin: Tests the algorithm by fitting the models to data, loading the
+        models results, and asserting various conditions about the models and its results.
 
         test_running_algorithm_initialized_from_file_from_mixin: Similar to test_running_algorithm_from_mixin,
-        but the model is initialized from a file before fitting it to the data.
+        but the models is initialized from a file before fitting it to the data.
     """
 
-    def test_running_algorithm_from_mixin(self):
+    def running_algorithm_from_mixin(self, path=None):
         """
         Test running algorithm function.
         """
 
-        # Fit the model to the data
+        # Fit the models to the data
         self._fit_model_to_data(self.conf)
 
-        # Load the model results
-        theta = self._load_model_results()
+        # Load the models results
+        theta = self._load_model_results(path)
 
         # Load the ground truth results
-        thetaGT = self._load_ground_truth_results()
+        thetaGT = self._load_ground_truth_results(path)
 
-        # Assert the model information
+        # Assert the models information
         self._assert_model_information(theta)
 
         # Assert the dictionary keys
@@ -121,8 +122,7 @@ class ModelTestMixin:
         # Asserting GT information
         self._assert_ground_truth_information(theta, thetaGT)
 
-    def test_running_algorithm_initialized_from_file_from_mixin(self):
-
+    def running_algorithm_initialized_from_file_from_mixin(self):
         with open(
             PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml"), encoding="utf-8"
         ) as fp:
@@ -132,14 +132,15 @@ class ModelTestMixin:
 
         self.conf["end_file"] = (
             "_OUT_" + self.algorithm
-        )  # Adding a suffix to the output files
+        )  # Adding a suffix to the evaluation files
 
         self.conf["initialization"] = 1
         self.conf["files"] = self.files
+        self.conf["rng"] = np.random.default_rng(seed=RANDOM_SEED_REPROD)
 
         self._fit_model_to_data(self.conf)
 
-        # Load the model results
+        # Load the models results
         theta_path = Path(self.model.out_folder) / str("theta" + self.model.end_file)
         theta = self._load_model_results(theta_path)
 
@@ -151,7 +152,7 @@ class ModelTestMixin:
         )
         thetaGT = self._load_ground_truth_results(thetaGT_path)
 
-        # Assert the model information
+        # Assert the models information
         self._assert_model_information(theta)
 
         # Assert the dictionary keys
@@ -160,7 +161,7 @@ class ModelTestMixin:
         # Asserting GT information
         self._assert_ground_truth_information(theta, thetaGT)
 
-    def test_model_parameter_change_with_config_file(self):
+    def model_parameter_change_with_config_file(self):
         # Load the configuration file
         with open(PATH_FOR_INIT / ("setting_" + self.algorithm + ".yaml")) as fp:
             self.conf = yaml.safe_load(fp)
@@ -169,16 +170,13 @@ class ModelTestMixin:
         self.conf["K"] = K_NEW
 
         # Change the random seed in the configuration
-        self.conf["rseed"] = RANDOM_SEED_REPROD
+        self.conf["rng"] = np.random.default_rng(seed=RANDOM_SEED_REPROD)
 
-        # Fit the model to the data using the modified configuration
+        # Fit the models to the data using the modified configuration
         self._fit_model_to_data(self.conf)
 
-        # Assert that the model's K parameter matches the value in the configuration
+        # Assert that the models's K parameter matches the value in the configuration
         assert self.model.K == self.conf["K"]
-
-        # Assert that the model's random seed matches the value in the configuration
-        assert self.model.rseed == self.conf["rseed"]
 
 
 class ConcreteCrossValidation(CrossValidation):

@@ -2,12 +2,13 @@
 Unit tests for the ModelClass class.
 """
 
-from pathlib import Path
 import unittest
+from importlib.resources import files
+from pathlib import Path
 
 import numpy as np
 
-from pgm.model.base import ModelBase
+from probinet.models.base import ModelBase
 
 
 class TestModelClass(unittest.TestCase):
@@ -26,17 +27,19 @@ class TestModelClass(unittest.TestCase):
         self.model_class.K = self.K
         self.model_class.rng = np.random.RandomState(0)  # pylint: disable=no-member
         self.model_class.files = (
-            Path("pgm").resolve() / "data" / "input" / "theta_gt111.npz"
+            Path("probinet").resolve() / "data" / "input" / "theta_gt111.npz"
         )
-        self.model_class.theta = np.load(
-            self.model_class.files, allow_pickle=True
-        )  # TODO: use package data
+        self.model_class.theta_name = "theta_gt111.npz"
+        with files("probinet.data.input").joinpath(
+            self.model_class.theta_name
+        ) as theta:
+            self.model_class.theta = np.load(theta, allow_pickle=True)
         self.model_class.eta0 = 0
         self.model_class.undirected = False
         self.model_class.assortative = True
         self.model_class.constrained = True
 
-        # Parameters for the initialization of the model
+        # Parameters for the initialization of the models
         self.model_class.use_unit_uniform = True
         self.model_class.normalize_rows = True
 
@@ -47,7 +50,6 @@ class TestModelClass(unittest.TestCase):
         self.assertTrue(0 <= self.model_class.eta <= 1)
 
     def test_randomize_w(self):
-
         self.model_class._randomize_w()  # pylint: disable=protected-access
         if self.model_class.assortative:
             self.assertEqual(
@@ -72,13 +74,11 @@ class TestModelClass(unittest.TestCase):
             self.assertTrue(np.all(row_sums_v > 0))
 
     def test_initialize_random_eta(self):
-
         self.model_class.initialization = 0
         self.model_class._initialize()  # nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(0 <= self.model_class.eta <= 1)
 
     def test_initialize_random_uvw(self):
-
         self.model_class.initialization = 0
         self.model_class._initialize()  # nodes=[0, 1, 2])  # pylint: disable=protected-access
         self.assertTrue(np.all((0 <= self.model_class.u) & (self.model_class.u <= 1)))

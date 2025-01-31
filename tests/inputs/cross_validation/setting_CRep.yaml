@@ -1,6 +1,6 @@
 parameters:
   K: [2, 3, 4]
-  rseed: [623]
+  rseed: [0]
   initialization: [0]
   undirected: [False]
   end_file: ["_CRep"]
@@ -12,11 +12,12 @@ parameters:
   out_folder: ""
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
-  in_folder: "pgm/data/input/"
+  in_folder: "probinet/data/input/"
   adj: "syn111.dat"
   ego: "source"
   alter: "target"
   NFold: 2
+  sep: " "
   out_results: True
   out_mask: False
 output_file: "syn111_cv.csv"

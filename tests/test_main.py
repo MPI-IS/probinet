@@ -1,40 +1,41 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 from unittest import mock
 
-import networkx as nx
-import numpy as np
 from tests.fixtures import BaseTest
 
-from pgm.main import main as single_main
-from pgm.main import parse_args
+from probinet.main import main as single_main
+from probinet.main import parse_args
 
 COMMAND_TO_RUN_MODEL = "run_model"
-PATH_TO_INPUT = str(Path("pgm") / "data" / "input")
+PATH_TO_INPUT = str(Path("probinet") / "data" / "input")
 
 
 class TestMain(BaseTest):
-
     def setUp(self):
         self.expected_config = {}
         self.kwargs_to_check = {}
         self.input_names = {}
         self.K_values = {}
+        self.number_of_args_for_fit = 1
 
-    def main_with_no_parameters(self, algorithm, mock_fit, main_function):
-
+    def check_default_params_passed_to_fit(
+        self, algorithm, mock_fit, main_function, *extra_args
+    ):
         # Set up the command line arguments for the main function
         sys.argv = [
             COMMAND_TO_RUN_MODEL,  # Name of the main script
             algorithm,  # Algorithm name
             "--out_folder",
             str(self.folder),  # Output folder
-            "--out_inference",  # Flag to output inference results
+            "--out_inference",  # Flag to evaluation inference results
             "--files",
             PATH_TO_INPUT,
             "--end_file",
             f"_{algorithm}",
-        ]
+        ] + list(
+            extra_args
+        )  # Add extra arguments if any
 
         # Call the main function
         main_function()
@@ -45,16 +46,25 @@ class TestMain(BaseTest):
         # Get the arguments with which the fit method was called
         called_args = mock_fit.call_args
 
-        # Check that each expected configuration key matches the called arguments
-        for key in self.expected_config:
-            self.assertEqual(called_args.kwargs[key], self.expected_config[key])
+        # Check that the args are three
+        self.assertEqual(len(called_args.args), self.number_of_args_for_fit)
 
-        # Check that each key in kwargs_to_check is present in the called arguments
-        for key in self.kwargs_to_check:
-            self.assertIn(key, called_args.kwargs, f"{key} not found in called_kwargs")
+        # Check that each expected configuration key and value is in the called arguments
+        for key, value in self.expected_config.items():
+            self.assertIn(
+                key, called_args.kwargs, "Key '%s' not found in called arguments" % key
+            )
+            if (
+                key != "rseed"
+            ):  # Skip rseed as it is generated based on the current time
+                self.assertEqual(
+                    called_args.kwargs[key],
+                    value,
+                    "Value for key '%s' does not match the expected value" % key,
+                )
 
-    def main_with_custom_parameters(
-        self, algorithm, mock_import_data, mock_fit, main_function
+    def check_custom_params_passed_to_fit(
+        self, algorithm, mock_fit, main_function, *extra_args
     ):
         # Set the value of K from the class attribute
         K = self.K_values
@@ -63,31 +73,42 @@ class TestMain(BaseTest):
         sys.argv = [
             COMMAND_TO_RUN_MODEL,  # Name of the main script
             algorithm,  # Algorithm name
-            "-o",
+            "--out_folder",
             str(self.folder),  # Output folder
+            "--out_inference",  # Flag to evaluation inference results
+            "--files",
+            PATH_TO_INPUT,  # Input files
+            "--end_file",
+            f"_{algorithm}",  # End file
             "-K",
             str(K),  # Number of communities
-            # "--flag_conv",
-            # "deltas",  # Some parameter F with value 'deltas'
-            "-A",
-            "custom_network.dat",  # Some parameter A with value 'custom_network.dat'
-            # "--out_inference",  # Flag to output inference results
-        ]
+            "--initialization",
+            "0",
+            "--assortative",
+        ] + list(
+            extra_args
+        )  # Add extra arguments if any
 
         # Call the main function
         main_function()
 
-        # Ensure the import_data function was called exactly once
-        mock_import_data.assert_called_once()
-
         # Get the arguments with which the fit method was called
         called_args = mock_fit.call_args
 
-        # Check that the keys in the called arguments match the expected input names
-        self.assertSetEqual(set(called_args.kwargs.keys()), set(self.input_names))
-
         # Check that the value of K in the called arguments matches the expected value
         self.assertEqual(called_args.kwargs["K"], K)
+
+        # Check that the evaluation folder in the called arguments matches the expected value
+        self.assertEqual(called_args.kwargs["out_folder"], str(self.folder))
+
+        # Check that out_inference is set to True
+        self.assertTrue(called_args.kwargs["out_inference"])
+
+        # Check that the initialization is set to 0
+        self.assertEqual(called_args.kwargs["initialization"], 0)
+
+        # Check that assortative is set to True
+        self.assertTrue(called_args.kwargs["assortative"])
 
 
 class TestMainCRep(TestMain):
@@ -106,45 +127,17 @@ class TestMainCRep(TestMain):
             "out_inference": True,
             "rseed": 0,
             "undirected": False,
-            "mask": None,
         }
-        self.kwargs_to_check = ["data", "data_T", "data_T_vals", "nodes"]
-
-        self.input_names = [
-            "data",
-            "data_T",
-            "data_T_vals",
-            "nodes",
-            "K",
-            "assortative",
-            "constrained",
-            "end_file",
-            "eta0",
-            "files",
-            "fix_eta",
-            "initialization",
-            "out_folder",
-            "out_inference",
-            "rseed",
-            "undirected",
-            "mask",
-        ]
 
         self.K_values = 5
 
-    @mock.patch("pgm.model.crep.CRep.fit")
+    @mock.patch("probinet.models.crep.CRep.fit")
     def test_CRep_with_no_parameters(self, mock_fit):
-        return self.main_with_no_parameters("CRep", mock_fit, single_main)
+        return self.check_default_params_passed_to_fit("CRep", mock_fit, single_main)
 
-    @mock.patch("pgm.model.crep.CRep.fit")
-    @mock.patch(
-        "pgm.main.import_data",
-        return_value=([nx.Graph()], mock.ANY, mock.ANY, mock.ANY),
-    )
-    def test_CRep_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters(
-            "CRep", mock_import_data, mock_fit, single_main
-        )
+    @mock.patch("probinet.models.crep.CRep.fit")
+    def test_CRep_with_custom_parameters(self, mock_fit):
+        return self.check_custom_params_passed_to_fit("CRep", mock_fit, single_main)
 
 
 class TestMainJointCRep(TestMain):
@@ -166,43 +159,19 @@ class TestMainJointCRep(TestMain):
             "use_approximation": False,
             "undirected": False,
         }
-        self.kwargs_to_check = ["data", "data_T", "data_T_vals", "nodes"]
-
-        self.input_names = [
-            "data",
-            "data_T",
-            "data_T_vals",
-            "nodes",
-            "K",
-            "rseed",
-            "initialization",
-            "out_inference",
-            "out_folder",
-            "end_file",
-            "assortative",
-            "eta0",
-            "fix_eta",
-            "fix_communities",
-            "fix_w",
-            "use_approximation",
-            "files",
-            "undirected",
-        ]
 
         self.K_values = 5
 
-    @mock.patch("pgm.model.jointcrep.JointCRep.fit")
+    @mock.patch("probinet.models.jointcrep.JointCRep.fit")
     def test_JointCRep_with_no_parameters(self, mock_fit):
-        return self.main_with_no_parameters("JointCRep", mock_fit, single_main)
+        return self.check_default_params_passed_to_fit(
+            "JointCRep", mock_fit, single_main
+        )
 
-    @mock.patch("pgm.model.jointcrep.JointCRep.fit")
-    @mock.patch(
-        "pgm.main.import_data",
-        return_value=([nx.Graph()], mock.ANY, mock.ANY, mock.ANY),
-    )
-    def test_JointCRep_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters(
-            "JointCRep", mock_import_data, mock_fit, single_main
+    @mock.patch("probinet.models.jointcrep.JointCRep.fit")
+    def test_JointCRep_with_custom_parameters(self, mock_fit):
+        return self.check_custom_params_passed_to_fit(
+            "JointCRep", mock_fit, single_main
         )
 
 
@@ -220,40 +189,18 @@ class TestMainMTCOV(TestMain):
             "assortative": False,
             "files": PATH_TO_INPUT,
             "undirected": False,
+            "batch_size": None,
         }
 
-        self.kwargs_to_check = ["data", "data_X", "nodes"]
-        self.input_names = [
-            "data",
-            "data_X",
-            "nodes",
-            "K",
-            "gamma",
-            "assortative",
-            "end_file",
-            "files",
-            "initialization",
-            "out_folder",
-            "out_inference",
-            "rseed",
-            "batch_size",
-            "undirected",
-        ]
         self.K_values = 5
 
-    @mock.patch("pgm.model.mtcov.MTCOV.fit")
+    @mock.patch("probinet.models.mtcov.MTCOV.fit")
     def test_MTCOV_with_no_parameters(self, mock_fit):
-        return self.main_with_no_parameters("MTCOV", mock_fit, single_main)
+        return self.check_default_params_passed_to_fit("MTCOV", mock_fit, single_main)
 
-    @mock.patch("pgm.model.mtcov.MTCOV.fit")
-    @mock.patch(
-        "pgm.main.import_data_mtcov",
-        return_value=([nx.Graph()], np.empty(0), mock.ANY, []),
-    )
-    def test_MTCOV_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters(
-            "MTCOV", mock_import_data, mock_fit, single_main
-        )
+    @mock.patch("probinet.models.mtcov.MTCOV.fit")
+    def test_MTCOV_with_custom_parameters(self, mock_fit):
+        return self.check_custom_params_passed_to_fit("MTCOV", mock_fit, single_main)
 
 
 class TestMainDynCRep(TestMain):
@@ -263,6 +210,8 @@ class TestMainDynCRep(TestMain):
             "K": 2,
             "assortative": False,
             "beta0": 0.25,
+            "ag": 1.1,
+            "bg": 0.5,
             "constrained": False,
             "constraintU": False,
             "end_file": "_DynCRep",
@@ -272,64 +221,28 @@ class TestMainDynCRep(TestMain):
             "fix_communities": False,
             "fix_eta": False,
             "fix_w": False,
+            "flag_data_T": 0,
             "initialization": 0,
             "out_folder": str(self.folder),
             "out_inference": True,
             "rseed": 0,
+            "temporal": True,
             "undirected": False,
-            "mask": None,
         }
 
-        self.kwargs_to_check = [
-            "data",
-            "T",
-            "nodes",
-            "flag_data_T",
-            "ag",
-            "bg",
-            "temporal",
-        ]
-
-        self.input_names = [
-            "K",
-            "T",
-            "ag",
-            "assortative",
-            "beta0",
-            "bg",
-            "constrained",
-            "constraintU",
-            "data",
-            "end_file",
-            "eta0",
-            "files",
-            "fix_beta",
-            "fix_communities",
-            "fix_eta",
-            "fix_w",
-            "flag_data_T",
-            "initialization",
-            "nodes",
-            "out_folder",
-            "out_inference",
-            "rseed",
-            "temporal",
-            "undirected",
-            "mask",
-        ]
         self.K_values = 2
+        self.extra_args = ["--force_dense"]
 
-    @mock.patch("pgm.model.dyncrep.DynCRep.fit")
+    @mock.patch("probinet.models.dyncrep.DynCRep.fit")
     def test_DynCRep_with_no_parameters(self, mock_fit):
-        return self.main_with_no_parameters("DynCRep", mock_fit, single_main)
+        return self.check_default_params_passed_to_fit(
+            "DynCRep", mock_fit, single_main, *self.extra_args
+        )
 
-    @mock.patch("pgm.model.dyncrep.DynCRep.fit")
-    @mock.patch(
-        "pgm.main.import_data", return_value=([nx.Graph()], np.empty(0), mock.ANY, [])
-    )
-    def test_DynCRep_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters(
-            "DynCRep", mock_import_data, mock_fit, single_main
+    @mock.patch("probinet.models.dyncrep.DynCRep.fit")
+    def test_DynCRep_with_custom_parameters(self, mock_fit):
+        return self.check_custom_params_passed_to_fit(
+            "DynCRep", mock_fit, single_main, *self.extra_args
         )
 
 
@@ -339,71 +252,33 @@ class TestMainAnomalyDetection(TestMain):
         self.expected_config = {
             "K": 3,
             "files": PATH_TO_INPUT,
+            "ag": 1.1,
+            "bg": 0.5,
+            "constrained": False,
+            "assortative": False,
             "fix_communities": False,
+            "fix_mupr": False,
+            "fix_pibr": False,
+            "flag_anomaly": True,
+            "initialization": 0,
             "end_file": "_ACD",
+            "mupr0": None,
             "out_folder": str(self.folder),
             "out_inference": True,
+            "pibr0": None,
+            "rseed": 0,
+            "undirected": False,
         }
 
-        self.kwargs_to_check = [
-            "data",
-            "nodes",
-            "undirected",
-            "initialization",
-            "assortative",
-            "constrained",
-            "ag",
-            "bg",
-            "pibr0",
-            "mupr0",
-            "end_file",
-            "flag_anomaly",
-            "fix_pibr",
-            "fix_mupr",
-            "K",
-            "fix_communities",
-            "files",
-            "out_inference",
-            "out_folder",
-        ]
-
-        self.input_names = [
-            "data",
-            "nodes",
-            "undirected",
-            "initialization",
-            "assortative",
-            "constrained",
-            "ag",
-            "bg",
-            "pibr0",
-            "mupr0",
-            "end_file",
-            "flag_anomaly",
-            "fix_pibr",
-            "fix_mupr",
-            "K",
-            "fix_communities",
-            "files",
-            "mask",
-            "out_inference",
-            "out_folder",
-            "rseed",
-        ]
         self.K_values = 2
 
-    @mock.patch("pgm.model.acd.AnomalyDetection.fit")
+    @mock.patch("probinet.models.acd.AnomalyDetection.fit")
     def test_ACD_with_no_parameters(self, mock_fit):
-        return self.main_with_no_parameters("ACD", mock_fit, single_main)
+        return self.check_default_params_passed_to_fit("ACD", mock_fit, single_main)
 
-    @mock.patch("pgm.model.acd.AnomalyDetection.fit")
-    @mock.patch(
-        "pgm.main.import_data", return_value=([nx.Graph()], np.empty(0), mock.ANY, [])
-    )
-    def test_ACD_with_custom_parameters(self, mock_import_data, mock_fit):
-        return self.main_with_custom_parameters(
-            "ACD", mock_import_data, mock_fit, single_main
-        )
+    @mock.patch("probinet.models.acd.AnomalyDetection.fit")
+    def test_ACD_with_custom_parameters(self, mock_fit):
+        return self.check_custom_params_passed_to_fit("ACD", mock_fit, single_main)
 
 
 class TestParseArgs(BaseTest):
@@ -483,3 +358,57 @@ class TestParseArgs(BaseTest):
             self.assertEqual(args.K, self.K_value)
             # Check that an argument specific to another parser (e.g., cov_name for MTCOV) is not set
             self.assertFalse(hasattr(args, "cov_name"))
+
+
+class TestDefaultMainCalls(BaseTest):
+    """
+    Test cases for the CLI interface. The goal is to ensure that the main function runs correctly with the default parameters.
+    """
+
+    def run_algorithm_test(self, algorithm, *extra_args):
+        # Set up the command line arguments for the main function
+        sys.argv = ["run_model", algorithm, "-f", PATH_TO_INPUT, "-d"] + list(
+            extra_args
+        )
+        # Call the main function
+        single_main()
+
+    def test_main_crep(self):
+        self.run_algorithm_test("CRep")
+
+    def test_main_crep_assortative(self):
+        self.run_algorithm_test("CRep", "--assortative", "--num_realizations", "1")
+
+    def test_main_jointcrep(self):
+        self.run_algorithm_test("JointCRep")
+
+    def test_main_jointcrep_approximation(self):
+        self.run_algorithm_test(
+            "JointCRep",
+            "--use_approximation",
+            "True",
+            "--num_realizations",
+            "2",
+            "--max_iter",
+            "1000",
+        )
+
+    def test_main_mtcov(self):
+        self.run_algorithm_test("MTCOV")
+
+    def test_main_mtcov_assortative(self):
+        self.run_algorithm_test("MTCOV", "--assortative", "--num_realizations", "1")
+
+    def test_main_dyncrep(self):
+        self.run_algorithm_test("DynCRep", "--force_dense")
+
+    def test_main_dyncrep_assortative(self):
+        self.run_algorithm_test(
+            "DynCRep", "--assortative", "--force_dense", "--num_realizations", "1"
+        )
+
+    def test_main_acd(self):
+        self.run_algorithm_test("ACD")
+
+    def test_main_acd_assortative(self):
+        self.run_algorithm_test("ACD", "--assortative")

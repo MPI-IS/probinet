@@ -1,7 +1,7 @@
 parameters:
   K: [3]
   flag_anomaly: [True]
-  rseed: [10]
+  rseed: [0]
   initialization: [0]
   out_inference: [False]
   out_folder: ""
@@ -10,11 +10,12 @@ parameters:
   undirected: [False]
   files: ["config/data/input/theta_gt111.npz"]
 input_params:
-  in_folder: "pgm/data/input/"
+  in_folder: "probinet/data/input/"
   adj: "synthetic_data_for_ACD.dat"
   ego: "source"
   alter: "target"
   NFold: 2
+  sep: " "
   out_results: True
   out_mask: False
 output_file: "synthetic_data_for_ACD_cv.csv"

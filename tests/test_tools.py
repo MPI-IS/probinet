@@ -2,8 +2,8 @@
 Test cases for the tools module.
 """
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 import networkx as nx
 import numpy as np
@@ -11,10 +11,24 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 from sparse import COO
 
-from pgm.input.tools import (
-    build_edgelist, can_cast_to_int, Exp_ija_matrix, get_item_array_from_subs, is_sparse,
-    normalize_nonzero_membership, output_adjacency, sp_uttkrp, sp_uttkrp_assortative,
-    sptensor_from_dense_array, transpose_ij2, transpose_ij3, write_adjacency, write_design_Matrix)
+from probinet.utils.matrix_operations import (
+    Exp_ija_matrix,
+    normalize_nonzero_membership,
+    sp_uttkrp,
+    sp_uttkrp_assortative,
+    transpose_matrix,
+    transpose_tensor,
+)
+from probinet.utils.tools import (
+    build_edgelist,
+    can_cast_to_int,
+    get_item_array_from_subs,
+    is_sparse,
+    output_adjacency,
+    sptensor_from_dense_array,
+    write_adjacency,
+    write_design_matrix,
+)
 
 from .constants import DECIMAL, RTOL
 from .fixtures import BaseTest
@@ -115,14 +129,14 @@ class TestTensors(unittest.TestCase):
         # Test case for transpose_ij3
         M = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
         expected_result = np.array([[[1, 3], [2, 4]], [[5, 7], [6, 8]]])
-        result = transpose_ij3(M)
+        result = transpose_tensor(M)
         np.testing.assert_array_equal(result, expected_result)
 
     def test_transpose_ij2(self):
         # Test case for transpose_ij2
         M = np.array([[1, 2], [3, 4]])
         expected_result = np.array([[1, 3], [2, 4]])
-        result = transpose_ij2(M)
+        result = transpose_matrix(M)
         np.testing.assert_array_equal(result, expected_result)
 
     def test_Exp_ija_matrix(self):
@@ -178,7 +192,7 @@ class TestWriteDesignMatrix(BaseTest):
         self.expected_output = df
 
     def test_write_design_Matrix(self):
-        write_design_Matrix(
+        write_design_matrix(
             self.metadata,
             self.perc,
             self.folder,
@@ -246,10 +260,10 @@ class TestOutputAdjacency(BaseTest):
         # Call the function with the test inputs
         output_adjacency(self.A, self.folder, self.label)
 
-        # Check if the output file exists
+        # Check if the evaluation file exists
         self.assertTrue(Path(self.folder + self.label + ".dat").is_file())
 
-        # Load the output file into a DataFrame
+        # Load the evaluation file into a DataFrame
         df = pd.read_csv(self.folder + self.label + ".dat", sep=" ")
 
         # Create the expected DataFrame
@@ -262,5 +276,5 @@ class TestOutputAdjacency(BaseTest):
 
         expected_df = pd.concat(df_list).reset_index(drop=True)
 
-        # Check if the output DataFrame matches the expected DataFrame
+        # Check if the evaluation DataFrame matches the expected DataFrame
         pd.testing.assert_frame_equal(df, expected_df)

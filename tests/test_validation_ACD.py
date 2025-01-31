@@ -5,14 +5,19 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from pgm.input.loader import import_data
-from pgm.input.tools import normalize_nonzero_membership
-from pgm.model.acd import AnomalyDetection
-from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_matrix
-from pgm.model_selection.metrics import evalu
-from pgm.output.evaluate import cosine_similarity
+from probinet.evaluation.community_detection import (
+    compute_community_detection_metric,
+    cosine_similarity,
+)
+from probinet.input.loader import build_adjacency_from_file
+from probinet.model_selection.masking import (
+    extract_mask_kfold,
+    shuffle_indices_all_matrix,
+)
+from probinet.models.acd import AnomalyDetection
+from probinet.utils.matrix_operations import normalize_nonzero_membership
 
-from .constants import DECIMAL_2, DECIMAL_3, DECIMAL_4, DECIMAL_5
+from .constants import DECIMAL_2, DECIMAL_3, DECIMAL_4, DECIMAL_5, RANDOM_SEED_REPROD
 from .fixtures import BaseTest
 
 
@@ -31,33 +36,25 @@ class ACDTestCase(BaseTest):
         )
         self.keys_in_thetaGT = list(
             self.theta.keys()
-        )  # They should be ['z', 'u', 'v', 'w', 'mu',
-        # 'pi', 'nodes']
+        )  # They should be ['z', 'u', 'v', 'w', 'mu', 'pi', 'nodes']
         self.adj = "synthetic_data_for_ACD.dat"
         self.K = self.theta["u"].shape[1]
-        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.A, self.B, self.B_T, self.data_T_vals = import_data(
-                network.name, header=0
-            )
+        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+            self.gdata = build_adjacency_from_file(network.name, header=0)
 
         # Define the nodes, positions, number of nodes, and number of layers
-        self.nodes = self.A[0].nodes()
-        self.pos = nx.spring_layout(self.A[0])
-        self.N = len(self.nodes)
-        self.T = self.B.shape[0] - 1
-        self.L = self.B.shape[0]
+        self.pos = nx.spring_layout(self.gdata.graph_list[0])
+        self.N = len(self.gdata.nodes)
+        self.T = self.gdata.adjacency_tensor.shape[0] - 1
+        self.L = self.gdata.adjacency_tensor.shape[0]
         self.fold = 1
-        self.seed = 0
+
+        # Create a random number generator with a specified seed
+        self.rng = np.random.default_rng(seed=RANDOM_SEED_REPROD)
 
     def prepare_data(self):
-        # Create a random number generator with a specified seed
-        self.prng = np.random.RandomState(seed=self.seed)
-
-        # Generate a random integer from 0 to 1000 using the random number generator
-        self.rseed = self.prng.randint(1000)
-
         # Shuffle the indices of all matrices using the generated random seed
-        self.indices = shuffle_indices_all_matrix(self.N, self.L, rseed=self.rseed)
+        self.indices = shuffle_indices_all_matrix(self.N, self.L, rng=self.rng)
 
         # Extract a mask for k-fold cross-validation using the shuffled indices
         self.mask = extract_mask_kfold(self.indices, self.N, fold=self.fold, NFold=5)
@@ -66,16 +63,16 @@ class ACDTestCase(BaseTest):
         np.count_nonzero(self.theta["z"][self.mask[0]])
 
         # Create a copy of the 'B' array to use for training
-        self.B_train = self.B.copy()
+        self.B_train = self.gdata.adjacency_tensor.copy()
 
         # Set the elements of the training array to 0 where the mask is true
         self.B_train[self.mask > 0] = 0
 
+        # Redefine gdata
+        self.gdata = self.gdata._replace(adjacency_tensor=self.B_train)
+
         # Create an input mask that is the logical NOT of the original mask
         self.mask_input = np.logical_not(self.mask)
-
-        # Redefine the random seed to this fixed value (10)
-        self.rseed = 10
 
     def assert_model_results(self, u, v, w, pi, mu, maxL, theta, data):
         # Assertions for u
@@ -111,20 +108,17 @@ class ACDTestCase(BaseTest):
         u1 = normalize_nonzero_membership(u)
         v1 = normalize_nonzero_membership(v)
 
-        f1_u = evalu(u1, theta["u"], "f1")
-        f1_v = evalu(v1, theta["v"], "f1")
+        f1_u = compute_community_detection_metric(u1, theta["u"], "f1")
+        f1_v = compute_community_detection_metric(v1, theta["v"], "f1")
 
         # Assertions for f1 score
         self.assertAlmostEqual(f1_u, data["f1_score"]["f1_u"], places=DECIMAL_2)
         self.assertAlmostEqual(f1_v, data["f1_score"]["f1_v"], places=DECIMAL_2)
 
     def test_running_algorithm_from_random_init(self):
-
         # The next section is taken from the original code like this. This is a temporary
         # validation test. In the future, a test built from fixture will be added.
 
-        seed = 10
-        self.seed = seed
         self.prepare_data()
 
         model = AnomalyDetection(
@@ -132,8 +126,7 @@ class ACDTestCase(BaseTest):
         )
 
         u, v, w, pi, mu, maxL = model.fit(
-            data=self.B_train,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             undirected=False,
             initialization=0,
@@ -147,12 +140,12 @@ class ACDTestCase(BaseTest):
             fix_pibr=False,
             fix_mupr=False,
             mask=self.mask_input,
-            rseed=self.rseed,
             fix_communities=False,
             out_inference=True,
             out_folder=self.folder,
             end_file=("_OUT_" + self.algorithm),
             files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
+            rng=self.rng,
         )
 
         # Define the path to the data file
@@ -179,13 +172,15 @@ class ACDTestCase(BaseTest):
             "Some keys are missing in the theta dictionary",
         )
         # TODO: fix the previous assert (it should not be done from 1 onwards, but using all the
-        #  list. To fix it, I first need to talk to Hadiseh to see why there is a z in theta if
-        #  the model does not have it
+        #  list. To fix it, I first need to talk to author to see why there is a z in theta if
+        #  the models does not have it
 
     def test_running_algorithm_from_random_init_2(self):
-
         # The next section is taken from the original code like this. This is a temporary
         # validation test. In the future, a test built from fixture will be added.
+
+        # Create a random number generator with a specified seed
+        self.rng = np.random.default_rng(seed=RANDOM_SEED_REPROD + 1)
 
         self.prepare_data()
 
@@ -194,8 +189,7 @@ class ACDTestCase(BaseTest):
         )
 
         u, v, w, pi, mu, maxL = model.fit(
-            data=self.B_train,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             undirected=False,
             initialization=0,
@@ -209,12 +203,12 @@ class ACDTestCase(BaseTest):
             fix_pibr=False,
             fix_mupr=False,
             mask=self.mask_input,
-            rseed=self.rseed,
             fix_communities=False,
             out_inference=True,
             out_folder=self.folder,
             end_file=("_OUT_" + self.algorithm),
             files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
+            rng=self.rng,
         )
         # Define the path to the data file
         data_file_path = (
@@ -248,8 +242,7 @@ class ACDTestCase(BaseTest):
         )
 
         u, v, w, pi, mu, maxL = model.fit(
-            data=self.B_train,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             undirected=False,
             initialization=1,
@@ -263,11 +256,11 @@ class ACDTestCase(BaseTest):
             fix_pibr=True,
             fix_mupr=True,
             mask=self.mask_input,
-            rseed=self.rseed,
             fix_communities=False,
             out_inference=False,
             end_file=self.label,
             files=(self.data_path / str("theta_" + self.label)).with_suffix(".npz"),
+            rng=self.rng,
         )
 
         # Define the path to the data file
@@ -287,11 +280,11 @@ class ACDTestCase(BaseTest):
             u=u, v=v, w=w, pi=pi, mu=mu, maxL=maxL, theta=self.theta, data=data
         )
 
-    def test_force_dense_False(self):
+    def test_force_dense_false(self):
         """Test the import data function with force_dense set to False, i.e., the data is sparse."""
 
-        with files("pgm.data.input").joinpath(self.adj).open("rb") as network:
-            self.A, self.B, self.B_T, self.data_T_vals = import_data(
+        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+            self.gdata = build_adjacency_from_file(
                 network.name, header=0, force_dense=False
             )
 
@@ -300,11 +293,11 @@ class ACDTestCase(BaseTest):
         )
 
         model.fit(
-            data=self.B,
-            nodes=self.nodes,
+            self.gdata,
             K=self.K,
             out_inference=False,
+            rng=self.rng,
         )
 
         # Assert that the maxL is right
-        self.assertAlmostEqual(model.maxL, -30713.444635970005, places=3)
+        self.assertAlmostEqual(model.maxL, -33272.4811, places=3)

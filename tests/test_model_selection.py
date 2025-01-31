@@ -2,13 +2,13 @@ import unittest
 
 import numpy as np
 import pandas as pd
+import yaml
 from tests.constants import PATH_TO_GT
 from tests.fixtures import BaseTest
-import yaml
 
-from pgm.model_selection.cross_validation import CrossValidation
-from pgm.model_selection.labeling import predict_label
-from pgm.model_selection.main import cross_validation
+from probinet.evaluation.covariate_prediction import predict_label
+from probinet.model_selection.cross_validation import CrossValidation
+from probinet.model_selection.main import cross_validation
 
 
 class TestCrossValidationModels(BaseTest):
@@ -22,16 +22,16 @@ class TestCrossValidationModels(BaseTest):
             "setting_JointCRep.yaml",
         ]
         for model_file in model_files:
-            with open(PATH_TO_GT / model_file, "r",  encoding='utf8') as file:
+            with open(PATH_TO_GT / model_file, "r", encoding="utf8") as file:
                 model_name = model_file.split(".")[0].split("_")[1]
                 self.models[model_name] = yaml.safe_load(file)
 
     def run_cv_and_check_results(self, model_name):
-        # Load the model settings
+        # Load the models settings
         model = self.models[model_name]
-        # Change the output folder to the current temporary folder
+        # Change the evaluation folder to the current temporary folder
         model["parameters"]["out_folder"] = [self.folder]
-        # Change the output file to the current temporary folder
+        # Change the evaluation file to the current temporary folder
         model["output_file"] = self.folder + model["output_file"]
         # Change the path of the ground truth file
         model["ground_truth_file"] = (
@@ -45,11 +45,20 @@ class TestCrossValidationModels(BaseTest):
         # Check that the generated dataframe is equal to the ground truth dataframe
         for column in generated_df.columns:
             for i in range(len(generated_df)):
-                self.assertAlmostEqual(
-                    generated_df[column][i],
-                    ground_truth_df[column][i],
-                    places=5,
-                )
+                generated_value = generated_df[column][i]
+                ground_truth_value = ground_truth_df[column][i]
+
+                try:
+                    if isinstance(generated_value, list):
+                        generated_value = float(generated_value[0])
+                        ground_truth_value = float(ground_truth_value[0])
+                    else:
+                        generated_value = float(generated_value)
+                        ground_truth_value = float(ground_truth_value)
+                except ValueError:
+                    continue
+
+                self.assertAlmostEqual(generated_value, ground_truth_value, places=5)
 
     def test_dyncrep_cross_validation(self):
         self.run_cv_and_check_results("DynCRep")

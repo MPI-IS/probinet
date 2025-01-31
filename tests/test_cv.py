@@ -5,8 +5,12 @@ Test cases for the cv module.
 import unittest
 
 import numpy as np
+from tests.constants import RANDOM_SEED_REPROD
 
-from pgm.model_selection.masking import extract_mask_kfold, shuffle_indices_all_matrix
+from probinet.model_selection.masking import (
+    extract_mask_kfold,
+    shuffle_indices_all_matrix,
+)
 
 
 class TestCV(unittest.TestCase):
@@ -19,13 +23,16 @@ class TestCV(unittest.TestCase):
         self.N = 5
         self.L = 3
         self.NFold = 5
-        self.rseed = 10
+        self.rseed = RANDOM_SEED_REPROD
 
     def test_extract_mask_kfold(self):
         # Test extract_mask_kfold function
 
+        # Define rng
+        rng = np.random.default_rng(seed=self.rseed)
+
         # Generate shuffled indices
-        indices = shuffle_indices_all_matrix(self.N, self.L, rseed=self.rseed)
+        indices = shuffle_indices_all_matrix(self.N, self.L, rng=rng)
 
         # Test for each fold
         for fold in range(self.NFold):
@@ -46,8 +53,11 @@ class TestCV(unittest.TestCase):
     def test_shuffle_indices_all_matrix(self):
         # Test shuffle_indices_all_matrix function
 
+        # Define rng
+        rng = np.random.default_rng(seed=self.rseed)
+
         # Generate shuffled indices
-        indices = shuffle_indices_all_matrix(self.N, self.L, rseed=self.rseed)
+        indices = shuffle_indices_all_matrix(self.N, self.L, rng=rng)
 
         # Check if the indices are shuffled for each layer
         for l in range(self.L):

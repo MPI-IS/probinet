@@ -3,13 +3,11 @@ Unit tests for the JointCRep notebook.
 """
 
 import os
-from pathlib import Path
 import unittest
+from pathlib import Path
 
-from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
-
-# pylint: disable=missing-function-docstring, too-many-locals
+from nbconvert.preprocessors import ExecutePreprocessor
 
 
 class TestNotebooks(unittest.TestCase):
@@ -21,7 +19,7 @@ class TestNotebooks(unittest.TestCase):
         # Get the absolute path of the notebook dynamically
         root_path = Path(__file__).parent.parent
         notebook_path = (
-            root_path / "doc" / "source" / "tutorials" / f"{notebook_name}.ipynb"
+            root_path / "docs" / "source" / "tutorials" / f"{notebook_name}.ipynb"
         )
 
         # Store the current directory
@@ -55,6 +53,9 @@ class TestNotebooks(unittest.TestCase):
 
     def test_DynCRep_notebook_execution(self):
         self.run_notebook("DynCRep")
-    
+
     def test_ACD_notebook_execution(self):
         self.run_notebook("ACD")
+
+    def test_unknown_structure_notebook_execution(self):
+        self.run_notebook("Unknown_structure")

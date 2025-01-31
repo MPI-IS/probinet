@@ -5,9 +5,15 @@ Test cases for the evaluate module.
 import unittest
 
 import numpy as np
+from tests.constants import RANDOM_SEED_REPROD
 
-from pgm.output.evaluate import (
-    calculate_AUC, calculate_conditional_expectation, calculate_expectation, lambda0_full)
+from probinet.evaluation.expectation_computation import (
+    calculate_conditional_expectation,
+    calculate_expectation,
+    compute_mean_lambda0,
+)
+from probinet.evaluation.link_prediction import compute_link_prediction_AUC
+from tests.constants import RANDOM_SEED_REPROD
 
 
 class TestEvaluateFunctions(unittest.TestCase):
@@ -21,7 +27,7 @@ class TestEvaluateFunctions(unittest.TestCase):
         self.L = 3
         self.K = 2
         self.eta = 0.2
-        self.rseed = 42
+        self.rseed = RANDOM_SEED_REPROD
 
         # Generate random data for testing
         np.random.seed(self.rseed)
@@ -38,7 +44,7 @@ class TestEvaluateFunctions(unittest.TestCase):
         pred = np.random.rand(self.L, self.N, self.N)
 
         # Calculate AUC
-        auc_result = calculate_AUC(pred, self.B, mask=self.mask)
+        auc_result = compute_link_prediction_AUC(pred, self.B, mask=self.mask)
 
         # Check if AUC result is a number
         self.assertIsInstance(auc_result, float)
@@ -50,7 +56,7 @@ class TestEvaluateFunctions(unittest.TestCase):
         perfect_pred = self.B.astype(float)
 
         # Calculate AUC for perfect prediction
-        auc_result = calculate_AUC(perfect_pred, self.B, mask=self.mask)
+        auc_result = compute_link_prediction_AUC(perfect_pred, self.B, mask=self.mask)
 
         # Check if AUC result is 1.0
         self.assertEqual(auc_result, 1.0)
@@ -61,15 +67,15 @@ class TestEvaluateFunctions(unittest.TestCase):
         v = np.array([[0.5, 0.6], [0.7, 0.8]])
         w = np.array([[1.0, 2.0], [3.0, 4.0]])
 
-        # Updated expected output for the given inputs
+        # Updated expected evaluation for the given inputs
         expected_result = np.array(
             [[[0.29, 0.39], [0.63, 0.85]], [[0.63, 0.85], [1.41, 1.91]]]
         )
 
         # Call the _lambda0_full function
-        result = lambda0_full(u, v, w)
+        result = compute_mean_lambda0(u, v, w)
 
-        # Check if the result matches the updated expected output
+        # Check if the result matches the updated expected evaluation
         self.assertTrue(np.allclose(result, expected_result))
 
     def test_calculate_conditional_expectation(self):
