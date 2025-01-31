@@ -6,18 +6,15 @@
 ![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![Typed](https://img.shields.io/badge/typed-yes-brightgreen)
 
-Welcome to the documentation for the **Prob**abilistic **I**nference on **Net**works
-(``ProbINet``) Python
-package. This project is a
-collaborative effort to consolidate state-of-the-art probabilistic generative modeling implementations from various
+Welcome to the documentation for the **Prob**abilistic **I**nference on **Net**works (``ProbINet``) Python
+package. This project is a collaborative effort to consolidate state-of-the-art probabilistic generative modeling implementations from various
 scientific publications. Our focus lies in advancing network analysis techniques with an emphasis on recent modeling
 approaches that relax the restrictive conditional independence assumption, enabling the modeling of joint
 distributions of network data.
 
 The ``ProbINet`` package is designed to be a comprehensive and user-friendly toolset for
-researchers and practitioners
-interested in modeling network data through probabilistic generative approaches. Our goal is to provide a
-unified resource that brings together different advances scattered across many code repositories.
+researchers and practitioners interested in modeling network data through probabilistic 
+generative approaches. Our goal is to provide a unified resource that brings together different advances scattered across many code repositories.
 By doing so, we aim not only to enhance the usability of existing models, but also to facilitate the comparison
 of different approaches. Moreover, through a range of tutorials, we aim at simplifying the use of these methods
 to perform inferential tasks, including the prediction of missing network edges, node clustering (community detection),
@@ -47,7 +44,7 @@ To get started, follow these steps:
 3. Install the ``ProbINet`` package by running:
 
 ```bash
-   (venv) pip install .
+   (venv) pip install probinet
 ```
 
 ## Usage
