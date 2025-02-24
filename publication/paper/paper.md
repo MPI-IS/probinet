@@ -92,11 +92,15 @@ The package can be installed using Python’s package manager `pip` or directly 
 
 ## Example: Practical Use of ProbINet
 
-To illustrate the practical use of ProbINet, let's consider the scenario where you have a dataset representing a network with distinct structural patterns, similar to the one visualized in the figure below:
+To illustrate the practical use of ProbINet, we consider an example network dataset where interactions are directed, as the figure below.
 
 ![Soft Membership Visualization](figures/soft_membership_JointCRep.png)
 
-This network contains nodes that exhibit a variety of community memberships based on their relationships. Using ProbINet’s algorithms, such as `JointCRep`, you can analyze this network to infer underlying latent variables. These variables can help identify patterns such as outgoing or incoming community memberships that potentially explain the network’s structure.
+We select `JointCRep`, one of ProbINet’s algorithms, to infer the underlying latent variables. 
+This helps us to identify patterns such as outgoing or incoming community memberships, potentially explaining the observed out- and in-going edges.
+In this example, we can see how certain nodes are inferred to belong to mainly one community, while others have more mixed membership, 
+as shown by the colors of the markers. In addition, we can see how the in- and out-going memberships can differ. 
+[CDBcomment: I would replace the u and v titles of the figures into "out-going membership", "in-coming membership", to use the same terminology as in the draft.]
 
 In this example, ProbINet enables you to:
 
@@ -109,8 +113,8 @@ ProbINet also provides built-in tools for visualizing results, as shown in the f
 
 # Running Times of Algorithms
 
-The following table provides an overview of the running times for the algorithms implemented 
-in ProbINet. The values **N** and **E** represent the number of nodes and edges in the network, 
+We provide an overview of the running times for the algorithms implemented 
+in ProbINet in the following table. The values **N** and **E** represent the number of nodes and edges in the network, 
 respectively. Numbers of edges given as ranges indicate the variation across different layers or 
 time steps. The column **L/T** indicates whether the number of layer or time steps is considered, 
 and how many are used. The parameter **K** represents the number of communities. The networks used 
