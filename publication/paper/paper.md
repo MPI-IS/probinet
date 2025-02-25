@@ -13,20 +13,20 @@ authors:
     orcid: 0000-0000-0000-0000
     #equal-contrib: true
     affiliation: 1 
-  - name: Caterina De Bacco
-    #equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-    affiliation: 2
   - name: Martina Contisciani
     #corresponding: true # (This is how to denote the corresponding author)
+    affiliation: 2
+ - name: Caterina De Bacco
+    #equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
     affiliation: 3
-  - name: Jean Claude-Passy
+   - name: Jean Claude-Passy
     affiliation: 1
 affiliations:
   - name: Max Planck Institute for Intelligent Systems, Tübingen, Germany.
     index: 1
-  - name: Delft University of Technology, Delft, Netherlands.
-    index: 2
   - name: Central European University, Vienna, Austria.
+    index: 2
+  - name: Delft University of Technology, Delft, Netherlands.
     index: 3
 date: 22 January 2025
 bibliography: paper.bib
@@ -58,11 +58,11 @@ focuses on integrating diverse models, facilitating parameter selection, providi
 
 | **Name**         | **Description**                                                                                          | **Network Properties**                   |
 |-----------------|------------------------------------------------------------------------------------------------------|----------------------------------------|
-| **MTCOV**       | Extracts overlapping communities in multilayer networks using topology and node attributes [1].       | Weighted, Multilayer, Attributes      |
-| **CRep**        | Models reciprocity in directed networks [2].                                                          | Directed, Reciprocity                 |
-| **JointCRep**   | Captures community structure and reciprocity with a joint edge distribution [3].                     | Directed, Weighted, Reciprocity       |
-| **DynCRep**     | Extends CRep for dynamic networks [4].                                                               | Dynamic, Directed, Weighted          |
-| **ACD**         | Identifies anomalous edges by assigning community memberships to nodes and anomaly parameters to edges [5]. | Directed, Attributes, Anomalies       |
+| **MTCOV**       | Extracts overlapping communities in multilayer networks using topology and node attributes [1].       | Weighted, Multilayer, Attributes, Communities      |
+| **CRep**        | Models directed networks with communities and reciprocity [2].                                                          | Directed, Weighted, Communities, Reciprocity                 |
+| **JointCRep**   | Captures community structure and reciprocity with a joint edge distribution [3].                     | Directed, Communities, Reciprocity       |
+| **DynCRep**     | Extends CRep for dynamic networks [4].                                                               | Directed, Weighted, Dynamic, Communities, Reciprocity           |
+| **ACD**         | Identifies anomalous edges and node community memberships in weighted networks [5]. | Directed, Weighted, Communities, Anomalies       |
 
 
 - **Synthetic Network Generation**:   After fitting models to real data, ProbINet enables users to 
@@ -71,7 +71,7 @@ focuses on integrating diverse models, facilitating parameter selection, providi
 - **Simplified Parameter Selection and Model Evaluation**:   All models rely on key parameters, 
   such as the number of communities or the desired network structure. To optimize these parameters, ProbINet provides a dedicated module for cross-validation. This module seamlessly evaluates model performance across a range of parameter configurations, outputting results as a clear and easy-to-interpret dataframe.
 
-- **Rich Set of Metrics for Analysis**:  ProbINet includes an extensive collection of metrics to analyze algorithm outputs. These include classical metrics like F1 scores and Jaccard index for comparing detected and ground-truth community partitions, as well as advanced metrics for evaluating link prediction quality, offering users the tools needed for a deeper, comprehensive analysis.  
+- **Rich Set of Metrics for Analysis**:  ProbINet includes an extensive collection of metrics to analyze algorithm outputs. These include classical metrics like F1 scores and Jaccard index for comparing detected and "ground-truth" community partitions, as well as advanced metrics for evaluating link and covariate prediction qualities, offering users the tools needed for a deeper, comprehensive analysis.  
 
 - **Powerful Visualization Tools**:  ProbINet includes built-in visualization functions to make the 
   results more interpretable. Users can plot soft and hard community memberships, 
@@ -101,6 +101,7 @@ This helps us to identify patterns such as outgoing or incoming community member
 In this example, we can see how certain nodes are inferred to belong to mainly one community, while others have more mixed membership, 
 as shown by the colors of the markers. In addition, we can see how the in- and out-going memberships can differ. 
 [CDBcomment: I would replace the u and v titles of the figures into "out-going membership", "in-coming membership", to use the same terminology as in the draft.]
+[MCcomment: I would add a figure representing the network, a snapshot of the code to analyse it, and the current figure representing the communities. This should reflect the following enumerate list. Also, I would mention the existence of the tutorials somewhere.]
 
 In this example, ProbINet enables you to:
 
@@ -122,10 +123,10 @@ are those shown in the corresponding tutorials.
 
 | **Algorithm**   | **Network** | **N** | **E**     | **L/T** | **K** | **Time (s)** |
 |------------------|-------------|-------|-----------|---------|-------|--------------|
+| **MTCOV**        | Synthetic   | 300   | 724-1340  | 4       | 2     | 1.13         |
 | **CRep**         | Synthetic   | 600   | 5217      | 1       | 3     | 1.43         |
 | **JointCRep**    | Real        | 31    | 100       | 1       | 4     | 0.23         |
 | **DynCRep**      | Synthetic   | 300   | 1479-1859 | 5       | 3     | 22.1        |
-| **MTCOV**        | Synthetic   | 300   | 724-1340  | 4       | 2     | 1.13         |
 | **ACD**          | Synthetic   | 300   | 2698         | 1       | 3     | 14.98        |
 
 Notice that this table is intended to provide a general overview of the running times for the 
