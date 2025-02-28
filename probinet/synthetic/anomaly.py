@@ -15,7 +15,7 @@ from scipy.optimize import brentq
 from ..models.constants import OUTPUT_FOLDER
 from ..synthetic.base import GraphProcessingMixin, affinity_matrix
 from ..synthetic.dynamic import eq_c, membership_vectors
-from ..utils.tools import flt, get_or_create_rng
+from ..utils.tools import flt, get_or_create_rng, output_adjacency
 from ..visualization.plot import plot_M
 
 EPS = 1e-12  # Small value to avoid division by zero
@@ -320,7 +320,7 @@ class SyntNetAnomaly(GraphProcessingMixin):
             self._output_results(nodes)
 
         if self.output_adj:
-            self._output_adjacency(G, outfile=self.outfile_adj)
+            self.output_adjacency(G, outfile=self.outfile_adj)
 
         if self.verbose == 2:
             self._plot_A(A)

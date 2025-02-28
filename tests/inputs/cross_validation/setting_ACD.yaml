@@ -8,9 +8,9 @@ parameters:
   end_file: ["_ACD"]
   assortative: [True]
   undirected: [False]
-  files: ["config/data/input/theta_gt111.npz"]
+  files: ["config/data/input/theta_GT_model_class.npz"]
 input_params:
-  in_folder: "probinet/data/input/"
+  in_folder: "tests/inputs/"
   adj: "synthetic_data_for_ACD.dat"
   ego: "source"
   alter: "target"

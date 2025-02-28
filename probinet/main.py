@@ -179,7 +179,7 @@ def parse_args():
         "--eta0", type=float, default=None, help="Initial eta value"
     )
     crep_parser.add_argument(
-        "-A", "--adj_name", type=str, default="syn111.dat", help="Name of the network"
+        "-A", "--adj_name", type=str, default="synthetic_weighted_network.dat", help="Name of the network"
     )
 
     # JointCRep parser
@@ -224,7 +224,7 @@ def parse_args():
         "-A",
         "--adj_name",
         type=str,
-        default="synthetic_data.dat",
+        default="synthetic_binary_network.dat",
         help="Name of the network",
     )
 
@@ -268,14 +268,14 @@ def parse_args():
         "-A",
         "--adj_name",
         type=str,
-        default="multilayer_network.csv",
+        default="synthetic_multilayer_network.csv",
         help="Name of the network",
     )
     mtcov_parser.add_argument(
         "-C",
         "--cov_name",
         type=str,
-        default="X.csv",
+        default="synthetic_design_matrix.csv",
         help="Name of the design matrix used in MTCOV",
     )
 
@@ -348,7 +348,7 @@ def parse_args():
         "-A",
         "--adj_name",
         type=str,
-        default="dynamic_network.dat",
+        default="synthetic_dynamic_network.dat",
         help="Name of the network",
     )
 
@@ -397,7 +397,7 @@ def parse_args():
         "-A",
         "--adj_name",
         type=str,
-        default="synthetic_data_for_ACD.dat",
+        default="synthetic_network_with_anomalies.dat",
         help="Name of the network",
     )
 

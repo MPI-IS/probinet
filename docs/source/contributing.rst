@@ -56,12 +56,12 @@ Before starting work on a new feature or bug fix, ensure your fork is up to date
 
      git fetch upstream
 
-- Update your local ``main`` branch:
+- Update your local ``master`` branch:
 
   .. code-block:: bash
 
-     git checkout main
-     git merge upstream/main
+     git checkout master
+     git merge upstream/master
 
 Making Changes
 --------------

@@ -54,7 +54,6 @@ class GM_reciprocity(GraphProcessingMixin):
         avg_degree: float = 3,
         over: float = 0.0,
         corr: float = 0.0,
-        seed: int = 0,
         alpha: float = 0.1,
         ag: float = 0.1,
         beta: float = 0.1,
@@ -66,6 +65,7 @@ class GM_reciprocity(GraphProcessingMixin):
         output_adj: bool = False,
         outfile_adj: Optional[str] = None,
         ExpM: Optional[float] = None,
+        rng: Optional[np.random.Generator] = None,
     ):
         """
         Initialize the GM_reciprocity class with the given parameters.
@@ -84,8 +84,8 @@ class GM_reciprocity(GraphProcessingMixin):
             Fraction of nodes with mixed membership.
         corr : float, optional
             Correlation between u and v synthetically generated.
-        seed : int, optional
-            Seed for the random number generator.
+        rng : np.random.Generator, optional
+            Random number generator.
         alpha : float, optional
             Parameter of the Dirichlet distribution.
         ag : float, optional
@@ -112,8 +112,7 @@ class GM_reciprocity(GraphProcessingMixin):
         self.N = N  # number of nodes
         self.K = K  # number of communities
         self.avg_degree = avg_degree  # average degree
-        self.seed = seed  # random seed
-        self.rng = np.random.RandomState(self.seed)
+        self.rng = np.random.default_rng() if not rng else rng # random number generator
         self.alpha = alpha  # parameter of the Dirichlet distribution
         self.ag = ag  # alpha parameter of the Gamma distribution
         self.beta = beta  # beta parameter of the Gamma distribution
@@ -231,7 +230,7 @@ class GM_reciprocity(GraphProcessingMixin):
                 # Calculate the number of nodes belonging to more communities
                 overlapping = int(self.N * self.over)
                 # Randomly select 'overlapping' number of nodes
-                ind_over = np.random.randint(len(self.u), size=overlapping)
+                ind_over = self.rng.integers(len(self.u), size=overlapping)
 
                 # Check the normalization method
                 if self.Normalization == 0:
@@ -456,7 +455,7 @@ class GM_reciprocity(GraphProcessingMixin):
                 # Calculate the number of nodes belonging to more communities
                 overlapping = int(self.N * self.over)
                 # Randomly select 'overlapping' number of nodes
-                ind_over = np.random.randint(len(self.u), size=overlapping)
+                ind_over = self.rng.integers(len(self.u), size=overlapping)
 
                 # Check the normalization method
                 if self.Normalization == 0:

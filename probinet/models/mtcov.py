@@ -127,27 +127,21 @@ class MTCOV(ModelBase, ModelUpdateMixin):
         ----------
         gdata
             Graph adjacency tensor.
+        batch_size
+            Size of the subset of nodes to compute the likelihood with.
+        gamma
+            Scaling parameter to control the contribution of the two terms in the likelihood, by default 0.5.
         K
-            Number of communities, by default 3.
+            Number of communities, by default 2.
         initialization
             Indicator for choosing how to initialize u, v, and w. If 0, they will be generated randomly;
             1 means only the affinity matrix w will be uploaded from file; 2 implies the membership
             matrices u and v will be uploaded from file, and 3 all u, v, and w will be initialized
             through an input file, by default 0.
-        eta0
-            Initial value for the reciprocity coefficient, by default None.
         undirected
             Flag to call the undirected network, by default False.
         assortative
             Flag to call the assortative network, by default True.
-        fix_eta
-            Flag to fix the eta parameter, by default False.
-        fix_communities
-            Flag to fix the community memberships, by default False.
-        fix_w
-            Flag to fix the affinity tensor, by default False.
-        use_approximation
-            Flag to use approximation in updates, by default False.
         out_inference
             Flag to evaluate inference results, by default True.
         out_folder
@@ -241,18 +235,22 @@ class MTCOV(ModelBase, ModelUpdateMixin):
             # update the optimal parameters and the maximum log-likelihood
             if maxL < loglik:
                 super()._update_optimal_parameters()
-                self.maxL = loglik
+                maxL = loglik
                 self.final_it = it
                 conv = convergence
                 self.best_r = r
                 if self.flag_conv == "log":
                     best_loglik_values = list(loglik_values)
+
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
-                r, loglik, self.final_it, self.time_start, convergence
+                r, loglik, it, self.time_start, convergence
             )
 
         # End cycle over realizations
+
+        # Store the maximum log-likelihood
+        self.maxL = maxL
 
         # Evaluate the results of the fitting process
         self._evaluate_fit_results(self.maxL, conv, best_loglik_values)

@@ -5,11 +5,8 @@ Functions for computing expectations and related metrics.
 from typing import Optional, Tuple
 
 import numpy as np
-import pandas as pd
 from scipy.stats import poisson
-from sklearn import metrics
 
-from ..evaluation.covariate_prediction import extract_true_label, predict_label
 from ..types import GraphDataType
 from ..utils.matrix_operations import transpose_matrix, transpose_tensor
 from ..utils.tools import check_symmetric
@@ -340,20 +337,3 @@ def calculate_Q_dense(
         return num[mask.nonzero()] / den[mask.nonzero()]
 
 
-def compute_L1loss(X: np.ndarray, Xtilde: np.ndarray) -> float:
-    """
-    Calculate the L1 loss between two matrices.
-
-    Parameters
-    ----------
-    X : np.ndarray
-        The first matrix.
-    Xtilde : np.ndarray
-        The second matrix to compare against the first matrix.
-
-    Returns
-    -------
-    float
-        The L1 loss between the two matrices, rounded to three decimal places.
-    """
-    return np.round(np.mean(np.abs(X - Xtilde)), 3)

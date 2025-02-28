@@ -14,4 +14,4 @@ assortative: False
 constrained: False
 constraintU: False
 undirected: False
-files: "tests/inputs/theta_GT_DynCRep_for_initialization.npz"
+files: ""

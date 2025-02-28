@@ -235,8 +235,8 @@ class GraphProcessingMixin:
 
         # Check if the evaluation file name is provided
         if outfile is None:
-            # If not provided, generate a default file name using the seed and average degree
-            outfile = "syn" + str(self.seed) + "_k" + str(int(self.avg_degree)) + ".dat"
+            # If not provided, generate a default file name using the average degree
+            outfile = "syn_k" + str(int(self.avg_degree)) + ".dat"
 
         # Get the list of edges from the graph along with their data
         edges = list(G.edges(data=True))
@@ -263,7 +263,6 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         N: int = DEFAULT_N,
         L: int = DEFAULT_L,
         K: int = DEFAULT_K,
-        seed: int = DEFAULT_SEED,
         eta: float = DEFAULT_ETA,
         out_folder: Optional[PathLike] = None,
         output_parameters: bool = DEFAULT_OUTPUT_NET,
@@ -272,6 +271,7 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         end_file: Optional[str] = None,
         show_details: bool = DEFAULT_SHOW_DETAILS,
         show_plots: bool = DEFAULT_SHOW_PLOTS,
+        rng: Optional[np.random.Generator] = None,
         **kwargs,  # these kwargs are needed later on
     ):
         """
@@ -285,8 +285,6 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
             Number of layers in the network (default is DEFAULT_L).
         K : int, optional
             Number of communities in the network (default is DEFAULT_K).
-        seed : int, optional
-            Seed for the random number generator (default is DEFAULT_SEED).
         eta : float, optional
             Reciprocity coefficient (default is DEFAULT_ETA).
         out_folder : str, optional
@@ -299,6 +297,8 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
             Flag to print graph statistics (default is DEFAULT_SHOW_DETAILS).
         show_plots : bool, optional
             Flag to plot the network (default is DEFAULT_SHOW_PLOTS).
+        rng: np.random.Generator, optional
+            Random number generator.
         kwargs : dict
             Additional keyword arguments for further customization.
         """
@@ -308,9 +308,8 @@ class BaseSyntheticNetwork(metaclass=ABCMeta):
         self.K = K  # number of communities
 
         # Set seed random number generator
-        self.seed = seed
         self.eta = eta
-        self.rng = np.random.default_rng(seed)
+        self.rng = np.random.default_rng() if not rng else rng
 
         self.out_folder = out_folder
         self.output_parameters = output_parameters
@@ -385,7 +384,7 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
             outfile_adj = kwargs["outfile_adj"]
         else:
             try:
-                message = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta_seed"
+                message = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta"
                 logging.warning(message)
                 outfile_adj = "_".join(
                     [
@@ -394,12 +393,11 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
                         str(self.L),
                         str(self.K),
                         str(self.avg_degree),
-                        str(self.eta),
-                        str(self.seed),
+                        str(self.eta)
                     ]
                 )
             except AttributeError:
-                message = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree_seed"
+                message = "label parameter was not set. Defaulting to label=_N_L_K_avgdegree"
                 logging.warning(message)
                 outfile_adj = "_".join(
                     [
@@ -407,8 +405,7 @@ class StandardMMSBM(BaseSyntheticNetwork, GraphProcessingMixin):
                         str(self.N),
                         str(self.L),
                         str(self.K),
-                        str(self.avg_degree),
-                        str(self.seed),
+                        str(self.avg_degree)
                     ]
                 )
         self.outfile_adj = outfile_adj  # Formerly self.label

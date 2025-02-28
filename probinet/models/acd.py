@@ -143,9 +143,9 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         gdata
             Graph adjacency tensor.
         ag
-            Shape of gamma prior, by default 1.5.
+            Shape of gamma prior, by default AG_DEFAULT.
         bg
-            Rate of gamma prior, by default 10.0.
+            Rate of gamma prior, by default BG_DEFAULT.
         pibr0
             Initial value for the anomaly parameter pi, by default None.
         mupr0
@@ -157,7 +157,7 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         fix_mupr
             If True, the prior mu parameter is fixed, by default False.
         K
-            Number of communities, by default 3.
+            Number of communities, by default K_DEFAULT.
         undirected
             If True, the graph is considered undirected, by default False.
         initialization
@@ -175,15 +175,13 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
         out_inference
             If True, evaluation inference results, by default True.
         out_folder
-            Output folder for inference results, by default "outputs/".
+            Output folder for inference results, by default OUTPUT_FOLDER.
         end_file
             Suffix for the evaluation file, by default None.
         files
             Path to the file for initialization, by default None.
         rng
             Random number generator, by default None.
-        **kwargs
-            Additional parameters for the model.
 
         Returns
         -------
@@ -275,10 +273,10 @@ class AnomalyDetection(ModelBase, ModelUpdateMixin):
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
-                r, loglik, maxL, self.final_it, self.time_start, convergence
+                r, loglik, maxL, it, self.time_start, convergence
             )
 
-        # end cycle over realizations
+        # End cycle over realizations
 
         # Store the maximum pseudo log-likelihood
         self.maxL = maxL

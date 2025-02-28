@@ -12,15 +12,15 @@ parameters:
   fix_communities: [False]
   fix_w: [False]
   use_approximation: [False]
-  files: ["config/data/input/theta_gt111.npz"]
+  files: ["config/data/input/theta_GT_model_class.npz"]
 input_params:
-  in_folder: "probinet/data/input/"
-  adj: "synthetic_data.dat"
+  in_folder: "tests/inputs/"
+  adj: "synthetic_data_for_JointCRep.dat"
   ego: "source"
   alter: "target"
   NFold: 2
   sep: " "
   out_results: True
   out_mask: False
-output_file: "synthetic_data_cv.csv"
-ground_truth_file: "synthetic_data_cv_GT_JointCRep.csv"
+output_file: "synthetic_data_for_JointCRep_cv.csv"
+ground_truth_file: "synthetic_data_for_JointCRep_cv_GT.csv"

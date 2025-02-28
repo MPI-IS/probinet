@@ -20,6 +20,22 @@ of different approaches. Moreover, through a range of tutorials, we aim at simpl
 to perform inferential tasks, including the prediction of missing network edges, node clustering (community detection),
 anomaly identification, and the generation of synthetic data from latent variables.
 
+## Models Overview
+
+The package integrates a wide range of probabilistic  generative models tailored for various network data types and analytical goals. The following 
+  table summarizes the models currently implemented in ``ProbINet``:
+
+| **Name**         | **Description**                                                                                       | **Network Properties**                   |
+|-----------------|----------------------------------------------------------------------------------------------------|----------------------------------------|
+| **MTCOV**       | Extracts overlapping communities in multilayer networks using topology and node attributes [CPDB20].       | Weighted, Multilayer, Attributes, Communities      |
+| **CRep**        | Models directed networks with communities and reciprocity [CSDB22].                                                       | Directed, Weighted, Communities, Reciprocity                 |
+| **JointCRep**   | Captures community structure and reciprocity with a joint edge distribution [SCDB21].                   | Directed, Communities, Reciprocity       |
+| **DynCRep**     | Extends CRep for dynamic networks [SCDB22].                                                             | Directed, Weighted, Dynamic, Communities, Reciprocity           |
+| **ACD**         | Identifies anomalous edges and node community memberships in weighted networks [SDB22]. | Directed, Weighted, Communities, Anomalies       |
+
+For more details on each model, please refer to the [documentation](https://mpi-is.github.io/probinet/). References to the original papers can be found [here](https://mpi-is.github.io/probinet/references.html).
+
+
 ## Installation
 
 
@@ -84,7 +100,7 @@ as follows:
 ```
 
 Some commands can also be executed using shorter versions of the arguments. For example, the 
-`--convergence_tol` argument can be shortened to `-tol`. For example:
+`--convergence_tol` argument can be shortened to `-tol`:
 
 ```bash
     run_probinet CRep -tol 0.1

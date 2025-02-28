@@ -111,18 +111,14 @@ class CRep(ModelBase, ModelUpdateMixin):
         float,
     ]:
         """
-        Fit the CRep models to the given data using the EM algorithm.
+        Model directed networks by using a probabilistic generative model based on a Poisson
+        distribution and a pseudo-likelihood approximation. It assumes communities and reciprocity
+        as main mechanisms for tie formation. The inference is performed via the EM algorithm.
 
         Parameters
         ----------
-        data
+        gdata
             Graph adjacency tensor.
-        data_T
-            Transposed graph adjacency tensor.
-        data_T_vals
-            Array with values of entries A[j, i] given non-zero entry (i, j).
-        nodes
-            List of node IDs.
         K
             Number of communities, by default 3.
         mask
@@ -132,23 +128,25 @@ class CRep(ModelBase, ModelUpdateMixin):
         eta0
             Initial value of the reciprocity coefficient, by default None.
         undirected
-            Flag to specify if the graph is undirected, by default False.
+            Flag to call the undirected network, by default False.
         assortative
-            Flag to specify if the graph is assortative, by default True.
+            Flag to call the assortative network, by default True.
         constrained
-            Flag to specify if the models is constrained, by default True.
+            Flag to specify if the model is constrained, by default True.
         out_inference
-            Flag to specify if inference results should be evaluation, by default True.
-        out_folder
-            Output folder for inference results, by default "outputs/".
-        end_file
-            Suffix for the evaluation file, by default "_CRep".
+            Flag to evaluate inference results, by default True.
         fix_eta
-            Flag to specify if the eta parameter should be fixed, by default False.
+            Flag to fix the eta parameter, by default False.
+        fix_w
+             Flag to fix the affinity tensor, by default False.
+        out_folder
+            Output folder for inference results, by default OUTPUT_FOLDER.
+        end_file
+            Suffix for the evaluation file, by default None.
         files
-            Path to the file for initialization, by default "".
+            Path to the file for initialization, by default None.
         rng
-            Random number generator.
+            Random number generator, by default None.
 
         Returns
         -------
@@ -230,10 +228,10 @@ class CRep(ModelBase, ModelUpdateMixin):
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
-                r, loglik, self.final_it, self.time_start, convergence
+                r, loglik, it, self.time_start, convergence
             )
 
-        # end cycle over realizations
+        # End cycle over realizations
 
         # Store the maximum pseudo log-likelihood
         self.maxPSL = maxL
