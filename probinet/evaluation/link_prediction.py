@@ -52,6 +52,7 @@ def compute_link_prediction_AUC(
     float
         The AUC value for the link prediction.
     """
+    # The following line is needed to avoid sklearn ValueError: continuous format is not supported
     data = (data0 > 0).astype("int")
     processed_data = mask_or_flatten_array(mask, data)
     processed_pred = mask_or_flatten_array(mask, pred)
@@ -177,3 +178,22 @@ def calculate_f1_score(
     return metrics.f1_score(
         mask_or_flatten_array(mask, data), mask_or_flatten_array(mask, Z_pred)
     )
+
+
+def compute_L1loss(X: np.ndarray, Xtilde: np.ndarray) -> float:
+    """
+    Calculate the L1 loss between two matrices.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        The first matrix.
+    Xtilde : np.ndarray
+        The second matrix to compare against the first matrix.
+
+    Returns
+    -------
+    float
+        The L1 loss between the two matrices, rounded to three decimal places.
+    """
+    return np.round(np.mean(np.abs(X - Xtilde)), 3)

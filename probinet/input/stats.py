@@ -53,7 +53,7 @@ def print_graph_stats(
         print("Sparsity [%s] = %.3f" % (layer, E / (N * N)))
         # Check if network is directed; if not, skip the calculation of the reciprocity
         if nx.is_directed(G[layer]):
-            print("Reciprocity (networkX) = %.3f" % nx.reciprocity(nx.Graph(G[layer])))
+            print("Reciprocity (networkX) = %.3f" % nx.reciprocity(nx.DiGraph(G[layer])))
 
         if rw is not None:
             print(

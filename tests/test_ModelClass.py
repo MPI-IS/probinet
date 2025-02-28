@@ -3,7 +3,6 @@ Unit tests for the ModelClass class.
 """
 
 import unittest
-from importlib.resources import files
 from pathlib import Path
 
 import numpy as np
@@ -27,13 +26,9 @@ class TestModelClass(unittest.TestCase):
         self.model_class.K = self.K
         self.model_class.rng = np.random.RandomState(0)  # pylint: disable=no-member
         self.model_class.files = (
-            Path("probinet").resolve() / "data" / "input" / "theta_gt111.npz"
+            Path(__file__).parent / "inputs" / "theta_GT_model_class.npz"
         )
-        self.model_class.theta_name = "theta_gt111.npz"
-        with files("probinet.data.input").joinpath(
-            self.model_class.theta_name
-        ) as theta:
-            self.model_class.theta = np.load(theta, allow_pickle=True)
+        self.model_class.theta = np.load(self.model_class.files, allow_pickle=True)
         self.model_class.eta0 = 0
         self.model_class.undirected = False
         self.model_class.assortative = True

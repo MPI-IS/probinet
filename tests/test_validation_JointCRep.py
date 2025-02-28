@@ -12,7 +12,7 @@ from probinet.models.jointcrep import JointCRep
 class JointCRepTestCase(BaseTest, ModelTestMixin):
     algorithm = "JointCRep"
     keys_in_thetaGT = ["u", "v", "w", "eta", "final_it", "maxL", "nodes"]
-    adj = "synthetic_data.dat"
+    adj = "synthetic_data_for_JointCRep.dat"
     ego = "source"
     alter = "target"
     K = 2
@@ -43,7 +43,7 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
         self.model = JointCRep(max_iter=self.max_iter)
 
     def _load_data(self, force_dense):
-        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+        with files("tests.inputs").joinpath(self.adj).open("rb") as network:
             return build_adjacency_from_file(
                 network.name,
                 ego=self.ego,

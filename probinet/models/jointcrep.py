@@ -98,7 +98,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
         gdata
             Graph adjacency tensor.
         K
-            Number of communities, by default 3.
+            Number of communities, by default K_DEFAULT.
         initialization
             Indicator for choosing how to initialize u, v, and w. If 0, they will be generated randomly;
             1 means only the affinity matrix w will be uploaded from file; 2 implies the membership
@@ -217,7 +217,7 @@ class JointCRep(ModelBase, ModelUpdateMixin):
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
-                r, loglik, self.final_it, self.time_start, convergence
+                r, loglik, it, self.time_start, convergence
             )
 
         # End cycle over realizations

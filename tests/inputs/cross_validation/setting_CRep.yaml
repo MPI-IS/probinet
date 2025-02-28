@@ -10,15 +10,15 @@ parameters:
   constrained: [True]
   out_inference: [False]
   out_folder: ""
-  files: ["config/data/input/theta_gt111.npz"]
+  files: ["config/data/input/theta_GT_model_class.npz"]
 input_params:
-  in_folder: "probinet/data/input/"
-  adj: "syn111.dat"
+  in_folder: "tests/inputs/"
+  adj: "synthetic_data_for_CRep.dat"
   ego: "source"
   alter: "target"
   NFold: 2
   sep: " "
   out_results: True
   out_mask: False
-output_file: "syn111_cv.csv"
-ground_truth_file: "syn111_cv_GT_CRep.csv"
+output_file: "synthetic_data_for_CRep_cv.csv"
+ground_truth_file: "synthetic_data_for_CRep_cv_GT.csv"

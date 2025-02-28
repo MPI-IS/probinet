@@ -100,7 +100,7 @@ as follows:
 ```
 
 Some commands can also be executed using shorter versions of the arguments. For example, the 
-`--convergence_tol` argument can be shortened to `-tol`. For example:
+`--convergence_tol` argument can be shortened to `-tol`:
 
 ```bash
     run_probinet CRep -tol 0.1

@@ -1,5 +1,7 @@
+K: 2
 out_inference: True
 out_folder: "outputs/"
 end_file: "_MTCOV"
 assortative: False
-files: "../data/input/theta.npz"
+initialization: 0
+files: ""

@@ -37,11 +37,11 @@ class DynCRep(ModelBase, ModelUpdateMixin):
     """
 
     def __init__(
-        self,
-        err: float = 0.01,  # Overriding the base class default
-        num_realizations: int = 1,  # Overriding the base class default
-        max_iter: int = 1000,  # Overriding the base class default
-        **kwargs,  # Capture all other arguments for ModelBase
+            self,
+            err: float = 0.01,  # Overriding the base class default
+            num_realizations: int = 1,  # Overriding the base class default
+            max_iter: int = 1000,  # Overriding the base class default
+            **kwargs,  # Capture all other arguments for ModelBase
     ) -> None:
         # Pass the overridden arguments along with any others to the parent class
         super().__init__(
@@ -73,8 +73,8 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         return data_kwargs
 
     def _check_fit_params(
-        self,
-        **kwargs: Any,
+            self,
+            **kwargs: Any,
     ) -> None:
         # Call the check_fit_params method from the parent class
         super()._check_fit_params(
@@ -127,32 +127,32 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             self.theta = np.load(Path(self.files).resolve(), allow_pickle=True)
 
     def fit(
-        self,
-        gdata: GraphData,
-        T: Optional[int] = None,
-        mask: Optional[MaskType] = None,
-        K: int = 2,
-        ag: float = 1.0,
-        bg: float = 0.5,
-        eta0: float = None,
-        beta0: float = 0.25,
-        flag_data_T: int = 0,
-        temporal: bool = True,
-        initialization: int = 0,
-        assortative: bool = False,
-        constrained: bool = False,
-        constraintU: bool = False,
-        fix_eta: bool = False,
-        fix_beta: bool = False,
-        fix_communities: bool = False,
-        fix_w: bool = False,
-        undirected: bool = False,
-        out_inference: bool = True,
-        out_folder: Path = OUTPUT_FOLDER,
-        end_file: Optional[EndFileType] = None,
-        files: Optional[FilesType] = None,
-        rng: Optional[np.random.Generator] = None,
-        **_kwargs: Any,
+            self,
+            gdata: GraphData,
+            T: Optional[int] = None,
+            mask: Optional[MaskType] = None,
+            K: int = 2,
+            ag: float = 1.0,
+            bg: float = 0.5,
+            eta0: float = None,
+            beta0: float = 0.25,
+            flag_data_T: int = 0,
+            temporal: bool = True,
+            initialization: int = 0,
+            assortative: bool = False,
+            constrained: bool = False,
+            constraintU: bool = False,
+            fix_eta: bool = False,
+            fix_beta: bool = False,
+            fix_communities: bool = False,
+            fix_w: bool = False,
+            undirected: bool = False,
+            out_inference: bool = True,
+            out_folder: Path = OUTPUT_FOLDER,
+            end_file: Optional[EndFileType] = None,
+            files: Optional[FilesType] = None,
+            rng: Optional[np.random.Generator] = None,
+            **_kwargs: Any,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray, float,]:
         """
         Model directed networks by using a probabilistic generative models that assumes community parameters and
@@ -163,7 +163,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         gdata
             Graph adjacency tensor.
         T
-            Number of time steps.
+            Number of time steps, by default None.
         mask
             Mask for selecting the held-out set in the adjacency tensor in case of cross-validation, by default None.
         K
@@ -183,33 +183,31 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         initialization
             Initialization method for the models parameters, by default 0.
         assortative
-            Flag to indicate if the graph is assortative, by default False.
+            Flag to call the assortative network, by default False.
         constrained
-            Flag to indicate if the models is constrained, by default False.
+            Flag to specify if the model is constrained, by default True.
         constraintU
-            Flag to indicate if there is a constraint on U, by default False.
+            Flag to specify if u is constrained, by default False.
         fix_eta
-            Flag to indicate if the eta parameter should be fixed, by default False.
+            Flag to fix the eta parameter, by default False.
         fix_beta
-            Flag to indicate if the beta parameter should be fixed, by default False.
+            Flag to fix the beta parameter, by default False.
         fix_communities
-            Flag to indicate if the communities should be fixed, by default False.
+            Flag to fix the community memberships, by default False.
         fix_w
-            Flag to indicate if the w parameter should be fixed, by default False.
+             Flag to fix the affinity tensor, by default False.
         undirected
-            Flag to indicate if the graph is undirected, by default False.
+            Flag to call the undirected network, by default False.
         out_inference
-            Flag to indicate if inference results should be evaluation, by default True.
+            Flag to evaluate inference results, by default True.
         out_folder
-            Output folder for inference results, by default "outputs/".
+            Output folder for inference results, by default OUTPUT_FOLDER.
         end_file
-            Suffix for the evaluation file, by default "_DynCRep".
+            Suffix for the evaluation file, by default None.
         files
-            Path to the file for initialization, by default "".
+            Path to the file for initialization, by default None.
         rng
             Random number generator, by default None.
-        **kwargs
-            Additional parameters for the model.
 
         Returns
         -------
@@ -311,17 +309,20 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             if maxL < loglik:
                 super()._update_optimal_parameters()
                 best_loglik_values = list(loglik_values)
-                self.maxL = loglik
+                maxL = loglik
                 self.final_it = it
                 conv = convergence
                 self.best_r = r
 
             # Log the current realization number, log-likelihood, number of iterations, and elapsed time
             self._log_realization_info(
-                r, loglik, self.final_it, self.time_start, convergence
+                r, loglik, it, self.time_start, convergence
             )
 
-        # end cycle over realizations
+        # End cycle over realizations
+
+        # Store the maximum log-likelihood
+        self.maxL = maxL
 
         # Evaluate the results of the fitting process
         self._evaluate_fit_results(self.maxL, conv, best_loglik_values)
@@ -361,7 +362,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         return coincide, convergence, it, loglik, loglik_values
 
     def _preprocess_data_for_fit(
-        self, T: int, data: GraphDataType
+            self, T: int, data: GraphDataType
     ) -> Tuple[
         int,
         GraphDataType,
@@ -517,10 +518,10 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self._randomize_beta(1)  # Generates a single random number
 
     def _update_cache(
-        self,
-        data: GraphDataType,
-        data_T_vals: np.ndarray,
-        subs_nz: ArraySequence,
+            self,
+            data: GraphDataType,
+            data_T_vals: np.ndarray,
+            subs_nz: ArraySequence,
     ) -> None:
         """
         Update the cache used in the em_update.
@@ -540,7 +541,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         self.data_M_nz = self.get_data_values(data) / self.M_nz
         self.data_rho2 = (
-            self.get_data_values(data) * self.eta * data_T_vals / self.M_nz
+                self.get_data_values(data) * self.eta * data_T_vals / self.M_nz
         ).sum()
 
     def _update_em(self) -> Tuple[float, float, float, float, float]:
@@ -849,7 +850,7 @@ class DynCRep(ModelBase, ModelUpdateMixin):
 
         Z = np.einsum("k,q->kq", self.u.sum(axis=0), self.v.sum(axis=0))[
             np.newaxis, :, :
-        ]
+            ]
         Z *= 1.0 + self.beta_hat[self.T] * self.T
         Z += self.bg
 
@@ -972,12 +973,12 @@ class DynCRep(ModelBase, ModelUpdateMixin):
         self.beta_f = np.copy(self.beta_hat[-1])
 
     def _likelihood(  # type: ignore
-        self,
-        data: GraphDataType,
-        data_T: GraphDataType,
-        data_T_vals: np.ndarray,
-        subs_nz: ArraySequence,
-        mask: Optional[MaskType] = None,
+            self,
+            data: GraphDataType,
+            data_T: GraphDataType,
+            data_T_vals: np.ndarray,
+            subs_nz: ArraySequence,
+            mask: Optional[MaskType] = None,
     ) -> float:  # The inputs do change sometimes, so keeping it like this to avoid
         # conflicts during the execution.
         """
@@ -1019,27 +1020,27 @@ class DynCRep(ModelBase, ModelUpdateMixin):
             sub_mask_nz = mask.nonzero()
             if isinstance(data, np.ndarray):
                 loglik = (
-                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore
-                    - self.eta
-                    * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
+                        -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()  # type: ignore
+                        - self.eta
+                        * (data_T[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]).sum()
                 )
             elif isinstance(data, COO):
                 loglik = (
-                    -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
-                    - self.eta
-                    * (
-                        data_T.todense()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]
-                    ).sum()
+                        -(1 + self.beta0) * self.lambda0_ija[sub_mask_nz].sum()
+                        - self.eta
+                        * (
+                                data_T.todense()[sub_mask_nz] * self.beta_hat[sub_mask_nz[0]]
+                        ).sum()
                 )
         else:
             if isinstance(data, np.ndarray):
                 loglik = -(1 + self.beta0) * self.lambda0_ija.sum() - self.eta * (  # type: ignore
-                    data_T[0].sum() + self.beta0 * data_T[1:].sum()
+                        data_T[0].sum() + self.beta0 * data_T[1:].sum()
                 )
             elif isinstance(data, COO):
                 loglik = (
-                    -lambda0_ija_loc.sum()
-                    - self.eta * (data_T.sum(axis=(1, 2)) * self.beta_hat).sum()
+                        -lambda0_ija_loc.sum()
+                        - self.eta * (data_T.sum(axis=(1, 2)) * self.beta_hat).sum()
                 )
 
         logM = np.log(self.M_nz)

@@ -9,11 +9,11 @@ parameters:
   assortative: [False]
   undirected: [True]
   batch_size: [null]
-  files: ["config/data/input/theta_gt111.npz"]
+  files: ["config/data/input/theta_GT_model_class.npz"]
 input_params:
-  in_folder: "probinet/data/input/"
-  adj: "multilayer_network_for_crossvalidation.csv"
-  cov: "X_cv.csv"
+  in_folder: "tests/inputs/cross_validation/"
+  adj: "synthetic_network_for_MTCOV.csv"
+  cov: "synthetic_attribute_for_MTCOV.csv"
   ego: "source"
   alter: "target"
   egoX: "Name"
@@ -22,5 +22,5 @@ input_params:
   sep: ","
   out_results: True
   out_mask: False
-output_file: "multilayer_network_for_crossvalidation_cv.csv"
-ground_truth_file: "multilayer_network_for_crossvalidation_GT_MTCOV.csv"
+output_file: "synthetic_network_for_MTCOV_cv.csv"
+ground_truth_file: "synthetic_network_for_MTCOV_cv_GT.csv"
