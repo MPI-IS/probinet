@@ -37,13 +37,13 @@ class DynCRepTestCase(BaseTest):
             (self.data_path / f"theta_{self.label}").with_suffix(".npz"),
             allow_pickle=True,
         )
-        self.adj = "dynamic_network.dat"
+        self.adj = "synthetic_data_for_DynCRep.dat"
         self.K = self.theta["u"].shape[1]
         self.gdata = self._import_data()
         self._initialize_graph_properties()
 
     def _import_data(self, force_dense=True):
-        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+        with files("tests.inputs").joinpath(self.adj).open("rb") as network:
             return build_adjacency_from_file(
                 network.name, header=0, force_dense=force_dense
             )

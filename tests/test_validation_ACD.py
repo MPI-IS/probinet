@@ -39,7 +39,7 @@ class ACDTestCase(BaseTest):
         )  # They should be ['z', 'u', 'v', 'w', 'mu', 'pi', 'nodes']
         self.adj = "synthetic_data_for_ACD.dat"
         self.K = self.theta["u"].shape[1]
-        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+        with files("tests.inputs").joinpath(self.adj).open("rb") as network:
             self.gdata = build_adjacency_from_file(network.name, header=0)
 
         # Define the nodes, positions, number of nodes, and number of layers
@@ -283,7 +283,7 @@ class ACDTestCase(BaseTest):
     def test_force_dense_false(self):
         """Test the import data function with force_dense set to False, i.e., the data is sparse."""
 
-        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+        with files("tests.inputs").joinpath(self.adj).open("rb") as network:
             self.gdata = build_adjacency_from_file(
                 network.name, header=0, force_dense=False
             )

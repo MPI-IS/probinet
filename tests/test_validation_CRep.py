@@ -28,14 +28,14 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         # Test case parameters
         self.algorithm = "CRep"
         self.keys_in_thetaGT = ["u", "v", "w", "eta", "final_it", "maxPSL", "nodes"]
-        self.adj = "syn111.dat"
+        self.adj = "synthetic_data_for_CRep.dat"
         self.ego = "source"
         self.alter = "target"
         self.force_dense = False
 
         # Import data
 
-        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+        with files("tests.inputs").joinpath(self.adj).open("rb") as network:
             self.gdata = build_adjacency_from_file(
                 network.name,
                 ego=self.ego,
@@ -81,7 +81,7 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         self.force_dense = True
 
         # Import data
-        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+        with files("tests.inputs").joinpath(self.adj).open("rb") as network:
             self.gdata = build_adjacency_from_file(
                 network.name,
                 ego=self.ego,
@@ -116,7 +116,7 @@ class BaseTestCase(BaseTest, ModelTestMixin):
         self.force_dense = True
 
         # Import data
-        with files("probinet.data.input").joinpath(self.adj).open("rb") as network:
+        with files("tests.inputs").joinpath(self.adj).open("rb") as network:
             self.gdata = build_adjacency_from_file(
                 network.name,
                 ego=self.ego,

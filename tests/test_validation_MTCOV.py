@@ -25,8 +25,8 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         self.gamma = 0.5
         self.out_folder = "outputs/"
         self.end_file = "_test"
-        self.adj_name = "multilayer_network.csv"
-        self.cov_name = "X.csv"
+        self.adj_name = "synthetic_network_for_MTCOV.csv"
+        self.cov_name = "synthetic_attribute_for_MTCOV.csv"
         self.ego = "source"
         self.alter = "target"
         self.egoX = "Name"
@@ -37,7 +37,7 @@ class MTCOVTestCase(BaseTest, ModelTestMixin):
         self.batch_size = None
 
         # Import data
-        probinet_data_input_path = "probinet.data.input"
+        probinet_data_input_path = "tests.inputs"
         self.gdata: GraphData = build_adjacency_and_design_from_file(
             probinet_data_input_path,
             adj_name=self.adj_name,

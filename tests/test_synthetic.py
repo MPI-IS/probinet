@@ -27,6 +27,7 @@ class TestGMReciprocity(unittest.TestCase):
         # Set up parameters for the tests
         self.N = 100
         self.K = 3
+        self.rng = np.random.default_rng(seed=0)
 
     def _run_test(self, gm, expected_values):
         # Call the respective method
@@ -54,74 +55,74 @@ class TestGMReciprocity(unittest.TestCase):
         )  # Reciprocity
 
     def test_reciprocity_planted_network(self):
-        gm = GM_reciprocity(self.N, self.K)
+        gm = GM_reciprocity(self.N, self.K, rng=self.rng)
         gm.verbose = False  # Disable verbose evaluation for testing
 
         expected_values = {
-            "nodes": 72,
-            "edges": 124,
-            "sparsity_cof": 3.444,
-            "reciprocity": 0.516,
+            "nodes": 83,
+            "edges": 140,
+            "sparsity_cof": 3.373,
+            "reciprocity": 0.443,
         }
         self._run_test(gm.reciprocity_planted_network, expected_values)
 
     def test_reciprocity_planted_network_with_verbose(self):
-        gm = GM_reciprocity(self.N, self.K)
+        gm = GM_reciprocity(self.N, self.K, rng=self.rng)
         gm.verbose = True
 
         expected_values = {
-            "nodes": 72,
-            "edges": 124,
-            "sparsity_cof": 3.444,
-            "reciprocity": 0.516,
+            "nodes": 83,
+            "edges": 140,
+            "sparsity_cof": 3.373,
+            "reciprocity": 0.443,
         }
         self._run_test(gm.reciprocity_planted_network, expected_values)
 
     def test_planted_network_cond_independent(self):
-        gm = GM_reciprocity(self.N, self.K)
+        gm = GM_reciprocity(self.N, self.K, rng=self.rng)
         gm.verbose = False  # Disable verbose evaluation for testing
 
         expected_values = {
             "nodes": 98,
-            "edges": 137,
-            "sparsity_cof": 2.796,
-            "reciprocity": 0.029,
+            "edges": 161,
+            "sparsity_cof": 3.286,
+            "reciprocity": 0.037,
         }
         self._run_test(gm.planted_network_cond_independent, expected_values)
 
     def test_planted_network_cond_independent_with_verbose(self):
-        gm = GM_reciprocity(self.N, self.K)
+        gm = GM_reciprocity(self.N, self.K, rng=self.rng)
         gm.verbose = True
 
         expected_values = {
             "nodes": 98,
-            "edges": 137,
-            "sparsity_cof": 2.796,
-            "reciprocity": 0.029,
+            "edges": 161,
+            "sparsity_cof": 3.286,
+            "reciprocity": 0.037,
         }
         self._run_test(gm.planted_network_cond_independent, expected_values)
 
     def test_planted_network_reciprocity_only(self):
-        gm = GM_reciprocity(self.N, self.K)
+        gm = GM_reciprocity(self.N, self.K, rng=self.rng)
         gm.verbose = False  # Disable verbose evaluation for testing
 
         expected_values = {
-            "nodes": 26,
-            "edges": 38,
-            "sparsity_cof": 2.923,
-            "reciprocity": 0.579,
+            "nodes": 65,
+            "edges": 98,
+            "sparsity_cof": 3.015,
+            "reciprocity": 0.388,
         }
         self._run_test(gm.planted_network_reciprocity_only, expected_values)
 
     def test_planted_network_reciprocity_only_with_verbose(self):
-        gm = GM_reciprocity(self.N, self.K)
+        gm = GM_reciprocity(self.N, self.K, rng=self.rng)
         gm.verbose = True
 
         expected_values = {
-            "nodes": 26,
-            "edges": 38,
-            "sparsity_cof": 2.923,
-            "reciprocity": 0.579,
+            "nodes": 65,
+            "edges": 98,
+            "sparsity_cof": 3.015,
+            "reciprocity": 0.388,
         }
         self._run_test(gm.planted_network_reciprocity_only, expected_values)
 
@@ -179,9 +180,9 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
         self.N = 100
         self.L = 1
         self.K = 2
-        self.seed = 0
+        self.seed = RANDOM_SEED_REPROD
         self.eta = 50
-        self.out_folder = Path(__file__).parent / "data/input/synthetic/"
+        self.out_folder = Path(__file__).parent / "data"/"input"/"synthetic"
         self.output_net = True
         self.show_details = True
         self.show_plots = False
@@ -190,12 +191,12 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
             self.N,
             self.L,
             self.K,
-            self.seed,
             self.eta,
             out_folder=self.out_folder,
             output_adj=self.output_net,
             show_details=self.show_details,
             show_plots=self.show_plots,
+            rng = np.random.default_rng(seed=self.seed),
             **self.kwargs,
         )
 
@@ -203,7 +204,6 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
         self.assertEqual(self.base_synthetic_network.N, self.N)
         self.assertEqual(self.base_synthetic_network.L, self.L)
         self.assertEqual(self.base_synthetic_network.K, self.K)
-        self.assertEqual(self.base_synthetic_network.seed, self.seed)
         self.assertEqual(self.base_synthetic_network.out_folder, self.out_folder)
         self.assertEqual(self.base_synthetic_network.output_adj, self.output_net)
         self.assertEqual(self.base_synthetic_network.show_details, self.show_details)

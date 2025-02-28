@@ -10,4 +10,4 @@ fix_eta: False
 fix_communities: False
 fix_w: False
 use_approximation: False
-files: "../data/input/theta.npz"
+files: ""

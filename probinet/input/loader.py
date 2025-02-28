@@ -23,9 +23,9 @@ from .stats import print_graph_stats
 
 
 def build_adjacency_from_networkx(
-    network: nx.Graph,
-    weight_list: list[str],
-    file_name: Optional[PathLike] = None,
+        network: nx.Graph,
+        weight_list: list[str],
+        file_name: Optional[PathLike] = None,
 ) -> GraphData:
     """
     Import networkx graph and convert it to the GraphData object
@@ -65,16 +65,16 @@ def build_adjacency_from_networkx(
 
 
 def build_adjacency_from_file(
-    path_to_file: PathLike,
-    ego: str = "source",
-    alter: str = "target",
-    force_dense: bool = True,
-    undirected: bool = False,
-    noselfloop: bool = True,
-    sep: str = "\\s+",
-    binary: bool = True,
-    header: Optional[int] = 0,
-    **_kwargs: Any,
+        path_to_file: PathLike,
+        ego: str = "source",
+        alter: str = "target",
+        force_dense: bool = True,
+        undirected: bool = False,
+        noselfloop: bool = True,
+        sep: str = "\\s+",
+        binary: bool = True,
+        header: Optional[int] = 0,
+        **_kwargs: Any,
 ) -> GraphData:
     """
     Import data, i.e., the adjacency matrix, from a given folder.
@@ -90,15 +90,15 @@ def build_adjacency_from_file(
     alter
         Name of the column to consider as the target of the edge.
     force_dense
-        If set to True, the algorithm is forced to consider a dense adjacency tensor.
+        If set to True, the network is saved in a dense adjacency tensor.
     undirected
-        If set to True, the algorithm considers an undirected graph.
+        If set to True, the network is considered undirected.
     noselfloop
-        If set to True, the algorithm removes the self-loops.
+        If set to True, the self-loops are removed.
     sep
         Separator to use when reading the dataset.
     binary
-        If set to True, the algorithm reads the graph with binary edges.
+        If set to True, the network is treated as binary.
     header
         Row number to use as the column names, and the start of the data.
 
@@ -158,13 +158,13 @@ def build_adjacency_from_file(
 
 
 def read_and_process_design_matrix(
-    in_folder_path: PathLike,
-    cov_name: str,
-    sep: str,
-    header: Optional[int],
-    nodes: list[str],
-    attr_name: str,
-    egoX: str,
+        in_folder_path: PathLike,
+        cov_name: str,
+        sep: str,
+        header: Optional[int],
+        nodes: list[str],
+        attr_name: str,
+        egoX: str,
 ) -> pd.DataFrame:
     """
     Read and process the design matrix with covariates.
@@ -199,20 +199,20 @@ def read_and_process_design_matrix(
 
 
 def build_adjacency_and_design_from_file(
-    in_folder: str,
-    adj_name: str = "multilayer_network.csv",
-    cov_name: str = "X.csv",
-    ego: str = "source",
-    egoX: str = "Name",
-    alter: str = "target",
-    attr_name: str = "Metadata",
-    undirected: bool = False,
-    force_dense: bool = True,
-    noselfloop: bool = True,
-    sep: str = ",",
-    header: Optional[int] = 0,
-    return_X_as_np: bool = True,
-    **_kwargs,
+        in_folder: str,
+        adj_name: str = "synthetic_multilayer_network.csv",
+        cov_name: str = "synthetic_design_matrix.csv",
+        ego: str = "source",
+        egoX: str = "Name",
+        alter: str = "target",
+        attr_name: str = "Metadata",
+        undirected: bool = False,
+        binary: bool = True,
+        force_dense: bool = True,
+        noselfloop: bool = True,
+        sep: str = ",",
+        header: Optional[int] = 0,
+        return_X_as_np: bool = True,
 ) -> GraphData:
     """
     Import data, i.e. the adjacency tensor and the design matrix, from a given folder.
@@ -234,19 +234,19 @@ def build_adjacency_and_design_from_file(
     attr_name : str
         Name of the attribute to consider in the analysis.
     undirected : bool
-        If set to True, the algorithm considers an undirected graph.
+        If set to True, the network is considered undirected.
+    binary
+        If set to True, the network is treated as binary.
     force_dense : bool
-        If set to True, the algorithm is forced to consider a dense adjacency tensor.
+        If set to True, the network is saved in a dense adjacency tensor.
     noselfloop : bool
-        If set to True, the algorithm removes the self-loops.
+        If set to True, the self-loops are removed.
     sep : str
         Separator to use when reading the dataset.
     header : int
         Row number to use as the column names, and the start of the data.
     return_X_as_np : bool
         If set to True, the design matrix is returned as a numpy array.
-    _kwargs
-        Additional keyword arguments.
 
     Returns
     -------
@@ -285,7 +285,7 @@ def build_adjacency_and_design_from_file(
         undirected=undirected,
         noselfloop=noselfloop,
         sep=sep,
-        binary=False,
+        binary=binary,
         header=header,
     )
 
@@ -302,13 +302,13 @@ def build_adjacency_and_design_from_file(
 
 
 def read_graph(
-    df_adj: pd.DataFrame,
-    ego: str = "source",
-    alter: str = "target",
-    undirected: bool = False,
-    noselfloop: bool = True,
-    binary: bool = True,
-    label: str = "weight",
+        df_adj: pd.DataFrame,
+        ego: str = "source",
+        alter: str = "target",
+        undirected: bool = False,
+        noselfloop: bool = True,
+        binary: bool = True,
+        label: str = "weight",
 ) -> list[nx.MultiDiGraph]:
     """
     Create the graph by adding edges and nodes.
@@ -326,11 +326,11 @@ def read_graph(
     alter: str
            Name of the column to consider as the target of the edge.
     undirected: bool
-                If set to True, the algorithm considers an undirected graph.
+                If set to True, the network is considered undirected.
     noselfloop: bool
-                If set to True, the algorithm removes the self-loops.
+                If set to True, the self-loops are removed.
     binary: bool
-            If set to True, read the graph with binary edges.
+            If set to True, the network is treated as binary.
     label: str
              Name to be assigned to the edge attribute, across all layers.
 
@@ -361,7 +361,7 @@ def read_graph(
         v1 = row[ego]
         v2 = row[alter]
         for layer in range(L):
-            if row[layer + 2] > 0:
+            if row.iloc[layer + 2] > 0:
                 if binary:
                     if A[layer].has_edge(v1, v2):
                         A[layer][v1][v2][0][label] = 1
@@ -374,7 +374,7 @@ def read_graph(
                             row[layer + 2]
                         )  # the edge already exists, no parallel edge created
                     else:
-                        edge_attributes = {label: int(row[layer + 2])}
+                        edge_attributes = {label: int(row.iloc[layer + 2])}
                         A[layer].add_edge(v1, v2, **edge_attributes)
 
     # Remove self-loops
@@ -387,10 +387,10 @@ def read_graph(
 
 
 def read_design_matrix(
-    df_X: pd.DataFrame,
-    nodes: list,
-    attribute: Union[str, None] = None,
-    ego: str = "Name",
+        df_X: pd.DataFrame,
+        nodes: list,
+        attribute: Union[str, None] = None,
+        ego: str = "Name",
 ):
     """
     Create the design matrix with the one-hot encoding of the given attribute.
