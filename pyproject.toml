@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "probinet"
 description = "Python package for probabilistic network analysis."
-version = "1.0"
+version = "1.0.1rc1"
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 authors = [
