@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN"
+                  "JATS-publishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.2" article-type="other">
+<front>
+<journal-meta>
+<journal-id></journal-id>
+<journal-title-group>
+<journal-title>Journal of Open Source Software</journal-title>
+<abbrev-journal-title>JOSS</abbrev-journal-title>
+</journal-title-group>
+<issn publication-format="electronic">2475-9066</issn>
+<publisher>
+<publisher-name>Open Journals</publisher-name>
+</publisher>
+</journal-meta>
+<article-meta>
+<article-id pub-id-type="publisher-id">0</article-id>
+<article-id pub-id-type="doi">N/A</article-id>
+<title-group>
+<article-title>ProbINet: Bridging Usability Gaps in Probabilistic
+Network Analysis</article-title>
+</title-group>
+<contrib-group>
+<contrib contrib-type="author">
+<name>
+<surname>Baptista</surname>
+<given-names>Diego</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<contrib contrib-type="author">
+<name>
+<surname>Contisciani</surname>
+<given-names>Martina</given-names>
+</name>
+<xref ref-type="aff" rid="aff-2"/>
+</contrib>
+<contrib contrib-type="author">
+<name>
+<surname>Bacco</surname>
+<given-names>Caterina De</given-names>
+</name>
+<xref ref-type="aff" rid="aff-3"/>
+</contrib>
+<contrib contrib-type="author">
+<name>
+<surname>Passy</surname>
+<given-names>Jean-Claude</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<aff id="aff-1">
+<institution-wrap>
+<institution>Max Planck Institute for Intelligent Systems, Tübingen,
+Germany.</institution>
+</institution-wrap>
+</aff>
+<aff id="aff-2">
+<institution-wrap>
+<institution>Central European University, Vienna, Austria.</institution>
+</institution-wrap>
+</aff>
+<aff id="aff-3">
+<institution-wrap>
+<institution>Delft University of Technology, Delft,
+Netherlands.</institution>
+</institution-wrap>
+</aff>
+</contrib-group>
+<pub-date date-type="pub" publication-format="electronic" iso-8601-date="2025-01-22">
+<day>22</day>
+<month>1</month>
+<year>2025</year>
+</pub-date>
+<volume>¿VOL?</volume>
+<issue>¿ISSUE?</issue>
+<fpage>¿PAGE?</fpage>
+<permissions>
+<copyright-statement>Authors of papers retain copyright and release the
+work under a Creative Commons Attribution 4.0 International License (CC
+BY 4.0)</copyright-statement>
+<copyright-year>1970</copyright-year>
+<copyright-holder>The article authors</copyright-holder>
+<license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/">
+<license-p>Authors of papers retain copyright and release the work under
+a Creative Commons Attribution 4.0 International License (CC BY
+4.0)</license-p>
+</license>
+</permissions>
+<kwd-group kwd-group-type="author">
+<kwd>Python</kwd>
+<kwd>network science</kwd>
+<kwd>probabilistic modeling</kwd>
+<kwd>community detection</kwd>
+<kwd>anomaly detection</kwd>
+<kwd>synthetic data generation</kwd>
+</kwd-group>
+</article-meta>
+</front>
+<body>
+<sec id="summary">
+  <title>Summary</title>
+  <p><bold>Prob</bold>abilistic <bold>I</bold>nference on
+  <bold>Net</bold>works (ProbINet) is a Python package that provides a
+  unified framework to perform probabilistic inference on networks,
+  enabling researchers and practitioners to analyze and model complex
+  network data. The package integrates code implementations from several
+  scientific publications, supporting tasks such as community detection,
+  anomaly detection, and synthetic data generation using latent variable
+  models. It is designed to simplify the use of cutting-edge techniques
+  in network analysis by providing a cohesive and user-friendly
+  interface. The package includes efficient implementations of
+  probabilistic algorithms, tools for model evaluation, and
+  visualizations to support data exploration.</p>
+</sec>
+<sec id="statement-of-need">
+  <title>Statement of need</title>
+  <p>Network analysis plays a central role in fields such as social
+  sciences, biology, and fraud detection, where understanding
+  relationships between entities is critical. Probabilistic generative
+  models
+  (<xref alt="Contisciani et al., 2020" rid="ref-contisciani2020community" ref-type="bibr">Contisciani
+  et al., 2020</xref>,
+  <xref alt="2022" rid="ref-contisciani2022community" ref-type="bibr">2022</xref>;
+  <xref alt="Safdari et al., 2021" rid="ref-safdari2021generative" ref-type="bibr">Safdari
+  et al., 2021</xref>,
+  <xref alt="2022" rid="ref-safdari2022reciprocity" ref-type="bibr">2022</xref>;
+  <xref alt="Safdari &amp; De Bacco, 2022" rid="ref-safdari2022anomaly" ref-type="bibr">Safdari
+  &amp; De Bacco, 2022</xref>) have emerged as powerful tools for
+  discovering hidden patterns in networks, detecting communities,
+  identifying anomalies, and generating realistic synthetic data.
+  Despite their potential, the practical use of these models remains
+  challenging due to a lack of integration and accessibility. These
+  methods are often implemented in fragmented codebases spread across
+  individual publications, creating barriers for researchers and
+  practitioners who wish to compare models, reproduce results, or apply
+  them to their own data. ProbINet addresses this critical gap by
+  consolidating recent approaches into a single, unified framework. It
+  provides accessible tools for network analysis tasks, allowing users
+  to explore advanced techniques without the overhead of navigating
+  multiple repositories or inconsistent documentation. By integrating
+  multiple models and workflows, this package promotes reproducibility,
+  simplifies adoption, and enhances usability across disciplines.</p>
+</sec>
+<sec id="mathematical-background">
+  <title>Mathematical background</title>
+  <p>The mathematical foundation of our package builds on recent
+  developments in probabilistic generative models for networks. These
+  models assume that observed network structures arise from underlying
+  latent variables and allow for flexible probabilistic modeling of
+  joint distributions between data and latent variables. By relaxing
+  several restrictive assumptions commonly made in earlier models, our
+  framework supports more expressive methods to uncover hidden
+  structures (e.g., communities and anomalies), model uncertainty, and
+  generate realistic synthetic network data.</p>
+</sec>
+<sec id="main-features">
+  <title>Main features</title>
+  <p>ProbINet offers a versatile and feature-rich framework to perform
+  inference on networks using probabilistic generative models. Its
+  design focuses on integrating diverse models, facilitating parameter
+  selection, providing tools for evaluation and visualization, and
+  enabling synthetic data generation. Key features include:</p>
+  <list list-type="bullet">
+    <list-item>
+      <p><bold>Diverse Network Models</bold>: The package integrates
+      various probabilistic generative models for different network
+      types and analytical goals. The table below summarizes the models
+      implemented in ProbINet:</p>
+    </list-item>
+  </list>
+  <table-wrap>
+    <table>
+      <colgroup>
+        <col width="14%" />
+        <col width="59%" />
+        <col width="27%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th><bold>Algorithm’s Name</bold> </th>
+          <th><bold>Description</bold></th>
+          <th><bold>Network Properties</bold></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><bold>MTCOV</bold></td>
+          <td>Extracts overlapping communities in multilayer networks
+          using topology and node attributes
+          (<xref alt="Contisciani et al., 2020" rid="ref-contisciani2020community" ref-type="bibr">Contisciani
+          et al., 2020</xref>).</td>
+          <td>Weighted, Multilayer, Attributes, Communities</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><bold>CRep</bold></td>
+          <td>Models directed networks with communities and reciprocity
+          (<xref alt="Safdari et al., 2021" rid="ref-safdari2021generative" ref-type="bibr">Safdari
+          et al., 2021</xref>).</td>
+          <td>Directed, Weighted, Communities, Reciprocity</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><bold>JointCRep</bold></td>
+          <td>Captures community structure and reciprocity with a joint
+          edge distribution
+          (<xref alt="Contisciani et al., 2022" rid="ref-contisciani2022community" ref-type="bibr">Contisciani
+          et al., 2022</xref>).</td>
+          <td>Directed, Communities, Reciprocity</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><bold>DynCRep</bold></td>
+          <td>Extends CRep for dynamic networks
+          (<xref alt="Safdari et al., 2022" rid="ref-safdari2022reciprocity" ref-type="bibr">Safdari
+          et al., 2022</xref>).</td>
+          <td>Directed, Weighted, Dynamic, Communities, Reciprocity</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><bold>ACD</bold></td>
+          <td>Identifies anomalous edges and node community memberships
+          in weighted networks
+          (<xref alt="Safdari &amp; De Bacco, 2022" rid="ref-safdari2022anomaly" ref-type="bibr">Safdari
+          &amp; De Bacco, 2022</xref>).</td>
+          <td>Directed, Weighted, Communities, Anomalies</td>
+        </tr>
+      </tbody>
+    </table>
+  </table-wrap>
+  <list list-type="bullet">
+    <list-item>
+      <p><bold>Synthetic Network Generation</bold>: ProbINet enables
+      users to generate synthetic networks that closely resemble the
+      characteristics of the real ones. This feature is particularly
+      useful for conducting further analyses on replicated networks,
+      such as testing hypotheses, training algorithms, or exploring
+      network variability.</p>
+    </list-item>
+    <list-item>
+      <p><bold>Simplified Parameter Selection and Model
+      Evaluation</bold>: ProbINet includes a cross-validation module to
+      optimize key parameters like the number of communities, providing
+      performance results in a clear and easy-to-interpret
+      dataframe.</p>
+    </list-item>
+    <list-item>
+      <p><bold>Rich Set of Metrics for Analysis</bold>: ProbINet
+      includes metrics like F1 scores, Jaccard index, and advanced
+      metrics for link and covariate prediction performance.</p>
+    </list-item>
+    <list-item>
+      <p><bold>Powerful Visualization Tools</bold>: ProbINet includes
+      functions to plot community memberships, adjacency matrices, and
+      performance metrics like precision and recall.</p>
+    </list-item>
+    <list-item>
+      <p><bold>User-Friendly Command-Line Interface</bold>: ProbINet
+      provides an intuitive command-line interface for specifying models
+      and data paths, fitting models, and outputting inferred
+      parameters, making it accessible to users with minimal Python
+      experience.</p>
+    </list-item>
+    <list-item>
+      <p><bold>Modular and Extensible Codebase</bold>: The package is
+      designed with modularity in mind, enabling users to extend its
+      functionality with minimal effort. New models can be easily
+      integrated as long as they follow similar modeling principles,
+      ensuring the framework remains adaptable.</p>
+    </list-item>
+  </list>
+  <p>These features are further illustrated in the <bold>Usage</bold>
+  section below with practical examples, showcasing how to apply the
+  package’s capabilities to real-world network data.</p>
+</sec>
+<sec id="usage">
+  <title>Usage</title>
+  <sec id="installation">
+    <title>Installation</title>
+    <p>The package can be installed using Python’s package manager
+    <monospace>pip</monospace> or directly from the source repository.
+    Detailed installation instructions are provided in the
+    <ext-link ext-link-type="uri" xlink:href="https://mpi-is.github.io/probinet/">documentation</ext-link>.</p>
+  </sec>
+  <sec id="example-analyzing-a-social-network-with-probinet">
+    <title>Example: Analyzing a Social Network with ProbINet</title>
+    <p>In this section, we demonstrate the use of ProbINet to analyze a
+    social network representing friendship relationships among boys in a
+    small high school in Illinois
+    (<xref alt="Coleman, 1964" rid="ref-konectU003Acoleman" ref-type="bibr">Coleman,
+    1964</xref>). This network comprises 31 nodes and 100 directed
+    edges, where each node represents a student, and the edges indicate
+    reported friendships between them.</p>
+    <p>We analyze this network using JointCRep, one of the implemented
+    algorithms in ProbINet, with the aim to infer the latent variables
+    underlying these interactions. Specifically, this model assumes that
+    communities and reciprocity are the main mechanisms for tie
+    formation, a reasonable assumption for friendship relationships.</p>
+    <sec id="steps-to-analyze-the-network-with-probinet">
+      <title>Steps to Analyze the Network with ProbINet</title>
+      <p>Using ProbINet, you can:</p>
+      <list list-type="order">
+        <list-item>
+          <p>Load your network data as an edge list.</p>
+        </list-item>
+        <list-item>
+          <p>Select an appropriate algorithm (e.g., JointCRep) based on
+          your objective.</p>
+        </list-item>
+        <list-item>
+          <p>Fit the model to your data and extract inferred latent
+          variables.</p>
+        </list-item>
+        <list-item>
+          <p>Analyze the results. For instance, we can investigate the
+          soft community memberships, which reveal how nodes interact
+          with multiple communities through both incoming and outgoing
+          connections.</p>
+        </list-item>
+      </list>
+      <p>These steps are exemplified in Figure 1. On the left, a network
+      representation of the input data is displayed alongside the lines
+      of code required for its analysis using ProbINet. The resulting
+      output is shown on the right, where nodes are colored according to
+      their inferred soft community memberships, while edge thickness
+      and color intensity represent the inferred probability of edge
+      existence.</p>
+      <fig>
+        <caption><p>Usage of ProbINet on a social network representing
+        friendship relationships among boys in a small high school in
+        Illinois. (Top-left) A network representation of the input data,
+        consisting of 31 nodes and 100 directed edges. (Bottom-left) A
+        snapshot of the code required for analysis using ProbINet.
+        (Right) The resulting output, where node colors indicate
+        inferred soft community memberships, and edge thickness and
+        color intensity represent the inferred probability of edge
+        existence.</p></caption>
+        <graphic mimetype="image" mime-subtype="png" xlink:href="example.png" />
+      </fig>
+      <p>This example illustrates just a few of the various tasks that
+      can be performed with ProbINet. For a more detailed tutorial on
+      this dataset, along with additional use cases, please refer to the
+      <ext-link ext-link-type="uri" xlink:href="https://mpi-is.github.io/probinet/">package
+      documentation</ext-link>, where we provide numerous examples and
+      guided tutorials.</p>
+    </sec>
+  </sec>
+</sec>
+<sec id="running-times-of-algorithms">
+  <title>Running Times of Algorithms</title>
+  <p>The table below summarizes the running times for ProbINet
+  algorithms when the package is run using the CLI
+  <monospace>run_probinet</monospace>. <bold>N</bold> and <bold>E</bold>
+  represent the number of nodes and edges, respectively. Edge ranges
+  indicate variation across layers or time steps. <bold>L/T</bold>
+  indicates the number of layers or time steps, and <bold>K</bold>
+  represents the number of communities. The networks used are from the
+  tutorials.</p>
+  <table-wrap>
+    <table>
+      <colgroup>
+        <col width="18%" />
+        <col width="8%" />
+        <col width="12%" />
+        <col width="11%" />
+        <col width="8%" />
+        <col width="42%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th><bold>Algorithm</bold></th>
+          <th><bold>N</bold></th>
+          <th><bold>E</bold></th>
+          <th><bold>L/T</bold></th>
+          <th><bold>K</bold></th>
+          <th><bold>Time (mean ± std, in seconds)</bold></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><bold>MTCOV</bold></td>
+          <td>300</td>
+          <td>724-1340</td>
+          <td>4</td>
+          <td>2</td>
+          <td>1.51 ± 0.14</td>
+        </tr>
+        <tr>
+          <td><bold>CRep</bold></td>
+          <td>600</td>
+          <td>5512</td>
+          <td>1</td>
+          <td>3</td>
+          <td>3.00 ± 0.35</td>
+        </tr>
+        <tr>
+          <td><bold>JointCRep</bold></td>
+          <td>250</td>
+          <td>2512</td>
+          <td>1</td>
+          <td>2</td>
+          <td>3.81 ± 0.69</td>
+        </tr>
+        <tr>
+          <td><bold>DynCRep</bold></td>
+          <td>100</td>
+          <td>234-274</td>
+          <td>5</td>
+          <td>2</td>
+          <td>1.48 ± 0.06</td>
+        </tr>
+        <tr>
+          <td><bold>ACD</bold></td>
+          <td>500</td>
+          <td>5459</td>
+          <td>1</td>
+          <td>3</td>
+          <td>27.8 ± 3.2</td>
+        </tr>
+      </tbody>
+    </table>
+  </table-wrap>
+  <p>These benchmarks were performed on a 12th Gen Intel Core i9-12900
+  CPU with 16 cores and 24 threads, using
+  <monospace>hyperfine</monospace> and 10 runs. Runs required small
+  amount of RAM (less than 1GB). This table provides a general overview
+  of running times for the algorithms on the default networks. A
+  detailed analysis should be performed on the user’s specific data.</p>
+</sec>
+<sec id="acknowledgements">
+  <title>Acknowledgements</title>
+  <p>We extend our gratitude to the contributors of the seminal
+  publications whose work is integrated into this package. We also thank
+  Kibidi Neocosmos, Valkyrie Felso, and Kathy Su for their valuable
+  feedback and suggestions during the development of this package.</p>
+</sec>
+</body>
+<back>
+<ref-list>
+  <title></title>
+  <ref id="ref-contisciani2020community">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Contisciani</surname><given-names>Martina</given-names></name>
+        <name><surname>Power</surname><given-names>Eleanor A</given-names></name>
+        <name><surname>De Bacco</surname><given-names>Caterina</given-names></name>
+      </person-group>
+      <article-title>Community detection with node attributes in multilayer networks</article-title>
+      <source>Scientific reports</source>
+      <publisher-name>Nature Publishing Group UK London</publisher-name>
+      <year iso-8601-date="2020">2020</year>
+      <volume>10</volume>
+      <issue>1</issue>
+      <fpage>15736</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-safdari2021generative">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Safdari</surname><given-names>Hadiseh</given-names></name>
+        <name><surname>Contisciani</surname><given-names>Martina</given-names></name>
+        <name><surname>De Bacco</surname><given-names>Caterina</given-names></name>
+      </person-group>
+      <article-title>Generative model for reciprocity and community detection in networks</article-title>
+      <source>Physical Review Research</source>
+      <publisher-name>APS</publisher-name>
+      <year iso-8601-date="2021">2021</year>
+      <volume>3</volume>
+      <issue>2</issue>
+      <fpage>023209</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-contisciani2022community">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Contisciani</surname><given-names>Martina</given-names></name>
+        <name><surname>Safdari</surname><given-names>Hadiseh</given-names></name>
+        <name><surname>De Bacco</surname><given-names>Caterina</given-names></name>
+      </person-group>
+      <article-title>Community detection and reciprocity in networks by jointly modelling pairs of edges</article-title>
+      <source>Journal of Complex Networks</source>
+      <publisher-name>Oxford University Press</publisher-name>
+      <year iso-8601-date="2022">2022</year>
+      <volume>10</volume>
+      <issue>4</issue>
+      <fpage>cnac034</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-safdari2022reciprocity">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Safdari</surname><given-names>Hadiseh</given-names></name>
+        <name><surname>Contisciani</surname><given-names>Martina</given-names></name>
+        <name><surname>De Bacco</surname><given-names>Caterina</given-names></name>
+      </person-group>
+      <article-title>Reciprocity, community detection, and link prediction in dynamic networks</article-title>
+      <source>Journal of Physics: Complexity</source>
+      <publisher-name>IOP Publishing</publisher-name>
+      <year iso-8601-date="2022">2022</year>
+      <volume>3</volume>
+      <issue>1</issue>
+      <fpage>015010</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-safdari2022anomaly">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Safdari</surname><given-names>Hadiseh</given-names></name>
+        <name><surname>De Bacco</surname><given-names>Caterina</given-names></name>
+      </person-group>
+      <article-title>Anomaly detection and community detection in networks</article-title>
+      <source>Journal of Big Data</source>
+      <publisher-name>Springer</publisher-name>
+      <year iso-8601-date="2022">2022</year>
+      <volume>9</volume>
+      <issue>1</issue>
+      <fpage>122</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-konectU003Acoleman">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Coleman</surname><given-names>James Samuel</given-names></name>
+      </person-group>
+      <article-title>Introduction to mathematical sociology</article-title>
+      <source>London Free Press Glencoe</source>
+      <year iso-8601-date="1964">1964</year>
+    </element-citation>
+  </ref>
+</ref-list>
+</back>
+</article>

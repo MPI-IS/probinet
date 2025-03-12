@@ -19,6 +19,7 @@ def plot_hard_membership(
     node_size: np.ndarray,
     colors: Dict,
     edge_color: str,
+    edgewidth: float = 0.5,
 ) -> plt.Figure:
     """
     Plot a graph with nodes colored by their hard memberships.
@@ -53,7 +54,7 @@ def plot_hard_membership(
             node_size=node_size,
             node_color=[colors[node] for node in communities[k]],
             with_labels=False,
-            width=0.5,
+            width=edgewidth,
             edge_color=edge_color,
             arrows=True,
             arrowsize=5,
@@ -103,6 +104,7 @@ def plot_soft_membership(
     node_size: np.ndarray,
     colors: Dict,
     edge_color: str,
+    edgewidth: float = 0.5,
 ) -> plt.Figure:
     """
     Plot a graph with nodes colored by their mixed (soft) memberships.
@@ -128,14 +130,14 @@ def plot_soft_membership(
           The matplotlib figure object.
     """
 
-    fig = plt.figure(figsize=(9, 4))
+    fig = plt.figure(figsize=(8, 3))
     for j, k in enumerate(thetas):
         plt.subplot(1, 2, j + 1)
         ax = plt.gca()
         nx.draw_networkx_edges(
             graph,
             pos,
-            width=0.5,
+            width=edgewidth,
             edge_color=edge_color,
             arrows=True,
             arrowsize=5,

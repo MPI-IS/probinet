@@ -10,6 +10,8 @@ from pathlib import Path
 
 import numpy as np
 
+import numpy as np
+
 from .models.acd import AnomalyDetection
 from .models.base import ModelBaseParameters
 from .models.crep import CRep

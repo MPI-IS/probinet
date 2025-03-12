@@ -34,7 +34,6 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-
 dependencies = [
     "jupyter",
     "matplotlib",
