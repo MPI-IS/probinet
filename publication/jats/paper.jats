@@ -31,22 +31,22 @@ Network Analysis</article-title>
 </contrib>
 <contrib contrib-type="author">
 <name>
-<surname>Bacco</surname>
-<given-names>Caterina De</given-names>
+<surname>Contisciani</surname>
+<given-names>Martina</given-names>
 </name>
 <xref ref-type="aff" rid="aff-2"/>
 </contrib>
 <contrib contrib-type="author">
 <name>
-<surname>Contisciani</surname>
-<given-names>Martina</given-names>
+<surname>Bacco</surname>
+<given-names>Caterina De</given-names>
 </name>
 <xref ref-type="aff" rid="aff-3"/>
 </contrib>
 <contrib contrib-type="author">
 <name>
-<surname>Claude-Passy</surname>
-<given-names>Jean</given-names>
+<surname>Passy</surname>
+<given-names>Jean-Claude</given-names>
 </name>
 <xref ref-type="aff" rid="aff-1"/>
 </contrib>
@@ -58,13 +58,13 @@ Germany.</institution>
 </aff>
 <aff id="aff-2">
 <institution-wrap>
-<institution>Delft University of Technology, Delft,
-Netherlands.</institution>
+<institution>Central European University, Vienna, Austria.</institution>
 </institution-wrap>
 </aff>
 <aff id="aff-3">
 <institution-wrap>
-<institution>Central European University, Vienna, Austria.</institution>
+<institution>Delft University of Technology, Delft,
+Netherlands.</institution>
 </institution-wrap>
 </aff>
 </contrib-group>
@@ -164,23 +164,22 @@ a Creative Commons Attribution 4.0 International License (CC BY
   enabling synthetic data generation. Key features include:</p>
   <list list-type="bullet">
     <list-item>
-      <p><bold>Diverse and Unified Network Models</bold>: The package
-      integrates a wide range of probabilistic generative models
-      tailored for various network data types and analytical goals. The
-      following table summarizes the models currently implemented in
-      ProbINet:</p>
+      <p><bold>Diverse Network Models</bold>: The package integrates
+      various probabilistic generative models for different network
+      types and analytical goals. The table below summarizes the models
+      implemented in ProbINet:</p>
     </list-item>
   </list>
   <table-wrap>
     <table>
       <colgroup>
-        <col width="11%" />
-        <col width="64%" />
-        <col width="25%" />
+        <col width="14%" />
+        <col width="59%" />
+        <col width="27%" />
       </colgroup>
       <thead>
         <tr>
-          <th><bold>Name</bold></th>
+          <th><bold>Algorithm’s Name</bold> </th>
           <th><bold>Description</bold></th>
           <th><bold>Network Properties</bold></th>
         </tr>
@@ -189,75 +188,96 @@ a Creative Commons Attribution 4.0 International License (CC BY
         <tr>
           <td><bold>MTCOV</bold></td>
           <td>Extracts overlapping communities in multilayer networks
-          using topology and node attributes [1].</td>
-          <td>Weighted, Multilayer, Attributes</td>
+          using topology and node attributes
+          (<xref alt="Contisciani et al., 2020" rid="ref-contisciani2020community" ref-type="bibr">Contisciani
+          et al., 2020</xref>).</td>
+          <td>Weighted, Multilayer, Attributes, Communities</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
           <td><bold>CRep</bold></td>
-          <td>Models reciprocity in directed networks [2].</td>
-          <td>Directed, Reciprocity</td>
+          <td>Models directed networks with communities and reciprocity
+          (<xref alt="Safdari et al., 2021" rid="ref-safdari2021generative" ref-type="bibr">Safdari
+          et al., 2021</xref>).</td>
+          <td>Directed, Weighted, Communities, Reciprocity</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
           <td><bold>JointCRep</bold></td>
           <td>Captures community structure and reciprocity with a joint
-          edge distribution [3].</td>
-          <td>Directed, Weighted, Reciprocity</td>
+          edge distribution
+          (<xref alt="Contisciani et al., 2022" rid="ref-contisciani2022community" ref-type="bibr">Contisciani
+          et al., 2022</xref>).</td>
+          <td>Directed, Communities, Reciprocity</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
           <td><bold>DynCRep</bold></td>
-          <td>Extends CRep for dynamic networks [4].</td>
-          <td>Dynamic, Directed, Weighted</td>
+          <td>Extends CRep for dynamic networks
+          (<xref alt="Safdari et al., 2022" rid="ref-safdari2022reciprocity" ref-type="bibr">Safdari
+          et al., 2022</xref>).</td>
+          <td>Directed, Weighted, Dynamic, Communities, Reciprocity</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
           <td><bold>ACD</bold></td>
-          <td>Identifies anomalous edges by assigning community
-          memberships to nodes and anomaly parameters to edges [5].</td>
-          <td>Directed, Attributes, Anomalies</td>
+          <td>Identifies anomalous edges and node community memberships
+          in weighted networks
+          (<xref alt="Safdari &amp; De Bacco, 2022" rid="ref-safdari2022anomaly" ref-type="bibr">Safdari
+          &amp; De Bacco, 2022</xref>).</td>
+          <td>Directed, Weighted, Communities, Anomalies</td>
         </tr>
       </tbody>
     </table>
   </table-wrap>
   <list list-type="bullet">
     <list-item>
-      <p><bold>Synthetic Network Generation</bold>: After fitting models
-      to real data, ProbINet enables users to generate synthetic
-      networks that closely resemble the characteristics of the real
-      ones. This feature is particularly useful for conducting further
-      analyses on replicated networks, such as testing hypotheses,
-      training algorithms, or exploring network variability.</p>
+      <p><bold>Synthetic Network Generation</bold>: ProbINet enables
+      users to generate synthetic networks that closely resemble the
+      characteristics of the real ones. This feature is particularly
+      useful for conducting further analyses on replicated networks,
+      such as testing hypotheses, training algorithms, or exploring
+      network variability.</p>
     </list-item>
     <list-item>
       <p><bold>Simplified Parameter Selection and Model
-      Evaluation</bold>: All models rely on key parameters, such as the
-      number of communities or the desired network structure. To
-      optimize these parameters, ProbINet provides a dedicated module
-      for cross-validation. This module seamlessly evaluates model
-      performance across a range of parameter configurations, outputting
-      results as a clear and easy-to-interpret dataframe.</p>
+      Evaluation</bold>: ProbINet includes a cross-validation module to
+      optimize key parameters like the number of communities, providing
+      performance results in a clear and easy-to-interpret
+      dataframe.</p>
     </list-item>
     <list-item>
       <p><bold>Rich Set of Metrics for Analysis</bold>: ProbINet
-      includes an extensive collection of metrics to analyze algorithm
-      outputs. These include classical metrics like F1 scores and
-      Jaccard index for comparing detected and ground-truth community
-      partitions, as well as advanced metrics for evaluating link
-      prediction quality, offering users the tools needed for a deeper,
-      comprehensive analysis.</p>
+      includes metrics like F1 scores, Jaccard index, and advanced
+      metrics for link and covariate prediction performance.</p>
     </list-item>
     <list-item>
       <p><bold>Powerful Visualization Tools</bold>: ProbINet includes
-      built-in visualization functions to make the results more
-      interpretable. Users can plot soft and hard community memberships,
-      adjacency matrices, and performance metrics like precision and
-      recall.</p>
+      functions to plot community memberships, adjacency matrices, and
+      performance metrics like precision and recall.</p>
     </list-item>
     <list-item>
       <p><bold>User-Friendly Command-Line Interface</bold>: ProbINet
-      includes a robust and intuitive command-line interface, enabling
-      users to specify the desired model and provide the path to their
-      data. The interface then fits the selected model to the data and
-      outputs the inferred parameters, making the package accessible
-      even to those with minimal Python experience.</p>
+      provides an intuitive command-line interface for specifying models
+      and data paths, fitting models, and outputting inferred
+      parameters, making it accessible to users with minimal Python
+      experience.</p>
     </list-item>
     <list-item>
       <p><bold>Modular and Extensible Codebase</bold>: The package is
@@ -277,141 +297,153 @@ a Creative Commons Attribution 4.0 International License (CC BY
     <title>Installation</title>
     <p>The package can be installed using Python’s package manager
     <monospace>pip</monospace> or directly from the source repository.
-    Detailed installation instructions are provided in the documentation
-    available at <bold>https://mpi-is.github.io/probinet/</bold>.</p>
+    Detailed installation instructions are provided in the
+    <ext-link ext-link-type="uri" xlink:href="https://mpi-is.github.io/probinet/">documentation</ext-link>.</p>
   </sec>
-  <sec id="example-practical-use-of-probinet">
-    <title>Example: Practical Use of ProbINet</title>
-    <p>To illustrate the practical use of ProbINet, let’s consider the
-    scenario where you have a dataset representing a network with
-    distinct structural patterns, similar to the one visualized in the
-    figure below:</p>
-    <fig>
-      <caption><p>Soft Membership Visualization</p></caption>
-      <graphic mimetype="image" mime-subtype="png" xlink:href="soft_membership_JointCRep.png" />
-    </fig>
-    <p>This network contains nodes that exhibit a variety of community
-    memberships based on their relationships. Using ProbINet’s
-    algorithms, such as <monospace>JointCRep</monospace>, you can
-    analyze this network to infer underlying latent variables. These
-    variables can help identify patterns such as outgoing or incoming
-    community memberships that potentially explain the network’s
-    structure.</p>
-    <p>In this example, ProbINet enables you to:</p>
-    <list list-type="order">
-      <list-item>
-        <p>Load your network data in the form of an edge list.</p>
-      </list-item>
-      <list-item>
-        <p>Select the desired algorithm, such as
-        <monospace>JointCRep</monospace>, suitable for your type of
-        network (e.g., directed, undirected, multilayer, or
-        dynamic).</p>
-      </list-item>
-      <list-item>
-        <p>Fit the model to your data and obtain the inferred latent
-        variables.</p>
-      </list-item>
-      <list-item>
-        <p>Use the inferred parameters to uncover patterns, such as soft
-        community memberships. These memberships provide insights into
-        how nodes interact with different communities, both in terms of
-        outgoing and incoming connections.</p>
-      </list-item>
-    </list>
-    <p>ProbINet also provides built-in tools for visualizing results, as
-    shown in the figure, where the soft community memberships of nodes
-    are visually represented. This output aids in interpreting the
-    network structure and identifying meaningful communities or
-    patterns.</p>
+  <sec id="example-analyzing-a-social-network-with-probinet">
+    <title>Example: Analyzing a Social Network with ProbINet</title>
+    <p>In this section, we demonstrate the use of ProbINet to analyze a
+    social network representing friendship relationships among boys in a
+    small high school in Illinois
+    (<xref alt="Coleman, 1964" rid="ref-konectU003Acoleman" ref-type="bibr">Coleman,
+    1964</xref>). This network comprises 31 nodes and 100 directed
+    edges, where each node represents a student, and the edges indicate
+    reported friendships between them.</p>
+    <p>We analyze this network using JointCRep, one of the implemented
+    algorithms in ProbINet, with the aim to infer the latent variables
+    underlying these interactions. Specifically, this model assumes that
+    communities and reciprocity are the main mechanisms for tie
+    formation, a reasonable assumption for friendship relationships.</p>
+    <sec id="steps-to-analyze-the-network-with-probinet">
+      <title>Steps to Analyze the Network with ProbINet</title>
+      <p>Using ProbINet, you can:</p>
+      <list list-type="order">
+        <list-item>
+          <p>Load your network data as an edge list.</p>
+        </list-item>
+        <list-item>
+          <p>Select an appropriate algorithm (e.g., JointCRep) based on
+          your objective.</p>
+        </list-item>
+        <list-item>
+          <p>Fit the model to your data and extract inferred latent
+          variables.</p>
+        </list-item>
+        <list-item>
+          <p>Analyze the results. For instance, we can investigate the
+          soft community memberships, which reveal how nodes interact
+          with multiple communities through both incoming and outgoing
+          connections.</p>
+        </list-item>
+      </list>
+      <p>These steps are exemplified in Figure 1. On the left, a network
+      representation of the input data is displayed alongside the lines
+      of code required for its analysis using ProbINet. The resulting
+      output is shown on the right, where nodes are colored according to
+      their inferred soft community memberships, while edge thickness
+      and color intensity represent the inferred probability of edge
+      existence.</p>
+      <fig>
+        <caption><p>Usage of ProbINet on a social network representing
+        friendship relationships among boys in a small high school in
+        Illinois. (Top-left) A network representation of the input data,
+        consisting of 31 nodes and 100 directed edges. (Bottom-left) A
+        snapshot of the code required for analysis using ProbINet.
+        (Right) The resulting output, where node colors indicate
+        inferred soft community memberships, and edge thickness and
+        color intensity represent the inferred probability of edge
+        existence.</p></caption>
+        <graphic mimetype="image" mime-subtype="png" xlink:href="example.png" />
+      </fig>
+      <p>This example illustrates just a few of the various tasks that
+      can be performed with ProbINet. For a more detailed tutorial on
+      this dataset, along with additional use cases, please refer to the
+      <ext-link ext-link-type="uri" xlink:href="https://mpi-is.github.io/probinet/">package
+      documentation</ext-link>, where we provide numerous examples and
+      guided tutorials.</p>
+    </sec>
   </sec>
 </sec>
 <sec id="running-times-of-algorithms">
   <title>Running Times of Algorithms</title>
-  <p>The following table provides an overview of the running times for
-  the algorithms implemented in ProbINet. The values <bold>N</bold> and
-  <bold>E</bold> represent the number of nodes and edges in the network,
-  respectively. Numbers of edges given as ranges indicate the variation
-  across different layers or time steps. The column <bold>L/T</bold>
-  indicates whether the number of layer or time steps is considered, and
-  how many are used. The parameter <bold>K</bold> represents the number
-  of communities. The networks used are those shown in the corresponding
+  <p>The table below summarizes the running times for ProbINet
+  algorithms when the package is run using the CLI
+  <monospace>run_probinet</monospace>. <bold>N</bold> and <bold>E</bold>
+  represent the number of nodes and edges, respectively. Edge ranges
+  indicate variation across layers or time steps. <bold>L/T</bold>
+  indicates the number of layers or time steps, and <bold>K</bold>
+  represents the number of communities. The networks used are from the
   tutorials.</p>
   <table-wrap>
     <table>
       <colgroup>
-        <col width="23%" />
-        <col width="16%" />
-        <col width="9%" />
-        <col width="14%" />
-        <col width="11%" />
-        <col width="9%" />
         <col width="18%" />
+        <col width="8%" />
+        <col width="12%" />
+        <col width="11%" />
+        <col width="8%" />
+        <col width="42%" />
       </colgroup>
       <thead>
         <tr>
           <th><bold>Algorithm</bold></th>
-          <th><bold>Network</bold></th>
           <th><bold>N</bold></th>
           <th><bold>E</bold></th>
           <th><bold>L/T</bold></th>
           <th><bold>K</bold></th>
-          <th><bold>Time (s)</bold></th>
+          <th><bold>Time (mean ± std, in seconds)</bold></th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><bold>CRep</bold></td>
-          <td>Synthetic</td>
-          <td>600</td>
-          <td>5217</td>
-          <td>1</td>
-          <td>3</td>
-          <td>1.43</td>
-        </tr>
-        <tr>
-          <td><bold>JointCRep</bold></td>
-          <td>Real</td>
-          <td>31</td>
-          <td>100</td>
-          <td>1</td>
-          <td>4</td>
-          <td>0.23</td>
-        </tr>
-        <tr>
-          <td><bold>DynCRep</bold></td>
-          <td>Synthetic</td>
-          <td>300</td>
-          <td>1479-1859</td>
-          <td>5</td>
-          <td>3</td>
-          <td>22.1</td>
-        </tr>
-        <tr>
           <td><bold>MTCOV</bold></td>
-          <td>Synthetic</td>
           <td>300</td>
           <td>724-1340</td>
           <td>4</td>
           <td>2</td>
-          <td>1.13</td>
+          <td>1.51 ± 0.14</td>
+        </tr>
+        <tr>
+          <td><bold>CRep</bold></td>
+          <td>600</td>
+          <td>5512</td>
+          <td>1</td>
+          <td>3</td>
+          <td>3.00 ± 0.35</td>
+        </tr>
+        <tr>
+          <td><bold>JointCRep</bold></td>
+          <td>250</td>
+          <td>2512</td>
+          <td>1</td>
+          <td>2</td>
+          <td>3.81 ± 0.69</td>
+        </tr>
+        <tr>
+          <td><bold>DynCRep</bold></td>
+          <td>100</td>
+          <td>234-274</td>
+          <td>5</td>
+          <td>2</td>
+          <td>1.48 ± 0.06</td>
         </tr>
         <tr>
           <td><bold>ACD</bold></td>
-          <td>Synthetic</td>
-          <td>300</td>
-          <td>2698</td>
+          <td>500</td>
+          <td>5459</td>
           <td>1</td>
           <td>3</td>
-          <td>14.98</td>
+          <td>27.8 ± 3.2</td>
         </tr>
       </tbody>
     </table>
   </table-wrap>
-  <p>Notice that this table is intended to provide a general overview of
-  the running times for the algorithms on the specific networks used in
-  the tutorials. A more detailed analysis of the running times should
-  still be performed on the user’s specific data.</p>
+  <p>These benchmarks were performed on a 12th Gen Intel Core i9-12900
+  CPU with 16 cores and 24 threads, using
+  <monospace>hyperfine</monospace> and 10 runs. Runs required small
+  amount of RAM (less than 1GB). This table provides a general overview
+  of running times for the algorithms on the default networks. A
+  detailed analysis should be performed on the user’s specific data.</p>
 </sec>
 <sec id="acknowledgements">
   <title>Acknowledgements</title>
@@ -506,6 +538,16 @@ a Creative Commons Attribution 4.0 International License (CC BY
       <issue>1</issue>
       <fpage>122</fpage>
       <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-konectU003Acoleman">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Coleman</surname><given-names>James Samuel</given-names></name>
+      </person-group>
+      <article-title>Introduction to mathematical sociology</article-title>
+      <source>London Free Press Glencoe</source>
+      <year iso-8601-date="1964">1964</year>
     </element-citation>
   </ref>
 </ref-list>
