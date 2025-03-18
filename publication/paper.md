@@ -41,20 +41,22 @@ to analyze and model complex network data. The package integrates code implement
 
 # Statement of need
 
-Network analysis plays a central role in fields such as social sciences, biology, and fraud 
-detection, where understanding relationships between entities is critical. Probabilistic 
-generative models [@contisciani2020community; @safdari2021generative; @contisciani2022community; 
-@safdari2022anomaly; @safdari2022reciprocity] have emerged as powerful tools for discovering 
-hidden patterns in networks, detecting communities, identifying anomalies, and generating 
-realistic synthetic data.  However, their use is hindered by fragmented implementations, making 
-comparison and reproduction difficult. ProbINet addresses this critical gap by consolidating 
-recent approaches into a single, unified framework, allowing users to explore advanced techniques without the overhead of navigating multiple repositories or inconsistent documentation, boosting  reproducibility and usability across disciplines.
+Network analysis plays a central role in fields such as social sciences, biology, and fraud
+detection, where understanding relationships between entities is critical. Probabilistic
+generative models [@contisciani2020community; @safdari2021generative; @contisciani2022community;
+@safdari2022anomaly; @safdari2022reciprocity] have emerged as powerful tools for discovering
+hidden patterns in networks, detecting communities, identifying anomalies, and generating
+realistic synthetic data.  However, their use is hindered by fragmented implementations, making
+comparisons difficult. ProbINet addresses this critical gap by consolidating
+recent approaches into a single, unified framework, allowing users to explore advanced techniques
+without the overhead of navigating multiple repositories or inconsistent documentation,
+boosting reproducibility and usability across disciplines.
 
 # Main features
 
 ProbINet offers a versatile and feature-rich framework to perform inference on networks using probabilistic generative models.  Key features include:
 
-- **Diverse Network Models**: The package integrates generative models for various network types 
+- **Diverse Network Models**: Integration of generative models for various network types
   and goals:
 
 | **Algorithm's Name**&nbsp; | **Description**                                                                                                         | **Network Properties**                                |
@@ -69,25 +71,21 @@ ProbINet offers a versatile and feature-rich framework to perform inference on n
 |                            |                                                                                                                         |                                                       |
 | **ACD**                    | Identifies anomalous edges and node community memberships in weighted networks [@safdari2022anomaly].                                     | Directed, Weighted, Communities, Anomalies            |
 
-- **Synthetic Network Generation**: ProbINet enables users to generate synthetic networks that closely resemble the real ones for further analyses, such as testing  hypotheses.
+- **Synthetic Network Generation**: Ability to generate synthetic networks that closely resemble real ones for further analyses (e.g., testing hypotheses).
 
-- **Simplified Parameter Selection**: ProbINet includes a cross-validation  module to optimize key parameters, providing performance results in a clear dataframe.
+- **Simplified Parameter Selection**: A cross-validation module to optimize key parameters, providing performance results in a clear dataframe.
 
-- **Rich Set of Metrics for Analysis**:  ProbINet includes metrics like F1 scores, Jaccard index, and advanced metrics for link and covariate prediction performance.
+- **Rich Set of Metrics for Analysis**:  Advanced metrics (e.g., F1 scores, Jaccard index) for link and covariate prediction performance.
 
-- **Powerful Visualization Tools**:  ProbINet includes functions to plot community memberships, and performance metrics.
+- **Powerful Visualization Tools**: Functions for plotting community memberships and performance metrics.
 
-- **User-Friendly Command-Line Interface**:  ProbINet offers an intuitive command-line interface,
-  making it accessible to users with minimal Python experience.
+- **User-Friendly Command-Line Interface**: An intuitive interface for easy access.
 
-- **Extensible Codebase**: The package is modular, allowing easy integration of new models that follow similar principles.
+- **Extensible and Modular Codebase**: Future integration of additional models possible.
 
 The **Usage** section below illustrates these features with a practical example on real-world data.
 
 # Usage
-## Installation
-You can install the package using `pip` or from the source repository. Detailed instructions are in 
-the [documentation](https://mpi-is.github.io/probinet/).
 
 ## Example: Analyzing a Social Network with ProbINet
 
@@ -107,8 +105,12 @@ For more tutorials and use cases, see the [package documentation](https://mpi-is
 
 # Running Times of Algorithms
 
-The table below summarizes the running times for ProbINet algorithms when the package is run using the CLI `run_probinet`. **N** and **E** represent 
-the number of nodes and edges, respectively. Edge ranges indicate variation across layers or time steps. **L/T** indicates the number of layers or time steps, and **K** represents the number of communities.
+The table below provides a general overview of the algorithms running times
+on the data used in the tutorials.
+**N** and **E** represent the number of nodes and edges, respectively.
+Edge ranges indicate variation across layers or time steps.
+**L/T** indicates the number of layers or time steps,
+and **K** represents the number of communities.
 
 | **Algorithm** | **N** | **E**    | **L/T** | **K** | **Time (mean ± std, in seconds)** |
 |---------------|-------|----------|---------|-------|-----------------------------------|
@@ -118,10 +120,9 @@ the number of nodes and edges, respectively. Edge ranges indicate variation acro
 | **DynCRep**   | 100   | 234-274  | 5       | 2     | 1.48 ± 0.06                       |
 | **ACD**       | 500   | 5459     | 1       | 3     | 27.8 ± 3.2                        |
 
-These benchmarks were performed on a 12th Gen Intel Core i9-12900 CPU with 16 cores and 24 
-threads, using `hyperfine` and 10 runs. Runs required small amount of RAM (less than 1GB). This 
-table provides a general overview of running times for the algorithms on the default networks. A detailed analysis should be 
-performed on the user's specific data.
+
+These benchmarks were performed on a 12th Gen Intel Core i9-12900 CPU, using `hyperfine` [@Peter_hyperfine_2023] and 10 runs.
+Runs required small amounts of RAM (less than 1 GB).
 
 # Acknowledgements
 
