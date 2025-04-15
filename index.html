@@ -1,0 +1,772 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ProbINet &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API" href="api.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/index.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>ProbINet</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">ProbINet</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#models-overview">Models Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#usage">Usage</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tests">Tests</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation">Documentation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorials">Tutorials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-start">Where to start</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#authors">Authors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributing">Contributing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#license">License</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#copyright">Copyright</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a><ul class="visible nav section-nav flex-column">
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="probinet">
+<h1>ProbINet<a class="headerlink" href="#probinet" title="Link to this heading">#</a></h1>
+<p><img alt="Python" src="https://img.shields.io/pypi/pyversions/probinet" />
+<a class="reference external" href="https://pypi.org/project/probinet/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/probinet.svg" /></a>
+<img alt="Build Status" src="https://github.com/MPI-IS/probinet/actions/workflows/test.yml/badge.svg" />
+<img alt="Code Style: Black" src="https://img.shields.io/badge/code%20style-black-000000.svg" />
+<img alt="Typed" src="https://img.shields.io/badge/typed-yes-brightgreen" /></p>
+<p>Welcome to the documentation for the <strong>Prob</strong>abilistic <strong>I</strong>nference on <strong>Net</strong>works (<code class="docutils literal notranslate"><span class="pre">ProbINet</span></code>) Python
+package. This project is a collaborative effort to consolidate state-of-the-art probabilistic generative modeling implementations from various
+scientific publications. Our focus lies in advancing network analysis techniques with an emphasis on recent modeling
+approaches that relax the restrictive conditional independence assumption, enabling the modeling of joint
+distributions of network data.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ProbINet</span></code> package is designed to be a comprehensive and user-friendly toolset for
+researchers and practitioners interested in modeling network data through probabilistic
+generative approaches. Our goal is to provide a unified resource that brings together different advances scattered across many code repositories.
+By doing so, we aim not only to enhance the usability of existing models, but also to facilitate the comparison
+of different approaches. Moreover, through a range of tutorials, we aim at simplifying the use of these methods
+to perform inferential tasks, including the prediction of missing network edges, node clustering (community detection),
+anomaly identification, and the generation of synthetic data from latent variables.</p>
+<section id="models-overview">
+<h2>Models Overview<a class="headerlink" href="#models-overview" title="Link to this heading">#</a></h2>
+<p>The package integrates a wide range of probabilistic  generative models tailored for various network data types and analytical goals. The following
+table summarizes the models currently implemented in <code class="docutils literal notranslate"><span class="pre">ProbINet</span></code>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Name</strong></p></th>
+<th class="head"><p><strong>Description</strong></p></th>
+<th class="head"><p><strong>Network Properties</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>MTCOV</strong></p></td>
+<td><p>Extracts overlapping communities in multilayer networks using topology and node attributes [CPDB20].</p></td>
+<td><p>Weighted, Multilayer, Attributes, Communities</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CRep</strong></p></td>
+<td><p>Models directed networks with communities and reciprocity [CSDB22].</p></td>
+<td><p>Directed, Weighted, Communities, Reciprocity</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>JointCRep</strong></p></td>
+<td><p>Captures community structure and reciprocity with a joint edge distribution [SCDB21].</p></td>
+<td><p>Directed, Communities, Reciprocity</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>DynCRep</strong></p></td>
+<td><p>Extends CRep for dynamic networks [SCDB22].</p></td>
+<td><p>Directed, Weighted, Dynamic, Communities, Reciprocity</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>ACD</strong></p></td>
+<td><p>Identifies anomalous edges and node community memberships in weighted networks [SDB22].</p></td>
+<td><p>Directed, Weighted, Communities, Anomalies</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For more details on each model, please refer to the <a class="reference external" href="https://mpi-is.github.io/probinet/">documentation</a>. References to the original papers can be found <a class="reference external" href="https://mpi-is.github.io/probinet/references.html">here</a>.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
+<p>This package requires Python 3.10 or higher. Please ensure you have one of these versions before proceeding with the installation.
+To get started, follow these steps:</p>
+<ol class="arabic simple">
+<li><p>Clone the repository and navigate to the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> directory:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/MPI-IS/probinet.git
+<span class="w">   </span><span class="nb">cd</span><span class="w"> </span>probinet
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create a virtual environment. For example, using <code class="docutils literal notranslate"><span class="pre">venv</span></code>:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>--copies<span class="w"> </span>venv
+<span class="w">   </span>.<span class="w"> </span>venv/bin/activate
+<span class="w">   </span><span class="o">(</span>venv<span class="o">)</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>pip<span class="w"> </span><span class="c1"># optional but always advised!</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Install the <code class="docutils literal notranslate"><span class="pre">ProbINet</span></code> package by running:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="o">(</span>venv<span class="o">)</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>probinet
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h2>
+<p>Run the <code class="docutils literal notranslate"><span class="pre">ProbINet</span></code> package as a whole with the <code class="docutils literal notranslate"><span class="pre">run_probinet</span></code> command. This command can be run
+from any directory after the package is installed.</p>
+<p>A list of the parameters that can be passed as arguments is available by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>run_probinet<span class="w"> </span>--help
+</pre></div>
+</div>
+<p>To run a specific model, pass the model name as an argument. The available models are: <code class="docutils literal notranslate"><span class="pre">CRep</span></code>, <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code>, <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code>, <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code>, and <code class="docutils literal notranslate"><span class="pre">ACD</span></code>. For example, to run the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> model, use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>run_probinet<span class="w"> </span>CRep
+</pre></div>
+</div>
+<p>To see the specific options for a model, use the <code class="docutils literal notranslate"><span class="pre">-h</span></code> flag. For example, to see the options for the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> model, use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>run_probinet<span class="w"> </span>CRep<span class="w"> </span>-h
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">run_probinet</span></code> command can be run at different logging levels. To run the command with the <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> level, use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>run_probinet<span class="w"> </span>CRep<span class="w"> </span>-d
+</pre></div>
+</div>
+<p>To set arguments with double dashes (e.g., <code class="docutils literal notranslate"><span class="pre">--convergence_tol</span></code>), include them in the command line
+as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>run_probinet<span class="w"> </span>CRep<span class="w"> </span>--convergence_tol<span class="w"> </span><span class="m">0</span>.1
+</pre></div>
+</div>
+<p>Some commands can also be executed using shorter versions of the arguments. For example, the
+<code class="docutils literal notranslate"><span class="pre">--convergence_tol</span></code> argument can be shortened to <code class="docutils literal notranslate"><span class="pre">-tol</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>run_probinet<span class="w"> </span>CRep<span class="w"> </span>-tol<span class="w"> </span><span class="m">0</span>.1
+</pre></div>
+</div>
+<p>These shorter versions can be found in the help message of each model.</p>
+</section>
+<section id="tests">
+<h2>Tests<a class="headerlink" href="#tests" title="Link to this heading">#</a></h2>
+<p>To run the tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>python<span class="w"> </span>-m<span class="w"> </span>unittest
+</pre></div>
+</div>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h2>
+<p>The documentation can be built locally. First, install the <code class="docutils literal notranslate"><span class="pre">dev</span></code> extra:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</pre></div>
+</div>
+<p>To build the documentation, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="nb">cd</span><span class="w"> </span>docs
+<span class="w">    </span>make<span class="w"> </span>html
+</pre></div>
+</div>
+<p>The documentation will be available in the <code class="docutils literal notranslate"><span class="pre">docs/build/html</span></code> directory.</p>
+</section>
+<section id="tutorials">
+<h2>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading">#</a></h2>
+<p>The tutorials are available in the <a class="reference external" href="https://github.com/MPI-IS/probinet/tree/develop/docs/source/tutorials">tutorials</a>
+directory.
+Each tutorial is a Jupyter
+notebook that can be run in a Jupyter environment.</p>
+</section>
+<section id="where-to-start">
+<h2>Where to start<a class="headerlink" href="#where-to-start" title="Link to this heading">#</a></h2>
+<p>If you are new to this type of modeling, we suggest checking out the <a class="reference external" href="https://mpi-is.github.io/probinet/start.html">Inputs and Outputs</a> section.
+This section provides an overview of the input and output data structures used in the package.</p>
+</section>
+<section id="authors">
+<h2>Authors<a class="headerlink" href="#authors" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/diegoabt">Diego Baptista Theuerkauf</a></p></li>
+<li><p><a class="reference external" href="https://is.mpg.de/person/jpassy">Jean-Claude Passy</a></p></li>
+</ul>
+<p>The authors of the original implementations integrated to this package are:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://cdebacco.com/">Caterina De Bacco</a></p></li>
+<li><p><a class="reference external" href="https://github.com/mcontisc">Martina Contisciani</a></p></li>
+<li><p><a class="reference external" href="https://github.com/hds-safdari">Hadiseh Safdari</a></p></li>
+</ul>
+<p>See the references in the documentation for more details.</p>
+<p>Special thanks to <a class="reference external" href="https://is.mpg.de/~posada">Alejandro Posada</a> for his contributions to the
+logo design. A sincere thank you to <a class="reference external" href="https://github.com/vmfelso">Valkyrie Felso</a> and <a class="reference external" href="https://github.com/ksu00">Kathy Su</a> for their invaluable feedback.
+We also deeply appreciate <a class="reference external" href="https://github.com/kibidi">Kibidi Neocosmos</a> for serving as a beta user and helping refine the
+package.</p>
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">#</a></h2>
+<p>Would you like to contribute to the development of <strong>ProbINet</strong>? Contributions are welcome and
+appreciated! You can find detailed information on how to get started here: <a class="reference external" href="https://mpi-is.github.io/probinet/contributing.html">Contributing Guide</a>.</p>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">#</a></h2>
+<p>This project is licensed under the GNU GPL version 3 - see the <a class="reference external" href="https://github.com/MPI-IS/probinet/blob/develop/LICENSE.md">LICENSE</a> file for
+details.</p>
+</section>
+<section id="copyright">
+<h2>Copyright<a class="headerlink" href="#copyright" title="Link to this heading">#</a></h2>
+<p>© 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems</p>
+</section>
+</section>
+<section id="references">
+<h1>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h1>
+<div class="docutils container" id="id1">
+<div role="list" class="citation-list">
+<div class="citation" id="id2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Col64<span class="fn-bracket">]</span></span>
+<p>James Samuel Coleman. Introduction to mathematical sociology. <em>London Free Press Glencoe</em>, 1964.</p>
+</div>
+<div class="citation" id="id3" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>CPDB20<span class="fn-bracket">]</span></span>
+<p>Martina Contisciani, Eleanor A Power, and Caterina De Bacco. Community detection with node attributes in multilayer networks. <em>Scientific reports</em>, 10(1):15736, 2020.</p>
+</div>
+<div class="citation" id="id4" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>CSDB22<span class="fn-bracket">]</span></span>
+<p>Martina Contisciani, Hadiseh Safdari, and Caterina De Bacco. Community detection and reciprocity in networks by jointly modeling pairs of edges. <em>Journal of Complex Networks</em>, 10(4):cnac034, 2022.</p>
+</div>
+<div class="citation" id="id5" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>SCDB21<span class="fn-bracket">]</span></span>
+<p>Hadiseh Safdari, Martina Contisciani, and Caterina De Bacco. Generative model for reciprocity and community detection in networks. <em>Physical Review Research</em>, 3(2):023209, 2021.</p>
+</div>
+<div class="citation" id="id6" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>SCDB22<span class="fn-bracket">]</span></span>
+<p>Hadiseh Safdari, Martina Contisciani, and Caterina De Bacco. Reciprocity, community detection, and link prediction in dynamic networks. <em>Journal of Physics: Complexity</em>, 3(1):015010, 2022.</p>
+</div>
+<div class="citation" id="id7" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>SDB22<span class="fn-bracket">]</span></span>
+<p>Hadiseh Safdari and Caterina De Bacco. Anomaly detection and community detection in networks. <em>Journal of Big Data</em>, 9(1):122, 2022.</p>
+</div>
+</div>
+</div>
+<p>Thank you for choosing ProbINet. We hope you enjoy using it!</p>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="start.html">Inputs and Outputs</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">How To Contribute</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="right-next"
+       href="api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">ProbINet</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#models-overview">Models Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#usage">Usage</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tests">Tests</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation">Documentation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorials">Tutorials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-start">Where to start</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#authors">Authors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributing">Contributing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#license">License</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#copyright">Copyright</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a><ul class="visible nav section-nav flex-column">
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

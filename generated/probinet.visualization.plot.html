@@ -1,0 +1,801 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>probinet.visualization.plot &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'generated/probinet.visualization.plot';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Inputs and Outputs" href="../start.html" />
+    <link rel="prev" title="probinet.visualization" href="probinet.visualization.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../api.html">API</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/generated/probinet.visualization.plot.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>probinet.visualization.plot</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.extract_bridge_properties"><code class="docutils literal notranslate"><span class="pre">extract_bridge_properties()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.mapping"><code class="docutils literal notranslate"><span class="pre">mapping()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_A"><code class="docutils literal notranslate"><span class="pre">plot_A()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_L"><code class="docutils literal notranslate"><span class="pre">plot_L()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_M"><code class="docutils literal notranslate"><span class="pre">plot_M()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_adjacency"><code class="docutils literal notranslate"><span class="pre">plot_adjacency()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_adjacency_samples"><code class="docutils literal notranslate"><span class="pre">plot_adjacency_samples()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_graph"><code class="docutils literal notranslate"><span class="pre">plot_graph()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_hard_membership"><code class="docutils literal notranslate"><span class="pre">plot_hard_membership()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_precision_recall"><code class="docutils literal notranslate"><span class="pre">plot_precision_recall()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_soft_membership"><code class="docutils literal notranslate"><span class="pre">plot_soft_membership()</span></code></a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-probinet.visualization.plot">
+<span id="probinet-visualization-plot"></span><h1>probinet.visualization.plot<a class="headerlink" href="#module-probinet.visualization.plot" title="Link to this heading">#</a></h1>
+<p>It provides a set of plotting functions for visualizing the results of the generative models.</p>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#probinet.visualization.plot.extract_bridge_properties" title="probinet.visualization.plot.extract_bridge_properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_bridge_properties</span></code></a>(i, color, U[, ...])</p></td>
+<td><p>Extract the properties of the bridges of a node i.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#probinet.visualization.plot.mapping" title="probinet.visualization.plot.mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code></a>(G, A)</p></td>
+<td><p>Map the nodes of a graph G to the nodes of a graph A.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_A" title="probinet.visualization.plot.plot_A"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_A</span></code></a>(A[, cmap])</p></td>
+<td><p>Plot the adjacency tensor produced by the generative algorithm.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_L" title="probinet.visualization.plot.plot_L"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_L</span></code></a>(values[, indices, k_i, xlab, ylabel, ...])</p></td>
+<td><p>Plot the log-likelihood.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_M" title="probinet.visualization.plot.plot_M"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_M</span></code></a>(M[, cmap, figsize, fontsize])</p></td>
+<td><p>Plot the M matrix produced by the generative algorithm.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_adjacency" title="probinet.visualization.plot.plot_adjacency"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_adjacency</span></code></a>(Bd, M_marginal, ...[, cm])</p></td>
+<td><p>Plot the adjacency matrix and its reconstruction given by the marginal and the conditional expected values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_adjacency_samples" title="probinet.visualization.plot.plot_adjacency_samples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_adjacency_samples</span></code></a>(Bdata, Bsampled[, cm])</p></td>
+<td><p>Plot the adjacency matrix and five sampled networks.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_graph" title="probinet.visualization.plot.plot_graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_graph</span></code></a>(graph, M_marginal, M_conditional, ...)</p></td>
+<td><p>Plot a graph and its reconstruction given by the marginal and the conditional expected values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_hard_membership" title="probinet.visualization.plot.plot_hard_membership"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_hard_membership</span></code></a>(graph, communities, ...)</p></td>
+<td><p>Plot a graph with nodes colored by their hard memberships.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_precision_recall" title="probinet.visualization.plot.plot_precision_recall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_precision_recall</span></code></a>(conf_matrix[, cm])</p></td>
+<td><p>Plot precision and recall of a given confusion matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#probinet.visualization.plot.plot_soft_membership" title="probinet.visualization.plot.plot_soft_membership"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_soft_membership</span></code></a>(graph, thetas, pos, ...)</p></td>
+<td><p>Plot a graph with nodes colored by their mixed (soft) memberships.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.extract_bridge_properties">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">extract_bridge_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#extract_bridge_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.extract_bridge_properties" title="Link to this definition">#</a></dt>
+<dd><p>Extract the properties of the bridges of a node i.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<em>int</em>) – Index of the node.</p></li>
+<li><p><strong>color</strong> (<em>dict</em>) – Dictionary with the colors of the nodes.</p></li>
+<li><p><strong>U</strong> (<em>ndarray</em>) – Out-going membership matrix.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Threshold for the membership values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>wedge_sizes</strong> (<em>ndarray</em>) – Sizes of the wedges.</p></li>
+<li><p><strong>wedge_colors</strong> (<em>list</em>) – Colors of the wedges.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.mapping">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiGraph</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DiGraph</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.mapping" title="Link to this definition">#</a></dt>
+<dd><p>Map the nodes of a graph G to the nodes of a graph A.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> (<em>nx.DiGraph</em>) – Graph to be mapped.</p></li>
+<li><p><strong>A</strong> (<em>nx.DiGraph</em>) – Graph to be mapped to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>G</strong> – Graph G with the nodes mapped to the nodes of A.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nx.DiGraph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_A">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_A</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Blues'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Figure</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_A"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_A" title="Link to this definition">#</a></dt>
+<dd><p>Plot the adjacency tensor produced by the generative algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>A</strong> (<em>list</em>) – List of scipy sparse matrices, one for each layer.</p></li>
+<li><p><strong>cmap</strong> (<em>Matplotlib object</em>) – Colormap used for the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>figures</strong> – List of matplotlib figure objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_L">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_L</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Iterations'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Log-likelihood</span> <span class="pre">values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(10,</span> <span class="pre">5)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int_ticks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_L"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_L" title="Link to this definition">#</a></dt>
+<dd><p>Plot the log-likelihood.
+:param values: List of log-likelihood values.
+:type values: list
+:param indices: List of indices.
+:type indices: list
+:param k_i: Number of initial iterations to be ignored.
+:type k_i: int
+:param xlab: Label of the x-axis.
+:type xlab: str
+:param ylabel:
+:type ylabel: str
+:param figsize: Figure size.
+:type figsize: tuple
+:param int_ticks: Flag to use integer ticks.
+:type int_ticks: bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fig</strong> – The matplotlib figure object.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_M">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_M</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'PuBuGn'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(7,</span> <span class="pre">7)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_M"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_M" title="Link to this definition">#</a></dt>
+<dd><p>Plot the M matrix produced by the generative algorithm. Each entry is the
+Poisson mean associated with each pair of nodes in the graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<em>np.ndarray</em>) – NxN M matrix associated with the graph. Contains all the means used
+for generating edges.</p></li>
+<li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>optional</em>) – Colormap used for the plot.</p></li>
+<li><p><strong>figsize</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Size of the figure to be plotted.</p></li>
+<li><p><strong>fontsize</strong> (<em>int</em><em>, </em><em>optional</em>) – Font size to be used in the plot title.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_adjacency">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_adjacency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Bd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_marginal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_conditional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Blues'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_adjacency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_adjacency" title="Link to this definition">#</a></dt>
+<dd><p>Plot the adjacency matrix and its reconstruction given by the marginal and the conditional
+expected values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Bd</strong> (<em>ndarray</em>) – Adjacency matrix.</p></li>
+<li><p><strong>M_marginal</strong> (<em>ndarray</em>) – Marginal expected values.</p></li>
+<li><p><strong>M_conditional</strong> (<em>ndarray</em>) – Conditional expected values.</p></li>
+<li><p><strong>nodes</strong> (<em>list</em>) – List of nodes.</p></li>
+<li><p><strong>cm</strong> (<em>Matplotlib object</em>) – Colormap used for the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fig</strong> – The matplotlib figure object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_adjacency_samples">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_adjacency_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Bdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Bsampled</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Blues'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_adjacency_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_adjacency_samples" title="Link to this definition">#</a></dt>
+<dd><p>Plot the adjacency matrix and five sampled networks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Bdata</strong> (<em>list</em>) – List of adjacency matrices for the data.</p></li>
+<li><p><strong>Bsampled</strong> (<em>list</em>) – List of adjacency matrices for sampled networks.</p></li>
+<li><p><strong>cm</strong> (<em>Matplotlib object</em>) – Colormap used for the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fig</strong> – The matplotlib figure object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_graph">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_marginal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_conditional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_graph" title="Link to this definition">#</a></dt>
+<dd><p>Plot a graph and its reconstruction given by the marginal and the conditional expected values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.DiGraph</em>) – Graph to be plotted.</p></li>
+<li><p><strong>M_marginal</strong> (<em>ndarray</em>) – Marginal expected values.</p></li>
+<li><p><strong>M_conditional</strong> (<em>ndarray</em>) – Conditional expected values.</p></li>
+<li><p><strong>pos</strong> (<em>dict</em>) – Dictionary with the positions of the nodes.</p></li>
+<li><p><strong>node_size</strong> (<em>int</em>) – Size of the nodes.</p></li>
+<li><p><strong>node_color</strong> (<em>str</em>) – Color of the nodes.</p></li>
+<li><p><strong>edge_color</strong> (<em>str</em>) – Color of the edges.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Threshold for the membership values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fig</strong> – The matplotlib figure object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_hard_membership">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_hard_membership</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">communities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgewidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_hard_membership"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_hard_membership" title="Link to this definition">#</a></dt>
+<dd><p>Plot a graph with nodes colored by their hard memberships.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.DiGraph</em>) – Graph to be plotted.</p></li>
+<li><p><strong>communities</strong> (<em>Dict</em>) – Dictionary with the communities.</p></li>
+<li><p><strong>pos</strong> (<em>Dict</em>) – Dictionary with the positions of the nodes.</p></li>
+<li><p><strong>node_size</strong> (<em>ndarray</em>) – Array with the sizes of the nodes.</p></li>
+<li><p><strong>colors</strong> (<em>Dict</em>) – Dictionary with the colors of the nodes.</p></li>
+<li><p><strong>edge_color</strong> (<em>str</em>) – Color of the edges.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fig</strong> – The matplotlib figure object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_precision_recall">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_precision_recall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Blues'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_precision_recall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_precision_recall" title="Link to this definition">#</a></dt>
+<dd><p>Plot precision and recall of a given confusion matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conf_matrix</strong> (<em>ndarray</em>) – Confusion matrix.</p></li>
+<li><p><strong>cm</strong> (<em>Matplotlib object</em>) – Colormap used for the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fig</strong> – The matplotlib figure object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="probinet.visualization.plot.plot_soft_membership">
+<span class="sig-prename descclassname"><span class="pre">probinet.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_soft_membership</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thetas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgewidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="reference internal" href="../_modules/probinet/visualization/plot.html#plot_soft_membership"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#probinet.visualization.plot.plot_soft_membership" title="Link to this definition">#</a></dt>
+<dd><p>Plot a graph with nodes colored by their mixed (soft) memberships.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.DiGraph</em>) – Graph to be plotted.</p></li>
+<li><p><strong>thetas</strong> (<em>Dict</em>) – Dictionary with the mixed memberships.</p></li>
+<li><p><strong>pos</strong> (<em>Dict</em>) – Dictionary with the positions of the nodes.</p></li>
+<li><p><strong>node_size</strong> (<em>ndarray</em>) – Array with the sizes of the nodes.</p></li>
+<li><p><strong>colors</strong> (<em>Dict</em>) – Dictionary with the colors of the nodes.</p></li>
+<li><p><strong>edge_color</strong> (<em>str</em>) – Color of the edges.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fig</strong> – The matplotlib figure object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="probinet.visualization.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">probinet.visualization</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../start.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Inputs and Outputs</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.extract_bridge_properties"><code class="docutils literal notranslate"><span class="pre">extract_bridge_properties()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.mapping"><code class="docutils literal notranslate"><span class="pre">mapping()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_A"><code class="docutils literal notranslate"><span class="pre">plot_A()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_L"><code class="docutils literal notranslate"><span class="pre">plot_L()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_M"><code class="docutils literal notranslate"><span class="pre">plot_M()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_adjacency"><code class="docutils literal notranslate"><span class="pre">plot_adjacency()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_adjacency_samples"><code class="docutils literal notranslate"><span class="pre">plot_adjacency_samples()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_graph"><code class="docutils literal notranslate"><span class="pre">plot_graph()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_hard_membership"><code class="docutils literal notranslate"><span class="pre">plot_hard_membership()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_precision_recall"><code class="docutils literal notranslate"><span class="pre">plot_precision_recall()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probinet.visualization.plot.plot_soft_membership"><code class="docutils literal notranslate"><span class="pre">plot_soft_membership()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1198 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Analysis Of A Real-World Dataset Using The JointCRep Algorithm &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/JointCRep';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Decoding Temporal Relationships with DynCRep" href="DynCRep.html" />
+    <link rel="prev" title="Generation of Synthetic Networks using the CRep Algorithm" href="CRep.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/JointCRep.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Analysis Of A Real-World Dataset Using The JointCRep Algorithm</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-the-data">Importing the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configurating-the-model">Configurating the model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-model">Running the model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-results">Analyzing the results</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#communities">Communities</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-reconstruction">Network reconstruction</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-sampling">Network sampling</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="analysis-of-a-real-world-dataset-using-the-jointcrep-algorithm">
+<h1>Analysis Of A Real-World Dataset Using The <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> Algorithm<a class="headerlink" href="#analysis-of-a-real-world-dataset-using-the-jointcrep-algorithm" title="Link to this heading">#</a></h1>
+<p>In this tutorial, we show how to use the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package for analyzing a real-world dataset.</p>
+<p>We use the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> (<strong>Joint</strong> <strong>C</strong>ommunity and <strong>Re</strong>ci<strong>p</strong>rocity) algorithm <span id="id1">[<a class="reference internal" href="../references.html#id4" title="Martina Contisciani, Hadiseh Safdari, and Caterina De Bacco. Community detection and reciprocity in networks by jointly modeling pairs of edges. Journal of Complex Networks, 10(4):cnac034, 2022.">CSDB22</a>]</span>, which is a
+probabilistic generative model designed to perform inference in directed binary networks. This method jointly models pairs of edges by assuming communities and reciprocity as the main mechanisms for tie formation.</p>
+<section id="setting-the-logger">
+<h2>Setting the Logger<a class="headerlink" href="#setting-the-logger" title="Link to this heading">#</a></h2>
+<p>Let’s first configure the logger to show the information about the execution of the algorithm.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the logging module</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># Get the root logger and set its level to INFO</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;matplotlib&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="importing-the-data">
+<h2>Importing the data<a class="headerlink" href="#importing-the-data" title="Link to this heading">#</a></h2>
+<p>As a first step, we import the data using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package. In this tutorial, we analyze a
+social network that describes friendships between boys in a small high-school <span id="id2">[<a class="reference internal" href="../references.html#id2" title="James Samuel Coleman. Introduction to mathematical sociology. London Free Press Glencoe, 1964.">Col64</a>]</span>. The network is represented as an adjacency matrix, where each row and column corresponds to a node in the network, and each entry in the matrix indicates whether an edge exists between the corresponding pair of nodes. The network is directed, meaning that the adjacency matrix is asymmetric <span id="id3">[<a class="reference internal" href="../references.html#id4" title="Martina Contisciani, Hadiseh Safdari, and Caterina De Bacco. Community detection and reciprocity in networks by jointly modeling pairs of edges. Journal of Complex Networks, 10(4):cnac034, 2022.">CSDB22</a>]</span>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">probinet.input.loader</span> <span class="kn">import</span> <span class="n">build_adjacency_from_file</span>
+
+<span class="c1"># Get the absolute path of the root directory of the project</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+
+<span class="c1"># Define the path to the input folder</span>
+<span class="n">in_folder</span> <span class="o">=</span> <span class="n">root_dir</span> <span class="o">/</span> <span class="s2">&quot;probinet&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;input&quot;</span>
+
+<span class="c1"># Define the path of the adjacency matrix</span>
+<span class="n">adj</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;highschool_network.dat&quot;</span><span class="p">)</span>
+
+<span class="c1"># Define the complete path of the network</span>
+<span class="n">network</span> <span class="o">=</span> <span class="n">in_folder</span> <span class="o">/</span> <span class="n">adj</span>
+
+<span class="c1"># Flag to determine whether the adjacency matrix should be stored as a dense matrix</span>
+<span class="n">force_dense</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Flag to treat the network as undirected</span>
+<span class="n">undirected</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Flag to treat the network as binary</span>
+<span class="n">binary</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># Flag to remove the self-loops</span>
+<span class="n">noselfloop</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># Call the `build_adjacency_from_file` function to load the network data</span>
+<span class="c1"># The function takes several arguments:</span>
+<span class="c1"># - network: the path to the data</span>
+<span class="c1"># - ego: the name of the column that references the node in one extreme of the directed edge</span>
+<span class="c1"># - alter: the name of the column that references the other node</span>
+<span class="c1"># - undirected: the flag that signals if the network is undirected</span>
+<span class="c1"># - force_dense: if set to True, the network is saved in a dense adjacency tensor</span>
+<span class="c1"># - noselfloop : if set to True, the self-loops are removed</span>
+<span class="c1"># - binary: if set to True, the network is treated as binary</span>
+<span class="c1"># - header: the row number to use as the column names</span>
+<span class="n">graph_data</span> <span class="o">=</span> <span class="n">build_adjacency_from_file</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">,</span>
+    <span class="n">ego</span><span class="o">=</span><span class="s2">&quot;source&quot;</span><span class="p">,</span>
+    <span class="n">alter</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span>
+    <span class="n">undirected</span><span class="o">=</span><span class="n">undirected</span><span class="p">,</span>
+    <span class="n">force_dense</span><span class="o">=</span><span class="n">force_dense</span><span class="p">,</span>
+    <span class="n">noselfloop</span><span class="o">=</span><span class="n">noselfloop</span><span class="p">,</span>
+    <span class="n">binary</span><span class="o">=</span><span class="n">binary</span><span class="p">,</span>
+    <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The previous call to <code class="docutils literal notranslate"><span class="pre">build_adjacency_from_file</span></code> loads the data from the input folder, and
+returns a <code class="docutils literal notranslate"><span class="pre">GraphData</span></code> object containing the:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">graph_list</span></code>: A list with a MultiGraph (or MultiDiGraph if <code class="docutils literal notranslate"><span class="pre">undirected=False</span></code>) NetworkX object</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adjacency_tensor</span></code>: The adjacency matrix describing the graph</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transposed_tensor</span></code>: The transpose of the adjacency matrix</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data_values</span></code>: The observed values for the two-edge joint distributions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nodes</span></code>: The list of nodes in the graph</p></li>
+</ul>
+<p>To get some information about the data, we can call the <code class="docutils literal notranslate"><span class="pre">print_graph_stats</span></code> function from the
+<code class="docutils literal notranslate"><span class="pre">input.stats</span></code> module.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.input.stats</span> <span class="kn">import</span> <span class="n">print_graph_stats</span>
+
+<span class="c1"># Extract the graph list</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">graph_data</span><span class="o">.</span><span class="n">graph_list</span>
+<span class="c1"># Call the `print_graph_stats` function to print the basic</span>
+<span class="c1"># statistics of the graph in the list `A`.</span>
+<span class="n">print_graph_stats</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of nodes = 31
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 100 / &lt;k&gt; = 6.45
+Sparsity [0] = 0.104
+Reciprocity (networkX) = 0.520
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="configurating-the-model">
+<h2>Configurating the model<a class="headerlink" href="#configurating-the-model" title="Link to this heading">#</a></h2>
+<p>To configure the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm, we will use a configuration file. This approach allows for easy customization and reuse of settings. Let’s start by defining the configuration dictionary:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">config_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;assortative&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;end_file&quot;</span><span class="p">:</span> <span class="s2">&quot;_JointCRep&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;eta0&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fix_communities&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;fix_eta&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;fix_w&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;initialization&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;out_folder&quot;</span><span class="p">:</span> <span class="s2">&quot;tutorial_outputs/JointCRep/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;out_inference&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;rseed&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;use_approximation&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can also change some of the default numerical parameters and stored them into variables.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Change other parameters that are not part of the configuration file</span>
+<span class="n">num_realizations</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">plot_loglik</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can now save the configuration file to the output folder. This step is optional but recommended for future reference.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">yaml</span>
+
+<span class="c1"># Define the evaluation folder</span>
+<span class="n">out_folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">config_dict</span><span class="p">[</span><span class="s2">&quot;out_folder&quot;</span><span class="p">])</span>
+
+<span class="c1"># Ensure the evaluation folder exists</span>
+<span class="n">out_folder</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Define the path for the evaluation configuration file</span>
+<span class="n">output_config_path</span> <span class="o">=</span> <span class="n">config_dict</span><span class="p">[</span><span class="s2">&quot;out_folder&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/setting_JointCRep.yaml&quot;</span>
+
+<span class="c1"># Open the evaluation configuration file in write mode</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_config_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="c1"># Write the contents of the `conf` dictionary to the file</span>
+    <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config_dict</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="running-the-model">
+<h2>Running the model<a class="headerlink" href="#running-the-model" title="Link to this heading">#</a></h2>
+<p>In this step, we initialize and execute the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> model from the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package. The <code class="docutils literal notranslate"><span class="pre">fit</span></code> function applies the model to the input data using the configuration setting defined earlier. The algorithm iteratively refines its parameters to capture community structures and reciprocity patterns in the network.  The inferred parameters are stored in the variable <code class="docutils literal notranslate"><span class="pre">parameters_jointcrep</span></code>, facilitating further analysis and evaluation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.models.jointcrep</span> <span class="kn">import</span> <span class="n">JointCRep</span>
+
+<span class="c1"># Create an instance of the `JointCRep` class</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">JointCRep</span><span class="p">(</span><span class="n">num_realizations</span><span class="o">=</span><span class="n">num_realizations</span><span class="p">,</span> <span class="n">plot_loglik</span><span class="o">=</span><span class="n">plot_loglik</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the `time` module</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="c1"># Import the `numpy` module</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Set the logger back to INFO</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Get the current time</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="c1"># Run the `JointCRep` models using the graph_data</span>
+<span class="n">parameters_jointcrep</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">graph_data</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">config_dict</span><span class="p">[</span><span class="s2">&quot;rseed&quot;</span><span class="p">]),</span> <span class="o">**</span><span class="n">config_dict</span><span class="p">)</span>
+
+<span class="c1"># Print the time elapsed since the start of the `JointCRep` algorithm</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Time elapsed: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">time_start</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm successfully converged after 311 iterations with a maximum log-likelihood of -132.5216.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time elapsed: 12.51 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="analyzing-the-results">
+<h2>Analyzing the results<a class="headerlink" href="#analyzing-the-results" title="Link to this heading">#</a></h2>
+<p>Now that the results are obtained and the parameters are estimated, we can visually explore the network by leveraging the obtained information.</p>
+<section id="communities">
+<h3>Communities<a class="headerlink" href="#communities" title="Link to this heading">#</a></h3>
+<p>Here, we utilize the NetworkX library to visualize the graph structure and its communities. The following code snippet defines attributes such as node size, colors, and layout to enhance the visual representation. The <code class="docutils literal notranslate"><span class="pre">node_size</span></code> is proportional to the degree of each node, and the <code class="docutils literal notranslate"><span class="pre">colors</span></code> dictionary assigns distinct colors based on nodes’ communities. The layout of the nodes is determined using the spring layout algorithm.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="c1"># Save the graph from the graph list `A`</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Define the size of each node in the graph, proportional to its degree</span>
+<span class="n">node_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">graph</span><span class="o">.</span><span class="n">degree</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())]</span>
+
+<span class="c1"># Define a dictionary of colors for different communities in the graph</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;indianred&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;mediumseagreen&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;lightskyblue&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;sandybrown&quot;</span><span class="p">}</span>
+
+<span class="c1"># Compute the positions of the nodes in the graph using the spring layout algorithm</span>
+<span class="c1"># The spring layout positions the nodes using a force-directed algorithm,</span>
+<span class="c1"># where nodes repel each other and edges act like springs.</span>
+<span class="c1"># The `k` argument adjusts the optimal distance between nodes</span>
+<span class="c1"># The `iterations` defines the number of iterations to perform</span>
+<span class="c1"># The `seed` is used for initializing the random number generator</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="c1"># Define the color of the edges in the graph</span>
+<span class="n">edge_color</span> <span class="o">=</span> <span class="s2">&quot;darkgrey&quot;</span>
+
+<span class="c1"># Define the color of the nodes in the graph</span>
+<span class="n">node_color</span> <span class="o">=</span> <span class="s2">&quot;#3b8bc2ff&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>As a next step, we employ the <code class="docutils literal notranslate"><span class="pre">normalize_nonzero_membership</span></code> function from the <code class="docutils literal notranslate"><span class="pre">probinet.utils.matrix_operations</span></code> module to normalize the out-going (<code class="docutils literal notranslate"><span class="pre">u</span></code>) and in-coming (<code class="docutils literal notranslate"><span class="pre">v</span></code>) mixed-memberships, to give a probability interpretation. They are then stored in the <code class="docutils literal notranslate"><span class="pre">thetas</span></code> dictionary. Furthermore, the code extracts hard-memberships by identifying the community to which each node predominantly belongs, which are then stored in the <code class="docutils literal notranslate"><span class="pre">communities</span></code> dictionary.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.utils.matrix_operations</span> <span class="kn">import</span> <span class="n">normalize_nonzero_membership</span>
+
+<span class="c1"># Normalize the out-going mixed-memberships from the inferred parameters</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">normalize_nonzero_membership</span><span class="p">(</span><span class="n">parameters_jointcrep</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="c1"># Normalize the in-coming mixed-memberships from the inferred parameters</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">normalize_nonzero_membership</span><span class="p">(</span><span class="n">parameters_jointcrep</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># Store the normalized mixed-memberships in a dictionary for easy access</span>
+<span class="n">thetas</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;u&quot;</span><span class="p">:</span> <span class="n">u</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span>
+
+<span class="c1"># Extract hard-memberships by identifying the community with</span>
+<span class="c1"># the highest membership for each node. This is done by finding</span>
+<span class="c1"># the index of the maximum value along axis 1 (i.e., across each row).</span>
+<span class="c1"># The result is a dictionary where the keys are `u` and `v`</span>
+<span class="c1"># (representing out-going and in-coming memberships respectively)</span>
+<span class="c1"># and the values are arrays of community indices.</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;u&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s now visualize these partitions for a more intuitive understanding. The following code
+snippet utilizes the <code class="docutils literal notranslate"><span class="pre">plot_hard_membership</span></code> function from the <code class="docutils literal notranslate"><span class="pre">probinet.visualization.plot</span></code> module
+to generate a visualization of the hard-memberships within the network, offering a clear depiction of how nodes cluster into different communities.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.visualization.plot</span> <span class="kn">import</span> <span class="n">plot_hard_membership</span>
+
+<span class="c1"># Call the `plot_hard_membership` function</span>
+<span class="c1"># The function takes several arguments:</span>
+<span class="c1"># - graph: the NetworkX graph object representingthe network</span>
+<span class="c1"># - communities: the dictionary containing the hard-memberships of nodes</span>
+<span class="c1"># - pos: the dictionary specifying the positions of nodes in the graph</span>
+<span class="c1"># - node_size: the list specifying the size of each node; here proportional to</span>
+<span class="c1"># its degree.</span>
+<span class="c1"># - colors: the dictionary mapping community indices to colors</span>
+<span class="c1"># - edge_color: the string specifying the color of the edges in the graph.</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plot_hard_membership</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">communities</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">edge_color</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/598664deaaa39df1562e9be69b894531052375b58926fb49d653cb373d56fa68.png" src="../_images/598664deaaa39df1562e9be69b894531052375b58926fb49d653cb373d56fa68.png" />
+</div>
+</div>
+<p>We can also utilize the <code class="docutils literal notranslate"><span class="pre">plot_soft_membership</span></code> function from <code class="docutils literal notranslate"><span class="pre">probinet.visualization.plot</span></code> to
+visualize the node mixed-memberships.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.visualization.plot</span> <span class="kn">import</span> <span class="n">plot_soft_membership</span>
+
+<span class="c1"># Call the `plot_soft_membership` function</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plot_soft_membership</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">thetas</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">edge_color</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3ff8b1a2aa7ce98aa273c17c576f6c40c2577e20cbc5e48c52ceb77ef39e8a49.png" src="../_images/3ff8b1a2aa7ce98aa273c17c576f6c40c2577e20cbc5e48c52ceb77ef39e8a49.png" />
+</div>
+</div>
+</section>
+<section id="network-reconstruction">
+<h3>Network reconstruction<a class="headerlink" href="#network-reconstruction" title="Link to this heading">#</a></h3>
+<p>Now, we assess the performance of the model in network reconstruction tasks. To this end, we can use the marginal and the conditional expected values, as well as the joint distributions, as scores for the estimation of the entries of the adjacency matrix.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.evaluation.expectation_computation</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_marginal_and_conditional_expectation</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Extract the adjacency tensor from the graph data</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">graph_data</span><span class="o">.</span><span class="n">adjacency_tensor</span>
+
+<span class="c1"># Convert the sparse adjacency matrix `B` to a dense representation</span>
+<span class="n">Bdense</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+
+<span class="c1"># Unpack the latent variables from the results of the `JointCRep` models</span>
+<span class="c1"># The `u` variable represents the out-going memberships of the</span>
+<span class="c1"># nodes in the graph.</span>
+<span class="c1"># The `v` variable represents the in-coming memberships of the</span>
+<span class="c1"># nodes in the graph.</span>
+<span class="c1"># The `w` variable represents the affinity of the communities</span>
+<span class="c1"># The `eta` variable represents the pair-interaction coefficient</span>
+<span class="c1"># The `maxL` is the maximum log-likelihood achieved during the fitting</span>
+<span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">maxL</span> <span class="o">=</span> <span class="n">parameters_jointcrep</span>
+
+<span class="c1"># Compute the marginal and conditional expected values of the data</span>
+<span class="c1"># These expected values are based on the inferred parameters and provide a</span>
+<span class="c1"># measure of the model&#39;s fit to the data.</span>
+<span class="n">M_marginal</span><span class="p">,</span> <span class="n">M_conditional</span> <span class="o">=</span> <span class="n">compute_marginal_and_conditional_expectation</span><span class="p">(</span>
+    <span class="n">B</span><span class="o">=</span><span class="n">Bdense</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">V</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="n">eta</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We plot the adjacency matrices containing marginal and conditional expected values obtained with the inferred parameters.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.visualization.plot</span> <span class="kn">import</span> <span class="n">plot_adjacency</span>
+
+<span class="c1"># Call the `plot_adjacency` function</span>
+<span class="c1"># This function generates a visualization of the adjacency matrix</span>
+<span class="c1"># of the network, and takes several arguments:</span>
+<span class="c1"># - Bdense: the dense representation of the adjacency matrix</span>
+<span class="c1"># - M_marginal: the marginal expected values</span>
+<span class="c1"># - M_conditional: the conditional expected values</span>
+<span class="c1"># - nodes: the list of nodes in the graph</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plot_adjacency</span><span class="p">(</span><span class="n">Bdense</span><span class="p">,</span> <span class="n">M_marginal</span><span class="p">,</span> <span class="n">M_conditional</span><span class="p">,</span> <span class="n">graph_data</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/19dd4f0c8757c475da888451cf800eaa8d3d632d4fbcc9e45eace48cc3697844.png" src="../_images/19dd4f0c8757c475da888451cf800eaa8d3d632d4fbcc9e45eace48cc3697844.png" />
+</div>
+</div>
+<p>Next, we visualize the reconstructed adjacency matrices as graphs. The <code class="docutils literal notranslate"><span class="pre">plot_graph</span></code> function displays the network structure, incorporating information about the marginal and conditional expectations as edge width.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.visualization.plot</span> <span class="kn">import</span> <span class="n">plot_graph</span>
+
+<span class="c1"># Call the `plot_graph` function</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plot_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">M_marginal</span><span class="p">,</span> <span class="n">M_conditional</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="p">,</span> <span class="n">node_color</span><span class="p">,</span> <span class="n">edge_color</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3e855613f00333711e75dde299b3cb6a6cc54350950ae36915493658e2636595.png" src="../_images/3e855613f00333711e75dde299b3cb6a6cc54350950ae36915493658e2636595.png" />
+</div>
+</div>
+<p>From the figures, we can notice how the conditional expected values provide a better reconstruction, which is sparser and has more reciprocal edges correctly identified.</p>
+<p>In this step, we are going to evaluate how well the network has been reconstructed by
+using joint probabilities.</p>
+<p>In our network, each pair of nodes <code class="docutils literal notranslate"><span class="pre">(i,</span> <span class="pre">j)</span></code> can have a connection in both directions, forming a pair <code class="docutils literal notranslate"><span class="pre">(A(ij),</span> <span class="pre">A(ji))</span></code>. This pair can have one of four states: <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code>, <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1)</span></code>, <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">0)</span></code>, or <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">1)</span></code>. The state <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code> means there is no edge between nodes <code class="docutils literal notranslate"><span class="pre">i</span></code> and <code class="docutils literal notranslate"><span class="pre">j</span></code> in either direction. The state <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1)</span></code> means there is an edge from node <code class="docutils literal notranslate"><span class="pre">j</span></code> to node <code class="docutils literal notranslate"><span class="pre">i</span></code>, but not the other way around. The state <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">0)</span></code> means there is an edge from node <code class="docutils literal notranslate"><span class="pre">i</span></code> to node <code class="docutils literal notranslate"><span class="pre">j</span></code>, but not the other way around. The state <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">1)</span></code> means there is an edge in both directions.</p>
+<p>We use joint probabilities to predict these states, effectively turning the task of predicting edges in the network into a classification problem. We then compare these predictions with the actual states to assess the quality of the network reconstruction.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.evaluation.expectation_computation</span> <span class="kn">import</span> <span class="n">compute_M_joint</span>
+
+<span class="c1"># Compute the joint probability for every pair of edges in the network</span>
+<span class="c1"># The joint probability is represented as a vector of probabilities</span>
+<span class="c1"># p=[p00,p01,p10,p11].</span>
+<span class="n">p00</span><span class="p">,</span> <span class="n">p01</span><span class="p">,</span> <span class="n">p10</span><span class="p">,</span> <span class="n">p11</span> <span class="o">=</span> <span class="n">compute_M_joint</span><span class="p">(</span><span class="n">U</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">V</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="n">eta</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the total number of nodes in the graph</span>
+<span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph_data</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+
+<span class="c1"># Generate indices for the upper triangular matrix</span>
+<span class="n">idx_upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Define the possible labels for pairs of edges</span>
+<span class="n">inf_labels</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+
+<span class="c1"># Initialize lists to store the true and predicted labels</span>
+<span class="n">true_labels</span><span class="p">,</span> <span class="n">pred_labels</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+<span class="c1"># Iterate over each pair of nodes in the upper triangular matrix</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">idx_upper</span><span class="p">):</span>
+    <span class="c1"># Append the true label for the pair of edges to the `true_labels` list</span>
+    <span class="c1"># The true label is determined by looking up the pair of edge values in</span>
+    <span class="c1"># the `inf_labels` list.</span>
+    <span class="n">true_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inf_labels</span><span class="o">.</span><span class="n">index</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">Bdense</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">Bdense</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]))))</span>
+
+    <span class="c1"># Compute the probabilities for each possible label for the pair of edges</span>
+    <span class="c1"># The probabilities are computed based on the joint probabilities</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p00</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">p01</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">p10</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">p11</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]]</span>
+
+    <span class="c1"># Normalize the probabilities so that they sum to 1</span>
+    <span class="n">probs</span> <span class="o">/=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">probs</span><span class="p">)</span>
+
+    <span class="c1"># Append the predicted label for the pair of edges to the `pred_labels` list</span>
+    <span class="c1"># The predicted label is the one with the highest probability</span>
+    <span class="n">pred_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">probs</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.visualization.plot</span> <span class="kn">import</span> <span class="n">plot_precision_recall</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">metrics</span>
+
+<span class="c1"># Compute the confusion matrix between the true and predicted labels</span>
+<span class="c1"># The confusion matrix is a table that is often used to describe the</span>
+<span class="c1"># performance of a classification models.</span>
+<span class="c1"># Each row of the matrix represents the instances in a predicted class,</span>
+<span class="c1"># while each column represents the instances in an actual class.</span>
+<span class="c1"># The function `confusion_matrix` from the `sklearn.metrics` module</span>
+<span class="c1"># is used to compute the confusion matrix.</span>
+<span class="n">conf_matrix</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">true_labels</span><span class="p">,</span> <span class="n">pred_labels</span><span class="p">)</span>
+
+<span class="c1"># Call the `plot_precision_recall` function</span>
+<span class="c1"># Precision identifies the proportion of correctly classified observed entries</span>
+<span class="c1"># Recall (Sensitivity) indicates the proportion of predicted edges</span>
+<span class="c1"># being correctly classified.</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plot_precision_recall</span><span class="p">(</span><span class="n">conf_matrix</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/415d7adbd39c4e518d218736ee64f8089987a56e48f4cc260e0b751b2f32b1eb.png" src="../_images/415d7adbd39c4e518d218736ee64f8089987a56e48f4cc260e0b751b2f32b1eb.png" />
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm is performing well in correctly identifying situations where there are no connections between nodes <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code> and where there are mutual connections <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">1)</span></code>. However, when the algorithm makes mistakes, it’s usually because it predicts that there are no connections between nodes <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code>, when in reality there is a one-way connection either from node <code class="docutils literal notranslate"><span class="pre">i</span></code> to node <code class="docutils literal notranslate"><span class="pre">j</span></code> <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">0)</span></code> or from node <code class="docutils literal notranslate"><span class="pre">j</span></code> to node <code class="docutils literal notranslate"><span class="pre">i</span></code> <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1)</span></code>. This suggests that the algorithm has a tendency to predict fewer connections than there actually are, resulting in a network that appears less connected or sparser than the real one.</p>
+<p>The recall matrix has the highest entries in the main diagonal, denoting good performance. Overall, in this case, we obtain higher intensities as for the precision, indicating the tendency of labelling the predicted edges with the right type.</p>
+</section>
+<section id="network-sampling">
+<h3>Network sampling<a class="headerlink" href="#network-sampling" title="Link to this heading">#</a></h3>
+<p>In this section, we examine the performance of <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> in generating samples that resemble the observed network. In particular, we use the inferred parameters and the observed average degree to generate five synthetic networks by employing the <code class="docutils literal notranslate"><span class="pre">ReciprocityMMSBM_joints</span></code> method. This function reflects the assumptions underlying the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a list of degrees for each node in the graph</span>
+<span class="n">degrees</span> <span class="o">=</span> <span class="p">[</span><span class="n">graph</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span>
+
+<span class="c1"># Calculate the mean degree of the nodes in the graph</span>
+<span class="c1"># This gives an average measure of connectivity in the network</span>
+<span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">degrees</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Turn off the logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">probinet.synthetic.reciprocity</span> <span class="kn">import</span> <span class="n">ReciprocityMMSBM_joints</span>
+
+<span class="c1"># Set the number of communities</span>
+<span class="n">K</span> <span class="o">=</span> <span class="n">config_dict</span><span class="p">[</span><span class="s2">&quot;K&quot;</span><span class="p">]</span>
+
+<span class="c1"># Initialize an empty list to store the generated samples</span>
+<span class="n">Bsampled</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Fix a seed for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># Generate five samples with different random seeds</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="c1"># Call the `ReciprocityMMSBM_joints` method from the</span>
+    <span class="c1"># `probinet.synthetic.syn_sbm` module.</span>
+    <span class="c1"># The function takes several arguments:</span>
+    <span class="c1"># - N: the total number of nodes in the graph</span>
+    <span class="c1"># - K: the number of communities</span>
+    <span class="c1"># - avg_degree: the desired average degree</span>
+    <span class="c1"># - show_details: the flag to control the verbosity of the evaluation</span>
+    <span class="c1"># - show_plots: the flag to plot the sampled networks</span>
+    <span class="c1"># - eta: the pair-interaction parameter</span>
+    <span class="c1"># - parameters: the list containing the parameters u, v, and w</span>
+    <span class="c1"># - seed: the random seed for the models</span>
+    <span class="c1"># - output_net: the flag to save the sampled networks and the parameters</span>
+    <span class="n">syn</span> <span class="o">=</span> <span class="n">ReciprocityMMSBM_joints</span><span class="p">(</span>
+        <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span>
+        <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+        <span class="n">avg_degree</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+        <span class="n">show_details</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_plots</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">eta</span><span class="o">=</span><span class="n">eta</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">],</span>
+        <span class="n">rng</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">),</span>
+        <span class="n">output_net</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Append the adjacency matrix of the generated network</span>
+    <span class="c1"># to the &#39;Bsampled&#39; list.</span>
+    <span class="n">Bsampled</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">syn</span><span class="o">.</span><span class="n">layer_graphs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
+
+    <span class="c1"># Update the random seed for the next iteration.</span>
+    <span class="n">rseed</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:is_sparse parameter was not set. Defaulting to is_sparse=True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:perc_overlapping parameter was not set. Defaulting to perc_overlapping=0.2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:correlation_u_v parameter for overlapping communities was not set. Defaulting to corr=0.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:alpha parameter of Dirichlet distribution was not set. Defaulting to alpha=[0.1, 0.1, 0.1, 0.1]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:structure parameter was not set. Defaulting to structure=[&#39;assortative&#39;]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:is_sparse parameter was not set. Defaulting to is_sparse=True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:perc_overlapping parameter was not set. Defaulting to perc_overlapping=0.2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:correlation_u_v parameter for overlapping communities was not set. Defaulting to corr=0.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:alpha parameter of Dirichlet distribution was not set. Defaulting to alpha=[0.1, 0.1, 0.1, 0.1]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:structure parameter was not set. Defaulting to structure=[&#39;assortative&#39;]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:is_sparse parameter was not set. Defaulting to is_sparse=True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:perc_overlapping parameter was not set. Defaulting to perc_overlapping=0.2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:correlation_u_v parameter for overlapping communities was not set. Defaulting to corr=0.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:alpha parameter of Dirichlet distribution was not set. Defaulting to alpha=[0.1, 0.1, 0.1, 0.1]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:structure parameter was not set. Defaulting to structure=[&#39;assortative&#39;]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:is_sparse parameter was not set. Defaulting to is_sparse=True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:perc_overlapping parameter was not set. Defaulting to perc_overlapping=0.2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:correlation_u_v parameter for overlapping communities was not set. Defaulting to corr=0.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:alpha parameter of Dirichlet distribution was not set. Defaulting to alpha=[0.1, 0.1, 0.1, 0.1]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:structure parameter was not set. Defaulting to structure=[&#39;assortative&#39;]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:is_sparse parameter was not set. Defaulting to is_sparse=True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:label parameter was not set. Defaulting to label=_N_L_K_avgdegree_eta
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:perc_overlapping parameter was not set. Defaulting to perc_overlapping=0.2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:correlation_u_v parameter for overlapping communities was not set. Defaulting to corr=0.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:alpha parameter of Dirichlet distribution was not set. Defaulting to alpha=[0.1, 0.1, 0.1, 0.1]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:structure parameter was not set. Defaulting to structure=[&#39;assortative&#39;]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of nodes = 31
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 117 / &lt;k&gt; = 7.55
+Sparsity [0] = 0.122
+Reciprocity (networkX) = 0.564
+Number of nodes = 30
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 92 / &lt;k&gt; = 6.13
+Sparsity [0] = 0.102
+Reciprocity (networkX) = 0.435
+Number of nodes = 31
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 101 / &lt;k&gt; = 6.52
+Sparsity [0] = 0.105
+Reciprocity (networkX) = 0.475
+Number of nodes = 30
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 104 / &lt;k&gt; = 6.93
+Sparsity [0] = 0.116
+Reciprocity (networkX) = 0.500
+Number of nodes = 31
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 111 / &lt;k&gt; = 7.16
+Sparsity [0] = 0.116
+Reciprocity (networkX) = 0.559
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s now visualize the original network’s adjacency matrix alongside the five generated samples using the <code class="docutils literal notranslate"><span class="pre">plot_adjacency_samples</span></code> function.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.visualization.plot</span> <span class="kn">import</span> <span class="n">plot_adjacency_samples</span>
+
+<span class="c1"># Call the `plot_adjacency_samples` function</span>
+<span class="c1"># The `Bdense` is the adjacency matrix of the original network</span>
+<span class="c1"># The `Bsampled` is a list of adjacency matrices of the generated</span>
+<span class="c1"># samples.</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plot_adjacency_samples</span><span class="p">(</span><span class="n">Bdense</span><span class="p">,</span> <span class="n">Bsampled</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/ebd60a8443caaede813590b0b9a8f9b8c148d4db5af7a210833afc0c4397a61f.png" src="../_images/ebd60a8443caaede813590b0b9a8f9b8c148d4db5af7a210833afc0c4397a61f.png" />
+</div>
+</div>
+<p>The samples seem to resemble the observed network, and we can also notice the dense groups given by reciprocated edges. In addition to these qualitative results, Table D4 in <span id="id4">[<a class="reference internal" href="../references.html#id4" title="Martina Contisciani, Hadiseh Safdari, and Caterina De Bacco. Community detection and reciprocity in networks by jointly modeling pairs of edges. Journal of Complex Networks, 10(4):cnac034, 2022.">CSDB22</a>]</span> reports the topological properties of the observed data and the sampled networks, showing that <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> generates networks samples that on average are most similar to the observed data in terms of average degree, reciprocity and clustering coefficient.</p>
+<p>For a better understanding of the structure of the package and its configuration, we invite the
+reader to take a look at the tutorial on the <a class="reference internal" href="MTCOV.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm</span></a>. Moreover, to see
+another example on how to use the <code class="docutils literal notranslate"><span class="pre">synthetic</span></code> module, please take a look at the tutorial on
+<a class="reference internal" href="CRep.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm</span></a>.</p>
+</section>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
+<p>This tutorial provides a comprehensive guide on using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package to analyze a real-world network. In particular, it uses the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm, which is a probabilistic generative method designed to perform inference in directed binary networks by jointly modelling pairs of edges and assuming communities and reciprocity as the main mechanisms for tie formation.</p>
+<p>The tutorial shows how to import a real-world data using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package, how to configure the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm, and how to run it on the input data.</p>
+<p>It also provides different examples for analyzing the results, such as visualizing the nodes’ memberships, reconstructing the network with marginal, conditional, and joint distributions, as well as sampling synthetic data that resemble the observed network.</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="CRep.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Generation of Synthetic Networks using the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> Algorithm</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="DynCRep.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Decoding Temporal Relationships with <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code></p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-the-data">Importing the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configurating-the-model">Configurating the model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-model">Running the model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-results">Analyzing the results</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#communities">Communities</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-reconstruction">Network reconstruction</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-sampling">Network sampling</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

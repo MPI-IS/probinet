@@ -1,0 +1,1639 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Decoding Temporal Relationships with DynCRep &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/DynCRep';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cross-Validation And Anomaly Detection With The ACD Algorithm" href="ACD.html" />
+    <link rel="prev" title="Analysis Of A Real-World Dataset Using The JointCRep Algorithm" href="JointCRep.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/DynCRep.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Decoding Temporal Relationships with DynCRep</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-generation">Data generation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Decoding Temporal Relationships with <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="decoding-temporal-relationships-with-dyncrep">
+<h1>Decoding Temporal Relationships with <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code><a class="headerlink" href="#decoding-temporal-relationships-with-dyncrep" title="Link to this heading">#</a></h1>
+<p>Welcome to our tutorial on <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> - a cutting-edge tool from the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package. Traditional network analysis models often fall
+short when it comes to capturing the dynamic nature of real-world networks.  <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> is designed to bridge this gap, providing a robust solution for analyzing and understanding the temporal evolution of complex networks.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> (<strong>Dyn</strong>amic <strong>C</strong>ommunity and <strong>Re</strong>ci<strong>p</strong>rocity) model is a tool that helps us to
+better
+understand complex, evolving networks. In real-world scenarios, networks are rarely static. They
+change and evolve over time, influenced by various factors such as changing relationships, evolving interests, and temporal events. The <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model captures these dynamic interaction patterns by considering the temporal order of connections between pairs of nodes in the network, rather than viewing them independently <span id="id1">[<a class="reference internal" href="../references.html#id6" title="Hadiseh Safdari, Martina Contisciani, and Caterina De Bacco. Reciprocity, community detection, and link prediction in dynamic networks. Journal of Physics: Complexity, 3(1):015010, 2022.">SCDB22</a>]</span>. This is a significant departure from standard models, which often assume that the connections between pairs of nodes are independent once we know certain hidden factors.  The <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model integrates community structure and reciprocity as key structural information of networks that evolve over time.   In this tutorial, we will guide you through the process of applying the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model to a dynamic network.</p>
+<blockquote>
+<div><p><strong><em>NOTE:</em></strong>  We suggest the reader to have a basic understanding of the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> and <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code>
+models before diving into this tutorial. If you are not familiar with these methods, we
+recommend checking out our tutorials <a class="reference internal" href="CRep.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm</span></a> and <a class="reference internal" href="JointCRep.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">JointCRep</span></code>
+algorithm</span></a> before proceeding with this one.</p>
+</div></blockquote>
+<section id="setting-the-logger">
+<h2>Setting the Logger<a class="headerlink" href="#setting-the-logger" title="Link to this heading">#</a></h2>
+<p>Let’s first set the logging level to <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> so we can see the relevant messages.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set logging level to DEBUG</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># Make it be set to DEBUG</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;matplotlib&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="data-generation">
+<h2>Data generation<a class="headerlink" href="#data-generation" title="Link to this heading">#</a></h2>
+<p>Before we dive into the tutorial, let’s take a moment to understand the key idea behind the
+<code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model. The <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model considers a temporal network as a sequence of adjacency
+matrices <code class="docutils literal notranslate"><span class="pre">A</span></code> where <code class="docutils literal notranslate"><span class="pre">A[t]</span></code> represents the adjacency matrix of the network at time <code class="docutils literal notranslate"><span class="pre">t</span></code>. The model
+takes in the sequence of adjacency matrices <code class="docutils literal notranslate"><span class="pre">A</span></code> and learns the parameters of the model that best
+describe the temporal relationships between nodes in the network.</p>
+<p>For this tutorial, we will use synthetic data generated using the <code class="docutils literal notranslate"><span class="pre">SyntheticDynCRep</span></code> class from the <code class="docutils literal notranslate"><span class="pre">probinet</span> <span class="pre">synthetic.dynamic</span></code> module. This is the generative model created using the same modelling
+assumptions as the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model. It takes in the parameters:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">N</span></code> - The number of nodes in the network.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">K</span></code> - The number of communities in the network.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">T</span></code> - The number of time steps in the network.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">avg_degree</span></code> - The average degree of nodes in the network.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">structure</span></code> - The structure of the network.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ExpM</span></code> - The expected number of edges in the network.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eta</span></code> - The reciprocity parameter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">corr</span></code> - The correlation between <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> synthetically generated.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">over</span></code> - The fraction of nodes with mixed membership.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">undirected</span></code> - Whether the network is undirected.</p></li>
+</ol>
+<p>To gain a deeper understanding of how these parameters influence the model, we can experiment by
+adjusting some of them and observing the resulting changes. Let’s begin with a straightforward scenario: a network with 50 nodes, divided into 2 communities, observed over a single time step. We’ll set the average degree of the nodes to 5. We’ll then examine the structure of the network when the parameters are set to create an assortative network.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.synthetic.dynamic</span> <span class="kn">import</span> <span class="n">SyntheticDynCRep</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Set the number of nodes, communities, and time steps</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">K</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">T</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># total number of time steps is T+1</span>
+<span class="n">avg_degree</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c1"># Structure of the network</span>
+<span class="n">structure</span> <span class="o">=</span> <span class="s2">&quot;assortative&quot;</span>  <span class="c1"># This is the default value</span>
+
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="c1"># Initialize the synthetic network class</span>
+<span class="n">synthetic_dyncrep</span> <span class="o">=</span> <span class="n">SyntheticDynCRep</span><span class="p">(</span>
+    <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> 
+    <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span> 
+    <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> 
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+    <span class="n">avg_degree</span><span class="o">=</span><span class="n">avg_degree</span><span class="p">,</span> 
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> 
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> 
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+<span class="p">)</span>
+
+<span class="n">temporal_network</span> <span class="o">=</span> <span class="n">synthetic_dyncrep</span><span class="o">.</span><span class="n">generate_net</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 50 
+Number of edges: 126
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 5.04
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.07936507936507936
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<img alt="../_images/ef23347e3cbcad85a381e0268184e3c60f8d4ee7eec24ac398d8f293df86ef40.png" src="../_images/ef23347e3cbcad85a381e0268184e3c60f8d4ee7eec24ac398d8f293df86ef40.png" />
+</div>
+</div>
+<p>As seen above, the network has been generated with the specified parameters. It consists of 50 nodes clustered into 2 communities. The network is assortative, meaning that nodes are more likely to connect to nodes within the same community. This explains why the adjacency matrix
+looks like a diagonal-block matrix. Let’s see what happens if the structure is changed to
+disassortative.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Structure of the network</span>
+<span class="n">structure</span> <span class="o">=</span> <span class="s2">&quot;disassortative&quot;</span>
+
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="c1"># Initialize the synthetic network class</span>
+<span class="n">synthetic_dyncrep</span> <span class="o">=</span> <span class="n">SyntheticDynCRep</span><span class="p">(</span>
+    <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+    <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">avg_degree</span><span class="o">=</span><span class="n">avg_degree</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate synthetic dynamic network</span>
+<span class="n">temporal_network</span> <span class="o">=</span> <span class="n">synthetic_dyncrep</span><span class="o">.</span><span class="n">generate_net</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 50 
+Number of edges: 126
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 5.04
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.12698412698412698
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<img alt="../_images/d2788fc0565a01293880ed0a2f27208e07db3607e5e447df6dc4f06fa2e9cfac.png" src="../_images/d2788fc0565a01293880ed0a2f27208e07db3607e5e447df6dc4f06fa2e9cfac.png" />
+</div>
+</div>
+<p>As seen above, the network now has a disassortative structure, meaning that nodes are more likely
+to connect to nodes in different communities. This is reflected in the adjacency matrix, which
+has connections off the diagonal.</p>
+<p>Notice that the generated network has about 120 edges. If we want to generate a network with a
+larger number of edges, we can increase the <code class="docutils literal notranslate"><span class="pre">ExpM</span></code> parameter. Let’s see what happens when we set it to 200.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the expected number of edges</span>
+<span class="n">ExpM</span> <span class="o">=</span> <span class="mi">200</span>
+
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="c1"># Initialize the synthetic network class</span>
+<span class="n">synthetic_dyncrep</span> <span class="o">=</span> <span class="n">SyntheticDynCRep</span><span class="p">(</span>
+    <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+    <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">avg_degree</span><span class="o">=</span><span class="n">avg_degree</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span>
+    <span class="n">ExpM</span><span class="o">=</span><span class="n">ExpM</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate synthetic dynamic network</span>
+<span class="n">temporal_network</span> <span class="o">=</span> <span class="n">synthetic_dyncrep</span><span class="o">.</span><span class="n">generate_net</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 50 
+Number of edges: 200
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 8.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.14
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<img alt="../_images/55494d7616e6a87633b5d01930fa40a4d8f72d1ac4e9ca60778967ab20a76fa1.png" src="../_images/55494d7616e6a87633b5d01930fa40a4d8f72d1ac4e9ca60778967ab20a76fa1.png" />
+</div>
+</div>
+<p>Now the resulting network has about 200 edges, as specified by the <code class="docutils literal notranslate"><span class="pre">ExpM</span></code> parameter.</p>
+<p>Another key element of the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model is the reciprocity parameter <code class="docutils literal notranslate"><span class="pre">eta</span></code>. This parameter
+determines the level of reciprocity in the network, i.e., the likelihood that a connection between
+two nodes is reciprocated. The difference between this reciprocity parameter and the one
+introduced in the standard <code class="docutils literal notranslate"><span class="pre">CRep</span></code> model is that the dependency on the reciprocated tie is on the
+previous time step, while standard <code class="docutils literal notranslate"><span class="pre">CRep</span></code> considers only the same time <code class="docutils literal notranslate"><span class="pre">t</span></code>, being an approach
+valid for static networks. Let’s see how the network structure changes with different values of
+<code class="docutils literal notranslate"><span class="pre">eta</span></code>. By default, the <code class="docutils literal notranslate"><span class="pre">eta</span></code> parameter is set to 0. Let’s see what happens when we increase to 0.5. Notice that to observe the effect of the reciprocity parameter, we need to generate a
+network with more than one time step.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the number of time steps</span>
+<span class="n">T</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Set the reciprocity parameter</span>
+<span class="n">eta</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="c1"># Initialize the synthetic network class</span>
+<span class="n">synthetic_dyncrep</span> <span class="o">=</span> <span class="n">SyntheticDynCRep</span><span class="p">(</span>
+    <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+    <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">avg_degree</span><span class="o">=</span><span class="n">avg_degree</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+    <span class="n">eta</span><span class="o">=</span><span class="n">eta</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate synthetic dynamic network</span>
+<span class="n">temporal_network</span> <span class="o">=</span> <span class="n">synthetic_dyncrep</span><span class="o">.</span><span class="n">generate_net</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 50 
+Number of edges: 126
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 5.04
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.07936507936507936
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=1
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 50 
+Number of edges: 131
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 5.24
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.22900763358778625
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Compare current and previous reciprocity.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Time step: 1
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of non-zero elements in the adjacency matrix at time t: 131.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t: 0.22900763358778625
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t-1: 0.16030534351145037
+</pre></div>
+</div>
+<img alt="../_images/ef23347e3cbcad85a381e0268184e3c60f8d4ee7eec24ac398d8f293df86ef40.png" src="../_images/ef23347e3cbcad85a381e0268184e3c60f8d4ee7eec24ac398d8f293df86ef40.png" />
+<img alt="../_images/518cf8c44ae0a9c586d235118469499eaabe41e793d54695101bfd403aedfc57.png" src="../_images/518cf8c44ae0a9c586d235118469499eaabe41e793d54695101bfd403aedfc57.png" />
+</div>
+</div>
+<p>As seen above (more concretely in the graph statistics), the reciprocity in the second time step
+network is higher than in the first time step network. This is because the <code class="docutils literal notranslate"><span class="pre">eta</span></code> parameter has been
+set to 0.5, which increases the likelihood of reciprocated connections in the network. From a
+graphical perspective, the network structure is more clustered in the second time step, given
+that the existing connections <code class="docutils literal notranslate"><span class="pre">(i,j)</span></code> in the first time step are more likely to be reciprocated
+as <code class="docutils literal notranslate"><span class="pre">(j,i)</span></code> in the second time step.</p>
+</section>
+<section id="id2">
+<h2>Decoding Temporal Relationships with <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code><a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<p>Now that we are more familiar with the generative model, let’s move on to the next step: decoding
+the temporal relationships in the network using the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model. For the actual analysis, we
+will generate a synthetic network with 300 nodes, divided into 3 communities, and observed over
+6 time steps. We will set the average degree of the nodes to 10 and the reciprocity parameter
+to 0.5.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the number of nodes, communities, and time steps</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">K</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">T</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">avg_degree</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">eta</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="c1"># Initialize the synthetic network class</span>
+<span class="n">synthetic_dyncrep</span> <span class="o">=</span> <span class="n">SyntheticDynCRep</span><span class="p">(</span>
+    <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+    <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">avg_degree</span><span class="o">=</span><span class="n">avg_degree</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+    <span class="n">eta</span><span class="o">=</span><span class="n">eta</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate synthetic dynamic network</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">synthetic_dyncrep</span><span class="o">.</span><span class="n">generate_net</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 300 
+Number of edges: 1492
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 9.947
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.030831099195710455
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=1
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 300 
+Number of edges: 1644
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 10.96
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.17639902676399027
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 300 
+Number of edges: 1760
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 11.733
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.2534090909090909
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=3
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 300 
+Number of edges: 1834
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 12.227
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.2791712104689204
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=4
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 300 
+Number of edges: 1855
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 12.367
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.2857142857142857
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:t=5
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of nodes: 300 
+Number of edges: 1912
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Average degree (2E/N): 12.747
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Reciprocity at t: 0.3148535564853556
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:------------------------------
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Compare current and previous reciprocity.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Time step: 1
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of non-zero elements in the adjacency matrix at time t: 1644.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t: 0.17639902676399027
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t-1: 0.12347931873479319
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Time step: 2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of non-zero elements in the adjacency matrix at time t: 1760.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t: 0.2534090909090909
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t-1: 0.22727272727272727
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Time step: 3
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of non-zero elements in the adjacency matrix at time t: 1834.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t: 0.2791712104689204
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t-1: 0.26663031624863687
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Time step: 4
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of non-zero elements in the adjacency matrix at time t: 1855.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t: 0.2857142857142857
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t-1: 0.2857142857142857
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Time step: 5
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of non-zero elements in the adjacency matrix at time t: 1912.0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t: 0.3148535564853556
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Fraction of non-zero elements in the transposed adjacency matrix at time t-1: 0.301255230125523
+</pre></div>
+</div>
+<img alt="../_images/8a25e21deaec56719e59539e9b83c3fa3001a610ef8e1df0061a8c3f9e09f154.png" src="../_images/8a25e21deaec56719e59539e9b83c3fa3001a610ef8e1df0061a8c3f9e09f154.png" />
+<img alt="../_images/1a254d6007f96a74b6b273820d9c99bc8d20ab724ecf00e8c1432ccbb10c0c8d.png" src="../_images/1a254d6007f96a74b6b273820d9c99bc8d20ab724ecf00e8c1432ccbb10c0c8d.png" />
+<img alt="../_images/0aea0fa297403e57b56a9c7ac73ba1a66b1006a88ea489d520bea0d5f65a949a.png" src="../_images/0aea0fa297403e57b56a9c7ac73ba1a66b1006a88ea489d520bea0d5f65a949a.png" />
+<img alt="../_images/b4b079721105aeb5128092f9f54060fe3195caf478911f4acb3e7304ecac5d09.png" src="../_images/b4b079721105aeb5128092f9f54060fe3195caf478911f4acb3e7304ecac5d09.png" />
+<img alt="../_images/f5189ed3663c0545049c02160b49bc106c3bf0878e4cbc00aa05c3a3c92ad3d3.png" src="../_images/f5189ed3663c0545049c02160b49bc106c3bf0878e4cbc00aa05c3a3c92ad3d3.png" />
+<img alt="../_images/7b5c4d6b041fe6d845d69d8938aef83d4a39f8d3110965f8fc4c79408c8d8fef.png" src="../_images/7b5c4d6b041fe6d845d69d8938aef83d4a39f8d3110965f8fc4c79408c8d8fef.png" />
+</div>
+</div>
+<p>As mentioned initially, the synthetically generated network is a sequence of adjacency matrices <code class="docutils literal notranslate"><span class="pre">A</span></code> where <code class="docutils literal notranslate"><span class="pre">A[t]</span></code> represents the adjacency matrix of the network at time <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">A</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&lt;networkx.classes.digraph.DiGraph at 0x7f7657f609e0&gt;,
+ &lt;networkx.classes.digraph.DiGraph at 0x7f7657e67920&gt;,
+ &lt;networkx.classes.digraph.DiGraph at 0x7f7657e0a240&gt;,
+ &lt;networkx.classes.digraph.DiGraph at 0x7f7657e0a300&gt;,
+ &lt;networkx.classes.digraph.DiGraph at 0x7f7657e09ee0&gt;,
+ &lt;networkx.classes.digraph.DiGraph at 0x7f7657fa7290&gt;]
+</pre></div>
+</div>
+</div>
+</div>
+<p>To utilize the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model, we need to transform the sequence of adjacency matrices <code class="docutils literal notranslate"><span class="pre">A</span></code> into
+a sequence of adjacency tensors <code class="docutils literal notranslate"><span class="pre">B</span></code>, where <code class="docutils literal notranslate"><span class="pre">B</span></code> is a numpy adjacency tensor derived from a
+NetworkX graph. The <code class="docutils literal notranslate"><span class="pre">build_B_from_A</span></code> function from the <code class="docutils literal notranslate"><span class="pre">probinet.input.preprocessing</span></code> module can be used to perform this transformation. The function takes in the sequence of adjacency matrices <code class="docutils literal notranslate"><span class="pre">A</span></code> and the list of nodes in the network and returns the adjacency tensor <code class="docutils literal notranslate"><span class="pre">B</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.input.preprocessing</span> <span class="kn">import</span> <span class="n">create_adjacency_tensor_from_graph_list</span>
+
+<span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+<span class="n">B</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">create_adjacency_tensor_from_graph_list</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Done! We now have the adjacency tensor <code class="docutils literal notranslate"><span class="pre">B</span></code> of dimensions <code class="docutils literal notranslate"><span class="pre">(T+1,</span> <span class="pre">N,</span> <span class="pre">N)</span></code> where <code class="docutils literal notranslate"><span class="pre">T</span></code> is the number of time steps, and <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of nodes in the network. The adjacency tensor <code class="docutils literal notranslate"><span class="pre">B</span></code> is a numpy array that can be used as input to the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">B</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(6, 300, 300)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.models.dyncrep</span> <span class="kn">import</span> <span class="n">DynCRep</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>First, we instantiate the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model by creating an instance of the class. During this process, we can modify the default attribute values by specifying our desired maximum number of iterations and the number of realizations. The <code class="docutils literal notranslate"><span class="pre">max_iter</span></code> parameter sets the maximum number of iterations for the optimization algorithm, and the <code class="docutils literal notranslate"><span class="pre">num_realizations</span></code> parameter defines the number of times the model will run.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dyncrep</span> <span class="o">=</span> <span class="n">DynCRep</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">num_realizations</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">T</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The model requires the information to be properly encoded into a <code class="docutils literal notranslate"><span class="pre">GraphData</span></code> object. We show how
+to do this below.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.models.classes</span> <span class="kn">import</span> <span class="n">GraphData</span>
+
+<span class="c1"># Build the GraphData object to pass to the fit method</span>
+<span class="n">gdata</span> <span class="o">=</span> <span class="n">GraphData</span><span class="p">(</span>
+    <span class="n">graph_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">adjacency_tensor</span><span class="o">=</span><span class="n">B</span><span class="p">,</span>
+    <span class="n">transposed_tensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+    <span class="n">data_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can now fit the data into the model <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code>
+model. We need to set the number of time steps <code class="docutils literal notranslate"><span class="pre">T</span></code>, the list of nodes in the network, and other
+parameters too. Given that the data has been generated using <code class="docutils literal notranslate"><span class="pre">K=3</span></code>, we will change the file to reflect this.  The model
+returns the learned parameters of the model, including the community memberships <code class="docutils literal notranslate"><span class="pre">u</span></code>, <code class="docutils literal notranslate"><span class="pre">v</span></code>, the
+temporal relationships <code class="docutils literal notranslate"><span class="pre">w</span></code> between the communities, the reciprocity parameter <code class="docutils literal notranslate"><span class="pre">eta</span></code>, the edge
+disappearance  rate <code class="docutils literal notranslate"><span class="pre">beta</span></code>  and the  log-likelihood of  the  model.</p>
+<blockquote>
+<div><p><strong><em>NOTE:</em></strong> The parameters <code class="docutils literal notranslate"><span class="pre">ag</span></code> and <code class="docutils literal notranslate"><span class="pre">bg</span></code> are the hyperparameters of the gamma distribution,
+which is used for regularization. The authors of the main reference assume gamma-distributed
+priors for the membership vectors. We fix them to 1.1 and 0.5, respectively.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="n">u_dyn</span><span class="p">,</span> <span class="n">v_dyn</span><span class="p">,</span> <span class="n">w_dyn</span><span class="p">,</span> <span class="n">eta_dyn</span><span class="p">,</span> <span class="n">beta_dyn</span><span class="p">,</span> <span class="n">Loglikelihood_dyn</span> <span class="o">=</span> <span class="n">dyncrep</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">gdata</span><span class="p">,</span>
+    <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+    <span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+    <span class="n">ag</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span>
+    <span class="n">bg</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">out_inference</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:### Version: w-DYN ###
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of time steps L: 6
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:T is greater than 0. Proceeding with calculations that require multiple time steps.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator seed: 35399562948360463058890781895381311971
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:eta is initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 2.26 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 4.51 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 6.76 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 9.01 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 11.26 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 13.50 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 15.76 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - Log-likelihood = -23086.767217859804 - iterations = 721 - time = 16.24 seconds - convergence = True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator seed: 203178491105477591223103010971659415971
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:eta is initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 1 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 100 - time = 2.26 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 200 - time = 4.51 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 300 - time = 6.78 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 400 - time = 9.03 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 500 - time = 11.31 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 600 - time = 13.58 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 700 - time = 15.84 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 800 - time = 18.10 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 900 - time = 20.36 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 1 - Log-likelihood = -23538.732583283192 - iterations = 981 - time = 22.19 seconds - convergence = True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator seed: 118970195796093957196501181087388680547
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:eta is initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 2 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 100 - time = 2.26 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 200 - time = 4.50 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 300 - time = 6.76 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 400 - time = 9.03 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 500 - time = 11.27 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 600 - time = 13.51 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 2 - Log-likelihood = -23134.291440811314 - iterations = 621 - time = 13.99 seconds - convergence = True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 0 - maxL = -23086.767217859804 - best iterations = 721
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm successfully converged after 721 iterations with a maximum log-likelihood of -23086.7672.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Parameters won&#39;t be saved! If you want to save them, set out_inference=True.
+</pre></div>
+</div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model has been effectively applied to the adjacency tensor <code class="docutils literal notranslate"><span class="pre">B</span></code>, with the fitting process carried out over three realizations, all of which achieved successful convergence. As detailed in the referenced paper and other tutorials, the vectors <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> represent the out-going and in-coming community memberships of the network’s nodes, respectively, and remain constant over time. Conversely, the affinity matrix, which delineates the edge density within and between communities, is a time-dependent function. By utilizing the <code class="docutils literal notranslate"><span class="pre">plot_matrices</span></code> function outlined below, we can observe the evolution of these relationships over time.</p>
+<blockquote>
+<div><p><strong><em>NOTE:</em></strong> You might be curious as to why the parameters <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> remain
+constant over time. As outlined in the primary reference, it’s not necessary to estimate these
+parameters at every time step. The model is designed to estimate them just once. This represents a first approach,  where the affinity matrix is treated as a time-dependent variable,
+while the community membership vectors, <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code>, are kept static over time. It’s worth
+noting that an alternative interpretation could involve fixing <code class="docutils literal notranslate"><span class="pre">w</span></code> and allowing <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> to
+change over time. As explained by the authors, the model can be easily adapted to accommodate
+this alternative scenario.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">w_dyn</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(6, 3, 3)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the colormap for the plots</span>
+<span class="n">cmap</span> <span class="o">=</span> <span class="s2">&quot;PuBuGn&quot;</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">Normalize</span>
+
+
+<span class="k">def</span> <span class="nf">plot_matrices</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;PuBuGn&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot a temporal array in a row of subplots with a single shared colorbar.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    w : np.ndarray</span>
+<span class="sd">        Temporal array to plot.</span>
+<span class="sd">    cmap : str, optional</span>
+<span class="sd">        Colormap to use for the plots. Default is &#39;PuBuGn&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the number of time steps</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Normalize the data for consistent color mapping</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">vmax</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+
+    <span class="c1"># Create a new figure with specified size</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">T</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Loop over each time step</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+        <span class="c1"># Add a subplot for the current time step</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+
+        <span class="c1"># Display the matrix as an image</span>
+        <span class="n">cax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;nearest&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Add a title to the subplot</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Time step: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+        <span class="c1"># Set ticks to be at 0.5, 1.5, 2.5 but show as 0, 1, 2</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+
+        <span class="c1"># Set tick labels to 0, 1, 2</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Add a single colorbar to the figure</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">,</span> <span class="n">fraction</span><span class="o">=</span><span class="mf">0.046</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_matrices</span><span class="p">(</span><span class="n">w_dyn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/4d45de5ed08c6a0865d548f1792e5f20094cb0c85634d482e0eb79092e4ba421.png" src="../_images/4d45de5ed08c6a0865d548f1792e5f20094cb0c85634d482e0eb79092e4ba421.png" />
+</div>
+</div>
+<p>The interactions between communities vary across different timesteps, as depicted in the visualizations. These interactions, in conjunction with the vectors <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code>, provide insights into the temporal evolution of community memberships.</p>
+<p>To further our understanding, we can compare the inferred expected adjacency tensor with the input data
+used to train the model.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.evaluation.expectation_computation</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_expected_adjacency_tensor_multilayer</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">probinet.utils.matrix_operations</span> <span class="kn">import</span> <span class="n">transpose_tensor</span>
+
+<span class="c1"># Define the number of time steps</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="c1"># Compute the expected adjacency tensor</span>
+<span class="n">lambda_inf_dyn</span> <span class="o">=</span> <span class="n">compute_expected_adjacency_tensor_multilayer</span><span class="p">(</span><span class="n">u_dyn</span><span class="p">,</span> <span class="n">v_dyn</span><span class="p">,</span> <span class="n">w_dyn</span><span class="p">)</span>
+<span class="n">M_inf_dyn</span> <span class="o">=</span> <span class="n">lambda_inf_dyn</span> <span class="o">+</span> <span class="n">eta_dyn</span> <span class="o">*</span> <span class="n">transpose_tensor</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The comparison between the two temporal arrays can be done using the <code class="docutils literal notranslate"><span class="pre">calculate_AUC</span></code> function
+from the <code class="docutils literal notranslate"><span class="pre">probinet.evaluation</span></code> module. This function calculates the Area Under the Curve (AUC)
+for the given temporal arrays. We can use this function to compute the AUC for each time step, i.e.,  the probability that a randomly selected edge has higher expected value than a randomly
+selected non-existing edge. A value of 1 means perfect reconstruction, while 0.5 is pure random chance.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.evaluation.link_prediction</span> <span class="kn">import</span> <span class="n">compute_link_prediction_AUC</span>
+<span class="kn">from</span> <span class="nn">probinet.utils.tools</span> <span class="kn">import</span> <span class="n">flt</span>
+
+<span class="c1"># Compute the AUC for each time step</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Time step </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">: AUC = </span><span class="si">{</span><span class="n">flt</span><span class="p">(</span><span class="n">compute_link_prediction_AUC</span><span class="p">(</span><span class="n">B</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">),</span><span class="w"> </span><span class="n">M_inf_dyn</span><span class="p">[</span><span class="n">t</span><span class="p">]))</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time step 0: AUC = 0.783
+Time step 1: AUC = 0.747
+Time step 2: AUC = 0.82
+Time step 3: AUC = 0.771
+Time step 4: AUC = 0.813
+Time step 5: AUC = 0.796
+</pre></div>
+</div>
+</div>
+</div>
+<p>As we can see, the results obtained from the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model show a high AUC value for each time.
+We can also get a graphical feeling about how the inferred temporal relationships compare to the input data by using the <code class="docutils literal notranslate"><span class="pre">plot_temporal_arrays</span></code> function defined below.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_temporal_arrays</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">titles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;PuBuGn&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot a list of temporal arrays in separate columns.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arrays : list of np.ndarray</span>
+<span class="sd">        List of temporal arrays to plot.</span>
+<span class="sd">    cmap : str, optional</span>
+<span class="sd">        Colormap to use for the plots. Default is &#39;PuBuGn&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the number of time steps from the first array in the list</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># Create a new figure with specified size</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span>
+
+    <span class="c1"># Loop over each time step</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Loop over each array</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">array</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">arrays</span><span class="p">):</span>
+            <span class="c1"># Add a subplot for the current array at the current time step</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">T</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">),</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Display the array as an image</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;nearest&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Add a colorbar to the plot</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">fraction</span><span class="o">=</span><span class="mf">0.046</span><span class="p">)</span>
+
+            <span class="c1"># Add a title to the first subplot of each column</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">titles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">titles</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Array </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_temporal_arrays</span><span class="p">([</span><span class="n">B</span><span class="p">,</span> <span class="n">M_inf_dyn</span><span class="p">],</span> <span class="n">titles</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Input Data&quot;</span><span class="p">,</span> <span class="s2">&quot;DynCRep-Dynamic </span><span class="se">\n</span><span class="s2">Expectation&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/c428763a6853f97d9270e9f8d552d4676193d2ae4b4afc257610abdd5c199330.png" src="../_images/c428763a6853f97d9270e9f8d552d4676193d2ae4b4afc257610abdd5c199330.png" />
+</div>
+</div>
+<p>As detailed in the main reference  <span id="id3">[<a class="reference internal" href="../references.html#id6" title="Hadiseh Safdari, Martina Contisciani, and Caterina De Bacco. Reciprocity, community detection, and link prediction in dynamic networks. Journal of Physics: Complexity, 3(1):015010, 2022.">SCDB22</a>]</span>, the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> algorithm operates in two distinct modes:
+<code class="docutils literal notranslate"><span class="pre">Dynamic</span></code> and <code class="docutils literal notranslate"><span class="pre">Static</span></code>. The <code class="docutils literal notranslate"><span class="pre">Dynamic</span></code> mode (also known as <em>w-DYN</em>), which is the default setting,
+captures
+and
+stores
+temporal relationships in a time-dependent affinity matrix, allowing for a nuanced understanding
+of evolving community structures. On the other hand, the <code class="docutils literal notranslate"><span class="pre">Static</span></code> mode (also known as <em>w-STATIC</em>),
+despite <code class="docutils literal notranslate"><span class="pre">u</span></code>,
+<code class="docutils literal notranslate"><span class="pre">v</span></code> and <code class="docutils literal notranslate"><span class="pre">w</span></code> being fixed in time, still allows for network evolution. This is
+facilitated by
+the appearance and disappearance of edges, governed by the parameters <code class="docutils literal notranslate"><span class="pre">beta</span></code> and <code class="docutils literal notranslate"><span class="pre">eta</span></code>. These two
+modes
+enhance the flexibility of the model, enabling it to effectively handle a variety of community structures.</p>
+<p>Let’s see now how to use the <code class="docutils literal notranslate"><span class="pre">Static</span></code> mode of the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model to decode the temporal
+relationships in the network. We will use the same synthetic network generated earlier, but this
+time we will fit the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model in <code class="docutils literal notranslate"><span class="pre">Static</span></code> mode by setting the <code class="docutils literal notranslate"><span class="pre">temporal</span></code> parameter to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="n">u_stat</span><span class="p">,</span> <span class="n">v_stat</span><span class="p">,</span> <span class="n">w_stat</span><span class="p">,</span> <span class="n">eta_stat</span><span class="p">,</span> <span class="n">beta_stat</span><span class="p">,</span> <span class="n">Loglikelihood</span> <span class="o">=</span> <span class="n">dyncrep</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">gdata</span><span class="p">,</span>
+    <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+    <span class="n">flag_data_T</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">ag</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span>
+    <span class="n">bg</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">temporal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># &lt;- Static mode</span>
+    <span class="n">out_inference</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:### Version: w-STATIC ###
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Number of time steps L: 1
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:T is greater than 0. Proceeding with calculations that require multiple time steps.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator seed: 35399562948360463058890781895381311971
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:eta is initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 0.32 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 0.62 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - Log-likelihood = -26646.376511830265 - iterations = 231 - time = 0.73 seconds - convergence = True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator seed: 146102082068021069584449920474084771037
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:eta is initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 1 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 100 - time = 0.31 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 200 - time = 0.61 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 300 - time = 0.92 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 1 - Log-likelihood = -26646.376511293165 - iterations = 301 - time = 0.93 seconds - convergence = True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator seed: 268373513923159823696334402928712542503
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:eta is initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 2 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 100 - time = 0.31 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 200 - time = 0.62 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 300 - time = 0.93 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 2 - Log-likelihood = -26690.222819729777 - iterations = 311 - time = 0.97 seconds - convergence = True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 1 - maxL = -26646.376511293165 - best iterations = 301
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm successfully converged after 301 iterations with a maximum log-likelihood of -26646.3765.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Parameters won&#39;t be saved! If you want to save them, set out_inference=True.
+</pre></div>
+</div>
+</div>
+</div>
+<p>As shown before, the affinity matrix <code class="docutils literal notranslate"><span class="pre">w</span></code> is now a constant matrix.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_matrices</span><span class="p">(</span><span class="n">w_stat</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/e5fbd4c67c45799adb449bedd37d780d04d40604ed4aee6a263a83118103c7df.png" src="../_images/e5fbd4c67c45799adb449bedd37d780d04d40604ed4aee6a263a83118103c7df.png" />
+</div>
+</div>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h3>
+<p>We have shown this way how to use the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model to decode the temporal relationships in a network. The model provides a powerful framework for understanding the dynamic nature of complex networks, capturing the temporal evolution of community structures and reciprocity.  We hope this tutorial has provided you with a solid foundation for working with the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> model and decoding temporal relationships in dynamic networks.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="JointCRep.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Analysis Of A Real-World Dataset Using The <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> Algorithm</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="ACD.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Cross-Validation And Anomaly Detection With The <code class="docutils literal notranslate"><span class="pre">ACD</span></code> Algorithm</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-generation">Data generation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Decoding Temporal Relationships with <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

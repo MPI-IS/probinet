@@ -1,0 +1,586 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>probinet.model_selection.mtcov_cross_validation &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/probinet/model_selection/mtcov_cross_validation';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for probinet.model_selection.mtcov_cross_validation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the MTCOVCrossValidation class, which is used for cross-validation of the MTCOV</span>
+<span class="sd">algorithm.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..evaluation.covariate_prediction</span> <span class="kn">import</span> <span class="n">compute_covariate_prediction_accuracy</span>
+<span class="kn">from</span> <span class="nn">..evaluation.likelihood</span> <span class="kn">import</span> <span class="n">loglikelihood</span>
+<span class="kn">from</span> <span class="nn">..evaluation.link_prediction</span> <span class="kn">import</span> <span class="n">compute_multilayer_link_prediction_AUC</span>
+<span class="kn">from</span> <span class="nn">..models.classes</span> <span class="kn">import</span> <span class="n">GraphData</span>
+<span class="kn">from</span> <span class="nn">..models.mtcov</span> <span class="kn">import</span> <span class="n">MTCOV</span>
+<span class="kn">from</span> <span class="nn">.cross_validation</span> <span class="kn">import</span> <span class="n">CrossValidation</span>
+<span class="kn">from</span> <span class="nn">.masking</span> <span class="kn">import</span> <span class="n">extract_masks</span><span class="p">,</span> <span class="n">shuffle_indicesG</span><span class="p">,</span> <span class="n">shuffle_indicesX</span>
+
+
+<div class="viewcode-block" id="MTCOVCrossValidation">
+<a class="viewcode-back" href="../../../generated/probinet.model_selection.mtcov_cross_validation.html#probinet.model_selection.mtcov_cross_validation.MTCOVCrossValidation">[docs]</a>
+<span class="k">class</span> <span class="nc">MTCOVCrossValidation</span><span class="p">(</span><span class="n">CrossValidation</span><span class="p">,</span> <span class="n">MTCOV</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for cross-validation of the MTCOV algorithm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">input_cv_params</span><span class="p">,</span> <span class="n">numerical_parameters</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the MTCOVCrossValidation class.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        algorithm</span>
+<span class="sd">        parameters</span>
+<span class="sd">        input_cv_params</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">algorithm</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">input_cv_params</span><span class="p">,</span> <span class="n">numerical_parameters</span><span class="p">)</span>
+        <span class="c1"># These are the parameters for the MTCOV algorithm</span>
+        <span class="k">if</span> <span class="n">numerical_parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">numerical_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_parameters</span> <span class="o">=</span> <span class="n">numerical_parameters</span>
+
+<div class="viewcode-block" id="MTCOVCrossValidation.extract_mask">
+<a class="viewcode-back" href="../../../generated/probinet.model_selection.mtcov_cross_validation.html#probinet.model_selection.mtcov_cross_validation.MTCOVCrossValidation.extract_mask">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fold</span><span class="p">):</span>
+        <span class="c1"># Prepare indices for cross-validation</span>
+        <span class="n">idxG</span> <span class="o">=</span> <span class="n">shuffle_indicesG</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
+        <span class="n">idxX</span> <span class="o">=</span> <span class="n">shuffle_indicesX</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
+
+        <span class="c1"># Extract the masks for the current fold using k-fold cross-validation</span>
+        <span class="n">maskG</span><span class="p">,</span> <span class="n">maskX</span> <span class="o">=</span> <span class="n">extract_masks</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span>
+            <span class="n">idxG</span><span class="o">=</span><span class="n">idxG</span><span class="p">,</span>
+            <span class="n">idxX</span><span class="o">=</span><span class="n">idxX</span><span class="p">,</span>
+            <span class="n">cv_type</span><span class="o">=</span><span class="s2">&quot;kfold&quot;</span><span class="p">,</span>
+            <span class="n">NFold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">NFold</span><span class="p">,</span>
+            <span class="n">fold</span><span class="o">=</span><span class="n">fold</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># If the out_mask attribute is set, save the masks to files</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_mask</span><span class="p">:</span>
+            <span class="n">outmaskG</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span><span class="si">}</span><span class="s2">maskG_f</span><span class="si">{</span><span class="n">fold</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="si">}</span><span class="s2">.pkl&quot;</span>
+            <span class="n">outmaskX</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span><span class="si">}</span><span class="s2">maskX_f</span><span class="si">{</span><span class="n">fold</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="si">}</span><span class="s2">.pkl&quot;</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Masks saved in: </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">outmaskG</span><span class="p">,</span> <span class="n">outmaskX</span><span class="p">)</span>
+
+            <span class="c1"># Save the masks to pickle files</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outmaskG</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">maskG</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outmaskX</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">maskX</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># Return the masks</span>
+        <span class="k">return</span> <span class="n">maskG</span><span class="p">,</span> <span class="n">maskX</span></div>
+
+
+<div class="viewcode-block" id="MTCOVCrossValidation.load_data">
+<a class="viewcode-back" href="../../../generated/probinet.model_selection.mtcov_cross_validation.html#probinet.model_selection.mtcov_cross_validation.MTCOVCrossValidation.load_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="p">:</span> <span class="n">GraphData</span> <span class="o">=</span> <span class="n">MTCOV</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">in_folder</span><span class="p">,</span>
+            <span class="n">adj_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">,</span>
+            <span class="n">cov_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="p">,</span>
+            <span class="n">ego</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ego</span><span class="p">,</span>
+            <span class="n">alter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">alter</span><span class="p">,</span>
+            <span class="n">egoX</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">egoX</span><span class="p">,</span>
+            <span class="n">attr_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attr_name</span><span class="p">,</span>
+            <span class="n">undirected</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;undirected&quot;</span><span class="p">],</span>
+            <span class="n">force_dense</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">return_X_as_np</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># We need to create the attribute design matrix as a df</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Xs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">design_matrix</span>
+        <span class="c1"># But the algorithm expects it as a numpy array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">design_matrix</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xs</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MTCOVCrossValidation.prepare_and_run">
+<a class="viewcode-back" href="../../../generated/probinet.model_selection.mtcov_cross_validation.html#probinet.model_selection.mtcov_cross_validation.MTCOVCrossValidation.prepare_and_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_and_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">masks</span><span class="p">):</span>
+        <span class="n">maskG</span><span class="p">,</span> <span class="n">maskX</span> <span class="o">=</span> <span class="n">masks</span>
+        <span class="c1"># Create copies of the adjacency matrix B and covariate matrix X to use for training</span>
+        <span class="n">B_train</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">adjacency_tensor</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">X_train</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">design_matrix</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Apply the masks to the training data by setting masked elements to 0</span>
+        <span class="n">B_train</span><span class="p">[</span><span class="n">maskG</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">X_train</span><span class="p">[</span><span class="n">maskX</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Create a copy of gdata to use for training</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdata_for_training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">adjacency_tensor</span><span class="o">=</span><span class="n">B_train</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdata_for_training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdata_for_training</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+            <span class="n">design_matrix</span><span class="o">=</span><span class="n">X_train</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Initialize the MTCOV algorithm object</span>
+        <span class="n">algorithm_object</span> <span class="o">=</span> <span class="n">MTCOV</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">num_parameters</span><span class="p">)</span>
+
+        <span class="c1"># Fit the MTCOV models to the training data and get the outputs</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">algorithm_object</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gdata_for_training</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;rseed&quot;</span><span class="p">},</span>
+            <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Return the outputs and the algorithm object</span>
+        <span class="k">return</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">algorithm_object</span></div>
+
+
+<div class="viewcode-block" id="MTCOVCrossValidation.calculate_performance_and_prepare_comparison">
+<a class="viewcode-back" href="../../../generated/probinet.model_selection.mtcov_cross_validation.html#probinet.model_selection.mtcov_cross_validation.MTCOVCrossValidation.calculate_performance_and_prepare_comparison">[docs]</a>
+    <span class="k">def</span> <span class="nf">calculate_performance_and_prepare_comparison</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">masks</span><span class="p">,</span> <span class="n">fold</span><span class="p">,</span> <span class="n">_algorithm_object</span>
+    <span class="p">):</span>
+        <span class="n">maskG</span><span class="p">,</span> <span class="n">maskX</span> <span class="o">=</span> <span class="n">masks</span>
+
+        <span class="c1"># Unpack the outputs from the algorithm</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">BETA</span><span class="p">,</span> <span class="n">logL</span> <span class="o">=</span> <span class="n">outputs</span>
+
+        <span class="c1"># Initialize the comparison dictionary with keys as headers</span>
+        <span class="n">comparison</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;K&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;gamma&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;fold&quot;</span><span class="p">:</span> <span class="n">fold</span><span class="p">,</span>
+            <span class="s2">&quot;rseed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rseed</span><span class="p">,</span>
+            <span class="s2">&quot;logL&quot;</span><span class="p">:</span> <span class="n">logL</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Calculate and assign the covariates accuracy values</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;gamma&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;acc_train&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_covariate_prediction_accuracy</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Xs</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">BETA</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">maskX</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;acc_test&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_covariate_prediction_accuracy</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Xs</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">BETA</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">maskX</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Calculate and assign the AUC values</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;gamma&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;auc_train&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_multilayer_link_prediction_AUC</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">adjacency_tensor</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">maskG</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;auc_test&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_multilayer_link_prediction_AUC</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">adjacency_tensor</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">maskG</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Calculate and assign the log-likelihood value</span>
+        <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;logL_test&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loglikelihood</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gdata</span><span class="o">.</span><span class="n">adjacency_tensor</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Xs</span><span class="p">,</span>
+            <span class="n">U</span><span class="p">,</span>
+            <span class="n">V</span><span class="p">,</span>
+            <span class="n">W</span><span class="p">,</span>
+            <span class="n">BETA</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;gamma&quot;</span><span class="p">],</span>
+            <span class="n">maskG</span><span class="o">=</span><span class="n">maskG</span><span class="p">,</span>
+            <span class="n">maskX</span><span class="o">=</span><span class="n">maskX</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Return the comparison dictionary</span>
+        <span class="k">return</span> <span class="n">comparison</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

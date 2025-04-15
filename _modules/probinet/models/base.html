@@ -1,0 +1,1738 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>probinet.models.base &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/probinet/models/base';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for probinet.models.base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Base classes for the models classes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">dataclasses</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">singledispatchmethod</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sparse</span> <span class="kn">import</span> <span class="n">COO</span>
+
+<span class="kn">from</span> <span class="nn">probinet.input.loader</span> <span class="kn">import</span> <span class="n">build_adjacency_from_file</span>
+<span class="kn">from</span> <span class="nn">probinet.models.classes</span> <span class="kn">import</span> <span class="n">GraphData</span>
+<span class="kn">from</span> <span class="nn">probinet.models.constants</span> <span class="kn">import</span> <span class="n">CONVERGENCE_TOL_</span><span class="p">,</span> <span class="n">DECISION_</span><span class="p">,</span> <span class="n">ERR_</span><span class="p">,</span> <span class="n">ERR_MAX_</span><span class="p">,</span> <span class="n">INF_</span>
+<span class="kn">from</span> <span class="nn">probinet.types</span> <span class="kn">import</span> <span class="n">GraphDataType</span>
+<span class="kn">from</span> <span class="nn">probinet.utils.tools</span> <span class="kn">import</span> <span class="n">log_and_raise_error</span>
+<span class="kn">from</span> <span class="nn">probinet.visualization.plot</span> <span class="kn">import</span> <span class="n">plot_L</span>
+
+
+<div class="viewcode-block" id="ModelBaseParameters">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBaseParameters">[docs]</a>
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">ModelBaseParameters</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inf : float</span>
+<span class="sd">        Initial value of the log-likelihood.</span>
+<span class="sd">    err_max : float</span>
+<span class="sd">        Minimum value for the parameters.</span>
+<span class="sd">    err : float</span>
+<span class="sd">        Noise for the initialization.</span>
+<span class="sd">    num_realizations : int</span>
+<span class="sd">        Number of iterations with different random initialization.</span>
+<span class="sd">    convergence_tol : float</span>
+<span class="sd">        Tolerance for convergence.</span>
+<span class="sd">    decision : int</span>
+<span class="sd">        Convergence parameter.</span>
+<span class="sd">    max_iter : int</span>
+<span class="sd">        Maximum number of EM steps before aborting.</span>
+<span class="sd">    plot_loglik : bool</span>
+<span class="sd">        Flag to plot the log-likelihood.</span>
+<span class="sd">    flag_conv : str</span>
+<span class="sd">        Flag to choose the convergence criterion.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">inf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">INF_</span>  <span class="c1"># initial value of the log-likelihood</span>
+    <span class="n">err_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">ERR_MAX_</span>  <span class="c1"># minimum value for the parameters</span>
+    <span class="n">err</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">ERR_</span>  <span class="c1"># noise for the initialization</span>
+    <span class="n">num_realizations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="mi">3</span>  <span class="c1"># number of iterations with different random initialization</span>
+    <span class="p">)</span>
+    <span class="n">convergence_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CONVERGENCE_TOL_</span>  <span class="c1"># tolerance for convergence</span>
+    <span class="n">decision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DECISION_</span>  <span class="c1"># convergence parameter</span>
+    <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span>  <span class="c1"># maximum number of EM steps before aborting</span>
+    <span class="n">plot_loglik</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># flag to plot the log-likelihood</span>
+    <span class="n">flag_conv</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;log&quot;</span>  <span class="c1"># flag to choose the convergence criterion</span></div>
+
+
+
+<div class="viewcode-block" id="ModelBase">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase">[docs]</a>
+<span class="k">class</span> <span class="nc">ModelBase</span><span class="p">(</span><span class="n">ModelBaseParameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for the models classes that inherit from the ModelBaseParameters class. It contains the</span>
+<span class="sd">    methods to check the parameters of the fit method, initialize the parameters, and check for</span>
+<span class="sd">    convergence. All the models classes should inherit from this class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Call the __init__ method of the parent class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">ModelBaseParameters</span><span class="o">.</span><span class="vm">__doc__</span>
+        <span class="c1"># Define additional attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes_to_save_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;u_f&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;v_f&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;w_f&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;eta_f&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;final_it&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;maxL&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;maxPSL&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;beta_f&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;nodes&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pibr&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mupr&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Initialize the attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">u_f</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_f</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_f</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_unit_uniform</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalize_rows</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_hat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_r</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_it</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_for_invalid_initialization</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;The initialization parameter can be either 0 &quot;</span>
+            <span class="s2">&quot;or 1. If 0, the model will be initialized &quot;</span>
+            <span class="s2">&quot;randomly. If 1, the model will be initialized with the parameters &quot;</span>
+            <span class="s2">&quot;stored in the file specified in the `files` parameter.&quot;</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ModelBase.check_params_to_load_data">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.check_params_to_load_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_params_to_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binary</span><span class="p">,</span> <span class="n">noselfloop</span><span class="p">,</span> <span class="n">undirected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the parameters to load the data are correct.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_validate_eta0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta0</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">eta0</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">eta0</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;If not None, the eta0 parameter has to be greater than 0.!&quot;</span>
+            <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_undirected_eta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">undirected</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fix_eta</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta0</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;If undirected=True, the parameter eta has to be fixed equal to 1 &quot;</span>
+                <span class="s2">&quot;(s.t. log(eta)=0).&quot;</span>
+            <span class="p">)</span>
+            <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_fit_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the parameters of the fit method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Extract parameters from args and kwargs</span>
+        <span class="n">initialization</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;initialization&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="n">undirected</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;undirected&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">assortative</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;assortative&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;K&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">data_X</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_X&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">eta0</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eta0&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">6</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">beta0</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta0&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">7</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gamma&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">8</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">use_approximation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_approximation&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">temporal</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;temporal&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">fix_eta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fix_eta&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">fix_w</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fix_w&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">fix_communities</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fix_communities&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">fix_beta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fix_beta&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">fix_pibr</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fix_pibr&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">fix_mupr</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fix_mupr&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">out_inference</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;out_inference&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">out_folder</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;out_folder&quot;</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">))</span>
+        <span class="n">end_file</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_file&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="n">verbose</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Check the initialization parameter</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initialization parameter: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">initialization</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">initialization</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">}:</span>
+            <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">message_for_invalid_initialization</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">=</span> <span class="n">initialization</span>
+
+        <span class="k">if</span> <span class="n">initialization</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">files</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">log_and_raise_error</span><span class="p">(</span>
+                    <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;If initialization is 1, provide a file.&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">files</span> <span class="o">=</span> <span class="n">files</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">undirected</span> <span class="o">=</span> <span class="n">undirected</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assortative</span> <span class="o">=</span> <span class="n">assortative</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_approximation</span> <span class="o">=</span> <span class="n">use_approximation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temporal</span> <span class="o">=</span> <span class="n">temporal</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fix_eta</span> <span class="o">=</span> <span class="n">fix_eta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fix_beta</span> <span class="o">=</span> <span class="n">fix_beta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fix_w</span> <span class="o">=</span> <span class="n">fix_w</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fix_communities</span> <span class="o">=</span> <span class="n">fix_communities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fix_pibr</span> <span class="o">=</span> <span class="n">fix_pibr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fix_mupr</span> <span class="o">=</span> <span class="n">fix_mupr</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_inference</span> <span class="o">=</span> <span class="n">out_inference</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span> <span class="o">=</span> <span class="n">out_folder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_file</span> <span class="o">=</span> <span class="n">end_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">K</span> <span class="o">=</span> <span class="n">K</span>
+
+        <span class="c1"># Validate the data_X parameter</span>
+        <span class="k">if</span> <span class="n">data_X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Data_X parameter: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;The number of rows of the data_X matrix is different from the number of nodes.&quot;</span>
+                <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="c1"># Validate the eta0 parameter</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Eta0 parameter: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">eta0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fix_eta</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_and_raise_error</span><span class="p">(</span>
+                <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;If fix_eta=True, provide a value for eta0.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fix_beta</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">beta0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">log_and_raise_error</span><span class="p">(</span>
+                    <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;If fix_beta=True, provide a value for beta0.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">beta0</span> <span class="o">=</span> <span class="n">beta0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fix_w</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fixing w.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;If fix_w=True, the initialization has to be  1.&quot;</span>
+                <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fix_communities</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;If fix_communities=True, the initialization has to be 1.&quot;</span>
+                <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialization of the parameters u, v, w, eta.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Call the method to initialize eta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_eta</span><span class="p">()</span>
+
+        <span class="c1"># Call the method to initialize beta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_beta</span><span class="p">()</span>
+
+        <span class="c1"># Check the initialization type and call the corresponding method</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># If initialization type is 0, call the method for random initialization</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_random_initialization</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># If initialization type is 1, call the method for file-based initialization</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_initialization</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If initialization type is neither 0 nor 1, log a message and raise a ValueError</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Invalid initialization parameter.&quot;</span>
+            <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_eta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># If eta0 is not None, assign its value to eta</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta0</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If eta0 is None, log a message and call the method to randomize eta</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;eta is initialized randomly.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_randomize_eta</span><span class="p">(</span><span class="n">use_unit_uniform</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_unit_uniform</span><span class="p">)</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_initialize_beta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Placeholder function for initializing beta.</span>
+<span class="sd">        Intentionally left empty for subclasses to override if necessary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_beta_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Assign the beta matrix from the input file to the beta attribute</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Add random noise to the beta matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_random_noise</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_random_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Log a message indicating that u, v and w are being initialized randomly</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;u, v and w are initialized randomly.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Randomize w and u, v</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_randomize_w</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_randomize_u_v</span><span class="p">(</span><span class="n">normalize_rows</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_rows</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_file_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Log a message indicating that u, v and w are being initialized using the input file</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;u, v and w are initialized using the input file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">)</span>
+        <span class="c1"># Initialize u and v</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_u</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_v</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_w</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_membership_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">matrix_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">matrix_value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Assign the input matrix value to the local variable &#39;matrix&#39;</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">matrix_value</span>
+
+        <span class="c1"># Assert that the nodes in the current object and the nodes in the theta dictionary are the same</span>
+        <span class="c1"># If they are not the same, raise an AssertionError with the message &#39;Nodes do not match.&#39;</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]),</span> <span class="s2">&quot;Nodes do not match.&quot;</span>
+
+        <span class="c1"># Find the maximum value in the &#39;matrix&#39;</span>
+        <span class="n">max_entry</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
+
+        <span class="c1"># Add random noise to the &#39;matrix&#39;. The noise is a random number between 0 and 1,</span>
+        <span class="c1"># multiplied by the maximum entry in the &#39;matrix&#39; and the error rate &#39;self.err&#39;</span>
+        <span class="n">matrix</span> <span class="o">+=</span> <span class="n">max_entry</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">err</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="c1"># Set the attribute of the current object with the name &#39;matrix_name&#39; to</span>
+        <span class="c1"># the value of &#39;matrix&#39;</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix_name</span><span class="p">,</span> <span class="n">matrix</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_u</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize out-going membership matrix u from file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_membership_matrix</span><span class="p">(</span><span class="s2">&quot;u&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="s2">&quot;u&quot;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_v</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize in-coming membership matrix v from file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">undirected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_membership_matrix</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_add_random_noise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add random noise to a matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix : np.ndarray</span>
+<span class="sd">            The matrix to which random noise will be added.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matrix : np.ndarray</span>
+<span class="sd">            The matrix after random noise has been added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">max_entry</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
+        <span class="n">matrix</span> <span class="o">+=</span> <span class="n">max_entry</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">err</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matrix</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize affinity tensor w from file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assortative</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+            <span class="p">),</span> <span class="s2">&quot;The shape of the affinity tensor w is incorrect.&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_random_noise</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_w_dyn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Initialize the affinity tensor w from the input file</span>
+        <span class="n">w0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span>
+        <span class="c1"># Initialize the affinity tensor w with zeros</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assortative</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">w0</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">w0</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">w0</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">w0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Add random noise to the affinity tensor w if fix_w is False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fix_w</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_random_noise</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_w_stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Initialize the affinity tensor w from the input file</span>
+        <span class="n">w0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span>
+        <span class="c1"># Initialize the affinity tensor w with zeros</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assortative</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">w0</span><span class="p">))</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">w0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Add random noise to the affinity tensor w if fix_w is False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fix_w</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_random_noise</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="nd">@singledispatchmethod</span>
+    <span class="k">def</span> <span class="nf">_randomize_beta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize community-parameter matrix beta from file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        shape : int</span>
+<span class="sd">                The shape of the beta matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="nd">@_randomize_beta</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assign a random number in (0, 1.) to each entry of the beta matrix, and normalize each row.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        shape : tuple</span>
+<span class="sd">                The shape of the beta matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">def</span> <span class="nf">_randomize_u_v</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalize_rows</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assign a random number in (0, 1.) to each entry of the membership matrices u and v,</span>
+<span class="sd">        and normalize each row if normalize_rows is True.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        normalize_rows : bool</span>
+<span class="sd">                         If True, normalize each row of the membership matrices u and v.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">))</span>
+        <span class="c1"># Normalize each row of the membership matrix u</span>
+        <span class="k">if</span> <span class="n">normalize_rows</span><span class="p">:</span>
+            <span class="c1"># Compute the sum of each row of the membership matrix u</span>
+            <span class="n">row_sums</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># Normalize each row of the membership matrix u if the sum of the row is greater than 0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">[</span><span class="n">row_sums</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">row_sums</span><span class="p">[</span><span class="n">row_sums</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">undirected</span><span class="p">:</span>
+            <span class="c1"># Set the membership matrix v to be a random sample of shape (self.N, self.K)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">))</span>
+            <span class="c1"># Normalize each row of the membership matrix v</span>
+            <span class="k">if</span> <span class="n">normalize_rows</span><span class="p">:</span>
+                <span class="n">row_sums</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">row_sums</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">row_sums</span><span class="p">[</span><span class="n">row_sums</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If the graph is undirected, set the membership matrix v to be equal to the</span>
+            <span class="c1"># membership matrix u</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span>
+
+    <span class="k">def</span> <span class="nf">_randomize_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assign a random number in (0, 1.) to each entry of the affinity tensor w.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assortative</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_randomize_eta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_unit_uniform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a random number in (0, 1.) or (1., 50.) based on the flag.</span>
+<span class="sd">        For CRep the default is (0, 1.) and for JointCRep the default is (1., 50.).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        use_unit_uniform : bool</span>
+<span class="sd">            If True, generate a random number in (1., 50.).</span>
+<span class="sd">            If False, generate a random number in (0, 1.).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">use_unit_uniform</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1.01</span><span class="p">,</span> <span class="mf">49.99</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_old_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update values of the parameters in the previous iteration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_variables</span><span class="p">(</span><span class="n">source_suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">target_suffix</span><span class="o">=</span><span class="s2">&quot;_old&quot;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">def</span> <span class="nf">_update_optimal_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update values of the parameters after convergence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_variables</span><span class="p">(</span><span class="n">source_suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">target_suffix</span><span class="o">=</span><span class="s2">&quot;_f&quot;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">def</span> <span class="nf">_lambda_nz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subs_nz</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">temporal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the mean lambda_ij for only non-zero entries.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        subs_nz : tuple</span>
+<span class="sd">                  Indices of elements of data that are non-zero.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nz_recon_I : ndarray</span>
+<span class="sd">                     Mean lambda_ij for only non-zero entries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">temporal</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">assortative</span><span class="p">:</span>
+                <span class="n">nz_recon_IQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                    <span class="s2">&quot;Ik,Ikq-&gt;Iq&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">[</span><span class="n">subs_nz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">[</span><span class="n">subs_nz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:,</span> <span class="p">:]</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nz_recon_IQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                    <span class="s2">&quot;Ik,Ik-&gt;Ik&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">[</span><span class="n">subs_nz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">[</span><span class="n">subs_nz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:]</span>
+                <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">assortative</span><span class="p">:</span>
+                <span class="n">nz_recon_IQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                    <span class="s2">&quot;Ik,kq-&gt;Iq&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">[</span><span class="n">subs_nz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nz_recon_IQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;Ik,k-&gt;Ik&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">[</span><span class="n">subs_nz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
+
+        <span class="n">nz_recon_I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;Iq,Iq-&gt;I&quot;</span><span class="p">,</span> <span class="n">nz_recon_IQ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">subs_nz</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">:])</span>
+
+        <span class="k">return</span> <span class="n">nz_recon_I</span>
+
+    <span class="k">def</span> <span class="nf">_ps_likelihood</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">GraphDataType</span><span class="p">,</span>
+        <span class="n">data_T</span><span class="p">:</span> <span class="n">COO</span><span class="p">,</span>
+        <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the pseudo-log-likelihood.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the log-likelihood.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_check_for_convergence</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">it</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">loglik</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">coincide</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">convergence</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check for convergence of the models.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : GraphDataType</span>
+<span class="sd">               Graph adjacency tensor.</span>
+<span class="sd">        it : int</span>
+<span class="sd">             Current iteration number.</span>
+<span class="sd">        loglik : float</span>
+<span class="sd">                 Current log-likelihood value.</span>
+<span class="sd">        coincide : int</span>
+<span class="sd">                   Number of times the update of the log-likelihood respects the convergence_tol.</span>
+<span class="sd">        convergence : bool</span>
+<span class="sd">                      Flag for convergence.</span>
+<span class="sd">        use_pseudo_likelihood : bool, default False</span>
+<span class="sd">                                Flag to indicate whether to use pseudo likelihood.</span>
+<span class="sd">        data_T_vals : Optional[np.ndarray]</span>
+<span class="sd">                      Array with values of entries A[j, i] given non-zero entry (i, j).</span>
+<span class="sd">        subs_nz : Optional[Tuple[np.ndarray]]</span>
+<span class="sd">                  Indices of elements of data that are non-zero.</span>
+<span class="sd">        T : Optional[int]</span>
+<span class="sd">            Number of time steps.</span>
+<span class="sd">        data_T : Optional[GraphDataType]</span>
+<span class="sd">                 Graph adjacency tensor (transpose).</span>
+<span class="sd">        mask : Optional[np.ndarray]</span>
+<span class="sd">               Mask for selecting the held out set in the adjacency tensor in case of cross-validation.</span>
+<span class="sd">        kwargs : Union[np.ndarray, int, List[int], Tuple[np.ndarray]]</span>
+<span class="sd">                 Additional parameters that might be needed for the computation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        it : int</span>
+<span class="sd">             Updated iteration number.</span>
+<span class="sd">        loglik : float</span>
+<span class="sd">                 Updated log-likelihood value.</span>
+<span class="sd">        coincide : int</span>
+<span class="sd">                   Updated number of times the update of the log-likelihood respects the convergence_tol.</span>
+<span class="sd">        convergence : bool</span>
+<span class="sd">                      Updated flag for convergence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check for convergence</span>
+        <span class="k">if</span> <span class="n">it</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">old_L</span> <span class="o">=</span> <span class="n">loglik</span>
+            <span class="n">loglik</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_likelihood</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">loglik</span> <span class="o">-</span> <span class="n">old_L</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_tol</span><span class="p">:</span>
+                <span class="n">coincide</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">coincide</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Define the convergence criterion</span>
+        <span class="n">convergence</span> <span class="o">=</span> <span class="n">coincide</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision</span> <span class="ow">or</span> <span class="n">convergence</span>
+        <span class="c1"># Update the number of iterations</span>
+        <span class="n">it</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">it</span><span class="p">,</span> <span class="n">loglik</span><span class="p">,</span> <span class="n">coincide</span><span class="p">,</span> <span class="n">convergence</span>
+
+    <span class="k">def</span> <span class="nf">_check_for_convergence_delta</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">it</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">coincide</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">du</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dv</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dw</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">de</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">convergence</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check for convergence by using the maximum distances between the old and the new</span>
+<span class="sd">        parameters values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        it : int</span>
+<span class="sd">             Number of iteration.</span>
+<span class="sd">        coincide : int</span>
+<span class="sd">                   Number of time the update of the log-likelihood respects the convergence_tol.</span>
+<span class="sd">        du : float</span>
+<span class="sd">             Maximum distance between the old and the new membership matrix U.</span>
+<span class="sd">        dv : float</span>
+<span class="sd">             Maximum distance between the old and the new membership matrix V.</span>
+<span class="sd">        dw : float</span>
+<span class="sd">             Maximum distance between the old and the new affinity tensor W.</span>
+<span class="sd">        de : float</span>
+<span class="sd">             Maximum distance between the old and the new eta parameter.</span>
+<span class="sd">        convergence : bool</span>
+<span class="sd">                      Flag for convergence.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        it : int</span>
+<span class="sd">             Number of iteration.</span>
+<span class="sd">        coincide : int</span>
+<span class="sd">                   Number of time the update of the log-likelihood respects the convergence_tol.</span>
+<span class="sd">        convergence : bool</span>
+<span class="sd">                      Flag for convergence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">du</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_tol</span>
+            <span class="ow">and</span> <span class="n">dv</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_tol</span>
+            <span class="ow">and</span> <span class="n">dw</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_tol</span>
+            <span class="ow">and</span> <span class="n">de</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_tol</span>
+        <span class="p">):</span>
+            <span class="n">coincide</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coincide</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">coincide</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision</span><span class="p">:</span>
+            <span class="n">convergence</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">it</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">it</span><span class="p">,</span> <span class="n">coincide</span><span class="p">,</span> <span class="n">convergence</span>
+
+    <span class="k">def</span> <span class="nf">_output_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Output results.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        maxL : float</span>
+<span class="sd">               Maximum log-likelihood.</span>
+<span class="sd">        nodes : list</span>
+<span class="sd">                List of nodes IDs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if the evaluation folder exists, otherwise create it</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span><span class="p">)</span>
+        <span class="n">output_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Define the evaluation file</span>
+        <span class="n">end_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_file</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;theta</span><span class="si">{</span><span class="n">end_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.npz&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create a dictionary to hold the attributes to be saved</span>
+        <span class="n">attributes_to_save</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Iterate over the instance&#39;s attributes</span>
+        <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Check if the attribute is a numpy array and its name is in the list</span>
+            <span class="k">if</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes_to_save_names</span><span class="p">:</span>
+                <span class="c1"># Remove the &#39;_f&#39; suffix from the attribute name if it exists</span>
+                <span class="n">attr_name_clean</span> <span class="o">=</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">&quot;_f&quot;</span><span class="p">)</span>
+                <span class="c1"># Remove the &#39;pr&#39; or &#39;br&#39; suffix if it exists</span>
+                <span class="n">attr_name_clean</span> <span class="o">=</span> <span class="n">attr_name_clean</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">&quot;pr&quot;</span><span class="p">)</span>
+                <span class="n">attr_name_clean</span> <span class="o">=</span> <span class="n">attr_name_clean</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">&quot;br&quot;</span><span class="p">)</span>
+                <span class="c1"># Add the attribute to the dictionary with the cleaned name</span>
+                <span class="n">attributes_to_save</span><span class="p">[</span><span class="n">attr_name_clean</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr_value</span>
+
+        <span class="c1"># Save the attributes</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="o">**</span><span class="n">attributes_to_save</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Inferred parameters saved in: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">outfile</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;To load: theta=np.load(filename), then e.g. theta[&quot;u&quot;]&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_evaluate_fit_results</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">maxL</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">conv</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">best_loglik_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the results of the fitting process and log the results.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        maxL : float</span>
+<span class="sd">            The maximum log-likelihood obtained from the fitting process.</span>
+<span class="sd">        conv : bool</span>
+<span class="sd">            A flag indicating whether the fitting process has converged.</span>
+<span class="sd">        best_loglik_values : list of float, optional</span>
+<span class="sd">            A list of the best log-likelihood values obtained at each iteration of the fitting</span>
+<span class="sd">            process.</span>
+<span class="sd">            If not provided, it defaults to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">best_loglik_values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flag_conv</span> <span class="o">==</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Algorithm did not converge. Please increase the number of realizations, or the maximum number of iterations.&quot;</span>
+                <span class="n">log_and_raise_error</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;The conv_flag is &#39;deltas&#39;; there is no best log-likelihood.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Log the best realization, maximum log-likelihood, and the best iterations</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;Best realization = </span><span class="si">%s</span><span class="s2"> - maxL = </span><span class="si">%s</span><span class="s2"> - best iterations = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">best_r</span><span class="p">,</span>
+            <span class="n">maxL</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">final_it</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Log that the algorithm did converge</span>
+        <span class="k">if</span> <span class="n">conv</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Algorithm successfully converged after </span><span class="si">%d</span><span class="s2"> iterations with a maximum log-likelihood of </span><span class="si">%.4f</span><span class="s2">.&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">final_it</span><span class="p">,</span>
+                <span class="n">maxL</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Algorithm did not converge.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if the fitting process has converged</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_it</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span> <span class="ow">not</span> <span class="n">conv</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Solution failed to converge in </span><span class="si">%s</span><span class="s2"> EM steps!&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Parameters won&#39;t be saved for this realization! If you have &quot;</span>
+                <span class="s2">&quot;provided a number of realizations equal to one, please increase it.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># If the fitting process has converged and out_inference is True, evaluate the results</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_inference</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output_results</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Parameters won&#39;t be saved! If you want to save them, set out_inference=True.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># If plot_loglik and flag_conv are both True, plot the best log-likelihood values</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_loglik</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flag_conv</span> <span class="o">==</span> <span class="s2">&quot;log&quot;</span><span class="p">):</span>
+            <span class="n">plot_L</span><span class="p">(</span><span class="n">best_loglik_values</span><span class="p">,</span> <span class="n">int_ticks</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_log_realization_info</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">r</span><span class="p">,</span>
+        <span class="n">loglik</span><span class="p">,</span>
+        <span class="n">final_it</span><span class="p">,</span>
+        <span class="n">time_start</span><span class="p">,</span>
+        <span class="n">convergence</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Log the current realization number, log-likelihood, number of iterations, and elapsed time.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        r : int</span>
+<span class="sd">            Current realization number.</span>
+<span class="sd">        loglik : float</span>
+<span class="sd">            Current log-likelihood.</span>
+<span class="sd">        final_it : int</span>
+<span class="sd">            Current number of iterations.</span>
+<span class="sd">        time_start : float</span>
+<span class="sd">            Start time of the realization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;num. realizations = </span><span class="si">%s</span><span class="s2"> - Log-likelihood = </span><span class="si">%s</span><span class="s2"> - iterations = </span><span class="si">%s</span><span class="s2"> - time = </span><span class="si">%s</span><span class="s2"> seconds - &quot;</span>
+            <span class="s2">&quot;convergence = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">r</span><span class="p">,</span>
+            <span class="n">loglik</span><span class="p">,</span>
+            <span class="n">final_it</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="n">convergence</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ModelBase.compute_likelihood">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.compute_likelihood">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">compute_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the log-likelihood of the data.</span>
+
+<span class="sd">        This is an abstract method that must be implemented in each derived class.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="ModelBase.load_data">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.load_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">adj_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GraphData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load the data from the input files.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        files</span>
+<span class="sd">            The directory containing the input files.</span>
+<span class="sd">        adj_name</span>
+<span class="sd">            The name of the adjacency file.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Additional keyword arguments to pass to the data loading function.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        GraphData</span>
+<span class="sd">            The loaded graph data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">adj_name</span><span class="p">)</span>
+        <span class="n">gdata</span><span class="p">:</span> <span class="n">GraphData</span> <span class="o">=</span> <span class="n">build_adjacency_from_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gdata</span></div>
+
+
+<div class="viewcode-block" id="ModelBase.get_params_to_load_data">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.get_params_to_load_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_params_to_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parameters from the arguments.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args : Namespace</span>
+<span class="sd">               The arguments.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        params : Dict[str, Any]</span>
+<span class="sd">                 The parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;files&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;adj_name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ego&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;alter&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;undirected&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;force_dense&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;noselfloop&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;binary&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="ModelBase.get_data_sum">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.get_data_sum">[docs]</a>
+    <span class="nd">@singledispatchmethod</span>
+    <span class="k">def</span> <span class="nf">get_data_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">GraphDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the sum of the data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : GraphDataType</span>
+<span class="sd">            The data to sum.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If the data type is unsupported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported data type&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@get_data_sum</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the sum of a numpy array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : np.ndarray</span>
+<span class="sd">            The numpy array to sum.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The sum of the numpy array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="nd">@get_data_sum</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">COO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the sum of a COO sparse array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : COO</span>
+<span class="sd">            The COO sparse array to sum.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The sum of the COO sparse array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ModelBase.get_data_toarray">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.get_data_toarray">[docs]</a>
+    <span class="nd">@singledispatchmethod</span>
+    <span class="k">def</span> <span class="nf">get_data_toarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">GraphDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert the data to a numpy array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : GraphDataType</span>
+<span class="sd">            The data to convert.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The converted numpy array.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If the data type is unsupported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported data type&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@get_data_toarray</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the numpy array as is.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : np.ndarray</span>
+<span class="sd">            The numpy array.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The same numpy array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="nd">@get_data_toarray</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">COO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a COO sparse array to a numpy array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : COO</span>
+<span class="sd">            The COO sparse array to convert.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The converted numpy array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ModelBase.get_data_nonzero">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.get_data_nonzero">[docs]</a>
+    <span class="nd">@singledispatchmethod</span>
+    <span class="k">def</span> <span class="nf">get_data_nonzero</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">GraphDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the indices of non-zero elements in the data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : GraphDataType</span>
+<span class="sd">            The data to get non-zero indices from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            The indices of non-zero elements.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If the data type is unsupported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported data type&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@get_data_nonzero</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the indices of non-zero elements in a numpy array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : np.ndarray</span>
+<span class="sd">            The numpy array to get non-zero indices from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            The indices of non-zero elements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+
+    <span class="nd">@get_data_nonzero</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">COO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the indices of non-zero elements in a COO sparse array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : COO</span>
+<span class="sd">            The COO sparse array to get non-zero indices from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            The indices of non-zero elements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">coords</span>
+
+<div class="viewcode-block" id="ModelBase.get_data_values">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelBase.get_data_values">[docs]</a>
+    <span class="nd">@singledispatchmethod</span>
+    <span class="k">def</span> <span class="nf">get_data_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the values of non-zero elements in the data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : Union[np.ndarray, COO]</span>
+<span class="sd">            The data to get non-zero values from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The values of non-zero elements.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If the data type is unsupported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported data type&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@get_data_values</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the values of non-zero elements in a numpy array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : np.ndarray</span>
+<span class="sd">            The numpy array to get non-zero values from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The values of non-zero elements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()]</span>
+
+    <span class="nd">@get_data_values</span><span class="o">.</span><span class="n">register</span>
+    <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">COO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the values of non-zero elements in a COO sparse array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : COO</span>
+<span class="sd">            The COO sparse array to get non-zero values from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The values of non-zero elements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="ModelUpdateMixin">
+<a class="viewcode-back" href="../../../generated/probinet.models.base.html#probinet.models.base.ModelUpdateMixin">[docs]</a>
+<span class="k">class</span> <span class="nc">ModelUpdateMixin</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mixin class for the update methods of the models classes. It is not a requirement to inherit</span>
+<span class="sd">    from this class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">err_max</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flag_conv</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_convergence</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_convergence_delta</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_start</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">u</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">u_old</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_old</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_old</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_u</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_v</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_w</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_eta</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_likelihood</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_finalize_update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">matrix_old</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="n">low_values_indices</span> <span class="o">=</span> <span class="n">matrix</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">err_max</span>  <span class="c1"># values are too low</span>
+        <span class="n">matrix</span><span class="p">[</span><span class="n">low_values_indices</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># and set to 0.</span>
+
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">matrix</span> <span class="o">-</span> <span class="n">matrix_old</span><span class="p">))</span>
+        <span class="n">matrix_old</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dist</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">matrix_old</span>
+
+    <span class="k">def</span> <span class="nf">_update_U</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># A generic function here that will do what each class needs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_specific_update_U</span><span class="p">()</span>
+
+        <span class="c1"># Finalize the update of the membership matrix U</span>
+        <span class="n">dist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finalize_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u_old</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dist</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_specific_update_U</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the membership matrix U.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_update_V</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># a generic function here that will do what each class needs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_specific_update_V</span><span class="p">()</span>  <span class="c1"># subs_nz, subs_X_nz, mask, subs_nz_mask)</span>
+
+        <span class="n">dist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finalize_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_old</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dist</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_specific_update_V</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the membership matrix V.</span>
+
+<span class="sd">        This is an abstract method that must be implemented in each derived class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_update_W</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># a generic function here that will do what each class needs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_specific_update_W</span><span class="p">()</span>
+
+        <span class="n">dist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finalize_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_old</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dist</span>
+
+    <span class="k">def</span> <span class="nf">_specific_update_W</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the affinity tensor W.</span>
+
+<span class="sd">        This is an abstract method that must be implemented in each derived class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_update_W_assortative</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># a generic function here that will do what each class needs</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_specific_update_W_assortative</span><span class="p">()</span>
+
+        <span class="n">dist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finalize_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_old</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dist</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_specific_update_W_assortative</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the membership matrix.</span>
+
+<span class="sd">        This is an abstract method that must be implemented in each derived class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_update_membership</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the membership matrix.</span>
+
+<span class="sd">        This is an abstract method that must be implemented in each derived class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_update_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the cache.</span>
+
+<span class="sd">        This is an abstract method that must be implemented in each derived class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_update_old_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update values of the parameters in the previous iteration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_variables</span><span class="p">(</span><span class="n">source_suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">target_suffix</span><span class="o">=</span><span class="s2">&quot;_old&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_optimal_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update values of the parameters after convergence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_variables</span><span class="p">(</span><span class="n">source_suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">target_suffix</span><span class="o">=</span><span class="s2">&quot;_f&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_realization</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">r</span><span class="p">,</span>
+        <span class="n">it</span><span class="p">,</span>
+        <span class="n">loglik</span><span class="p">,</span>
+        <span class="n">coincide</span><span class="p">,</span>
+        <span class="n">convergence</span><span class="p">,</span>
+        <span class="n">loglik_values</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform the EM update and check for convergence.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        r : int</span>
+<span class="sd">            Number of realizations.</span>
+<span class="sd">        it : int</span>
+<span class="sd">            Number of iterations.</span>
+<span class="sd">        loglik : float</span>
+<span class="sd">            Log-likelihood value.</span>
+<span class="sd">        coincide : int</span>
+<span class="sd">            Number of times the update of the log-likelihood respects the convergence tolerance.</span>
+<span class="sd">        convergence : bool</span>
+<span class="sd">            Flag for convergence.</span>
+<span class="sd">        loglik_values : list</span>
+<span class="sd">            List of log-likelihood values.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        it : int</span>
+<span class="sd">            Updated number of iterations.</span>
+<span class="sd">        loglik : float</span>
+<span class="sd">            Updated log-likelihood value.</span>
+<span class="sd">        coincide : int</span>
+<span class="sd">            Updated number of times the update of the log-likelihood respects the convergence tolerance.</span>
+<span class="sd">        convergence : bool</span>
+<span class="sd">            Updated flag for convergence.</span>
+<span class="sd">        loglik_values : list</span>
+<span class="sd">            Updated list of log-likelihood values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Updating realization </span><span class="si">%s</span><span class="s2"> ...&quot;</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+        <span class="c1"># It enters a while loop that continues until either convergence is achieved or the</span>
+        <span class="c1"># maximum number of iterations (self.max_iter) is reached.</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">convergence</span> <span class="ow">and</span> <span class="n">it</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">:</span>
+            <span class="c1"># It performs the main EM update (self._update_em()</span>
+            <span class="c1"># which updates the memberships and calculates the maximum difference</span>
+            <span class="c1"># between new and old parameters.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_em</span><span class="p">()</span>
+            <span class="c1"># Depending on the convergence flag (self.flag_conv), it checks for convergence using</span>
+            <span class="c1"># either the  log-likelihood values (self._check_for_convergence(data, it,</span>
+            <span class="c1"># loglik,  coincide, convergence, data_T=data_T, mask=mask)) or the maximum distances</span>
+            <span class="c1"># between the old and the new parameters (self._check_for_convergence_delta(it,</span>
+            <span class="c1"># coincide, delta_u, delta_v, delta_w, delta_eta, convergence)).</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flag_conv</span> <span class="o">==</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span>
+                <span class="n">it</span><span class="p">,</span> <span class="n">loglik</span><span class="p">,</span> <span class="n">coincide</span><span class="p">,</span> <span class="n">convergence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_convergence</span><span class="p">(</span>
+                    <span class="n">it</span><span class="p">,</span> <span class="n">loglik</span><span class="p">,</span> <span class="n">coincide</span><span class="p">,</span> <span class="n">convergence</span>
+                <span class="p">)</span>
+                <span class="n">loglik_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loglik</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">it</span> <span class="o">%</span> <span class="mi">100</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;num. realization = </span><span class="si">%s</span><span class="s2"> - iterations = </span><span class="si">%s</span><span class="s2"> - time = </span><span class="si">%.2f</span><span class="s2"> seconds&quot;</span><span class="p">,</span>
+                        <span class="n">r</span><span class="p">,</span>
+                        <span class="n">it</span><span class="p">,</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span>
+                    <span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">flag_conv</span> <span class="o">==</span> <span class="s2">&quot;deltas&quot;</span><span class="p">:</span>
+                <span class="n">it</span><span class="p">,</span> <span class="n">coincide</span><span class="p">,</span> <span class="n">convergence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_convergence_delta</span><span class="p">(</span>
+                    <span class="n">it</span><span class="p">,</span>
+                    <span class="n">coincide</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">delta_u</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">delta_v</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">delta_w</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">delta_eta</span><span class="p">,</span>
+                    <span class="n">convergence</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">it</span> <span class="o">%</span> <span class="mi">100</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;Nreal = </span><span class="si">%s</span><span class="s2"> - iterations = </span><span class="si">%s</span><span class="s2"> - time = </span><span class="si">%.2f</span><span class="s2"> seconds&quot;</span><span class="p">,</span>
+                        <span class="n">r</span><span class="p">,</span>
+                        <span class="n">it</span><span class="p">,</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log_and_raise_error</span><span class="p">(</span>
+                    <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;flag_conv can be either log or deltas!&quot;</span>
+                <span class="p">)</span>
+        <span class="c1"># After the while loop, it checks if the current  log-likelihood is the maximum</span>
+        <span class="c1"># so far. If it is, it updates the optimal parameters (</span>
+        <span class="c1"># self._update_optimal_parameters()) and sets maxL to the current log-likelihood.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flag_conv</span> <span class="o">==</span> <span class="s2">&quot;deltas&quot;</span><span class="p">:</span>
+            <span class="n">loglik</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_likelihood</span><span class="p">()</span>  <span class="c1"># data, data_T, mask</span>
+
+        <span class="k">return</span> <span class="n">it</span><span class="p">,</span> <span class="n">loglik</span><span class="p">,</span> <span class="n">coincide</span><span class="p">,</span> <span class="n">convergence</span><span class="p">,</span> <span class="n">loglik_values</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_update_em</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update parameters via EM procedure.</span>
+
+<span class="sd">        This is an abstract method that must be implemented in each derived class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_copy_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_suffix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_suffix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># of derived classes</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Copy variables from source to target.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source_suffix : str</span>
+<span class="sd">                        The suffix of the source variable names.</span>
+<span class="sd">        target_suffix : str</span>
+<span class="sd">                        The suffix of the target variable names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;u&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">]:</span>
+            <span class="n">source_var</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}{</span><span class="n">source_suffix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}{</span><span class="n">target_suffix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">source_var</span><span class="p">))</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

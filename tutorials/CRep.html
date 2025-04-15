@@ -1,0 +1,990 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Generation of Synthetic Networks using the CRep Algorithm &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/CRep';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Analysis Of A Real-World Dataset Using The JointCRep Algorithm" href="JointCRep.html" />
+    <link rel="prev" title="A Beginner’s Guide to the MTCOV Algorithm in the probinet Package" href="MTCOV.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/CRep.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Generation of Synthetic Networks using the CRep Algorithm</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generating-a-synthetic-network-using-the-crep-algorithm">Generating a synthetic network using the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-network-using-the-probinet-package">Analyzing the network using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-model">Running the model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-results">Analyzing the results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="generation-of-synthetic-networks-using-the-crep-algorithm">
+<h1>Generation of Synthetic Networks using the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> Algorithm<a class="headerlink" href="#generation-of-synthetic-networks-using-the-crep-algorithm" title="Link to this heading">#</a></h1>
+<p>In this tutorial, we show how to use the <em>Probabilistic Generative Models</em> (<code class="docutils literal notranslate"><span class="pre">probinet</span></code>) package for generating synthetic network data.</p>
+<p>We use the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> (<strong>C</strong>ommunity and <strong>Re</strong>ci<strong>p</strong>rocity) algorithm <span id="id1">[<a class="reference internal" href="../references.html#id5" title="Hadiseh Safdari, Martina Contisciani, and Caterina De Bacco. Generative model for reciprocity and community detection in networks. Physical Review Research, 3(2):023209, 2021.">SCDB21</a>]</span>, which is a probabilistic generative method designed to model directed networks. The main assumption of this approach is that communities and reciprocity are the main mechanisms for tie formation.</p>
+<section id="setting-the-logger">
+<h2>Setting the Logger<a class="headerlink" href="#setting-the-logger" title="Link to this heading">#</a></h2>
+<p>Let’s first configure the logger to show the information about the execution of the algorithms.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the logging module</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># Get the root logger and set its level to INFO</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="generating-a-synthetic-network-using-the-crep-algorithm">
+<h2>Generating a synthetic network using the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm<a class="headerlink" href="#generating-a-synthetic-network-using-the-crep-algorithm" title="Link to this heading">#</a></h2>
+<p>We start by loading the configuration file for the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm. This file contains the parameters needed to generate the synthetic network. The configuration file is in YAML format and is included in the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the `open_binary` function from the `importlib.resources` module</span>
+<span class="c1"># This function is used to open a binary file included in a package</span>
+<span class="kn">from</span> <span class="nn">importlib.resources</span> <span class="kn">import</span> <span class="n">open_binary</span>
+
+<span class="c1"># Import the `yaml` module to convert the data from a YAML formatted string into a Python dictionary</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+
+<span class="c1"># Define the path to the configuration file for the `CRep` algorithm</span>
+<span class="n">config_path</span> <span class="o">=</span> <span class="s2">&quot;setting_synthetic_data_CRep.yaml&quot;</span>
+
+<span class="c1"># Open the configuration file for the `CRep` algorithm</span>
+<span class="k">with</span> <span class="n">open_binary</span><span class="p">(</span><span class="s2">&quot;probinet.data.model&quot;</span><span class="p">,</span> <span class="n">config_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+    <span class="c1"># Load the content of the configuration file into a dictionary</span>
+    <span class="n">synthetic_configuration</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">yaml</span><span class="o">.</span><span class="n">Loader</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/tmp/ipykernel_2232/567822886.py:12: DeprecationWarning: open_binary is deprecated. Use files() instead. Refer to https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy for migration advice.
+  with open_binary(&quot;probinet.data.model&quot;, config_path) as fp:
+</pre></div>
+</div>
+</div>
+</div>
+<p>As we can see in the dictionary, the reciprocity coefficient <code class="docutils literal notranslate"><span class="pre">eta</span></code> is set to 0.5, meaning that the network will have a moderate level of reciprocity. Nevertheless, we are interested in generating a network with a higher level of reciprocity, thus we increase this value to 0.8. We also modify some details regarding the output of the algorithm.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the needed modules</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Increase the reciprocity coefficient</span>
+<span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;eta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.8</span>
+<span class="c1"># The flag `output_parameters` determines whether the models parameters</span>
+<span class="c1"># should be saved to a file</span>
+<span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;output_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="c1"># The flag `output_adj` determines whether the adjacency matrix should</span>
+<span class="c1"># be saved to a file</span>
+<span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;output_adj&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="c1"># The argument `outfile_adj` determines the name of the file for the</span>
+<span class="c1"># adjacency matrix</span>
+<span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;outfile_adj&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;synthetic_network.dat&quot;</span>
+<span class="c1"># The argument `out_folder` determines the output folder for the adjacency</span>
+<span class="c1"># matrix</span>
+<span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;out_folder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tutorial_outputs/CRep_synthetic/&quot;</span>
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;rng&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Once the parameters are set, we can generate a synthetic network using the <code class="docutils literal notranslate"><span class="pre">GM_reciprocity</span></code> class. For a better understanding of the structure of the package and its configuration, we invite the reader to take a look at the tutorial on the <a class="reference internal" href="MTCOV.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm</span></a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">synthetic_configuration</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;N&#39;: 600,
+ &#39;K&#39;: 3,
+ &#39;eta&#39;: 0.8,
+ &#39;avg_degree&#39;: 20,
+ &#39;ExpM&#39;: None,
+ &#39;over&#39;: 0.0,
+ &#39;corr&#39;: 0.0,
+ &#39;alpha&#39;: 0.1,
+ &#39;ag&#39;: 0.1,
+ &#39;beta&#39;: 0.1,
+ &#39;Normalization&#39;: 0,
+ &#39;structure&#39;: &#39;assortative&#39;,
+ &#39;end_file&#39;: &#39;&#39;,
+ &#39;out_folder&#39;: &#39;tutorial_outputs/CRep_synthetic/&#39;,
+ &#39;output_parameters&#39;: False,
+ &#39;output_adj&#39;: True,
+ &#39;outfile_adj&#39;: &#39;synthetic_network.dat&#39;,
+ &#39;rng&#39;: Generator(PCG64) at 0x7EFE84815380}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the `GM_reciprocity` class from the `probinet.synthetic.reciprocity` module</span>
+<span class="kn">from</span> <span class="nn">probinet.synthetic.reciprocity</span> <span class="kn">import</span> <span class="n">GM_reciprocity</span>
+
+<span class="c1"># Define the class `gen` as an instance of the `GM_reciprocity` class using the</span>
+<span class="c1"># configuration parameters</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="n">GM_reciprocity</span><span class="p">(</span><span class="o">**</span><span class="n">synthetic_configuration</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can check that the model parameters have been set correctly as attributes of the <code class="docutils literal notranslate"><span class="pre">gen</span></code> object.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gen</span><span class="o">.</span><span class="vm">__dict__</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;N&#39;: 600,
+ &#39;K&#39;: 3,
+ &#39;avg_degree&#39;: 20,
+ &#39;rng&#39;: Generator(PCG64) at 0x7EFE84815380,
+ &#39;alpha&#39;: 0.1,
+ &#39;ag&#39;: 0.1,
+ &#39;beta&#39;: 0.1,
+ &#39;end_file&#39;: &#39;&#39;,
+ &#39;out_folder&#39;: &#39;tutorial_outputs/CRep_synthetic/&#39;,
+ &#39;output_parameters&#39;: False,
+ &#39;output_adj&#39;: True,
+ &#39;outfile_adj&#39;: &#39;synthetic_network.dat&#39;,
+ &#39;eta&#39;: 0.8,
+ &#39;ExpM&#39;: 6000,
+ &#39;over&#39;: 0.0,
+ &#39;corr&#39;: 0.0,
+ &#39;Normalization&#39;: 0,
+ &#39;structure&#39;: &#39;assortative&#39;}
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can now generate a synthetic network using the <code class="docutils literal notranslate"><span class="pre">reciprocity_planted_network</span></code> method, which follows the assumptions of the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm. Notice that a network generated with this method is directed and weighted. The function returns a MultiDiGraph NetworkX object <code class="docutils literal notranslate"><span class="pre">G</span></code> and its adjacency matrix <code class="docutils literal notranslate"><span class="pre">A</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate the network using the `reciprocity_planted_network` method</span>
+<span class="n">G</span><span class="p">,</span> <span class="n">A</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">reciprocity_planted_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Number of links in the upper triangular matrix: 2700
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Number of links in the lower triangular matrix: 2656
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Sum of weights in the upper triangular matrix: 3145.000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Sum of weights in the lower triangular matrix: 3113.000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Number of possible unordered pairs: 179700
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Removed 0 nodes, because not part of the largest connected component
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Number of nodes: 600
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Number of edges: 5356
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Average degree (2E/N): 17.853
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Average weighted degree (2M/N): 20.86
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Expected reciprocity: 0.885
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Reciprocity (networkX) = 0.628
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Reciprocity (considering the weights of the edges) = 0.835
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Adjacency matrix saved in: tutorial_outputs/CRep_synthetic/synthetic_network.dat
+</pre></div>
+</div>
+</div>
+</div>
+<p>Notice that, although we set the reciprocity coefficient to 0.8, the actual network reciprocity is 0.628. This mismatch is because <code class="docutils literal notranslate"><span class="pre">CRep</span></code> generates weighted networks. By considering the edge weights, the actual network reciprocity becomes 0.835, pretty close to the desired one.</p>
+<p>We can now inspect how the network looks like.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># Plot the adjacency matrix</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Greys&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.colorbar.Colorbar at 0x7efe3a5ce840&gt;
+</pre></div>
+</div>
+<img alt="../_images/999c7559e0956476b51612d5cdb5bc339a678296410515aa7954f0937b3413aa.png" src="../_images/999c7559e0956476b51612d5cdb5bc339a678296410515aa7954f0937b3413aa.png" />
+</div>
+</div>
+<p>As we can see, the generated synthetic network reflects an assortative community structure as imposed with the parameter <code class="docutils literal notranslate"><span class="pre">structure</span></code>. In this setting, nodes tend to connect more within their own communities than with nodes from other communities, resulting in higher edge densities within the diagonal blocks of the adjacency matrix.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">output_adj=True</span></code>, the function saves the network edges as a dataframe into the <code class="docutils literal notranslate"><span class="pre">synthetic_network.dat</span></code> file in the output folder. The first and the second columns of the dataframe describe the source and the target nodes, respectively, and the last column represents the weight of their interactions.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1"># Load the dataframe</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+    <span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;out_folder&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;outfile_adj&quot;</span><span class="p">],</span>
+    <span class="n">sep</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># Print the first 5 rows of the dataframe</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>source</th>
+      <th>target</th>
+      <th>w</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>9</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0</td>
+      <td>26</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0</td>
+      <td>30</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0</td>
+      <td>39</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0</td>
+      <td>44</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<p>We are all set now! In the next section, we will use the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package to analyze the network
+and extract the community structure and reciprocity coefficient.</p>
+</section>
+<section id="analyzing-the-network-using-the-probinet-package">
+<h2>Analyzing the network using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package<a class="headerlink" href="#analyzing-the-network-using-the-probinet-package" title="Link to this heading">#</a></h2>
+<p>First, we start by importing the data using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package. This means, we will load the data
+from the <code class="docutils literal notranslate"><span class="pre">synthetic_network.dat</span></code> file and generate the adjacency matrices needed to run the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.input.loader</span> <span class="kn">import</span> <span class="n">build_adjacency_from_file</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># Define the names of the columns in the input file that</span>
+<span class="c1"># represent the source and target nodes of each edge.</span>
+<span class="n">ego</span> <span class="o">=</span> <span class="s2">&quot;source&quot;</span>
+<span class="n">alter</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span>
+
+<span class="c1"># Set the `force_dense` flag to False</span>
+<span class="n">force_dense</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Set the `binary` flag to False to load the edge weights</span>
+<span class="n">binary</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Call the `build_adjacency_from_file` function to load the data from the input file</span>
+<span class="n">graph_data</span> <span class="o">=</span> <span class="n">build_adjacency_from_file</span><span class="p">(</span>
+    <span class="n">Path</span><span class="p">(</span><span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;out_folder&quot;</span><span class="p">])</span>
+    <span class="o">/</span> <span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;outfile_adj&quot;</span><span class="p">],</span>
+    <span class="n">ego</span><span class="o">=</span><span class="n">ego</span><span class="p">,</span>
+    <span class="n">alter</span><span class="o">=</span><span class="n">alter</span><span class="p">,</span>
+    <span class="n">force_dense</span><span class="o">=</span><span class="n">force_dense</span><span class="p">,</span>
+    <span class="n">binary</span><span class="o">=</span><span class="n">binary</span><span class="p">,</span>
+    <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>To get some information about the data, we can call the <code class="docutils literal notranslate"><span class="pre">print_graph_stats</span></code> function from the
+<code class="docutils literal notranslate"><span class="pre">input.stats</span></code> module.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.input.stats</span> <span class="kn">import</span> <span class="n">print_graph_stats</span>
+
+<span class="c1"># Extract the list of graphs</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">graph_data</span><span class="o">.</span><span class="n">graph_list</span>
+<span class="c1"># Call the `print_graph_stats` function to print the basic</span>
+<span class="c1"># statistics of the graphs in the list `A`.</span>
+<span class="n">print_graph_stats</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of nodes = 600
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 5356 / &lt;k&gt; = 17.85
+M[0] = 6258 - &lt;k_weighted&gt; = 20.860
+Sparsity [0] = 0.015
+Reciprocity (networkX) = 0.628
+</pre></div>
+</div>
+</div>
+</div>
+<p>Once the network is loaded, we can give it as input to the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm to obtain estimates of the latent
+variables describing the communities and the reciprocity.</p>
+</section>
+<section id="running-the-model">
+<h2>Running the model<a class="headerlink" href="#running-the-model" title="Link to this heading">#</a></h2>
+<p>Finally, we are ready to run the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> model! The way this works is in a two-step process: <br></p>
+<ol class="arabic simple">
+<li><p>Initialize the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> model by creating an instance of the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> class.</p></li>
+<li><p>Execute the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method on the created instance to run the algorithm.</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the `CRep` class from the `probinet.models.crep` module</span>
+<span class="kn">from</span> <span class="nn">probinet.models.crep</span> <span class="kn">import</span> <span class="n">CRep</span>
+
+<span class="c1"># Create an instance of the `CRep` class</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">CRep</span><span class="p">()</span>
+
+<span class="c1"># Print all the attributes of the `CRep` instance</span>
+<span class="c1"># The `__dict__` attribute of an object is a dictionary containing</span>
+<span class="c1"># the object&#39;s attributes.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;inf&#39;: 10000000000.0, &#39;err_max&#39;: 1e-12, &#39;err&#39;: 0.1, &#39;num_realizations&#39;: 5, &#39;convergence_tol&#39;: 0.0001, &#39;decision&#39;: 10, &#39;max_iter&#39;: 1000, &#39;plot_loglik&#39;: False, &#39;flag_conv&#39;: &#39;log&#39;, &#39;__doc__&#39;: &#39;\n    Base class for the models classes that inherit from the ModelBaseParameters class. It contains the\n    methods to check the parameters of the fit method, initialize the parameters, and check for\n    convergence. All the models classes should inherit from this class.\n    &#39;, &#39;attributes_to_save_names&#39;: [&#39;u_f&#39;, &#39;v_f&#39;, &#39;w_f&#39;, &#39;eta_f&#39;, &#39;final_it&#39;, &#39;maxL&#39;, &#39;maxPSL&#39;, &#39;beta_f&#39;, &#39;nodes&#39;, &#39;pibr&#39;, &#39;mupr&#39;], &#39;u_f&#39;: array([], dtype=float64), &#39;v_f&#39;: array([], dtype=float64), &#39;w_f&#39;: array([], dtype=float64), &#39;use_unit_uniform&#39;: False, &#39;theta&#39;: {}, &#39;normalize_rows&#39;: False, &#39;nodes&#39;: [], &#39;rng&#39;: Generator(PCG64) at 0x7EFE3A7C2EA0, &#39;beta_hat&#39;: array([], dtype=float64), &#39;best_r&#39;: 0, &#39;final_it&#39;: 0, &#39;message_for_invalid_initialization&#39;: &#39;The initialization parameter can be either 0 or 1. If 0, the model will be initialized randomly. If 1, the model will be initialized with the parameters stored in the file specified in the `files` parameter.&#39;, &#39;eta_f&#39;: 0.0}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Model created! Now, we can run the model using the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the needed modules</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Get the current time</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># Run the `CRep` models</span>
+<span class="n">inferred_parameters</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">graph_data</span><span class="p">,</span>
+    <span class="n">out_inference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">out_folder</span><span class="o">=</span><span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;out_folder&quot;</span><span class="p">],</span>
+    <span class="n">end_file</span><span class="o">=</span><span class="s2">&quot;_CRep&quot;</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="c1"># Print the time elapsed since the start of the `CRep` algorithm</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Time elapsed: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">time_start</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm successfully converged after 751 iterations with a maximum log-likelihood of -16390.7659.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Inferred parameters saved in: /home/runner/work/probinet/probinet/docs/source/tutorials/tutorial_outputs/CRep_synthetic/theta_CRep.npz
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:To load: theta=np.load(filename), then e.g. theta[&quot;u&quot;]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time elapsed: 9.12 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Done! The model has been run and the results are stored into the variable <code class="docutils literal notranslate"><span class="pre">inferred_parameters</span></code> and saved into the file <code class="docutils literal notranslate"><span class="pre">theta_CRep.npz</span></code> in the output folder.</p>
+</section>
+<section id="analyzing-the-results">
+<h2>Analyzing the results<a class="headerlink" href="#analyzing-the-results" title="Link to this heading">#</a></h2>
+<p>We can now retrieve the results from the saved file.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">filename</span> <span class="o">=</span> <span class="n">synthetic_configuration</span><span class="p">[</span><span class="s2">&quot;out_folder&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/theta_CRep.npz&quot;</span>
+<span class="c1"># Load the contents of the file into a dictionary</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Unpack the latent variables from the results of the `CRep` models</span>
+<span class="c1"># The `u` variable represents the out-going memberships of the</span>
+<span class="c1"># nodes in the graph.</span>
+<span class="c1"># The `v` variable represents the in-coming memberships of the</span>
+<span class="c1"># nodes in the graph.</span>
+<span class="c1"># The `w` variable represents the affinity of the communities</span>
+<span class="c1"># The `eta` variable represents the reciprocity coefficient</span>
+<span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;u&quot;</span><span class="p">],</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">],</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">],</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;eta&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can now compare the inferred parameters with the actual ones.</p>
+<p>Notice that we don’t expect good results in retrieving the communities because we are in a regime
+with high reciprocity. Indeed, as explained in the main reference <span id="id2">[<a class="reference internal" href="../references.html#id5" title="Hadiseh Safdari, Martina Contisciani, and Caterina De Bacco. Generative model for reciprocity and community detection in networks. Physical Review Research, 3(2):023209, 2021.">SCDB21</a>]</span>,
+the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm gives  increasingly less  weight to the communities as reciprocity increases, resulting in poor community detection performance when the communities are not fully determining edge formation. On the other hand, it well summarizes the network reciprocity.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="c1"># Print the actual network reciprocity</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Actual network reciprocity: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">reciprocity</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Print the inferred reciprocity coefficient</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inferred reciprocity coefficient: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Actual network reciprocity: 0.628
+Inferred reciprocity coefficient: 0.674
+</pre></div>
+</div>
+</div>
+</div>
+<p>For a more graphical approach on how to investigate the results, we invite the reader to take a
+look at the tutorial on the <a class="reference internal" href="JointCRep.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm</span></a>.</p>
+<p>Notice also that the <code class="docutils literal notranslate"><span class="pre">GM_reciprocity</span></code> class provides various methods to create synthetic data according different generative assumptions, and the <code class="docutils literal notranslate"><span class="pre">reciprocity_planted_network</span></code> method used in this tutorial is just an example.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
+<p>This tutorial provides a guide on using the  <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package  to  generate synthetic network data. In particular, it uses the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm, which is a probabilistic generative method designed to model directed networks assuming that communities and reciprocity are the main mechanisms for tie formation.</p>
+<p>The tutorial also shows how to analyze the generated network with the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package, and how to infer the latent variables using the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm. In addition, it guides the user on how to import the inferred results.</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="MTCOV.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">A Beginner’s Guide to the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> Algorithm in the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> Package</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="JointCRep.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Analysis Of A Real-World Dataset Using The <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> Algorithm</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generating-a-synthetic-network-using-the-crep-algorithm">Generating a synthetic network using the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-network-using-the-probinet-package">Analyzing the network using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-model">Running the model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-results">Analyzing the results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

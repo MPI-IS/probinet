@@ -1,0 +1,1043 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>A Beginner’s Guide to the MTCOV Algorithm in the probinet Package &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/MTCOV';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Generation of Synthetic Networks using the CRep Algorithm" href="CRep.html" />
+    <link rel="prev" title="Inputs and Outputs" href="../start.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ACD.html">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/MTCOV.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>A Beginner’s Guide to the MTCOV Algorithm in the probinet Package</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#package-structure">Package Structure</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#input">1. Input</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#models">2. Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">3. Evaluation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#synthetic">4. Synthetic</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-selection">5. Model Selection</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#utils">6. Utils</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#main">7. Main</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data">8. Data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization">9. Visualization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-the-data">Importing the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-model">Running the Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-results">Analyzing the results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="a-beginner-s-guide-to-the-mtcov-algorithm-in-the-probinet-package">
+<h1>A Beginner’s Guide to the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> Algorithm in the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> Package<a class="headerlink" href="#a-beginner-s-guide-to-the-mtcov-algorithm-in-the-probinet-package" title="Link to this heading">#</a></h1>
+<p>In this tutorial, we demonstrate how to use the <em>Probabilistic Generative Models</em> (<code class="docutils literal notranslate"><span class="pre">probinet</span></code>) package to
+run the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm on a sample dataset.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> (<strong>M</strong>ulti<strong>t</strong>ensor and <strong>Cov</strong>ariates) algorithm is a
+probabilistic generative model designed to perform community detection and broader inference in
+attributed multilayer networks, which are networks enriched with node and edge metadata  <span id="id1">[<a class="reference internal" href="../references.html#id3" title="Martina Contisciani, Eleanor A Power, and Caterina De Bacco. Community detection with node attributes in multilayer networks. Scientific reports, 10(1):15736, 2020.">CPDB20</a>]</span>.</p>
+<section id="package-structure">
+<h2>Package Structure<a class="headerlink" href="#package-structure" title="Link to this heading">#</a></h2>
+<p>Before explaining how to use the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm, let’s explore the structure of the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package, which is organized into several main modules.</p>
+<section id="input">
+<h3>1. Input<a class="headerlink" href="#input" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">input</span></code> module handles data input for subsequent use by the algorithms in the <code class="docutils literal notranslate"><span class="pre">model</span></code> module. It comprises the following submodules:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">loader</span></code>: Functions to load data from input files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">preprocessing</span></code>: Functions for data preprocessing, such as converting NetworkX graphs to sparse adjacency matrices.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stats</span></code>: Functions for computing statistics on the data.</p></li>
+</ul>
+</section>
+<section id="models">
+<h3>2. Models<a class="headerlink" href="#models" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">models</span></code> module contains the implementation of various algorithms, including the following
+submodules:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">crep</span></code>: Implementation of the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jointcrep</span></code>: Implementation of the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dyncrep</span></code>: Implementation of the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mtcov</span></code>: Implementation of the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">acd</span></code>: Implementation of the <code class="docutils literal notranslate"><span class="pre">ACD</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">base</span></code>: Base classes and utilities for the models.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">constants</span></code>: Constants used across the models.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">classes</span></code>: Classes used across the models.</p></li>
+</ul>
+</section>
+<section id="evaluation">
+<h3>3. Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">evaluation</span></code> module contains functions responsible for handling the outputs of the models. It
+consists of the following submodules:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">community_detection</span></code>: Functions to evaluate the performance of community detection algorithms.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">expectation_computation</span></code>: Functions  for computing expectations and related metrics.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">likelihood</span></code>: Functions for computing the likelihood of the model given the data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">link_prediction</span></code>: Functions for evaluating link prediction tasks.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">covariate_prediction</span></code>: Functions for evaluating node covariate prediction tasks.</p></li>
+</ul>
+</section>
+<section id="synthetic">
+<h3>4. Synthetic<a class="headerlink" href="#synthetic" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">synthetic</span></code> module contains functions to generate synthetic data. It consists of the following submodules:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">base</span></code>: Create a synthetic, directed, and weighted network (possibly multilayer) by a standard
+mixed-membership stochastic block-model.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reciprocity</span></code>: Generate directed networks with communities and reciprocity.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dynamic</span></code>: Create directed networks with communities and reciprocity that change over time.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">anomaly</span></code>: Generate networks with node communities and anomalous edges.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">multilayer</span></code>: Create attributed multilayer networks with communities.</p></li>
+</ul>
+<p>An example of how to use the <code class="docutils literal notranslate"><span class="pre">reciprocity</span></code> submodule is shown in the tutorial on <a class="reference internal" href="CRep.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm</span></a>.</p>
+</section>
+<section id="model-selection">
+<h3>5. Model Selection<a class="headerlink" href="#model-selection" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">model_selection</span></code> module contains functions for model selection and cross-validation. It consists of the following submodules:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">parameter_search</span></code>: Functions for searching model parameters.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cross_validation</span></code>: Functions for performing cross-validation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mtcov_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dyncrep_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">acd_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">ACD</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">crep_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jointcrep_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">masking</span></code>: Functions for masking data during cross-validation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">main</span></code>: Main entry points for running model selection.</p></li>
+</ul>
+</section>
+<section id="utils">
+<h3>6. Utils<a class="headerlink" href="#utils" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">utils</span></code> module contains utility functions used across the package. It consists of the following submodules:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matrix_operations</span></code>: Functions for matrix operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tools</span></code>: General utility functions.</p></li>
+</ul>
+</section>
+<section id="main">
+<h3>7. Main<a class="headerlink" href="#main" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">main</span></code> module contains the main entry points for running the algorithms.</p>
+</section>
+<section id="data">
+<h3>8. Data<a class="headerlink" href="#data" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">data</span></code> module contains the data files used by the package. It consists of the following submodules:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">input</span></code>: Input data files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">model</span></code>: Configuration files for the models.</p></li>
+</ul>
+</section>
+<section id="visualization">
+<h3>9. Visualization<a class="headerlink" href="#visualization" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">visualization</span></code> module contains functions for visualizing the results of the models. It
+consists of the following submodule:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">plot</span></code>: the main module used for plotting.</p></li>
+</ul>
+<p>Having explored the package structure, let’s see how to use it to run the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm.</p>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
+<p>Let’s start by configuring the algorithm and the parameters needed. The pipeline works based on two types of parameters:</p>
+<p><strong>Numerical Parameters:</strong> These are operational parameters that control the execution of the algorithm. They are not directly related to the model’s theoretical framework but are crucial for its practical implementation. Examples include:</p>
+<ul class="simple">
+<li><p><strong>Convergence tolerance (<code class="docutils literal notranslate"><span class="pre">convergence_tol</span></code>):</strong> This is a threshold used to determine when the
+algorithm has converged, i.e., when the changes in the model’s likelihood or parameters between iterations are small enough to consider the model as having reached its final state.</p></li>
+<li><p><strong>Maximum number of iterations (<code class="docutils literal notranslate"><span class="pre">max_iter</span></code>):</strong> This is the maximum number of times the algorithm will update the model’s parameters. If the model hasn’t converged by this point, the algorithm will stop anyway.</p></li>
+<li><p><strong>Number of realizations (<code class="docutils literal notranslate"><span class="pre">num_realizations</span></code>):</strong> This refers to the number of times the entire
+process (initialization and iterative updates) is repeated. The algorithm will then return the best realization, that is, for instance, the one with the highest likelihood upon convergence. This is done to account for the randomness in the initialization step and to ensure a more robust final model.</p></li>
+</ul>
+<p>These are set by default in the model’s class definition, but they can be changed by the user.</p>
+<p><strong>Model parameters:</strong>  These are parameters that are part of the model’s theoretical framework. They have a direct impact on the model’s behavior and the results it produces. Examples include:</p>
+<ul class="simple">
+<li><p><strong>Number of communities (<code class="docutils literal notranslate"><span class="pre">K</span></code>)</strong>: This is a fundamental parameter of the algorithms presented in
+this package. It determines the number of communities the algorithm will try to find in the network.</p></li>
+<li><p><strong>Scaling parameter (<code class="docutils literal notranslate"><span class="pre">gamma</span></code>)</strong>: This is a fundamental parameter of the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm.
+It controls the relative contribution of the two terms in the likelihood, which accounts for network topology and node covariates, respectively. When <code class="docutils literal notranslate"><span class="pre">gamma=0</span></code>, the inference is performed by analyzing the data purely in terms of the network topology. Vice versa, when <code class="docutils literal notranslate"><span class="pre">gamma=1</span></code>, the algorithm only uses the attribute information.</p></li>
+</ul>
+<p>Notice that the data is not a parameter, but an input to the algorithm, hence, it is not included in the default configuration of the class nor in the configuration file. This will be shown later in the tutorial.</p>
+</section>
+<section id="setting-the-logger">
+<h2>Setting the Logger<a class="headerlink" href="#setting-the-logger" title="Link to this heading">#</a></h2>
+<p>As a first step, let’s configure the logger to show the information about the execution of the algorithm.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the logging module</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># Get the root logger and set its level to INFO</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="importing-the-data">
+<h2>Importing the data<a class="headerlink" href="#importing-the-data" title="Link to this heading">#</a></h2>
+<p>We can now import the data using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">probinet.input.loader</span> <span class="kn">import</span> <span class="n">build_adjacency_and_design_from_file</span>
+<span class="kn">from</span> <span class="nn">probinet.models.classes</span> <span class="kn">import</span> <span class="n">GraphData</span>
+
+<span class="c1"># Define the names of the columns in the input file that</span>
+<span class="c1"># represent the source and target nodes of each edge.</span>
+<span class="n">ego</span> <span class="o">=</span> <span class="s2">&quot;source&quot;</span>
+<span class="n">alter</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span>
+<span class="n">egoX</span> <span class="o">=</span> <span class="s2">&quot;Name&quot;</span>
+
+<span class="c1"># Set the `force_dense` flag to False</span>
+<span class="c1"># This flag determines whether the adjacency matrices</span>
+<span class="c1"># should be stored as dense matrices.</span>
+<span class="c1"># If set to False, the adjacency matrices will be stored</span>
+<span class="c1"># as sparse matrices, which is more memory-efficient</span>
+<span class="c1"># for large networks with few edges.</span>
+<span class="n">force_dense</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Get the absolute path of the root directory of the project</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+
+<span class="c1"># Define the path to the input folder</span>
+<span class="n">in_folder</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_dir</span> <span class="o">/</span> <span class="s2">&quot;probinet/data/input/&quot;</span><span class="p">)</span>
+
+<span class="c1"># Define the name of the network file</span>
+<span class="n">adj_name</span> <span class="o">=</span> <span class="s2">&quot;synthetic_multilayer_network.csv&quot;</span>
+
+<span class="c1"># Define the name of the covariates file</span>
+<span class="n">cov_name</span> <span class="o">=</span> <span class="s2">&quot;synthetic_design_matrix.csv&quot;</span>
+
+<span class="c1"># Define the attribute name</span>
+<span class="n">attr_name</span> <span class="o">=</span> <span class="s2">&quot;Metadata&quot;</span>
+
+<span class="c1"># Flag to treat the network as undirected</span>
+<span class="n">undirected</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Flag to treat the network as binary</span>
+<span class="n">binary</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># Flag to remove the self-loops</span>
+<span class="n">noselfloop</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># Call the `build_adjacency_and_design_from_file` function to load the data from the input file</span>
+<span class="c1"># The function takes several arguments:</span>
+<span class="c1"># - in_folder: the path to the data</span>
+<span class="c1"># - adj_name: the name of the file with the adjacency matrix</span>
+<span class="c1"># - cov_name: the name of the file with the design matrix</span>
+<span class="c1"># - ego: the name of the column that references the node in one extreme of the directed edge</span>
+<span class="c1"># - alter: the name of the column that references the other node</span>
+<span class="c1"># - egoX: the name of the column to consider as node ID in the design matrix</span>
+<span class="c1"># - attr_name: name of the attribute to consider in the analysis</span>
+<span class="c1"># - undirected: the flag that signals if the network is undirected</span>
+<span class="c1"># - binary: if set to True, the network is treated as binary</span>
+<span class="c1"># - force_dense: if set to True, the network is saved in a dense adjacency tensor</span>
+<span class="c1"># - noselfloop : if set to True, the self-loops are removed</span>
+<span class="n">gdata</span><span class="p">:</span> <span class="n">GraphData</span> <span class="o">=</span> <span class="n">build_adjacency_and_design_from_file</span><span class="p">(</span>
+    <span class="n">in_folder</span><span class="p">,</span>
+    <span class="n">adj_name</span><span class="o">=</span><span class="n">adj_name</span><span class="p">,</span>
+    <span class="n">cov_name</span><span class="o">=</span><span class="n">cov_name</span><span class="p">,</span>
+    <span class="n">ego</span><span class="o">=</span><span class="n">ego</span><span class="p">,</span>
+    <span class="n">alter</span><span class="o">=</span><span class="n">alter</span><span class="p">,</span>
+    <span class="n">egoX</span><span class="o">=</span><span class="n">egoX</span><span class="p">,</span>
+    <span class="n">attr_name</span><span class="o">=</span><span class="n">attr_name</span><span class="p">,</span>
+    <span class="n">undirected</span><span class="o">=</span><span class="n">undirected</span><span class="p">,</span>
+    <span class="n">binary</span><span class="o">=</span><span class="n">binary</span><span class="p">,</span>
+    <span class="n">force_dense</span><span class="o">=</span><span class="n">force_dense</span><span class="p">,</span>
+    <span class="n">noselfloop</span><span class="o">=</span><span class="n">noselfloop</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>To get some information about the data, we can call the <code class="docutils literal notranslate"><span class="pre">print_graph_stats</span></code> function from the
+<code class="docutils literal notranslate"><span class="pre">input.stats</span></code> module.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.input.stats</span> <span class="kn">import</span> <span class="n">print_graph_stats</span>
+
+<span class="c1"># Extract the graph list from the `GraphData` object</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">gdata</span><span class="o">.</span><span class="n">graph_list</span>
+
+<span class="c1"># Call the `print_graph_stats` function to print the basic</span>
+<span class="c1"># statistics of the graphs in the list `A`.</span>
+<span class="n">print_graph_stats</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of nodes = 300
+Number of layers = 4
+Number of edges and average degree in each layer:
+E[0] = 1294 / &lt;k&gt; = 8.63
+Sparsity [0] = 0.014
+Reciprocity (networkX) = 0.028
+E[1] = 1340 / &lt;k&gt; = 8.93
+Sparsity [1] = 0.015
+Reciprocity (networkX) = 0.021
+E[2] = 724 / &lt;k&gt; = 4.83
+Sparsity [2] = 0.008
+Reciprocity (networkX) = 0.030
+E[3] = 742 / &lt;k&gt; = 4.95
+Sparsity [3] = 0.008
+Reciprocity (networkX) = 0.003
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s now show the adjacency matrix of one of the four layers.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="c1"># Save the graph corresponding to the first layer</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Get the adjacency matrix</span>
+<span class="n">adjacency_matrix</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">adjacency_matrix</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the `pyplot` module from `matplotlib` for creating</span>
+<span class="c1"># static, animated, and interactive visualizations in Python.</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># Display the reshaped adjacency matrix as an image</span>
+<span class="c1"># The `imshow` function from the `pyplot` module is used to</span>
+<span class="c1"># display data as an image.</span>
+<span class="c1"># The `cmap` argument specifies the colormap to use for the image</span>
+<span class="c1"># The `interpolation` argument specifies the interpolation method</span>
+<span class="c1"># to use when resizing the image.</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Greys&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add a color bar to the plot for reference</span>
+<span class="c1"># The colors in the color bar correspond to the values in the image:</span>
+<span class="c1"># black for 1, meaning a connection, and white for 0, meaning no connection.</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/2e8bf6ca80ed9af5f28ddeaf6d8d000349df2f3152c18a1cdc36a6b4d70b9c27.png" src="../_images/2e8bf6ca80ed9af5f28ddeaf6d8d000349df2f3152c18a1cdc36a6b4d70b9c27.png" />
+</div>
+</div>
+<p>As we can see in the matrix, the network is not fully connected, i.e., there are nodes that are not
+connected to any other node. This is a common characteristic of real-world networks. More
+importantly, we can see that the network has two main clusters of nodes, which are represented by the two regions more densely connected. These are the communities that the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm will try to detect.</p>
+</section>
+<section id="running-the-model">
+<h2>Running the Model<a class="headerlink" href="#running-the-model" title="Link to this heading">#</a></h2>
+<p>Finally, we are ready to run the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> model! The way this works is in a two-step process: <br></p>
+<ol class="arabic simple">
+<li><p>Initialize the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> model by creating an instance of the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> class.</p></li>
+<li><p>Execute the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method on the created instance to run the algorithm.</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the `MTCOV` class from the `probinet.models.mtcov` module</span>
+<span class="c1"># This class is used to create an instance of the `MTCOV` algorithm</span>
+<span class="kn">from</span> <span class="nn">probinet.models.mtcov</span> <span class="kn">import</span> <span class="n">MTCOV</span>
+
+<span class="c1"># Create an instance of the `MTCOV` class</span>
+<span class="c1"># The `MTCOV` class takes no arguments, unless the user wants</span>
+<span class="c1"># to change the default of the numerical parameters.</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">MTCOV</span><span class="p">()</span>
+
+<span class="c1"># Print all the attributes of the `MTCOV` instance</span>
+<span class="c1"># The `__dict__` attribute of an object is a dictionary containing</span>
+<span class="c1"># the object&#39;s attributes.</span>
+<span class="c1"># These correspond to the numerical parameters</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;inf&#39;: 10000000000.0, &#39;err_max&#39;: 1e-07, &#39;err&#39;: 0.1, &#39;num_realizations&#39;: 1, &#39;convergence_tol&#39;: 0.0001, &#39;decision&#39;: 10, &#39;max_iter&#39;: 500, &#39;plot_loglik&#39;: False, &#39;flag_conv&#39;: &#39;log&#39;, &#39;__doc__&#39;: None, &#39;attributes_to_save_names&#39;: [&#39;u_f&#39;, &#39;v_f&#39;, &#39;w_f&#39;, &#39;eta_f&#39;, &#39;final_it&#39;, &#39;maxL&#39;, &#39;maxPSL&#39;, &#39;beta_f&#39;, &#39;nodes&#39;, &#39;pibr&#39;, &#39;mupr&#39;], &#39;u_f&#39;: array([], dtype=float64), &#39;v_f&#39;: array([], dtype=float64), &#39;w_f&#39;: array([], dtype=float64), &#39;use_unit_uniform&#39;: False, &#39;theta&#39;: {}, &#39;normalize_rows&#39;: False, &#39;nodes&#39;: [], &#39;rng&#39;: Generator(PCG64) at 0x7F0670D7D0E0, &#39;beta_hat&#39;: array([], dtype=float64), &#39;best_r&#39;: 0, &#39;final_it&#39;: 0, &#39;message_for_invalid_initialization&#39;: &#39;The initialization parameter can be either 0 or 1. If 0, the model will be initialized randomly. If 1, the model will be initialized with the parameters stored in the file specified in the `files` parameter.&#39;}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Model created! Now, we can run the model using the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method. As mentioned before, this method
+takes as input the data, and model parameters.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the `time` module</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="c1"># Import the `numpy` module</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Define the output folder</span>
+<span class="n">out_folder</span> <span class="o">=</span> <span class="s2">&quot;tutorial_outputs/MTCOV/&quot;</span>
+
+<span class="c1"># Fix the rng for reproducibility</span>
+<span class="n">rseed</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+
+<span class="c1"># Get the current time</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="c1"># Run the `MTCOV` model</span>
+<span class="c1"># The `fit` method of the `MTCOV` class takes several arguments:</span>
+<span class="c1"># - gdata: the data to be analyzed</span>
+<span class="c1"># - out_inference: if set to True, the algorithm saves the final state of the models</span>
+<span class="c1"># - out_folder: the folder where the output files will be saved</span>
+<span class="c1"># - end_file: the ending of the file name</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">gdata</span><span class="p">,</span>
+    <span class="n">out_inference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">out_folder</span><span class="o">=</span><span class="n">out_folder</span><span class="p">,</span>
+    <span class="n">end_file</span><span class="o">=</span><span class="s2">&quot;_MTCOV&quot;</span><span class="p">,</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+<span class="p">)</span>
+
+<span class="c1"># Print the time elapsed since the start of the `MTCOV` algorithm</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Time elapsed: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">time_start</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:gamma = 0.5
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm successfully converged after 341 iterations with a maximum log-likelihood of -10093.8593.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Inferred parameters saved in: /home/runner/work/probinet/probinet/docs/source/tutorials/tutorial_outputs/MTCOV/theta_MTCOV.npz
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:To load: theta=np.load(filename), then e.g. theta[&quot;u&quot;]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time elapsed: 1.03 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Done! The final state of the model is not returned, but it is saved to the output folder.</p>
+</section>
+<section id="analyzing-the-results">
+<h2>Analyzing the results<a class="headerlink" href="#analyzing-the-results" title="Link to this heading">#</a></h2>
+<p>Next, we will examine the outcomes produced by the model. To do this, it is necessary to load the
+contents from the file <code class="docutils literal notranslate"><span class="pre">theta_MTCOV.npz</span></code>, generated by the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the path to the file containing the results of the `MTCOV` models</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="n">out_folder</span> <span class="o">+</span> <span class="s2">&quot;/theta_MTCOV.npz&quot;</span>
+
+<span class="c1"># Load the contents of the file into a dictionary</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Once this is done, we can unpack the latent variables.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Unpack the latent variables from the results of the `MTCOV` models</span>
+<span class="c1"># The `u` variable represents the out-going memberships of the</span>
+<span class="c1"># nodes in the graph.</span>
+<span class="c1"># The `v` variable represents the in-coming memberships of the</span>
+<span class="c1"># nodes in the graph.</span>
+<span class="c1"># The `w` variable represents the affinity of the communities</span>
+<span class="c1"># for each layer.</span>
+<span class="c1"># The `beta` variable represents the relationships between</span>
+<span class="c1"># communities and covariates.</span>
+<span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">beta</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;u&quot;</span><span class="p">],</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">],</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">],</span> <span class="n">theta</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>As outlined in the main reference <span id="id2">[<a class="reference internal" href="../references.html#id3" title="Martina Contisciani, Eleanor A Power, and Caterina De Bacco. Community detection with node attributes in multilayer networks. Scientific reports, 10(1):15736, 2020.">CPDB20</a>]</span>, <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> assumes a mixed-membership community structure, which
+means that
+every node can belong to more than one community with a different strength. The variables <code class="docutils literal notranslate"><span class="pre">u</span></code> and
+<code class="docutils literal notranslate"><span class="pre">v</span></code> are <code class="docutils literal notranslate"><span class="pre">NxK</span></code> membership matrices that represent the out-going and in-coming node memberships,
+respectively. In this specific demonstration, it’s important to recall that we configured the
+model parameter <code class="docutils literal notranslate"><span class="pre">K</span></code>, representing the number of communities, to be 2. Consequently, by examining the values of <code class="docutils literal notranslate"><span class="pre">u</span></code> for each node, we expect to obtain vector of length two, where the first entry is the probability of node <code class="docutils literal notranslate"><span class="pre">i</span></code> to belong to community 1 and the second one represents the probability to belong to community 2.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Iterate over the first 10 nodes in the graph</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">u</span><span class="p">[:</span><span class="mi">10</span><span class="p">]):</span>
+    <span class="c1"># Print the probability that the node belongs to the two communities</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;The probability that the node </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> belongs to the two communities is: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>The probability that the node 0 belongs to the two communities is: [1. 0.]
+The probability that the node 1 belongs to the two communities is: [1. 0.]
+The probability that the node 2 belongs to the two communities is: [1. 0.]
+The probability that the node 3 belongs to the two communities is: [1. 0.]
+The probability that the node 4 belongs to the two communities is: [1. 0.]
+The probability that the node 5 belongs to the two communities is: [0.93565105 0.06434895]
+The probability that the node 6 belongs to the two communities is: [1. 0.]
+The probability that the node 7 belongs to the two communities is: [1. 0.]
+The probability that the node 8 belongs to the two communities is: [1. 0.]
+The probability that the node 9 belongs to the two communities is: [1. 0.]
+</pre></div>
+</div>
+</div>
+</div>
+<p>To visualize the hard-memberships for the out-going case, we can assign each node to the
+community with the highest probability in <code class="docutils literal notranslate"><span class="pre">u</span></code>. We can then print the community assignments for the first 10 nodes.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calculate the hard-memberships for the out-going case</span>
+<span class="n">u_hard</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Get the indices of nodes in community 1 and community 2</span>
+<span class="n">community1_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">u_hard</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Community 1 corresponds to index 0</span>
+<span class="n">community2_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">u_hard</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Community 2 corresponds to index 1</span>
+
+<span class="c1"># Print some nodes from community 1</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Some nodes in community 1:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">community1_nodes</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+
+<span class="c1"># Print some nodes from community 2</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Some nodes in community 2:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">community2_nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Some nodes in community 1:
+[0 1 2 3 4 5 6 7 8 9]
+
+Some nodes in community 2:
+[150 151 152 153 154 155 156 157 158 159]
+</pre></div>
+</div>
+</div>
+</div>
+<p>We have learned this way to assign each node to a community, using the results given by the
+<code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm. For a more graphical approach, we invite the reader to take a look at the tutorial on the
+<a class="reference internal" href="JointCRep.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm</span></a>, where we show how to plot the communities in the
+network.</p>
+<p>In addition to investigate the node memberships, we can interpret the relationships between the
+inferred communities and the node covariate through the variable <code class="docutils literal notranslate"><span class="pre">beta</span></code>. As outlined in the main
+reference,
+<code class="docutils literal notranslate"><span class="pre">beta</span></code> is a <code class="docutils literal notranslate"><span class="pre">KxZ</span></code> dimensional matrix, where <code class="docutils literal notranslate"><span class="pre">Z</span></code> denotes the total number of different categories
+of the node attribute. In this example, the attribute Metadata has 2 categories. Then, every row
+<code class="docutils literal notranslate"><span class="pre">k</span></code> of the beta matrix denotes how much information of the different categories is used to create
+the <code class="docutils literal notranslate"><span class="pre">k</span></code>-th community. Also, this variable is normalized such that every row sums to 1.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Greys&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;Metadata 0&quot;</span><span class="p">,</span> <span class="s2">&quot;Metadata 1&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;Community 0&quot;</span><span class="p">,</span> <span class="s2">&quot;Community 1&quot;</span><span class="p">])</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/5186e590fb41291ad5f830e48c73b8ee9d88ba428584d948542774408c4d705c.png" src="../_images/5186e590fb41291ad5f830e48c73b8ee9d88ba428584d948542774408c4d705c.png" />
+</div>
+</div>
+<p>Through this plot, we can infer that community 0 is mainly related to nodes with category Metadata 0, while community 1 groups together primarily nodes with the category Metadata 1.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
+<p>This tutorial provides a comprehensive guide on using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package. Specifically, it focuses on the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm, which is a probabilistic generative model used for network analysis, designed to detect communities within a multilayer network where node attributes are considered.</p>
+<p>The tutorial explains the structure of the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package, which is organized into several main modules, such as <code class="docutils literal notranslate"><span class="pre">input</span></code>, <code class="docutils literal notranslate"><span class="pre">models</span></code>, <code class="docutils literal notranslate"><span class="pre">evaluation</span></code>, <code class="docutils literal notranslate"><span class="pre">synthetic</span></code>, <code class="docutils literal notranslate"><span class="pre">model_selection</span></code>, and <code class="docutils literal notranslate"><span class="pre">utils</span></code>. It also demonstrates how to configure and run the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm on the input data imported using the <code class="docutils literal notranslate"><span class="pre">probinet</span></code> package.</p>
+<p>Furthermore, it shows how to analyze the results produced by the model. It explains how to load the inferred parameters from a file, unpack the latent variables, and calculate the out-going hard-memberships. It also shows how to interpret the relationships between communities and attribute categories.</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../start.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Inputs and Outputs</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="CRep.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Generation of Synthetic Networks using the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> Algorithm</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#package-structure">Package Structure</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#input">1. Input</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#models">2. Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">3. Evaluation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#synthetic">4. Synthetic</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-selection">5. Model Selection</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#utils">6. Utils</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#main">7. Main</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data">8. Data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization">9. Visualization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-the-data">Importing the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-model">Running the Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-results">Analyzing the results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1930 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Cross-Validation And Anomaly Detection With The ACD Algorithm &#8212; probinet  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/ACD';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Analyzing Network Data with Unknown Community Structure" href="Unknown_structure.html" />
+    <link rel="prev" title="Decoding Temporal Relationships with DynCRep" href="DynCRep.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo-probinet.jpg" class="logo__image only-light" alt="probinet  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo-probinet.jpg" class="logo__image only-dark" alt="probinet  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.html">probinet.evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.community_detection.html">probinet.evaluation.community_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.covariate_prediction.html">probinet.evaluation.covariate_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.expectation_computation.html">probinet.evaluation.expectation_computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.likelihood.html">probinet.evaluation.likelihood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.evaluation.link_prediction.html">probinet.evaluation.link_prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.html">probinet.input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.loader.html">probinet.input.loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.preprocessing.html">probinet.input.preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.input.stats.html">probinet.input.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.main.html">probinet.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.html">probinet.model_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.acd_cross_validation.html">probinet.model_selection.acd_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.crep_cross_validation.html">probinet.model_selection.crep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.cross_validation.html">probinet.model_selection.cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.dyncrep_cross_validation.html">probinet.model_selection.dyncrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.jointcrep_cross_validation.html">probinet.model_selection.jointcrep_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.main.html">probinet.model_selection.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.masking.html">probinet.model_selection.masking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.mtcov_cross_validation.html">probinet.model_selection.mtcov_cross_validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.model_selection.parameter_search.html">probinet.model_selection.parameter_search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.html">probinet.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.acd.html">probinet.models.acd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.base.html">probinet.models.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.classes.html">probinet.models.classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.constants.html">probinet.models.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.crep.html">probinet.models.crep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.dyncrep.html">probinet.models.dyncrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.jointcrep.html">probinet.models.jointcrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.models.mtcov.html">probinet.models.mtcov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.html">probinet.synthetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.anomaly.html">probinet.synthetic.anomaly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.base.html">probinet.synthetic.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.dynamic.html">probinet.synthetic.dynamic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.multilayer.html">probinet.synthetic.multilayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.synthetic.reciprocity.html">probinet.synthetic.reciprocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.html">probinet.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.matrix_operations.html">probinet.utils.matrix_operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.utils.tools.html">probinet.utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.version.html">probinet.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.html">probinet.visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../generated/probinet.visualization.plot.html">probinet.visualization.plot</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">First Steps</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Inputs and Outputs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="MTCOV.html">A Beginner's Guide To The MTCOV Algorithm In The Probinet Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CRep.html">Generation Of Synthetic Networks Using The CRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JointCRep.html">Analysis Of A Real-World Dataset Using The JointCRep Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DynCRep.html">Decoding Temporal Relationships With DynCRep</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Cross-Validation And Anomaly Detection With The ACD Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Unknown_structure.html">Analyzing Network Data With Unknown Community Structure</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">How To Contribute</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/ACD.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Cross-Validation And Anomaly Detection With The ACD Algorithm</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-and-visualizing-the-data">Loading and Visualizing the Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performing-the-cross-validation">Performing the Cross-Validation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-the-cross-validation-results">Loading the Cross-Validation Results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-the-algorithm-with-the-best-k">Run the algorithm with the best K</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#community-detection">Community Detection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#anomaly-detection">Anomaly Detection</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="cross-validation-and-anomaly-detection-with-the-acd-algorithm">
+<h1>Cross-Validation And Anomaly Detection With The <code class="docutils literal notranslate"><span class="pre">ACD</span></code> Algorithm<a class="headerlink" href="#cross-validation-and-anomaly-detection-with-the-acd-algorithm" title="Link to this heading">#</a></h1>
+<p>Welcome to our tutorial on the <strong>A</strong>nomaly and <strong>C</strong>ommunity <strong>D</strong>etection (<code class="docutils literal notranslate"><span class="pre">ACD</span></code>) method. This is a
+probabilistic
+generative model and efficient algorithm to model anomalous edges in networks. It assigns latent
+variables as community memberships to nodes and anomaly to the edges <span id="id1">[<a class="reference internal" href="../references.html#id7" title="Hadiseh Safdari and Caterina De Bacco. Anomaly detection and community detection in networks. Journal of Big Data, 9(1):122, 2022.">SDB22</a>]</span>.</p>
+<p>In this tutorial, we will demonstrate how to use the ACD method. We will start by loading the data, performing cross-validation using the <code class="docutils literal notranslate"><span class="pre">model_selection</span></code> submodule, and then analyzing the results to determine the best number of communities <code class="docutils literal notranslate"><span class="pre">K</span></code>.</p>
+<section id="setting-the-logger">
+<h2>Setting the Logger<a class="headerlink" href="#setting-the-logger" title="Link to this heading">#</a></h2>
+<p>Let’s first set the logging level to <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> so we can see the relevant messages.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set logging level to DEBUG</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># Make it be set to DEBUG</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;matplotlib&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="loading-and-visualizing-the-data">
+<h2>Loading and Visualizing the Data<a class="headerlink" href="#loading-and-visualizing-the-data" title="Link to this heading">#</a></h2>
+<p>In this section, we will load the synthetic data required for our analyses. We will start by
+importing the necessary libraries and defining the file path for the adjacency matrix, and then,
+we will use the <code class="docutils literal notranslate"><span class="pre">build_adjacency_from_file</span></code> method to read it.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Step 1: Load the Data</span>
+<span class="kn">from</span> <span class="nn">probinet.input.loader</span> <span class="kn">import</span> <span class="n">build_adjacency_from_file</span>
+
+<span class="kn">from</span> <span class="nn">importlib.resources</span> <span class="kn">import</span> <span class="n">files</span>
+
+<span class="c1"># Import necessary libraries</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1"># Define the adjacency file</span>
+<span class="n">adj_file</span> <span class="o">=</span> <span class="s2">&quot;synthetic_network_with_anomalies.dat&quot;</span>
+
+<span class="c1"># Load the network data</span>
+<span class="k">with</span> <span class="n">files</span><span class="p">(</span><span class="s2">&quot;probinet.data.input&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">adj_file</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">network</span><span class="p">:</span>
+    <span class="n">graph_data</span> <span class="o">=</span> <span class="n">build_adjacency_from_file</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Read adjacency file from /home/runner/.local/lib/python3.12/site-packages/probinet/data/input/synthetic_network_with_anomalies.dat. The shape of the data is (5459, 3).
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Creating the networks ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Removing self loops
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of nodes = 500
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 5459 / &lt;k&gt; = 21.84
+Sparsity [0] = 0.022
+Reciprocity (networkX) = 0.077
+Reciprocity (considering the weights of the edges) = 0.077
+</pre></div>
+</div>
+</div>
+</div>
+<p>As we have seen in previous tutorials, the <code class="docutils literal notranslate"><span class="pre">build_adjacency_from_file</span></code> outputs a list of MultiDiGraph NetworkX
+objects, a graph adjacency tensor <code class="docutils literal notranslate"><span class="pre">B</span></code>, a transposed graph adjacency tensor <code class="docutils literal notranslate"><span class="pre">B_T</span></code>, and
+an array with values of entries <code class="docutils literal notranslate"><span class="pre">A[j,</span> <span class="pre">i]</span></code> given non-zero entry <code class="docutils literal notranslate"><span class="pre">(i,</span> <span class="pre">j)</span></code>. These outputs are
+essential for analyzing the network structure and performing further computations.</p>
+<p>Now that we have loaded the data, we can proceed to visualize the network structure.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="c1"># Extract the graph list</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">graph_data</span><span class="o">.</span><span class="n">graph_list</span>
+
+<span class="c1"># Set the seed for the layout</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="c1"># Draw the graph using the spring layout</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+    <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span>
+    <span class="n">node_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+    <span class="n">edge_color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+    <span class="n">with_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/7ba449e138e6ef84da3edbfcfeb571d197fd126670f1bb2f3ab8d247f10ad8cd.png" src="../_images/7ba449e138e6ef84da3edbfcfeb571d197fd126670f1bb2f3ab8d247f10ad8cd.png" />
+</div>
+</div>
+</section>
+<section id="performing-the-cross-validation">
+<h2>Performing the Cross-Validation<a class="headerlink" href="#performing-the-cross-validation" title="Link to this heading">#</a></h2>
+<p>As we can see from the plot, there’s no clear clustering. However, we can use the
+<code class="docutils literal notranslate"><span class="pre">ACD</span></code> algorithm to infer the communities, and also to get some
+information about the anomalies. To do this, we need to specify a set of parameters related to the number of communities, their interrelations, and other structural aspects. Selecting the appropriate hyperparameters can be challenging, so we will utilize the <code class="docutils literal notranslate"><span class="pre">model_selection</span></code> module, which is designed for model selection and cross-validation to optimize the algorithm’s performance.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">model_selection</span></code> module not only provides a comprehensive set of tools for model selection and cross-validation but also enables us to build specific modules for each model that carry out the cross-validation process. This module includes several submodules, each tailored for specific tasks:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">parameter_search</span></code>: Functions for searching optimal model parameters.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cross_validation</span></code>: Functions for general cross-validation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">masking</span></code>: Functions for masking data during cross-validation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">main</span></code>: Entry point for the cross-validation process. Although each algorithm has its own cross-validation submodule, the <code class="docutils literal notranslate"><span class="pre">main</span></code> submodule provides a unified interface for running cross-validation for all algorithms.</p></li>
+</ul>
+<p>Additionally, the module provides specialized cross-validation submodules for different algorithms:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mtcov_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">MTCOV</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dyncrep_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">acd_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">ACD</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">crep_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">CRep</span></code> algorithm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jointcrep_cross_validation</span></code>: Cross-validation specific to the <code class="docutils literal notranslate"><span class="pre">JointCRep</span></code> algorithm.</p></li>
+</ul>
+<p>By leveraging these tools, we can systematically assess and fine-tune our model to achieve the best possible results.</p>
+<p>Let’s look now at how to use it. As mentioned, we will use the <code class="docutils literal notranslate"><span class="pre">main</span></code> submodule to perform
+cross-validation for the <code class="docutils literal notranslate"><span class="pre">ACD</span></code> method. To do that, we need to define the model parameters
+(<code class="docutils literal notranslate"><span class="pre">model_parameters</span></code>) and cross-validation parameters (<code class="docutils literal notranslate"><span class="pre">cv_params</span></code>). The <code class="docutils literal notranslate"><span class="pre">model_parameters</span></code>
+include the lists of hyperparameters of the <code class="docutils literal notranslate"><span class="pre">ACD</span></code> method we would like to test. The <code class="docutils literal notranslate"><span class="pre">cv_params</span></code>
+include the parameters for the cross-validation process, such as the number of folds, the input
+folder, and the output results. Optionally, we can also specify another dictionary
+(<code class="docutils literal notranslate"><span class="pre">numerical_parameters</span></code>) with the
+numerical parameters to run the inference algorithm, like the number of iterations or the
+convergence threshold. We will set the number of iterations to 1000 using this input dictionary.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Step 2: Perform Cross-Validation</span>
+<span class="n">fold_number</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="c1"># Define the cross-validation parameters</span>
+<span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;flag_anomaly&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;rseed&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;initialization&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;out_inference&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;out_folder&quot;</span><span class="p">:</span> <span class="s2">&quot;tutorial_outputs/ACD/&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">fold_number</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;-fold_cv/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;end_file&quot;</span><span class="p">:</span> <span class="s2">&quot;_ACD&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;assortative&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;undirected&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">cv_params</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;in_folder&quot;</span><span class="p">:</span> <span class="s2">&quot;../../../probinet/data/input/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;adj&quot;</span><span class="p">:</span> <span class="n">adj_file</span><span class="p">,</span>
+    <span class="s2">&quot;ego&quot;</span><span class="p">:</span> <span class="s2">&quot;source&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alter&quot;</span><span class="p">:</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NFold&quot;</span><span class="p">:</span> <span class="n">fold_number</span><span class="p">,</span>
+    <span class="s2">&quot;out_results&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;out_mask&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;sep&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">numerical_parameters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="s2">&quot;num_realizations&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>As we can see, the <code class="docutils literal notranslate"><span class="pre">model_parameters</span></code> dictionary contains the hyperparameters we want to test. In
+this case, we will only focus on the number of communities <code class="docutils literal notranslate"><span class="pre">K</span></code>. To avoid making the tutorial too long, we will only test two values for <code class="docutils literal notranslate"><span class="pre">K</span></code>, but in practice, we should test a broader range of values.</p>
+<p>We are now ready to run the cross-validation process. We will use the <code class="docutils literal notranslate"><span class="pre">cross_validation</span></code> function from the <code class="docutils literal notranslate"><span class="pre">main</span></code> submodule, passing the method name (<code class="docutils literal notranslate"><span class="pre">ACD</span></code>), the model parameters, and the cross-validation parameters as arguments. The function will then perform the cross-validation and store the results in a CSV file.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># Define the output file name</span>
+<span class="n">adj_file_stem</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">adj_file</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
+<span class="n">cv_results_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;outputs/</span><span class="si">{</span><span class="n">fold_number</span><span class="si">}</span><span class="s2">-fold_cv/</span><span class="si">{</span><span class="n">adj_file_stem</span><span class="si">}</span><span class="s2">_cv.csv&quot;</span><span class="p">)</span>
+
+<span class="c1"># Delete the file if it already exists</span>
+<span class="k">if</span> <span class="n">cv_results_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+    <span class="n">cv_results_file</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+
+<span class="c1"># Run the cross-validation</span>
+<span class="kn">from</span> <span class="nn">probinet.model_selection.main</span> <span class="kn">import</span> <span class="n">cross_validation</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="p">(</span><span class="s2">&quot;ACD&quot;</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span> <span class="n">cv_params</span><span class="p">,</span> <span class="n">numerical_parameters</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Starting cross-validation for algorithm: ACD
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter flag_anomaly to list. The value used is True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter rseed to list. The value used is 10
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter initialization to list. The value used is 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter out_inference to list. The value used is False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter out_folder to list. The value used is tutorial_outputs/ACD/3-fold_cv/
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter end_file to list. The value used is _ACD
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter assortative to list. The value used is True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter undirected to list. The value used is False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Converting parameter files to list. The value used is 
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Parameter grid created with 2 combinations
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Running cross-validation for parameters: {&#39;K&#39;: 2, &#39;flag_anomaly&#39;: True, &#39;rseed&#39;: 10, &#39;initialization&#39;: 0, &#39;out_inference&#39;: False, &#39;out_folder&#39;: &#39;tutorial_outputs/ACD/3-fold_cv/&#39;, &#39;end_file&#39;: &#39;_ACD&#39;, &#39;assortative&#39;: True, &#39;undirected&#39;: False, &#39;files&#39;: &#39;&#39;}
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Results will be saved in: tutorial_outputs/ACD/3-fold_cv/synthetic_network_with_anomalies_cv.csv
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Read adjacency file from ../../../probinet/data/input/synthetic_network_with_anomalies.dat. The shape of the data is (5459, 3).
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Creating the networks ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Removing self loops
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Starting the cross-validation procedure.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+FOLD 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Preprocessing the data for fitting the models.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Data looks like: [[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 1. 0. 0.]
+  ...
+  [0. 1. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 32318217809460493494586234015929749787
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of nodes = 500
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 5459 / &lt;k&gt; = 21.84
+Sparsity [0] = 0.022
+Reciprocity (networkX) = 0.077
+Reciprocity (considering the weights of the edges) = 0.077
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 4.17 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 8.28 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 12.38 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 16.46 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 20.55 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 24.65 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 28.73 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 800 - time = 32.83 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 900 - time = 36.91 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1000 - time = 41.08 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - ELBO = -23424.33955246871 - ELBOmax = -23424.33955246871 - iterations = 1000 - time = 41.08 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 0 - maxL = -23424.33955246871 - best iterations = 1000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm did not converge.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Solution failed to converge in 1000 EM steps!
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Parameters won&#39;t be saved for this realization! If you have provided a number of realizations equal to one, please increase it.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Time elapsed: 41.2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+Time elapsed: 41.2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+FOLD 1
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Preprocessing the data for fitting the models.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Data looks like: [[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  ...
+  [0. 1. 1. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 32318217809460493494586234015929749787
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 4.11 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 8.26 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 12.41 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 16.54 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 20.70 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 24.89 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 29.01 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 800 - time = 33.13 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 900 - time = 37.26 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1000 - time = 41.37 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - ELBO = -22548.273443234037 - ELBOmax = -22548.273443234037 - iterations = 1000 - time = 41.37 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 0 - maxL = -22548.273443234037 - best iterations = 1000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm did not converge.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Solution failed to converge in 1000 EM steps!
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Parameters won&#39;t be saved for this realization! If you have provided a number of realizations equal to one, please increase it.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Time elapsed: 41.46 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+Time elapsed: 82.67 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+FOLD 2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Preprocessing the data for fitting the models.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Data looks like: [[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 1. 0. 0.]
+  ...
+  [0. 0. 1. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 32318217809460493494586234015929749787
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 4.06 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 8.12 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 12.18 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 16.21 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 20.30 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 24.36 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 28.42 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 800 - time = 32.50 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 900 - time = 36.58 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1000 - time = 40.67 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - ELBO = -23364.426988026255 - ELBOmax = -23364.426988026255 - iterations = 1000 - time = 40.67 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 0 - maxL = -23364.426988026255 - best iterations = 1000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm did not converge.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Solution failed to converge in 1000 EM steps!
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Parameters won&#39;t be saved for this realization! If you have provided a number of realizations equal to one, please increase it.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Time elapsed: 40.78 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+Time elapsed: 123.45 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Completed cross-validation for parameters: {&#39;K&#39;: 2, &#39;flag_anomaly&#39;: True, &#39;rseed&#39;: 10, &#39;initialization&#39;: 0, &#39;out_inference&#39;: False, &#39;out_folder&#39;: &#39;tutorial_outputs/ACD/3-fold_cv/&#39;, &#39;end_file&#39;: &#39;_ACD_2K2&#39;, &#39;assortative&#39;: True, &#39;undirected&#39;: False, &#39;files&#39;: &#39;&#39;, &#39;rng&#39;: Generator(PCG64) at 0x7F84B76DFD80}
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Running cross-validation for parameters: {&#39;K&#39;: 3, &#39;flag_anomaly&#39;: True, &#39;rseed&#39;: 10, &#39;initialization&#39;: 0, &#39;out_inference&#39;: False, &#39;out_folder&#39;: &#39;tutorial_outputs/ACD/3-fold_cv/&#39;, &#39;end_file&#39;: &#39;_ACD&#39;, &#39;assortative&#39;: True, &#39;undirected&#39;: False, &#39;files&#39;: &#39;&#39;}
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Results will be saved in: tutorial_outputs/ACD/3-fold_cv/synthetic_network_with_anomalies_cv.csv
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Read adjacency file from ../../../probinet/data/input/synthetic_network_with_anomalies.dat. The shape of the data is (5459, 3).
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Creating the networks ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Removing self loops
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Starting the cross-validation procedure.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+FOLD 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Preprocessing the data for fitting the models.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Data looks like: [[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 1. 0. 0.]
+  ...
+  [0. 1. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 32318217809460493494586234015929749787
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of nodes = 500
+Number of layers = 1
+Number of edges and average degree in each layer:
+E[0] = 5459 / &lt;k&gt; = 21.84
+Sparsity [0] = 0.022
+Reciprocity (networkX) = 0.077
+Reciprocity (considering the weights of the edges) = 0.077
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 4.46 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 8.81 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 13.21 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 17.63 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 22.07 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 26.51 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 30.90 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 800 - time = 35.28 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 900 - time = 39.72 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1000 - time = 44.11 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - ELBO = -24429.9884872685 - ELBOmax = -24429.9884872685 - iterations = 1000 - time = 44.11 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 0 - maxL = -24429.9884872685 - best iterations = 1000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm did not converge.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Solution failed to converge in 1000 EM steps!
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Parameters won&#39;t be saved for this realization! If you have provided a number of realizations equal to one, please increase it.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Time elapsed: 44.23 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+Time elapsed: 44.23 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+FOLD 1
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Preprocessing the data for fitting the models.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Data looks like: [[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  ...
+  [0. 1. 1. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 32318217809460493494586234015929749787
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 4.49 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 8.95 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 13.40 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 17.84 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 22.27 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 26.69 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 31.13 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 800 - time = 35.54 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 900 - time = 39.98 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1000 - time = 44.41 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - ELBO = -24077.26218072593 - ELBOmax = -24077.26218072593 - iterations = 1000 - time = 44.41 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 0 - maxL = -24077.26218072593 - best iterations = 1000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm did not converge.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Solution failed to converge in 1000 EM steps!
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Parameters won&#39;t be saved for this realization! If you have provided a number of realizations equal to one, please increase it.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Time elapsed: 44.51 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+Time elapsed: 88.75 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+FOLD 2
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Preprocessing the data for fitting the models.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Data looks like: [[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 1. 0. 0.]
+  ...
+  [0. 0. 1. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 32318217809460493494586234015929749787
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 4.36 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 8.77 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 13.16 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 17.59 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 21.96 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 26.34 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 30.70 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 800 - time = 35.04 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 900 - time = 39.41 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1000 - time = 43.78 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - ELBO = -24422.632805297333 - ELBOmax = -24422.632805297333 - iterations = 1000 - time = 43.78 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 0 - maxL = -24422.632805297333 - best iterations = 1000
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm did not converge.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Solution failed to converge in 1000 EM steps!
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Parameters won&#39;t be saved for this realization! If you have provided a number of realizations equal to one, please increase it.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Time elapsed: 43.88 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:
+Time elapsed: 132.63 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Completed cross-validation for parameters: {&#39;K&#39;: 3, &#39;flag_anomaly&#39;: True, &#39;rseed&#39;: 10, &#39;initialization&#39;: 0, &#39;out_inference&#39;: False, &#39;out_folder&#39;: &#39;tutorial_outputs/ACD/3-fold_cv/&#39;, &#39;end_file&#39;: &#39;_ACD_2K3&#39;, &#39;assortative&#39;: True, &#39;undirected&#39;: False, &#39;files&#39;: &#39;&#39;, &#39;rng&#39;: Generator(PCG64) at 0x7F84B76DFBC0}
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Completed cross-validation for algorithm: ACD
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Results saved in: tutorial_outputs/ACD/3-fold_cv/synthetic_network_with_anomalies_cv.csv
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="loading-the-cross-validation-results">
+<h2>Loading the Cross-Validation Results<a class="headerlink" href="#loading-the-cross-validation-results" title="Link to this heading">#</a></h2>
+<p>Now we are ready to load the cross-validation results into a DataFrame and analyze them to determine the best number of communities <code class="docutils literal notranslate"><span class="pre">K</span></code>. We will load the results from the CSV file generated during the cross-validation process and display the first few rows to get an overview of the data.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Step 3: Load the Cross-Validation Results</span>
+
+<span class="c1"># Load the cross-validation results into a DataFrame</span>
+<span class="n">adj_file_stem</span> <span class="o">=</span> <span class="n">adj_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">cv_results_file</span> <span class="o">=</span> <span class="s2">&quot;tutorial_outputs/ACD/&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">fold_number</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;-fold_cv/</span><span class="si">{</span><span class="n">adj_file_stem</span><span class="si">}</span><span class="s2">_cv.csv&quot;</span>
+<span class="n">cv_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">cv_results_file</span><span class="p">)</span>
+
+<span class="c1"># Display the cross-validation results</span>
+<span class="n">cv_results</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>K</th>
+      <th>fold</th>
+      <th>rseed</th>
+      <th>flag_anomaly</th>
+      <th>mu</th>
+      <th>pi</th>
+      <th>ELBO</th>
+      <th>final_it</th>
+      <th>aucA_train</th>
+      <th>aucA_test</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2</td>
+      <td>0</td>
+      <td>10</td>
+      <td>True</td>
+      <td>0.081372</td>
+      <td>0.032686</td>
+      <td>-23424.339552</td>
+      <td>1000</td>
+      <td>0.782865</td>
+      <td>0.728420</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>1</td>
+      <td>10</td>
+      <td>True</td>
+      <td>0.026510</td>
+      <td>0.087423</td>
+      <td>-22548.273443</td>
+      <td>1000</td>
+      <td>0.918773</td>
+      <td>0.917673</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>2</td>
+      <td>10</td>
+      <td>True</td>
+      <td>0.063706</td>
+      <td>0.045017</td>
+      <td>-23364.426988</td>
+      <td>1000</td>
+      <td>0.848572</td>
+      <td>0.826343</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>0</td>
+      <td>10</td>
+      <td>True</td>
+      <td>0.017365</td>
+      <td>0.097270</td>
+      <td>-24429.988487</td>
+      <td>1000</td>
+      <td>0.883603</td>
+      <td>0.857582</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>3</td>
+      <td>1</td>
+      <td>10</td>
+      <td>True</td>
+      <td>0.016695</td>
+      <td>0.109226</td>
+      <td>-24077.262181</td>
+      <td>1000</td>
+      <td>0.903274</td>
+      <td>0.891657</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>3</td>
+      <td>2</td>
+      <td>10</td>
+      <td>True</td>
+      <td>0.017364</td>
+      <td>0.096245</td>
+      <td>-24422.632805</td>
+      <td>1000</td>
+      <td>0.879320</td>
+      <td>0.851543</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<p>As we can see, the resulting dataframe shows information about the used data folds, the
+number of communities, the random seed, the anomaly flag, the parameters <code class="docutils literal notranslate"><span class="pre">mu</span></code> and <code class="docutils literal notranslate"><span class="pre">pi</span></code>, the
+ELBO score, and the number of iterations needed to reach convergence of the ELBO function.
+Moreover, we can also see the scores for each combination of parameters both on the folds used
+for training, and the folds used for testing. Since we are interested in determining the best <code class="docutils literal notranslate"><span class="pre">K</span></code>
+value (best in terms of AUC scores over the folds), we will group the results by <code class="docutils literal notranslate"><span class="pre">K</span></code> and calculate
+the mean score for each group.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Remove the specified columns</span>
+<span class="n">cv_results_filtered</span> <span class="o">=</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fold&quot;</span><span class="p">,</span> <span class="s2">&quot;rseed&quot;</span><span class="p">,</span> <span class="s2">&quot;flag_anomaly&quot;</span><span class="p">,</span> <span class="s2">&quot;final_it&quot;</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;ELBO&quot;</span><span class="p">,</span> <span class="s2">&quot;pi&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Group by &#39;K&#39; and calculate the mean for each group</span>
+<span class="n">cv_results_mean</span> <span class="o">=</span> <span class="n">cv_results_filtered</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;K&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+<span class="n">cv_results_mean</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>K</th>
+      <th>aucA_train</th>
+      <th>aucA_test</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2</td>
+      <td>0.850070</td>
+      <td>0.824145</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>3</td>
+      <td>0.888732</td>
+      <td>0.866927</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<p>Now it is evident that <code class="docutils literal notranslate"><span class="pre">K</span></code> equal to 3 is the best choice, as it has the highest mean score (both
+in training and testing). We will use it to run the algorithm with the whole dataset, and
+then analyze the results.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get the best K</span>
+<span class="n">best_K</span> <span class="o">=</span> <span class="n">cv_results_mean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">cv_results_mean</span><span class="p">[</span><span class="s2">&quot;aucA_test&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()][</span><span class="s2">&quot;K&quot;</span><span class="p">]</span>
+<span class="c1"># Turn K into an integer</span>
+<span class="n">best_K</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">best_K</span><span class="p">)</span>
+<span class="n">best_K</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>3
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="run-the-algorithm-with-the-best-k">
+<h2>Run the algorithm with the best K<a class="headerlink" href="#run-the-algorithm-with-the-best-k" title="Link to this heading">#</a></h2>
+<p>First, we instantiate the model with the previously used numerical parameters, and then we run
+it with the best <code class="docutils literal notranslate"><span class="pre">K</span></code> value.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.models.acd</span> <span class="kn">import</span> <span class="n">AnomalyDetection</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">AnomalyDetection</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">num_realizations</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">inferred_parameters</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">graph_data</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="n">best_K</span><span class="p">,</span>
+    <span class="n">flag_anomaly</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">[</span><span class="s2">&quot;flag_anomaly&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">rng</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">model_parameters</span><span class="p">[</span><span class="s2">&quot;rseed&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="n">initialization</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">[</span><span class="s2">&quot;initialization&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">out_inference</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">[</span><span class="s2">&quot;out_inference&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">assortative</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">[</span><span class="s2">&quot;assortative&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">undirected</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">[</span><span class="s2">&quot;undirected&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Initialization parameter: 0
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Eta0 parameter: None
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Preprocessing the data for fitting the models.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Data looks like: [[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 1. 0. 0.]
+  ...
+  [0. 1. 1. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 32318217809460493494586234015929749787
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 0 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 100 - time = 4.58 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 200 - time = 9.10 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 300 - time = 13.63 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 400 - time = 18.19 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 500 - time = 22.71 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 600 - time = 27.32 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 700 - time = 31.90 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 800 - time = 36.48 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 900 - time = 41.14 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1000 - time = 45.78 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1100 - time = 50.39 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1200 - time = 54.99 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1300 - time = 59.67 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1400 - time = 64.27 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1500 - time = 68.82 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1600 - time = 73.36 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1700 - time = 77.89 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1800 - time = 82.44 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 1900 - time = 87.04 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 0 - iterations = 2000 - time = 91.60 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 0 - ELBO = -31185.813107034395 - ELBOmax = -31185.813107034395 - iterations = 2000 - time = 91.6 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 177229849016009480032711017833545026964
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 1 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 100 - time = 4.65 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 200 - time = 9.32 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 300 - time = 13.98 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 400 - time = 18.62 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 500 - time = 23.25 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 600 - time = 27.88 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 700 - time = 32.52 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 800 - time = 37.12 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 900 - time = 41.74 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1000 - time = 46.39 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1100 - time = 51.01 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1200 - time = 55.64 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1300 - time = 60.27 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1400 - time = 64.90 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1500 - time = 69.54 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1600 - time = 74.23 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1700 - time = 78.85 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1800 - time = 83.45 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 1 - iterations = 1900 - time = 88.06 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 1 - ELBO = -30700.274688083122 - ELBOmax = -30700.274688083122 - iterations = 1961 - time = 90.9 seconds - convergence = True
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Random number generator state: 43200527072458332628663604923316890241
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:u, v and w are initialized randomly.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Updating realization 2 ...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 100 - time = 4.59 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 200 - time = 9.17 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 300 - time = 13.74 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 400 - time = 18.31 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 500 - time = 22.93 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 600 - time = 27.42 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 700 - time = 31.90 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 800 - time = 36.39 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 900 - time = 40.87 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1000 - time = 45.36 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1100 - time = 49.90 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1200 - time = 54.43 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1300 - time = 58.95 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1400 - time = 63.44 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1500 - time = 67.94 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1600 - time = 72.45 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1700 - time = 76.94 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1800 - time = 81.44 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 1900 - time = 85.96 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realization = 2 - iterations = 2000 - time = 90.46 seconds
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:num. realizations = 2 - ELBO = -31199.28582432724 - ELBOmax = -30700.274688083122 - iterations = 2000 - time = 90.46 seconds - convergence = False
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Best realization = 1 - maxL = -30700.274688083122 - best iterations = 1961
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:root:Algorithm successfully converged after 1961 iterations with a maximum log-likelihood of -30700.2747.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG:root:Parameters won&#39;t be saved! If you want to save them, set out_inference=True.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">inferred_parameters</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Print the shape of each parameter</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;u shape: &quot;</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;v shape: &quot;</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;w shape: &quot;</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;mu: &quot;</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pi: &quot;</span><span class="p">,</span> <span class="n">pi</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>u shape:  (500, 3)
+v shape:  (500, 3)
+w shape:  (1, 3)
+mu:  0.026151238003873162
+pi:  0.0023670930676881973
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="community-detection">
+<h2>Community Detection<a class="headerlink" href="#community-detection" title="Link to this heading">#</a></h2>
+<p>Now that we have run the algorithm with the best <code class="docutils literal notranslate"><span class="pre">K</span></code> value, we can analyze the results. We will
+first plot the adjacency matrix to confirm that our choice of <code class="docutils literal notranslate"><span class="pre">K</span></code> is aligned with what we observed in the data.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a graph from the first adjacency matrix in the list A</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Get the adjacency matrix</span>
+<span class="n">adjacency_matrix</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">adjacency_matrix</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+<span class="c1"># Plot the adjacency matrix</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Greys&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add a color bar to the plot for reference</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/4615d1cb493486ddbbc3a2ce3128de557899fc5e3b182322763f9960152a8240.png" src="../_images/4615d1cb493486ddbbc3a2ce3128de557899fc5e3b182322763f9960152a8240.png" />
+</div>
+</div>
+<p>It is now more evident that the input data has indeed three communities, which matches the
+results given by the cross validation.</p>
+<p>We can now use the inferred parameters to plot the graph together with the communities.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Get the community with the highest probability for each node</span>
+<span class="n">umax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Draw the graph using the spring layout</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+    <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span>
+    <span class="n">node_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="o">=</span><span class="n">umax</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">edge_color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+    <span class="n">with_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">Set1</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3a4a3cc3646da9caaf9588c5df4eba2292234924ff77cf229c644604767da19a.png" src="../_images/3a4a3cc3646da9caaf9588c5df4eba2292234924ff77cf229c644604767da19a.png" />
+</div>
+</div>
+</section>
+<section id="anomaly-detection">
+<h2>Anomaly Detection<a class="headerlink" href="#anomaly-detection" title="Link to this heading">#</a></h2>
+<p>As we have seen, the <code class="docutils literal notranslate"><span class="pre">ACD</span></code> method also provides information about the anomalies. We can use the
+inferred parameters <code class="docutils literal notranslate"><span class="pre">pi</span></code> and <code class="docutils literal notranslate"><span class="pre">mu</span></code> to build a matrix <code class="docutils literal notranslate"><span class="pre">Q</span></code> that represents the probability of each
+edge being an anomaly. We can then set a threshold to determine which edges are anomalous. We can
+decide which threshold to use based on the distribution of values in <code class="docutils literal notranslate"><span class="pre">Q</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">probinet.evaluation.expectation_computation</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_mean_lambda0</span><span class="p">,</span>
+    <span class="n">calculate_Q_dense</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Calculate the matrix Q</span>
+<span class="n">M0</span> <span class="o">=</span> <span class="n">compute_mean_lambda0</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+<span class="n">Q</span> <span class="o">=</span> <span class="n">calculate_Q_dense</span><span class="p">(</span><span class="n">graph_data</span><span class="o">.</span><span class="n">adjacency_tensor</span><span class="p">,</span> <span class="n">M0</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+
+<span class="c1"># Plot the distribution of values in Q</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Q distribution&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3c2e4254e5feb58740b32d5d8c546aa020838cbf578f31b4e4e715d982fba04c.png" src="../_images/3c2e4254e5feb58740b32d5d8c546aa020838cbf578f31b4e4e715d982fba04c.png" />
+</div>
+</div>
+<p>The distribution of values in <code class="docutils literal notranslate"><span class="pre">Q</span></code> is skewed, with most values close to 0.027. We can concentrate on the most anomalous values by selecting the top 1%.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a mask for the edges</span>
+<span class="n">mask_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">mask_tmp</span><span class="p">[</span><span class="n">adjacency_matrix</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Calculate the threshold for the top 1% most anomalous edges</span>
+<span class="n">threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mask_tmp</span><span class="p">,</span> <span class="mi">99</span><span class="p">)</span>
+
+<span class="c1"># Create a copy of Q and set the top 1% most anomalous edges to 1, and the rest to 0</span>
+<span class="n">Z_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mask_tmp</span><span class="p">)</span>
+<span class="n">Z_pred</span><span class="p">[</span><span class="n">Z_pred</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">Z_pred</span><span class="p">[</span><span class="n">Z_pred</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">cmap</span> <span class="o">=</span> <span class="s2">&quot;PuBuGn&quot;</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">Z_pred</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">fraction</span><span class="o">=</span><span class="mf">0.046</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Z_pred&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/731d0e8b350eadbe1c02d6b5915eabb75a4a8a711460bfcbe55338d501554644.png" src="../_images/731d0e8b350eadbe1c02d6b5915eabb75a4a8a711460bfcbe55338d501554644.png" />
+</div>
+</div>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h3>
+<p>In this notebook, we explored the ACD (<strong>A</strong>nomaly and <strong>C</strong>ommunity <strong>D</strong>etection) model. We began by loading and visualizing the data after importing the necessary libraries. Next, we performed cross-validation by defining both model and cross-validation parameters, using the <code class="docutils literal notranslate"><span class="pre">cross_validation</span></code> function from the <code class="docutils literal notranslate"><span class="pre">model_selection</span></code> module. The results were then loaded to identify the optimal number of communities <code class="docutils literal notranslate"><span class="pre">K</span></code> based on the AUC scores.</p>
+<p>With the best <code class="docutils literal notranslate"><span class="pre">K</span></code> value determined, we proceeded by running the <code class="docutils literal notranslate"><span class="pre">ACD</span></code> algorithm. For community
+detection, we validated the choice of <code class="docutils literal notranslate"><span class="pre">K</span></code> by plotting the adjacency matrix and visualizing the
+graph with the detected communities.  For anomaly detection, we computed the matrix <code class="docutils literal notranslate"><span class="pre">Q</span></code>, which represented the probability of each edge being an anomaly.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="DynCRep.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Decoding Temporal Relationships with <code class="docutils literal notranslate"><span class="pre">DynCRep</span></code></p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Unknown_structure.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Analyzing Network Data with Unknown Community Structure</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-logger">Setting the Logger</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-and-visualizing-the-data">Loading and Visualizing the Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performing-the-cross-validation">Performing the Cross-Validation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-the-cross-validation-results">Loading the Cross-Validation Results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-the-algorithm-with-the-best-k">Run the algorithm with the best K</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#community-detection">Community Detection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#anomaly-detection">Anomaly Detection</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Diego Baptista Theuerkauf
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Max Planck Society / Software Workshop - Max Planck Institute for Intelligent Systems.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
