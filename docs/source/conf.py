@@ -89,4 +89,4 @@ html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 
 # Add the path to the logo PDF file
-html_logo = "_static/logo-probinet.pdf"
+html_logo = "_static/logo-probinet.jpg"
