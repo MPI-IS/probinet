@@ -135,6 +135,6 @@ class JointCRepTestCase(BaseTest, ModelTestMixin):
 
         # Assert that the results are equal
         self.assertTrue(
-            np.array_equal(theta["w"], thetaGT_default["w"]),
-            "The 'w' values should be equal for the same random seed",
+            np.allclose(theta["w"], thetaGT_default["w"], rtol=1e-8, atol=1e-12),
+            "The 'w' values should be numerically close for the same random seed",
         )

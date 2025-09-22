@@ -115,10 +115,9 @@ a Creative Commons Attribution 4.0 International License (CC BY
 </sec>
 <sec id="statement-of-need">
   <title>Statement of need</title>
-  <p>Network analysis plays a central role in fields such as social
-  sciences, biology, and fraud detection, where understanding
-  relationships between entities is critical. Probabilistic generative
-  models
+  <p>Network analysis is central to social sciences, biology, and fraud
+  detection, where understanding relationships is essential.
+  Probabilistic generative models
   (<xref alt="Contisciani et al., 2020" rid="ref-contisciani2020community" ref-type="bibr">Contisciani
   et al., 2020</xref>,
   <xref alt="2022" rid="ref-contisciani2022community" ref-type="bibr">2022</xref>;
@@ -126,26 +125,35 @@ a Creative Commons Attribution 4.0 International License (CC BY
   et al., 2021</xref>,
   <xref alt="2022" rid="ref-safdari2022reciprocity" ref-type="bibr">2022</xref>;
   <xref alt="Safdari &amp; De Bacco, 2022" rid="ref-safdari2022anomaly" ref-type="bibr">Safdari
-  &amp; De Bacco, 2022</xref>) have emerged as powerful tools for
-  discovering hidden patterns in networks, detecting communities,
-  identifying anomalies, and generating realistic synthetic data.
-  However, their use is hindered by fragmented implementations, making
-  comparison and reproduction difficult. ProbINet addresses this
-  critical gap by consolidating recent approaches into a single, unified
-  framework, allowing users to explore advanced techniques without the
-  overhead of navigating multiple repositories or inconsistent
-  documentation, boosting reproducibility and usability across
-  disciplines.</p>
+  &amp; De Bacco, 2022</xref>) reveal hidden patterns, detect
+  communities, identify anomalies, and generate synthetic data. Their
+  broader use is limited by fragmented implementations that hinder
+  comparisons and reproducibility. ProbINet addresses this gap by
+  unifying recent approaches in a single framework, improving
+  accessibility and usability across disciplines.</p>
+  <p>ProbINet stands out among network analysis tools. Graph-tool
+  (<xref alt="Peixoto, 2014" rid="ref-peixoto_graph-tool_2014" ref-type="bibr">Peixoto,
+  2014</xref>) provides community detection and general graph analysis
+  tools, but it uses a different model family than our mixed-membership
+  framework and does not account for reciprocity. CDlib
+  (<xref alt="Rossetti et al., 2019" rid="ref-rossetti_cdlib_2019" ref-type="bibr">Rossetti
+  et al., 2019</xref>) offers detection algorithms and evaluation
+  routines, but ProbINet extends this with probabilistic MLE models,
+  optional node attributes, and anomaly detection. pgmpy
+  (<xref alt="Ankan &amp; Textor, 2024" rid="ref-ankan_pgmpy_2024" ref-type="bibr">Ankan
+  &amp; Textor, 2024</xref>) focuses on Bayesian network structure
+  learning, while ProbINet uncovers latent patterns like communities and
+  reciprocity.</p>
 </sec>
 <sec id="main-features">
   <title>Main features</title>
-  <p>ProbINet offers a versatile and feature-rich framework to perform
-  inference on networks using probabilistic generative models. Key
-  features include:</p>
+  <p>ProbINet offers a feature-rich framework to perform inference on
+  networks using probabilistic generative models. Key features
+  include:</p>
   <list list-type="bullet">
     <list-item>
-      <p><bold>Diverse Network Models</bold>: The package integrates
-      generative models for various network types and goals:</p>
+      <p><bold>Diverse Network Models</bold>: Integration of generative
+      models for various network types and goals:</p>
     </list-item>
   </list>
   <table-wrap>
@@ -226,47 +234,38 @@ a Creative Commons Attribution 4.0 International License (CC BY
   </table-wrap>
   <list list-type="bullet">
     <list-item>
-      <p><bold>Synthetic Network Generation</bold>: ProbINet enables
-      users to generate synthetic networks that closely resemble the
-      real ones for further analyses, such as testing hypotheses.</p>
+      <p><bold>Synthetic Network Generation</bold>: Ability to generate
+      synthetic networks that closely resemble real ones for further
+      analyses (e.g., testing hypotheses).</p>
     </list-item>
     <list-item>
-      <p><bold>Simplified Parameter Selection</bold>: ProbINet includes
-      a cross-validation module to optimize key parameters, providing
-      performance results in a clear dataframe.</p>
+      <p><bold>Simplified Parameter Selection</bold>: A cross-validation
+      module to optimize key parameters, providing performance results
+      in a clear dataframe.</p>
     </list-item>
     <list-item>
-      <p><bold>Rich Set of Metrics for Analysis</bold>: ProbINet
-      includes metrics like F1 scores, Jaccard index, and advanced
-      metrics for link and covariate prediction performance.</p>
+      <p><bold>Rich Set of Metrics for Analysis</bold>: Advanced metrics
+      (e.g., F1 scores, Jaccard index) for link and covariate prediction
+      performance.</p>
     </list-item>
     <list-item>
-      <p><bold>Powerful Visualization Tools</bold>: ProbINet includes
-      functions to plot community memberships, and performance
-      metrics.</p>
+      <p><bold>Powerful Visualization Tools</bold>: Functions for
+      plotting community memberships and performance metrics.</p>
     </list-item>
     <list-item>
-      <p><bold>User-Friendly Command-Line Interface</bold>: ProbINet
-      offers an intuitive command-line interface, making it accessible
-      to users with minimal Python experience.</p>
+      <p><bold>User-Friendly Command-Line Interface</bold>: An intuitive
+      interface for easy access.</p>
     </list-item>
     <list-item>
-      <p><bold>Extensible Codebase</bold>: The package is modular,
-      allowing easy integration of new models that follow similar
-      principles.</p>
+      <p><bold>Extensible and Modular Codebase</bold>: Future
+      integration of additional models possible.</p>
     </list-item>
   </list>
   <p>The <bold>Usage</bold> section below illustrates these features
-  with a practical example on real-world data.</p>
+  with a real-world example.</p>
 </sec>
 <sec id="usage">
   <title>Usage</title>
-  <sec id="installation">
-    <title>Installation</title>
-    <p>You can install the package using <monospace>pip</monospace> or
-    from the source repository. Detailed instructions are in the
-    <ext-link ext-link-type="uri" xlink:href="https://mpi-is.github.io/probinet/">documentation</ext-link>.</p>
-  </sec>
   <sec id="example-analyzing-a-social-network-with-probinet">
     <title>Example: Analyzing a Social Network with ProbINet</title>
     <p>This section shows how to use ProbINet to analyze a social
@@ -279,16 +278,16 @@ a Creative Commons Attribution 4.0 International License (CC BY
     relationships.</p>
     <sec id="steps-to-analyze-the-network-with-probinet">
       <title>Steps to Analyze the Network with ProbINet</title>
-      <p>With ProbINet, you can load network data as an edge list,
+      <p>With ProbINet, you can load network data as an edge list and
       select an algorithm (e.g., JointCRep), fit the model to extract
       latent variables, and analyze results like soft community
       memberships, which show how nodes interact across communities.
       This is exemplified in Figure 1. On the left, a network
       representation of the input data is displayed alongside the lines
-      of code required for its analysis using ProbINet. The resulting
-      output is shown on the right, where nodes are colored according to
-      their inferred soft community memberships, while edge thickness
-      and color intensity represent the inferred probability of edge
+      of code required for its analysis using ProbINet. The result is
+      shown on the right, where nodes are colored according to their
+      inferred soft community memberships, while edge thickness and
+      color intensity represent the inferred probability of edge
       existence.</p>
       <fig>
         <caption><p>Usage of ProbINet on a social network. (Top-left) A
@@ -305,13 +304,11 @@ a Creative Commons Attribution 4.0 International License (CC BY
 </sec>
 <sec id="running-times-of-algorithms">
   <title>Running Times of Algorithms</title>
-  <p>The table below summarizes the running times for ProbINet
-  algorithms when the package is run using the CLI
-  <monospace>run_probinet</monospace>. <bold>N</bold> and <bold>E</bold>
-  represent the number of nodes and edges, respectively. Edge ranges
-  indicate variation across layers or time steps. <bold>L/T</bold>
-  indicates the number of layers or time steps, and <bold>K</bold>
-  represents the number of communities.</p>
+  <p>The table below summarizes algorithm runtimes on the tutorial data.
+  <bold>N</bold> and <bold>E</bold> represent the number of nodes and
+  edges, respectively. Edge ranges indicate variation across layers or
+  time steps. <bold>L/T</bold> indicates the number of layers or time
+  steps, and <bold>K</bold> represents the number of communities.</p>
   <table-wrap>
     <table>
       <colgroup>
@@ -377,11 +374,10 @@ a Creative Commons Attribution 4.0 International License (CC BY
     </table>
   </table-wrap>
   <p>These benchmarks were performed on a 12th Gen Intel Core i9-12900
-  CPU with 16 cores and 24 threads, using
-  <monospace>hyperfine</monospace> and 10 runs. Runs required small
-  amount of RAM (less than 1GB). This table provides a general overview
-  of running times for the algorithms on the default networks. A
-  detailed analysis should be performed on the user’s specific data.</p>
+  CPU, using <monospace>hyperfine</monospace>
+  (<xref alt="Peter, 2023" rid="ref-Peter_hyperfine_2023" ref-type="bibr">Peter,
+  2023</xref>) and 10 runs. Runs required small amounts of RAM (less
+  than 1 GB).</p>
 </sec>
 <sec id="acknowledgements">
   <title>Acknowledgements</title>
@@ -489,6 +485,62 @@ a Creative Commons Attribution 4.0 International License (CC BY
       <article-title>Introduction to mathematical sociology</article-title>
       <source>London Free Press Glencoe</source>
       <year iso-8601-date="1964">1964</year>
+    </element-citation>
+  </ref>
+  <ref id="ref-Peter_hyperfine_2023">
+    <element-citation publication-type="software">
+      <person-group person-group-type="author">
+        <name><surname>Peter</surname><given-names>David</given-names></name>
+      </person-group>
+      <article-title>hyperfine</article-title>
+      <year iso-8601-date="2023-03">2023</year><month>03</month>
+      <uri>https://github.com/sharkdp/hyperfine</uri>
+    </element-citation>
+  </ref>
+  <ref id="ref-peixoto_graph-tool_2014">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Peixoto</surname><given-names>Tiago P.</given-names></name>
+      </person-group>
+      <article-title>The graph-tool python library</article-title>
+      <source>figshare</source>
+      <year iso-8601-date="2014">2014</year>
+      <uri>http://figshare.com/articles/graph_tool/1164194</uri>
+      <pub-id pub-id-type="doi">10.6084/m9.figshare.1164194</pub-id>
+    </element-citation>
+  </ref>
+  <ref id="ref-rossetti_cdlib_2019">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Rossetti</surname><given-names>Giulio</given-names></name>
+        <name><surname>Milli</surname><given-names>Letizia</given-names></name>
+        <name><surname>Cazabet</surname><given-names>Rémy</given-names></name>
+      </person-group>
+      <article-title>CDlib: A python library to extract, compare and evaluate communities from complex networks</article-title>
+      <source>Applied Network Science</source>
+      <year iso-8601-date="2019">2019</year>
+      <volume>4</volume>
+      <issue>1</issue>
+      <uri>https://doi.org/10.1007/s41109-019-0165-9</uri>
+      <pub-id pub-id-type="doi">10.1007/s41109-019-0165-9</pub-id>
+      <fpage>52</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-ankan_pgmpy_2024">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Ankan</surname><given-names>Ankur</given-names></name>
+        <name><surname>Textor</surname><given-names>Johannes</given-names></name>
+      </person-group>
+      <article-title>Pgmpy: A python toolkit for bayesian networks</article-title>
+      <source>Journal of Machine Learning Research</source>
+      <year iso-8601-date="2024">2024</year>
+      <volume>25</volume>
+      <issue>265</issue>
+      <uri>http://jmlr.org/papers/v25/23-0487.html</uri>
+      <fpage>1</fpage>
+      <lpage>8</lpage>
     </element-citation>
   </ref>
 </ref-list>

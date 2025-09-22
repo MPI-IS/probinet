@@ -192,27 +192,3 @@ class DynCRepTestCase(BaseTest):
             self.gdata.adjacency_tensor,
             yaml_file,
         )
-
-    @unittest.skip("DynCRep does not support sparse data")
-    def test_force_dense_false(self):
-        """
-        This is a test for the DynCRep algorithm with force_dense=False, i.e., the input data is sparse.
-        """
-        self.gdata = self._import_data(force_dense=False)
-        self._initialize_graph_properties()
-        self.conf = self._load_and_update_config()
-        model = DynCRep(
-            max_iter=self.MAX_ITER,
-            num_realizations=self.NUM_REALIZATIONS,
-            plot_loglik=self.PLOT_LOGLIK,
-        )
-        u, v, w, eta, beta, Loglikelihood = model.fit(
-            self.gdata,
-            T=self.T,
-            nodes=self.nodes,
-            flag_data_T=0,
-            ag=self.AG,
-            bg=self.BG,
-            **self.conf,
-        )
-        self.assertEqual(Loglikelihood, self.LOG_LIKELIHOOD_EXPECTED)

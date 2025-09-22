@@ -88,19 +88,3 @@ class TestModelClass(unittest.TestCase):
         self.model_class.K = dfW.shape[1]
         self.model_class._initialize()  # pylint: disable=protected-access
         self.assertTrue(np.all(0 <= self.model_class.w))
-
-    @unittest.skip("Deciding whether initialization 2 is useful or not.")
-    def test_initialize_uv_from_file(self):
-        self.model_class.initialization = 2
-        self.model_class._initialize()  # pylint: disable=protected-access # Set by hand
-        self.assertTrue(np.all(0 <= self.model_class.u))
-        self.assertTrue(np.all(0 <= self.model_class.v))
-
-    @unittest.skip("Deciding whether initialization 3 is useful or not.")
-    def test_initialize_uvw_from_file(self):
-        self.model_class.initialization = 3
-        self.model_class.L, self.model_class.K = self.w_a.shape
-        self.model_class._initialize()  # in case it is: nodes=range(600) # pylint: disable=protected-access
-        self.assertTrue(np.all(0 <= self.model_class.u))
-        self.assertTrue(np.all(0 <= self.model_class.v))
-        self.assertTrue(np.all(0 <= self.model_class.w))

@@ -41,20 +41,16 @@ to analyze and model complex network data. The package integrates code implement
 
 # Statement of need
 
-Network analysis plays a central role in fields such as social sciences, biology, and fraud
-detection, where understanding relationships between entities is critical. Probabilistic
-generative models [@contisciani2020community; @safdari2021generative; @contisciani2022community;
-@safdari2022anomaly; @safdari2022reciprocity] have emerged as powerful tools for discovering
-hidden patterns in networks, detecting communities, identifying anomalies, and generating
-realistic synthetic data.  However, their use is hindered by fragmented implementations, making
-comparisons difficult. ProbINet addresses this critical gap by consolidating
-recent approaches into a single, unified framework, allowing users to explore advanced techniques
-without the overhead of navigating multiple repositories or inconsistent documentation,
-boosting reproducibility and usability across disciplines.
+Network analysis is central to social sciences, biology, and fraud detection, where 
+understanding relationships is essential. Probabilistic generative models [@contisciani2020community; @safdari2021generative; @contisciani2022community; @safdari2022anomaly; @safdari2022reciprocity] reveal hidden patterns, detect communities, identify anomalies, and generate synthetic data. Their broader use is limited by fragmented implementations that hinder comparisons and reproducibility. 
+ProbINet addresses this gap by unifying recent approaches in a single framework, improving accessibility and usability across disciplines. 
+
+ProbINet stands out among network analysis tools. Graph-tool [@peixoto_graph-tool_2014] provides community detection and general graph analysis tools, but it uses a different model family than our mixed-membership framework and does not account for reciprocity.  CDlib [@rossetti_cdlib_2019] offers detection algorithms and evaluation routines, but ProbINet extends this with probabilistic MLE models, optional node attributes, and anomaly detection. pgmpy [@ankan_pgmpy_2024] focuses on Bayesian network structure learning, while ProbINet uncovers latent patterns like communities and reciprocity.
 
 # Main features
 
-ProbINet offers a versatile and feature-rich framework to perform inference on networks using probabilistic generative models.  Key features include:
+ProbINet offers a feature-rich framework to perform inference on networks using probabilistic 
+generative models.  Key features include:
 
 - **Diverse Network Models**: Integration of generative models for various network types
   and goals:
@@ -83,7 +79,7 @@ ProbINet offers a versatile and feature-rich framework to perform inference on n
 
 - **Extensible and Modular Codebase**: Future integration of additional models possible.
 
-The **Usage** section below illustrates these features with a practical example on real-world data.
+The **Usage** section below illustrates these features with a real-world example.
 
 # Usage
 
@@ -94,10 +90,11 @@ directed edges representing friendships in a small Illinois high school [@konect
 
 ### Steps to Analyze the Network with ProbINet
 
-With ProbINet, you can load network data as an edge list, select an algorithm (e.g., JointCRep), 
+With ProbINet, you can load network data as an edge list and select an algorithm (e.g., JointCRep), 
 fit the model to extract latent variables, and analyze results like soft community memberships, 
 which show how nodes interact across communities.  This is exemplified in Figure 1. On the left, a 
-network representation of the input data is displayed alongside the lines of code required for its analysis using ProbINet. The resulting output is shown on the right, where nodes are colored according to their inferred soft community memberships, while edge thickness and color intensity represent the inferred probability of edge existence. 
+network representation of the input data is displayed alongside the lines of code required for 
+its analysis using ProbINet. The result is shown on the right, where nodes are colored according to their inferred soft community memberships, while edge thickness and color intensity represent the inferred probability of edge existence. 
 
 ![Usage of ProbINet on a social network. (Top-left) A network representation of the input data.  (Bottom-left) A snapshot of the code used. (Right) The resulting output.](figures/example.png)
 
@@ -105,8 +102,7 @@ For more tutorials and use cases, see the [package documentation](https://mpi-is
 
 # Running Times of Algorithms
 
-The table below provides a general overview of the algorithms running times
-on the data used in the tutorials.
+The table below summarizes algorithm runtimes on the tutorial data.
 **N** and **E** represent the number of nodes and edges, respectively.
 Edge ranges indicate variation across layers or time steps.
 **L/T** indicates the number of layers or time steps,
