@@ -229,7 +229,6 @@ class ACDTestCase(BaseTest):
 
         # TODO: Add a check for the parameters stored in theta
 
-    # @unittest.skip("Randomization seems to have a problem, random seeds might not be fixed.")
     def test_running_algorithm_from_file(self):
         # The next section is taken from the original code like this. This is a temporary
         # validation test. In the future, a test built from fixture will be added.

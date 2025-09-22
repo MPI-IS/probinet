@@ -182,7 +182,7 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
         self.K = 2
         self.seed = RANDOM_SEED_REPROD
         self.eta = 50
-        self.out_folder = Path(__file__).parent / "data"/"input"/"synthetic"
+        self.out_folder = Path(__file__).parent / "data" / "input" / "synthetic"
         self.output_net = True
         self.show_details = True
         self.show_plots = False
@@ -196,7 +196,7 @@ class TestBaseSyntheticNetwork(unittest.TestCase):
             output_adj=self.output_net,
             show_details=self.show_details,
             show_plots=self.show_plots,
-            rng = np.random.default_rng(seed=self.seed),
+            rng=np.random.default_rng(seed=self.seed),
             **self.kwargs,
         )
 
@@ -294,11 +294,6 @@ class TestReciprocityMMSBM_joints(unittest.TestCase):
             parameters=None,
         )
         self.mmsbm = mmsbm
-
-    @unittest.skip("Talk to Martina about why this test breaks.")
-    def test_nothing(self):
-        self.mmsbm.build_Y()
-        pass
 
 
 class TestSyntNetAnomaly(unittest.TestCase):
