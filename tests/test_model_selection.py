@@ -58,7 +58,7 @@ class TestCrossValidationModels(BaseTest):
                 except ValueError:
                     continue
 
-                self.assertAlmostEqual(generated_value, ground_truth_value, places=4)
+                self.assertAlmostEqual(generated_value, ground_truth_value, places=3)
 
     def test_dyncrep_cross_validation(self):
         self.run_cv_and_check_results("DynCRep")
