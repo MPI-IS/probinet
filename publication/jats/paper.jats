@@ -29,20 +29,21 @@ Network Analysis</article-title>
 <given-names>Diego</given-names>
 </name>
 <xref ref-type="aff" rid="aff-1"/>
+<xref ref-type="aff" rid="aff-2"/>
 </contrib>
 <contrib contrib-type="author">
 <name>
 <surname>Contisciani</surname>
 <given-names>Martina</given-names>
 </name>
-<xref ref-type="aff" rid="aff-2"/>
+<xref ref-type="aff" rid="aff-3"/>
 </contrib>
 <contrib contrib-type="author">
 <name>
 <surname>Bacco</surname>
 <given-names>Caterina De</given-names>
 </name>
-<xref ref-type="aff" rid="aff-3"/>
+<xref ref-type="aff" rid="aff-4"/>
 </contrib>
 <contrib contrib-type="author">
 <name>
@@ -59,10 +60,15 @@ Germany.</institution>
 </aff>
 <aff id="aff-2">
 <institution-wrap>
-<institution>Central European University, Vienna, Austria.</institution>
+<institution>Graz University of Technology, Graz, Austria</institution>
 </institution-wrap>
 </aff>
 <aff id="aff-3">
+<institution-wrap>
+<institution>Central European University, Vienna, Austria.</institution>
+</institution-wrap>
+</aff>
+<aff id="aff-4">
 <institution-wrap>
 <institution>Delft University of Technology, Delft,
 Netherlands.</institution>
@@ -172,19 +178,6 @@ a Creative Commons Attribution 4.0 International License (CC BY
       </thead>
       <tbody>
         <tr>
-          <td><bold>MTCOV</bold></td>
-          <td>Extracts overlapping communities in multilayer networks
-          using topology and node attributes
-          (<xref alt="Contisciani et al., 2020" rid="ref-contisciani2020community" ref-type="bibr">Contisciani
-          et al., 2020</xref>).</td>
-          <td>Weighted, Multilayer, Attributes, Communities</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
           <td><bold>CRep</bold></td>
           <td>Models directed networks with communities and reciprocity
           (<xref alt="Safdari et al., 2021" rid="ref-safdari2021generative" ref-type="bibr">Safdari
@@ -228,6 +221,19 @@ a Creative Commons Attribution 4.0 International License (CC BY
           (<xref alt="Safdari &amp; De Bacco, 2022" rid="ref-safdari2022anomaly" ref-type="bibr">Safdari
           &amp; De Bacco, 2022</xref>).</td>
           <td>Directed, Weighted, Communities, Anomalies</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><bold>MTCOV</bold></td>
+          <td>Extracts overlapping communities in multilayer networks
+          using topology and node attributes
+          (<xref alt="Contisciani et al., 2020" rid="ref-contisciani2020community" ref-type="bibr">Contisciani
+          et al., 2020</xref>).</td>
+          <td>Weighted, Multilayer, Attributes, Communities</td>
         </tr>
       </tbody>
     </table>
@@ -331,14 +337,6 @@ a Creative Commons Attribution 4.0 International License (CC BY
       </thead>
       <tbody>
         <tr>
-          <td><bold>MTCOV</bold></td>
-          <td>300</td>
-          <td>724-1340</td>
-          <td>4</td>
-          <td>2</td>
-          <td>1.51 ± 0.14</td>
-        </tr>
-        <tr>
           <td><bold>CRep</bold></td>
           <td>600</td>
           <td>5512</td>
@@ -369,6 +367,14 @@ a Creative Commons Attribution 4.0 International License (CC BY
           <td>1</td>
           <td>3</td>
           <td>27.8 ± 3.2</td>
+        </tr>
+        <tr>
+          <td><bold>MTCOV</bold></td>
+          <td>300</td>
+          <td>724-1340</td>
+          <td>4</td>
+          <td>2</td>
+          <td>1.51 ± 0.14</td>
         </tr>
       </tbody>
     </table>
