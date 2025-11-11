@@ -12,7 +12,7 @@ authors:
   - name: Diego Baptista
     orcid: 0000-0003-2994-0138
     #equal-contrib: true
-    affiliation: 1,2
+    affiliation: "1, 2"
   - name: Martina Contisciani
     #corresponding: true # (This is how to denote the corresponding author)
     affiliation: 3
@@ -24,7 +24,7 @@ authors:
 affiliations:
   - name: Max Planck Institute for Intelligent Systems, Tübingen, Germany.
     index: 1
-  - name: Graz University of Technology, Graz, Austria
+  - name: Graz University of Technology, Graz, Austria.
     index: 2
   - name: Central European University, Vienna, Austria.
     index: 3
