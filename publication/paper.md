@@ -43,8 +43,7 @@ to analyze and model complex network data. The package integrates code implement
 
 # Statement of need
 
-Network analysis is central to social sciences, biology, and fraud detection, where 
-understanding relationships is essential. Probabilistic generative models 
+Network analysis is central to disciplines such as social sciences, biology, and fraud detection, where understanding relationships is essential. Probabilistic generative models 
 [@safdari2021generative; @contisciani2022community; @safdari2022anomaly; @safdari2022reciprocity; @contisciani2020community
 ] reveal hidden patterns, detect communities, identify anomalies, and generate synthetic data. Their broader use is limited by fragmented implementations that hinder comparisons and reproducibility. 
 ProbINet addresses this gap by unifying recent approaches in a single framework, improving accessibility and usability across disciplines. 
@@ -57,19 +56,7 @@ ProbINet offers a feature-rich framework to perform inference on networks using 
 generative models.  Key features include:
 
 - **Diverse Network Models**: Integration of generative models for various network types
-  and goals:
-
-| **Algorithm's Name**&nbsp; | **Description**                                                                                                         | **Network Properties**                                |
-|----------------------------|-------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
-| **CRep**                   | Models directed networks with communities and reciprocity [@safdari2021generative].                                     | Directed, Weighted, Communities, Reciprocity          |
-|                            |                                                                                                                         |                                                       |
-| **JointCRep**              | Captures community structure and reciprocity with a joint edge distribution [@contisciani2022community].                | Directed, Communities, Reciprocity                    |
-|                            |                                                                                                                         |                                                       |
-| **DynCRep**                | Extends CRep for dynamic networks [@safdari2022reciprocity].                                                            | Directed, Weighted, Dynamic, Communities, Reciprocity |
-|                            |                                                                                                                         |                                                       |
-| **ACD**                    | Identifies anomalous edges and node community memberships in weighted networks [@safdari2022anomaly].                                     | Directed, Weighted, Communities, Anomalies            |
-|                            |                                                                                                                         |                                                       |
-| **MTCOV**                  | Extracts overlapping communities in multilayer networks using topology and node attributes [@contisciani2020community]. | Weighted, Multilayer, Attributes, Communities         |
+  and goals (see table below).
 
 - **Synthetic Network Generation**: Ability to generate synthetic networks that closely resemble real ones for further analyses (e.g., testing hypotheses).
 
@@ -82,6 +69,19 @@ generative models.  Key features include:
 - **User-Friendly Command-Line Interface**: An intuitive interface for easy access.
 
 - **Extensible and Modular Codebase**: Future integration of additional models possible.
+
+
+| **Algorithm's Name**&nbsp; | **Description**                                                                                                         | **Network Properties**                                |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| **CRep**                   | Models directed networks with communities and reciprocity [@safdari2021generative].                                     | Directed, Weighted, Communities, Reciprocity          |
+|                            |                                                                                                                         |                                                       |
+| **JointCRep**              | Captures community structure and reciprocity with a joint edge distribution [@contisciani2022community].                | Directed, Communities, Reciprocity                    |
+|                            |                                                                                                                         |                                                       |
+| **DynCRep**                | Extends CRep for dynamic networks [@safdari2022reciprocity].                                                            | Directed, Weighted, Dynamic, Communities, Reciprocity |
+|                            |                                                                                                                         |                                                       |
+| **ACD**                    | Identifies anomalous edges and node community memberships in weighted networks [@safdari2022anomaly].                                     | Directed, Weighted, Communities, Anomalies            |
+|                            |                                                                                                                         |                                                       |
+| **MTCOV**                  | Extracts overlapping communities in multilayer networks using topology and node attributes [@contisciani2020community]. | Weighted, Multilayer, Attributes, Communities         |
 
 The **Usage** section below illustrates these features with a real-world example.
 

@@ -121,9 +121,9 @@ a Creative Commons Attribution 4.0 International License (CC BY
 </sec>
 <sec id="statement-of-need">
   <title>Statement of need</title>
-  <p>Network analysis is central to social sciences, biology, and fraud
-  detection, where understanding relationships is essential.
-  Probabilistic generative models
+  <p>Network analysis is central to disciplines such as social sciences,
+  biology, and fraud detection, where understanding relationships is
+  essential. Probabilistic generative models
   (<xref alt="Contisciani et al., 2020" rid="ref-contisciani2020community" ref-type="bibr">Contisciani
   et al., 2020</xref>,
   <xref alt="2022" rid="ref-contisciani2022community" ref-type="bibr">2022</xref>;
@@ -159,7 +159,34 @@ a Creative Commons Attribution 4.0 International License (CC BY
   <list list-type="bullet">
     <list-item>
       <p><bold>Diverse Network Models</bold>: Integration of generative
-      models for various network types and goals:</p>
+      models for various network types and goals (see table below).</p>
+    </list-item>
+    <list-item>
+      <p><bold>Synthetic Network Generation</bold>: Ability to generate
+      synthetic networks that closely resemble real ones for further
+      analyses (e.g., testing hypotheses).</p>
+    </list-item>
+    <list-item>
+      <p><bold>Simplified Parameter Selection</bold>: A cross-validation
+      module to optimize key parameters, providing performance results
+      in a clear dataframe.</p>
+    </list-item>
+    <list-item>
+      <p><bold>Rich Set of Metrics for Analysis</bold>: Advanced metrics
+      (e.g., F1 scores, Jaccard index) for link and covariate prediction
+      performance.</p>
+    </list-item>
+    <list-item>
+      <p><bold>Powerful Visualization Tools</bold>: Functions for
+      plotting community memberships and performance metrics.</p>
+    </list-item>
+    <list-item>
+      <p><bold>User-Friendly Command-Line Interface</bold>: An intuitive
+      interface for easy access.</p>
+    </list-item>
+    <list-item>
+      <p><bold>Extensible and Modular Codebase</bold>: Future
+      integration of additional models possible.</p>
     </list-item>
   </list>
   <table-wrap>
@@ -238,35 +265,6 @@ a Creative Commons Attribution 4.0 International License (CC BY
       </tbody>
     </table>
   </table-wrap>
-  <list list-type="bullet">
-    <list-item>
-      <p><bold>Synthetic Network Generation</bold>: Ability to generate
-      synthetic networks that closely resemble real ones for further
-      analyses (e.g., testing hypotheses).</p>
-    </list-item>
-    <list-item>
-      <p><bold>Simplified Parameter Selection</bold>: A cross-validation
-      module to optimize key parameters, providing performance results
-      in a clear dataframe.</p>
-    </list-item>
-    <list-item>
-      <p><bold>Rich Set of Metrics for Analysis</bold>: Advanced metrics
-      (e.g., F1 scores, Jaccard index) for link and covariate prediction
-      performance.</p>
-    </list-item>
-    <list-item>
-      <p><bold>Powerful Visualization Tools</bold>: Functions for
-      plotting community memberships and performance metrics.</p>
-    </list-item>
-    <list-item>
-      <p><bold>User-Friendly Command-Line Interface</bold>: An intuitive
-      interface for easy access.</p>
-    </list-item>
-    <list-item>
-      <p><bold>Extensible and Modular Codebase</bold>: Future
-      integration of additional models possible.</p>
-    </list-item>
-  </list>
   <p>The <bold>Usage</bold> section below illustrates these features
   with a real-world example.</p>
 </sec>
