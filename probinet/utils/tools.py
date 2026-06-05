@@ -28,7 +28,14 @@ def can_cast_to_int(string: Union[int, float, str]) -> bool:
     Returns
     -------
     bool : bool
-           If True, the input can be converted to integer object.
+           If True, the input can be converted to an integer, False otherwise.
+
+    Raises
+    ------
+    ValueError
+        Caught internally; the error is logged and False is returned.
+    TypeError
+        If the input cannot be coerced by int() (e.g. None).
     """
 
     try:
@@ -58,6 +65,11 @@ def is_sparse(X: np.ndarray) -> bool:
     Returns
     -------
     Boolean flag: true if the input tensor is sparse, false otherwise.
+
+    Raises
+    ------
+    AttributeError
+        If X lacks .ndim, .size, or .nonzero().
     """
 
     # Get the number of dimensions of the input tensor X.
@@ -89,6 +101,11 @@ def sptensor_from_dense_array(X: np.ndarray) -> COO:
     -------
     COO
         Sparse tensor created from the dense array.
+
+    Raises
+    ------
+    ValueError, TypeError
+        Propagated from NumPy if X is not a valid array.
     """
     # Get the non-zero indices and values from the dense array
     coords = np.array(X.nonzero())
@@ -117,6 +134,13 @@ def get_item_array_from_subs(A: np.ndarray, ref_subs: ArraySequence) -> np.ndarr
     -------
     np.ndarray
         A 1-dimensional array containing the values of the tensor at the specified indices.
+
+    Raises
+    ------
+    IndexError
+        If any index is out of bounds.
+    ValueError
+        If the arrays in ref_subs have mismatched lengths.
     """
     return np.array([A[tuple(sub)] for sub in zip(*ref_subs)])
 
@@ -140,7 +164,13 @@ def check_symmetric(
 
     Returns
     -------
-    True if the matrix is symmetric, False otherwise.
+    True if matrix (a) (or every matrix in the list) equals its transpose
+        within rtol/atol; False otherwise.
+
+    Raises
+    ------
+    ValueError
+        If shapes are incompatible for transpose comparison.
     """
 
     if isinstance(a, list):
@@ -163,9 +193,14 @@ def build_edgelist(A: COO, layer: int) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        DataFrame containing the edgelist for the specified layer with columns 'source', 'target', and 'L<layer>'.
-    """
+        One row per non-zero entry, with columns 'source', 'target',
+        and 'L<layer>' (e.g. 'L0').
 
+    Raises
+    ------
+    AttributeError
+        If A has no .tocoo() method.
+    """
     # Convert the input sparse matrix A to COOrdinate format
     A_coo = A.tocoo()
 
@@ -243,8 +278,19 @@ def write_adjacency(
           Name of the column to consider as source of the edge.
     alter : str
             Name of the column to consider as target of the edge.
-    """
 
+    Returns
+    -------
+    None
+        Writes a CSV to folder + fname.
+
+    Raises
+    ------
+    IndexError
+        If G is empty (G[0] fails).
+    OSError
+        On file write failure.
+    """
     N = G[0].number_of_nodes()
     L = len(G)
     B = np.empty(shape=[len(G), N, N])
@@ -285,7 +331,8 @@ def create_design_matrix(
     Returns
     -------
     X : DataFrame
-        Design matrix
+        Columns [nodeID, attr_name]; node labels from dict keys,
+        attributes from dict values.
     """
     # Create a DataFrame from the metadata dictionary
     X = pd.DataFrame.from_dict(metadata, orient="index", columns=[attr_name])
@@ -315,6 +362,19 @@ def save_design_matrix(
              Path of the folder where to save the files.
     fname : str
             Name of the design matrix file.
+
+    Returns
+    -------
+    None
+        Saves CSV to folder/X_{perc_digits}.csv (filename derived from
+        str(perc)).
+
+    Raises
+    ------
+    OSError
+        On file write failure.
+    IndexError
+        If perc string is too short for character indexing.
     """
     # Construct the file path using f-string formatting and Path
     file_path = Path(folder) / f"{fname}{str(perc)[0]}_{str(perc)[2]}.csv"
@@ -377,10 +437,16 @@ def log_and_raise_error(error_type: Type[BaseException], message: str) -> None:
     message : str
         The error message to be logged and included in the exception.
 
+    Returns
+    -------
+    None
+        This function never returns normally.
+
     Raises
     ------
-    BaseException
-        An exception of the specified type with the given message.
+    error_type
+        Always raised after logging at ERROR level. Commonly
+        ValueError, RuntimeError, or NotImplementedError.
     """
 
     # Log the error message
@@ -400,10 +466,16 @@ def flt(x: float, d: int = 3) -> float:
         Number to be rounded.
     d : int
         Number of decimal places to round to.
+
     Returns
     -------
     float
-        The input number rounded to the specified number of decimal places.
+        The input number rounded (round(x, d)) to the specified number of decimal places.
+
+    Raises
+    ------
+    TypeError
+        If x is not roundable.
     """
     return round(x, d)
 
@@ -420,6 +492,7 @@ def get_or_create_rng(rng: Optional[np.random.Generator] = None) -> np.random.Ge
     Returns
     -------
     np.random.Generator
-        Initialized random number generator.
+        rng if not None; otherwise a new unseeded
+        np.random.default_rng().
     """
     return rng if rng else np.random.default_rng()
