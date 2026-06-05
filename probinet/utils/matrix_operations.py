@@ -158,11 +158,21 @@ def normalize_nonzero_membership(u: np.ndarray, axis: Optional[int] = 1) -> np.n
     u: ndarray
        Numpy Matrix.
     axis: Optional[int]
-          Axis along which the matrix should be normalized.
+          Axis along which the matrix is normalized. Default is 1.
 
     Returns
     -------
-    The matrix normalized by row.
+    np.ndarray
+        Normalized copy of u along axis. Sums equal to zero are
+        replaced with 1.0 before division to avoid divide-by-zero,
+        leaving the corresponding rows or columns unchanged.
+
+    Raises
+    ------
+    numpy.AxisError
+        If axis is not a valid axis for u.
+    TypeError
+        If u is not compatible with the required NumPy operations.
     """
 
     # Calculate the sum of elements along axis 1, keeping the same dimensions.
@@ -186,11 +196,17 @@ def transpose_matrix(M: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     M : ndarray
-        Numpy matrix.
+        Input 2-D numpy array.
 
     Returns
     -------
-    Transpose of the matrix.
+    np.ndarray
+        Transpose of the matrix M with shape (M.shape[1], M.shape[0]).
+
+    Raises
+    ------
+    ValueError
+        If M is not 2-D.
     """
     # Return the transpose of a matrix
     return np.einsum("ij->ji", M)
@@ -207,7 +223,15 @@ def transpose_tensor(M: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    Transpose version of M_aij, i.e. M_aji.
+    np.ndarray
+        Node-index swap on the last two dimensions (``aij -> aji``). Same
+        rank and shape as M; expects a tensor with at least 3
+        dimensions.
+
+    Raises
+    ------
+    ValueError
+        If ``M`` has fewer than 3 dimensions or ``einsum`` fails.
     """
 
     return np.einsum("aij->aji", M)
@@ -229,7 +253,13 @@ def Exp_ija_matrix(u: np.ndarray, v: np.ndarray, w: np.ndarray) -> np.ndarray:
     Returns
     -------
     M : ndarray
-        Mean lambda0_ij for all entries.
+        Expected Poisson rates ``lambda0_ij`` for all node pairs, shape
+        (N, N) where N = u.shape[0].
+
+    Raises
+    ------
+    ValueError
+        If u, v, and w have incompatible shapes for einsum.
     """
 
     # Compute the outer product of matrices u and v, resulting in a 4D tensor M.
