@@ -137,15 +137,17 @@ a Creative Commons Attribution 4.0 International License (CC BY
   comparisons and reproducibility. ProbINet addresses this gap by
   unifying recent approaches in a single framework, improving
   accessibility and usability across disciplines.</p>
-  <p>ProbINet stands out among network analysis tools. Graph-tool
+  <p>ProbINet stands out among network analysis tools. The graph-tool
+  package
   (<xref alt="Peixoto, 2014" rid="ref-peixoto_graph-tool_2014" ref-type="bibr">Peixoto,
   2014</xref>) provides community detection and general graph analysis
   tools, but it uses a different model family than our mixed-membership
   framework and does not account for reciprocity. CDlib
   (<xref alt="Rossetti et al., 2019" rid="ref-rossetti_cdlib_2019" ref-type="bibr">Rossetti
   et al., 2019</xref>) offers detection algorithms and evaluation
-  routines, but ProbINet extends this with probabilistic MLE models,
-  optional node attributes, and anomaly detection. pgmpy
+  routines, but ProbINet extends this with probabilistic
+  maximum-likelihood estimation (MLE) models, optional node attributes,
+  and anomaly detection. pgmpy
   (<xref alt="Ankan &amp; Textor, 2024" rid="ref-ankan_pgmpy_2024" ref-type="bibr">Ankan
   &amp; Textor, 2024</xref>) focuses on Bayesian network structure
   learning, while ProbINet uncovers latent patterns like communities and
@@ -168,8 +170,8 @@ a Creative Commons Attribution 4.0 International License (CC BY
     </list-item>
     <list-item>
       <p><bold>Simplified Parameter Selection</bold>: A cross-validation
-      module to optimize key parameters, providing performance results
-      in a clear dataframe.</p>
+      module to select key hyperparameters, providing performance
+      results in a clear data frame.</p>
     </list-item>
     <list-item>
       <p><bold>Rich Set of Metrics for Analysis</bold>: Advanced metrics
@@ -198,7 +200,7 @@ a Creative Commons Attribution 4.0 International License (CC BY
       </colgroup>
       <thead>
         <tr>
-          <th><bold>Algorithm’s Name</bold> </th>
+          <th><bold>Algorithm Name</bold> </th>
           <th><bold>Description</bold></th>
           <th><bold>Network Properties</bold></th>
         </tr>
@@ -278,8 +280,13 @@ a Creative Commons Attribution 4.0 International License (CC BY
     (<xref alt="Coleman, 1964" rid="ref-konectU003Acoleman" ref-type="bibr">Coleman,
     1964</xref>). We analyze the network using JointCRep in ProbINet to
     infer latent variables, assuming communities and reciprocity drive
-    tie formation, a reasonable assumption for friendship
-    relationships.</p>
+    tie formation, a reasonable assumption for friendship relationships
+    (<xref alt="Block, 2015" rid="ref-block2015reciprocity" ref-type="bibr">Block,
+    2015</xref>;
+    <xref alt="McFarland et al., 2014" rid="ref-mcfarland2014network" ref-type="bibr">McFarland
+    et al., 2014</xref>;
+    <xref alt="Vaquera &amp; Kao, 2008" rid="ref-vaquera2008friendship" ref-type="bibr">Vaquera
+    &amp; Kao, 2008</xref>).</p>
     <sec id="steps-to-analyze-the-network-with-probinet">
       <title>Steps to Analyze the Network with ProbINet</title>
       <p>With ProbINet, you can load network data as an edge list and
@@ -482,12 +489,12 @@ a Creative Commons Attribution 4.0 International License (CC BY
     </element-citation>
   </ref>
   <ref id="ref-konectU003Acoleman">
-    <element-citation publication-type="article-journal">
+    <element-citation publication-type="book">
       <person-group person-group-type="author">
         <name><surname>Coleman</surname><given-names>James Samuel</given-names></name>
       </person-group>
-      <article-title>Introduction to mathematical sociology</article-title>
-      <source>London Free Press Glencoe</source>
+      <source>Introduction to mathematical sociology</source>
+      <publisher-name>Free Press of Glencoe</publisher-name>
       <year iso-8601-date="1964">1964</year>
     </element-citation>
   </ref>
@@ -506,7 +513,7 @@ a Creative Commons Attribution 4.0 International License (CC BY
       <person-group person-group-type="author">
         <name><surname>Peixoto</surname><given-names>Tiago P.</given-names></name>
       </person-group>
-      <article-title>The graph-tool python library</article-title>
+      <article-title>The graph-tool Python library</article-title>
       <source>figshare</source>
       <year iso-8601-date="2014">2014</year>
       <uri>http://figshare.com/articles/graph_tool/1164194</uri>
@@ -520,7 +527,7 @@ a Creative Commons Attribution 4.0 International License (CC BY
         <name><surname>Milli</surname><given-names>Letizia</given-names></name>
         <name><surname>Cazabet</surname><given-names>Rémy</given-names></name>
       </person-group>
-      <article-title>CDlib: A python library to extract, compare and evaluate communities from complex networks</article-title>
+      <article-title>CDlib: A Python library to extract, compare and evaluate communities from complex networks</article-title>
       <source>Applied Network Science</source>
       <year iso-8601-date="2019">2019</year>
       <volume>4</volume>
@@ -537,7 +544,7 @@ a Creative Commons Attribution 4.0 International License (CC BY
         <name><surname>Ankan</surname><given-names>Ankur</given-names></name>
         <name><surname>Textor</surname><given-names>Johannes</given-names></name>
       </person-group>
-      <article-title>Pgmpy: A python toolkit for bayesian networks</article-title>
+      <article-title>pgmpy: A Python toolkit for Bayesian networks</article-title>
       <source>Journal of Machine Learning Research</source>
       <year iso-8601-date="2024">2024</year>
       <volume>25</volume>
@@ -545,6 +552,55 @@ a Creative Commons Attribution 4.0 International License (CC BY
       <uri>http://jmlr.org/papers/v25/23-0487.html</uri>
       <fpage>1</fpage>
       <lpage>8</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-mcfarland2014network">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>McFarland</surname><given-names>Daniel A.</given-names></name>
+        <name><surname>Moody</surname><given-names>James</given-names></name>
+        <name><surname>Diehl</surname><given-names>David</given-names></name>
+        <name><surname>Smith</surname><given-names>Jeffrey A.</given-names></name>
+        <name><surname>Thomas</surname><given-names>Reuben J.</given-names></name>
+      </person-group>
+      <article-title>Network ecology and adolescent social structure</article-title>
+      <source>American Sociological Review</source>
+      <year iso-8601-date="2014">2014</year>
+      <volume>79</volume>
+      <issue>6</issue>
+      <pub-id pub-id-type="doi">10.1177/0003122414554001</pub-id>
+      <fpage>1088</fpage>
+      <lpage>1121</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-vaquera2008friendship">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Vaquera</surname><given-names>Elizabeth</given-names></name>
+        <name><surname>Kao</surname><given-names>Grace</given-names></name>
+      </person-group>
+      <article-title>Do you like me as much as I like you? Friendship reciprocity and its effects on school outcomes among adolescents</article-title>
+      <source>Social Science Research</source>
+      <year iso-8601-date="2008">2008</year>
+      <volume>37</volume>
+      <issue>1</issue>
+      <pub-id pub-id-type="doi">10.1016/j.ssresearch.2006.11.002</pub-id>
+      <fpage>55</fpage>
+      <lpage>72</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-block2015reciprocity">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Block</surname><given-names>Per</given-names></name>
+      </person-group>
+      <article-title>Reciprocity, transitivity, and the mysterious three-cycle</article-title>
+      <source>Social Networks</source>
+      <year iso-8601-date="2015">2015</year>
+      <volume>40</volume>
+      <pub-id pub-id-type="doi">10.1016/j.socnet.2014.10.005</pub-id>
+      <fpage>163</fpage>
+      <lpage>173</lpage>
     </element-citation>
   </ref>
 </ref-list>

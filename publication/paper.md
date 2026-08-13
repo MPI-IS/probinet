@@ -48,7 +48,7 @@ Network analysis is central to disciplines such as social sciences, biology, and
 ] reveal hidden patterns, detect communities, identify anomalies, and generate synthetic data. Their broader use is limited by fragmented implementations that hinder comparisons and reproducibility. 
 ProbINet addresses this gap by unifying recent approaches in a single framework, improving accessibility and usability across disciplines. 
 
-ProbINet stands out among network analysis tools. Graph-tool [@peixoto_graph-tool_2014] provides community detection and general graph analysis tools, but it uses a different model family than our mixed-membership framework and does not account for reciprocity.  CDlib [@rossetti_cdlib_2019] offers detection algorithms and evaluation routines, but ProbINet extends this with probabilistic MLE models, optional node attributes, and anomaly detection. pgmpy [@ankan_pgmpy_2024] focuses on Bayesian network structure learning, while ProbINet uncovers latent patterns like communities and reciprocity.
+ProbINet stands out among network analysis tools. The graph-tool package [@peixoto_graph-tool_2014] provides community detection and general graph analysis tools, but it uses a different model family than our mixed-membership framework and does not account for reciprocity.  CDlib [@rossetti_cdlib_2019] offers detection algorithms and evaluation routines, but ProbINet extends this with probabilistic maximum-likelihood estimation (MLE) models, optional node attributes, and anomaly detection. pgmpy [@ankan_pgmpy_2024] focuses on Bayesian network structure learning, while ProbINet uncovers latent patterns like communities and reciprocity.
 
 # Main features
 
@@ -60,7 +60,7 @@ generative models.  Key features include:
 
 - **Synthetic Network Generation**: Ability to generate synthetic networks that closely resemble real ones for further analyses (e.g., testing hypotheses).
 
-- **Simplified Parameter Selection**: A cross-validation module to optimize key parameters, providing performance results in a clear dataframe.
+- **Simplified Parameter Selection**: A cross-validation module to select key hyperparameters, providing performance results in a clear data frame.
 
 - **Rich Set of Metrics for Analysis**:  Advanced metrics (e.g., F1 scores, Jaccard index) for link and covariate prediction performance.
 
@@ -71,7 +71,7 @@ generative models.  Key features include:
 - **Extensible and Modular Codebase**: Future integration of additional models possible.
 
 
-| **Algorithm's Name**&nbsp; | **Description**                                                                                                         | **Network Properties**                                |
+| **Algorithm Name**&nbsp; | **Description**                                                                                                         | **Network Properties**                                |
 |----------------------------|-------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
 | **CRep**                   | Models directed networks with communities and reciprocity [@safdari2021generative].                                     | Directed, Weighted, Communities, Reciprocity          |
 |                            |                                                                                                                         |                                                       |
@@ -90,7 +90,7 @@ The **Usage** section below illustrates these features with a real-world example
 ## Example: Analyzing a Social Network with ProbINet
 
 This section shows how to use ProbINet to analyze a social network of 31 students and 100 
-directed edges representing friendships in a small Illinois high school [@konect:coleman]. We analyze the network using JointCRep in ProbINet to infer latent variables, assuming communities and reciprocity drive tie formation, a reasonable assumption for friendship relationships.
+directed edges representing friendships in a small Illinois high school [@konect:coleman]. We analyze the network using JointCRep in ProbINet to infer latent variables, assuming communities and reciprocity drive tie formation, a reasonable assumption for friendship relationships [@mcfarland2014network; @vaquera2008friendship; @block2015reciprocity].
 
 ### Steps to Analyze the Network with ProbINet
 
