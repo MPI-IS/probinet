@@ -5,6 +5,7 @@
 ![Build Status](https://github.com/MPI-IS/probinet/actions/workflows/test.yml/badge.svg)
 ![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![Typed](https://img.shields.io/badge/typed-yes-brightgreen)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.08638/status.svg)](https://doi.org/10.21105/joss.08638)
 
 Welcome to the documentation for the **Prob**abilistic **I**nference on **Net**works (``ProbINet``) Python
 package. This project is a collaborative effort to consolidate state-of-the-art probabilistic generative modeling implementations from various
